@@ -27,18 +27,47 @@ local OPEN_FAIL_DELAY = 1.5
 
 local GetItemCount = (C_Item and C_Item.GetItemCount) or GetItemCount
 
+-- A lure attempt counts as failed when the pole still has no lure this long after it
+-- (longer than the lure's own cast time).
+local LURE_FAIL_DELAY = 8
+
 local skippedItems = {} -- itemID -> true for containers that failed to open (e.g. locked) this session
+local skippedLures = {} -- itemID -> true for lures that failed to apply (e.g. skill too low) this session
 local lastOpen
+local lastLure -- { itemID, time } of the first attempt with the current lure
 
 function Bags.NeedsLure()
     return ns.IsFishingPoleEquipped() and not GetWeaponEnchantInfo()
 end
 
+local function CheckLastLure()
+    if not lastLure then
+        return
+    end
+    if GetWeaponEnchantInfo() then
+        lastLure = nil
+    elseif GetTime() - lastLure.time >= LURE_FAIL_DELAY then
+        skippedLures[lastLure.itemID] = true
+        ns.Print("Cannot apply %s, skipping it for this session.",
+            select(2, C_Item.GetItemInfo(lastLure.itemID)) or lastLure.itemID)
+        lastLure = nil
+    end
+end
+
 function Bags.FindLure()
+    CheckLastLure()
     for _, itemID in ipairs(LURES) do
-        if GetItemCount(itemID) > 0 and (not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)) then
+        if not skippedLures[itemID] and GetItemCount(itemID) > 0
+            and (not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)) then
             return itemID
         end
+    end
+end
+
+-- Repeated presses with the same lure keep the first attempt's time, like NoteOpenAttempt.
+function Bags.NoteLureAttempt(itemID)
+    if not (lastLure and lastLure.itemID == itemID) then
+        lastLure = { itemID = itemID, time = GetTime() }
     end
 end
 
@@ -83,9 +112,16 @@ end
 
 function Bags.NoteOpenAttempt(bag, slot)
     local info = C_Container.GetContainerItemInfo(bag, slot)
-    if info then
-        lastOpen = { bag = bag, slot = slot, itemID = info.itemID, count = info.stackCount, time = GetTime() }
+    if not info then
+        return
     end
+    -- Keep the first attempt's time: repeated presses (and PreClick runs on both key down and up)
+    -- on the same unchanged stack must not keep postponing the failure check.
+    if lastOpen and lastOpen.bag == bag and lastOpen.slot == slot and lastOpen.itemID == info.itemID
+        and lastOpen.count == info.stackCount then
+        return
+    end
+    lastOpen = { bag = bag, slot = slot, itemID = info.itemID, count = info.stackCount, time = GetTime() }
 end
 
 -- Remember everything caught, so new Forever containers are picked up without updating the list.

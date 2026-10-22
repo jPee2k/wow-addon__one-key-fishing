@@ -11,7 +11,7 @@ local GLOBALS = {
     "RegisterStateDriver", "SecureHandlerWrapScript", "InCombatLockdown",
     -- spells
     "GetSpellInfo", "IsSpellKnown", "IsPlayerSpell", "C_Spell.GetSpellInfo", "C_Spell.GetSpellName",
-    "C_SpellBook.IsSpellKnown", "C_SpellBook.IsSpellInSpellBook", "UnitChannelInfo",
+    "C_SpellBook.IsSpellKnown", "C_SpellBook.IsSpellInSpellBook", "UnitChannelInfo", "UnitCastingInfo",
     -- professions / skill
     "GetProfessions", "GetProfessionInfo", "GetNumSkillLines", "GetSkillLineInfo",
     "C_TradeSkillUI.GetProfessionInfoBySkillLineID",

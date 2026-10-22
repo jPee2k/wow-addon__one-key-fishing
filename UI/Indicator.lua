@@ -57,6 +57,24 @@ bar.text = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 bar.text:SetPoint("LEFT", bar, "RIGHT", 4, 0)
 bar:Hide()
 
+-- Fishing time of this session, below the cast bar's place.
+frame.timer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+frame.timer:SetPoint("TOP", frame.label, "BOTTOM", 0, -14)
+
+local timerElapsed = 0
+frame:SetScript("OnUpdate", function(self, delta)
+    timerElapsed = timerElapsed + delta
+    if timerElapsed < 1 then
+        return
+    end
+    timerElapsed = 0
+    if ns.db.settings.sessionTimer then
+        self.timer:SetText(ns.Stats.FormatTime(ns.Stats.GetSessionTime()))
+    else
+        self.timer:SetText("")
+    end
+end)
+
 bar:SetScript("OnUpdate", function(self)
     local _, _, _, startMS, endMS = UnitChannelInfo("player")
     if not startMS then

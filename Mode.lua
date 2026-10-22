@@ -19,7 +19,8 @@ local function DesiredCVars()
     if settings.bobberIcon then
         cvars.SoftTargetIconGameObject = "1"
         cvars.SoftTargetIconInteract = "1"
-    end    return cvars
+    end
+    return cvars
 end
 
 local function ApplyCVars()
@@ -49,6 +50,11 @@ function Mode.IsActive()
     return active
 end
 
+-- On, but leaving as soon as combat ends.
+function Mode.IsExiting()
+    return pendingExit
+end
+
 function Mode.Enter()
     if active then
         return
@@ -63,6 +69,7 @@ function Mode.Enter()
     if ns.db.settings.gear then
         ns.Gear.Equip()
     end
+    ns.Camera.Apply()
     ApplyCVars()
     active = true
     pendingExit = false
@@ -81,6 +88,7 @@ function Mode.Exit()
     end
     ns.Action.Disable()
     ns.Gear.Restore()
+    ns.Camera.Restore()
     RestoreCVars()
     active = false
     pendingExit = false
@@ -131,9 +139,13 @@ end)
 -- Bindings and the spellbook are not reliably ready on PLAYER_ENTERING_WORLD, so wait a moment.
 local RESUME_DELAY = 1
 
-ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, _, isReloadingUi)
+ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadingUi)
     local resume = ns.charDB.resumeMode and isReloadingUi
     ns.charDB.resumeMode = nil
+    -- Only on a real login: loading screens also fire this event while the mode stays on.
+    if isInitialLogin then
+        ns.Camera.Forget()
+    end
     C_Timer.After(RESUME_DELAY, function()
         if resume then
             Mode.Enter()

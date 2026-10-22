@@ -19,6 +19,10 @@ globals = {
     "BINDING_NAME_ONEKEYFISHING_TOGGLE",
     "OneKeyFishing_ToggleMode",
     "OneKeyFishing_ActionKeyIdle",
+    "OneKeyFishing_OnAddonCompartmentClick",
+    "OneKeyFishing_OnAddonCompartmentEnter",
+    "OneKeyFishing_OnAddonCompartmentLeave",
+    "OneKeyFishingStatsFrame",
 }
 
 read_globals = {
@@ -42,8 +46,11 @@ read_globals = {
     "RegisterStateDriver", "C_Timer", "GetItemCount", "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
     "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink",
     "GetBindingText", "hooksecurefunc", "C_TooltipInfo", "TooltipDataProcessor",
-    "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "unpack",
-    "UnitChannelInfo", "UnitExists", "UnitName", "UnitGUID", "C_NamePlate", "GetLootSlotInfo",
+    "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "unpack", "HandleModifiedItemClick",
+    "UnitChannelInfo", "UnitCastingInfo", "UnitExists", "UnitName", "UnitGUID", "C_NamePlate", "GetLootSlotInfo",
+    "UnitIsAFK", "GetZoneText", "GetSubZoneText", "GetMoneyString", "RaidNotice_AddMessage", "RaidWarningFrame",
+    "ChatTypeInfo", "StaticPopupDialogs", "StaticPopup_Show", "YES", "NO", "time",
+    "GetCameraZoom", "CameraZoomIn", "CameraZoomOut", "GetCursorPosition", "AuctionHouseFrame", "SecondsToTime",
 
     -- Constants
     "WOW_PROJECT_ID", "WOW_PROJECT_MAINLINE", "WOW_PROJECT_CLASSIC", "INVSLOT_MAINHAND",

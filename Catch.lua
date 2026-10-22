@@ -31,6 +31,8 @@ ns.On("FISHING_CAST_STOP", function()
     local stoppedID = castID
     C_Timer.After(LOOT_GRACE, function()
         if caughtCastID ~= stoppedID and castID == stoppedID then
+            -- Settled as a miss: later fishing loot (e.g. fishing outside the mode) must not count for it.
+            caughtCastID = stoppedID
             ns.Fire("FISH_MISSED")
         end
     end)

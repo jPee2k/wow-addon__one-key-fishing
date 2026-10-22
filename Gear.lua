@@ -127,8 +127,9 @@ function ns.GetFishingBonus(itemID)
         end
     end
     bonus = bonus or KNOWN_POLE_BONUS[itemID] or 0
-    -- An empty tooltip means the item is not cached yet; do not remember that result.
-    if #lines > 0 then
+    -- An uncached item gives an empty or "Retrieving item information" tooltip; do not remember that result.
+    local cached = not C_Item.IsItemDataCachedByID or C_Item.IsItemDataCachedByID(itemID)
+    if cached and #lines > 0 then
         bonusCache[itemID] = bonus
     end
     return bonus
@@ -326,6 +327,10 @@ function Gear.Equip()
         ns.Print("%d fishing item(s) are not in your bags.", missing)
     end
     local swap = ns.charDB.gearSwap or {}
+    -- A restore that never landed is live again: the slot still holds the fishing item.
+    for _, entry in pairs(swap) do
+        entry.restoring = nil
+    end
     -- Ascending order: the main hand goes on before anything that depends on it.
     for slot = FIRST_SLOT, LAST_SLOT do
         local itemID = plan[slot]
@@ -348,10 +353,12 @@ function Gear.Equip()
 end
 
 -- Moves the item in an equipment slot to the first regular bag with free space.
-local function UnequipToBags(slot)
+-- `reserved` counts slots already promised this frame: free space only updates after the move lands.
+local function UnequipToBags(slot, reserved)
     for bag = 0, NUM_BAG_SLOTS or 4 do
         local free, bagType = C_Container.GetContainerNumFreeSlots(bag)
-        if free > 0 and bagType == 0 then
+        if free - (reserved[bag] or 0) > 0 and bagType == 0 then
+            reserved[bag] = (reserved[bag] or 0) + 1
             PickupInventoryItem(slot)
             if bag == 0 then
                 PutItemInBackpack()
@@ -365,13 +372,28 @@ local function UnequipToBags(slot)
     return false
 end
 
+-- Slots waiting for the current cast to end: true (all) or a set of slots.
+local deferredSlots
+
+local function IsCasting()
+    return UnitChannelInfo("player") ~= nil or UnitCastingInfo("player") ~= nil
+end
+
 -- `onlySlots` limits restoring to a subset (weapons during combat).
 local function RestoreSlots(onlySlots)
     local swap = ns.charDB.gearSwap
     if not swap then
         return
     end
+    -- Equipping fails while casting (e.g. leaving the mode with the bobber still out): retry after the cast.
+    if IsCasting() then
+        if deferredSlots ~= true then
+            deferredSlots = onlySlots or true
+        end
+        return
+    end
     local inCombat = InCombatLockdown()
+    local reserved = {}
     for slot = FIRST_SLOT, LAST_SLOT do
         local entry = swap[slot]
         if entry and (not onlySlots or onlySlots[slot]) then
@@ -386,11 +408,12 @@ local function RestoreSlots(onlySlots)
                 -- The player put something else here while fishing: leave it alone.
                 swap[slot] = nil
             elseif entry.previous then
+                -- Keep the entry until the swap lands (PLAYER_EQUIPMENT_CHANGED): equipping can fail silently.
+                entry.restoring = true
                 C_Item.EquipItemByName(entry.previous, slot)
-                swap[slot] = nil
             elseif not current then
                 swap[slot] = nil
-            elseif not inCombat and UnequipToBags(slot) then
+            elseif not inCombat and UnequipToBags(slot, reserved) then
                 swap[slot] = nil
             end
         end
@@ -411,6 +434,44 @@ end
 function Gear.HasPendingRestore()
     return ns.charDB.gearSwap ~= nil
 end
+
+ns.RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function(_, slot)
+    local swap = ns.charDB.gearSwap
+    local entry = swap and swap[slot]
+    if entry and entry.restoring and GetInventoryItemID("player", slot) ~= entry.equipped then
+        swap[slot] = nil
+        ns.charDB.gearSwap = next(swap) and swap or nil
+    end
+end)
+
+-- Finish a restore that waited for the cast to end.
+local function OnCastEnd(_, unit)
+    if unit ~= "player" or not deferredSlots then
+        return
+    end
+    local slots = deferredSlots
+    deferredSlots = nil
+    local function Staying()
+        return ns.Mode.IsActive() and not ns.Mode.IsExiting()
+    end
+    if Staying() then
+        return -- back in fishing mode: nothing to restore
+    end
+    -- The cast is still finishing on this frame; equipping right away can still fail.
+    C_Timer.After(0.2, function()
+        if Staying() then
+            return
+        end
+        if InCombatLockdown() then
+            RestoreSlots(WEAPON_SLOTS) -- the rest follows when the pending exit finishes after combat
+        else
+            RestoreSlots(slots ~= true and slots or nil)
+        end
+    end)
+end
+ns.RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP", OnCastEnd)
+ns.RegisterEvent("UNIT_SPELLCAST_STOP", OnCastEnd)
+ns.RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", OnCastEnd)
 
 -- Parses a link, an item ID or an item name typed by the player.
 function ns.ParseItem(text)

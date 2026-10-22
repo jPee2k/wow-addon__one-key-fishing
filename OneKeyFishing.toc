@@ -1,21 +1,31 @@
 ## Interface: 16001
 ## Title: OneKeyFishing
 ## Notes: One-key fishing helper for WoW Forever: cast, hook and loot with a single key.
-## Version: 0.1.0
+## Version: 0.2.0
 ## IconTexture: Interface\Icons\Trade_Fishing
 ## SavedVariables: OneKeyFishingDB
 ## SavedVariablesPerCharacter: OneKeyFishingCharDB
+## AddonCompartmentFunc: OneKeyFishing_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: OneKeyFishing_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: OneKeyFishing_OnAddonCompartmentLeave
 
 Core.lua
 Data.lua
 Gear.lua
 Bags.lua
+Camera.lua
 Action.lua
 Mode.lua
 Catch.lua
+Prices.lua
+Auction.lua
+Skill.lua
+Stats.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
+UI\StatsFrame.lua
 Debug.lua
 UI\Settings.lua
 UI\ItemHooks.lua
+UI\Minimap.lua

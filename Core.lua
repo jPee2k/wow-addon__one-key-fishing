@@ -67,7 +67,16 @@ local DB_DEFAULTS = {
         indicator = true,
         lockIndicator = false,
         toasts = true,
+        sessionTimer = true,
+        pauseOnAFK = true,
+        skillCapWarning = true,
+        auctionPrices = true,
+        camera = true,
+        cameraDistance = 10,
+        minimapButton = true,
     },
+    prices = {}, -- itemID -> { price = copper, time = time() } from auction scans
+    minimapAngle = 220,
     indicatorPos = nil, -- { point, relativePoint, x, y }
     fishedItems = {}, -- itemID -> true for everything ever looted from fishing
 }

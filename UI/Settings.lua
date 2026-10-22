@@ -20,7 +20,15 @@ local TOGGLES = {
     { key = "openContainers", label = "Open clams and fished containers" },
     { key = "indicator", label = "Show the action indicator and cast timer" },
     { key = "lockIndicator", label = "Lock the indicator position" },
-    { key = "toasts", label = "Show catch notifications" },}
+    { key = "toasts", label = "Show catch notifications" },
+    { key = "sessionTimer", label = "Show session fishing time under the indicator" },
+    { key = "pauseOnAFK", label = "Pause the fishing timer while AFK" },
+    { key = "skillCapWarning", label = "Warn when the Fishing rank is capped" },
+    { key = "auctionPrices", label = "Use scanned auction prices for catch value" },
+    { key = "camera", label = "Zoom the camera while fishing" },
+    { key = "minimapButton", label = "Show the minimap button" },
+}
+local COLUMN_OFFSET = 300
 
 local mainCategory
 
@@ -85,30 +93,71 @@ local function CreateMainPage()
 
     local featuresHeader = CreateText(page, "GameFontNormal", "Features")
     featuresHeader:SetPoint("TOPLEFT", keysHint, "BOTTOMLEFT", 0, -18)
-    local anchor = featuresHeader
-    for _, toggle in ipairs(TOGGLES) do
+    -- Two columns so the page fits without scrolling.
+    local perColumn = math.ceil(#TOGGLES / 2)
+    local anchor, firstColumnLast
+    for i, toggle in ipairs(TOGGLES) do
         local checkbox = CreateCheckbox(page, toggle.label,
             function() return ns.db.settings[toggle.key] end,
             function(value)
                 ns.db.settings[toggle.key] = value
                 ns.Fire("SETTINGS_CHANGED", toggle.key)
             end)
-        checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", anchor == featuresHeader and -2 or 0, -4)
+        if i == 1 then
+            checkbox:SetPoint("TOPLEFT", featuresHeader, "BOTTOMLEFT", -2, -4)
+        elseif i == perColumn + 1 then
+            checkbox:SetPoint("TOPLEFT", featuresHeader, "BOTTOMLEFT", COLUMN_OFFSET - 2, -4)
+        else
+            checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -4)
+        end
+        if i == perColumn then
+            firstColumnLast = checkbox
+        end
         anchor = checkbox
     end
-    local note = CreateText(page, "GameFontDisableSmall", "Changes apply the next time you enter fishing mode.")
-    note:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 2, -6)
+    local note = CreateText(page, "GameFontDisableSmall",
+        "Auto loot, bobber icon and gear changes apply the next time you enter fishing mode.")
+    note:SetPoint("TOPLEFT", firstColumnLast, "BOTTOMLEFT", 2, -6)
+
+    -- Camera distance: - value +
+    local cameraLabel = CreateText(page, "GameFontHighlight", "Camera distance while fishing:")
+    cameraLabel:SetPoint("TOPLEFT", note, "BOTTOMLEFT", 0, -12)
+    local cameraValue = CreateText(page, "GameFontHighlight")
+    local function ChangeDistance(step)
+        cameraValue:SetText(ns.Camera.SetDistance(ns.db.settings.cameraDistance + step))
+    end
+    local minus = CreateButton(page, "-", 26, function() ChangeDistance(-1) end)
+    minus:SetPoint("LEFT", cameraLabel, "RIGHT", 8, 0)
+    cameraValue:SetPoint("LEFT", minus, "RIGHT", 8, 0)
+    cameraValue:SetWidth(24)
+    cameraValue:SetJustifyH("CENTER")
+    local plus = CreateButton(page, "+", 26, function() ChangeDistance(1) end)
+    plus:SetPoint("LEFT", cameraValue, "RIGHT", 8, 0)
 
     local actionsHeader = CreateText(page, "GameFontNormal", "Actions")
-    actionsHeader:SetPoint("TOPLEFT", note, "BOTTOMLEFT", 0, -18)
+    actionsHeader:SetPoint("TOPLEFT", cameraLabel, "BOTTOMLEFT", 0, -18)
     local toggleButton = CreateButton(page, "Toggle fishing mode", 180, function() ns.Mode.Toggle() end)
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
     local apiButton = CreateButton(page, "Run API check", 140, function() ns.RunApiCheck() end)
     apiButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
+    local statsButton = CreateButton(page, "Open statistics", 140, function() ns.StatsFrame.Toggle() end)
+    statsButton:SetPoint("LEFT", apiButton, "RIGHT", 8, 0)
     local resetButton = CreateButton(page, "Reset indicator position", 190, function() ns.Indicator.ResetPosition() end)
-    resetButton:SetPoint("LEFT", apiButton, "RIGHT", 8, 0)
+    resetButton:SetPoint("TOPLEFT", toggleButton, "BOTTOMLEFT", 0, -6)
+    local scanButton = CreateButton(page, "Scan auction prices", 160, function() ns.Auction.Scan() end)
+    scanButton:SetPoint("LEFT", resetButton, "RIGHT", 8, 0)
+    local scanHint = CreateText(page, "GameFontDisableSmall", "(open the auction house first)")
+    scanHint:SetPoint("LEFT", scanButton, "RIGHT", 8, 0)
+    local function UpdateScanButton()
+        local usable = ns.Auction.IsOpen() and not ns.Auction.IsScanning()
+        scanButton:SetEnabled(usable)
+        scanHint:SetShown(not ns.Auction.IsOpen())
+    end
+    ns.On("AUCTION_STATE", UpdateScanButton)
 
     page:SetScript("OnShow", function()
+        UpdateScanButton()
+        cameraValue:SetText(ns.db.settings.cameraDistance)
         keys:SetText(("Fishing action: %s      Toggle fishing mode: %s"):format(
             KeyText("ONEKEYFISHING_ACTION"), KeyText("ONEKEYFISHING_TOGGLE")))
     end)

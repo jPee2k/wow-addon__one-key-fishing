@@ -1,0 +1,6 @@
+# Development files stay out of `git archive` packages.
+CLAUDE.md export-ignore
+PLAN.md export-ignore
+.luacheckrc export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore

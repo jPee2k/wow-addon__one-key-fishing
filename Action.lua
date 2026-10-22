@@ -58,6 +58,7 @@ button:SetScript("PreClick", function(self)
         self:SetAttribute("type", "item")
         self:SetAttribute("item", "item:" .. arg1)
         self:SetAttribute("target-slot", INVSLOT_MAINHAND or 16)
+        ns.Bags.NoteLureAttempt(arg1)
     elseif kind == "open" then
         self:SetAttribute("type", "item")
         self:SetAttribute("item", arg1 .. " " .. arg2) -- "bag slot"
@@ -113,14 +114,18 @@ function Action.Enable()
     fishingSpellID = spellID
     button:SetAttribute("spell", spellID)
     enabled = true
-    channeling = false
-    BindCast()
+    -- `channeling` is left to CHANNEL_STOP: re-entering during a cast must still bind the hook.
+    if channeling then
+        BindInteract()
+    else
+        BindCast()
+    end
     return true
 end
 
+-- `channeling` is not reset here: CHANNEL_STOP of a cast that is still running must still fire FISHING_CAST_STOP.
 function Action.Disable()
     enabled = false
-    channeling = false
     if not InCombatLockdown() then
         ClearOverrideBindings(owner)
     end
