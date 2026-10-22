@@ -61,6 +61,9 @@ function Mode.Enter()
     if not ns.Action.Enable() then
         return
     end
+    if ns.db.settings.gear then
+        ns.Gear.Equip()
+    end
     ApplyCVars()
     active = true
     pendingExit = false
@@ -78,6 +81,7 @@ function Mode.Exit()
         return
     end
     ns.Action.Disable()
+    ns.Gear.Restore()
     RestoreCVars()
     active = false
     pendingExit = false
@@ -96,6 +100,8 @@ end
 ns.RegisterEvent("PLAYER_REGEN_DISABLED", function()
     if active and ns.db.settings.exitOnCombat then
         pendingExit = true
+        -- Weapons can be swapped in combat; the rest of the gear waits until combat ends.
+        ns.Gear.RestoreWeapons()
     end
 end)
 
@@ -123,14 +129,20 @@ ns.RegisterEvent("PLAYER_LOGOUT", function()
     end
 end)
 
+-- Bindings and the spellbook are not reliably ready on PLAYER_ENTERING_WORLD, so wait a moment.
+local RESUME_DELAY = 1
+
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, _, isReloadingUi)
-    if not ns.charDB.resumeMode then
-        return
-    end
+    local resume = ns.charDB.resumeMode and isReloadingUi
     ns.charDB.resumeMode = nil
-    if isReloadingUi then
-        Mode.Enter()
-    end
+    C_Timer.After(RESUME_DELAY, function()
+        if resume then
+            Mode.Enter()
+        elseif not active and ns.Gear.HasPendingRestore() then
+            -- Logged out or crashed in fishing gear: put the normal gear back.
+            ns.Gear.Restore()
+        end
+    end)
 end)
 
 -- Called from Bindings.xml

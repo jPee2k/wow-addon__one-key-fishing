@@ -61,11 +61,19 @@ local DB_DEFAULTS = {
         autoLoot = true,
         bobberIcon = true,
         exitOnCombat = true,
+        gear = true,
+        lure = true,
+        openContainers = true,
     },
+    fishedItems = {}, -- itemID -> true for everything ever looted from fishing
 }
 
 local CHAR_DB_DEFAULTS = {
     schema = DB_SCHEMA,
+    gear = {
+        pole = nil, -- itemID chosen in settings; nil = best pole in bags
+        items = {}, -- extra fishing item IDs
+    },
 }
 
 -- Fills missing keys from defaults without touching values the user already has.

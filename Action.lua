@@ -26,7 +26,50 @@ RegisterStateDriver(owner, "combat", "[combat] 1; 0")
 
 local enabled = false
 local channeling = false
+local fishingSpellID
 local keys = {}
+
+-- What the next press should do, by priority: apply a lure, open a fished container, cast.
+-- Returns kind ("lure" | "open" | "cast") and its arguments.
+function Action.Resolve()
+    local settings = ns.db.settings
+    if settings.lure and ns.Bags.NeedsLure() then
+        local lureID = ns.Bags.FindLure()
+        if lureID then
+            return "lure", lureID
+        end
+    end
+    if settings.openContainers then
+        local bag, slot = ns.Bags.FindContainer()
+        if bag then
+            return "open", bag, slot
+        end
+    end
+    return "cast"
+end
+
+-- Attributes can only change outside combat; in combat the bindings are dropped anyway.
+button:SetScript("PreClick", function(self)
+    if InCombatLockdown() then
+        return
+    end
+    local kind, arg1, arg2 = Action.Resolve()
+    if kind == "lure" then
+        self:SetAttribute("type", "item")
+        self:SetAttribute("item", "item:" .. arg1)
+        self:SetAttribute("target-slot", INVSLOT_MAINHAND or 16)
+    elseif kind == "open" then
+        self:SetAttribute("type", "item")
+        self:SetAttribute("item", arg1 .. " " .. arg2) -- "bag slot"
+        self:SetAttribute("target-slot", nil)
+        ns.Bags.NoteOpenAttempt(arg1, arg2)
+    else
+        self:SetAttribute("type", "spell")
+        self:SetAttribute("spell", fishingSpellID)
+        self:SetAttribute("item", nil)
+        self:SetAttribute("target-slot", nil)
+    end
+end)
 
 local function ReadKeys()
     wipe(keys)
@@ -67,6 +110,7 @@ function Action.Enable()
         ns.Print("No key is bound to 'Fishing action'. Bind one in Options -> Keybindings -> AddOns -> OneKeyFishing.")
         return false
     end
+    fishingSpellID = spellID
     button:SetAttribute("spell", spellID)
     enabled = true
     channeling = false

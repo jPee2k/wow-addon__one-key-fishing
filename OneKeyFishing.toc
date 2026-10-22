@@ -8,7 +8,11 @@
 
 Core.lua
 Data.lua
+Gear.lua
+Bags.lua
 Action.lua
 Mode.lua
 UI\CopyWindow.lua
 Debug.lua
+UI\Settings.lua
+UI\ItemHooks.lua

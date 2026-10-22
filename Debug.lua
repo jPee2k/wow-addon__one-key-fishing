@@ -35,6 +35,11 @@ local GLOBALS = {
     "Settings.RegisterAddOnSetting", "Settings.CreateCheckbox", "Settings.CreateSlider",
     "Settings.OpenToCategory", "MenuUtil.CreateContextMenu", "AddonCompartmentFrame",
     "C_AddOns.GetAddOnMetadata", "C_CVar.GetCVar", "C_CVar.SetCVar", "C_EventUtils.IsEventValid",
+    "Settings.RegisterCanvasLayoutCategory", "Settings.RegisterCanvasLayoutSubcategory",
+    "C_TooltipInfo.GetItemByID", "HandleModifiedItemClick", "TooltipDataProcessor.AddTooltipPostCall",
+    "C_Item.GetItemIconByID",
+    "C_Item.GetItemCount", "C_Item.IsUsableItem", "C_Container.GetContainerNumFreeSlots",
+    "C_Container.ContainerIDToInventoryID", "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
 }
 
 local CVARS = {
@@ -62,6 +67,9 @@ local TEMPLATES = {
     { "Frame", "BasicFrameTemplateWithInset" },
     { "Frame", "BackdropTemplate" },
     { "ScrollFrame", "UIPanelScrollFrameTemplate" },
+    { "CheckButton", "UICheckButtonTemplate" },
+    { "Button", "UIPanelButtonTemplate" },
+    { "EditBox", "InputBoxTemplate" },
 }
 
 local function Resolve(path)
@@ -216,6 +224,12 @@ local function BuildReport()
         if Enum and Enum.ItemWeaponSubclass then
             add("  Enum.ItemWeaponSubclass.Fishingpole = %s", tostring(Enum.ItemWeaponSubclass.Fishingpole))
         end
+        if itemID then
+            add("  main hand fishing bonus (tooltip): %s", tostring(ns.GetFishingBonus(itemID)))
+        end
+        local bestPole, bestBonus = ns.Gear.FindBestPole()
+        add("  best pole in bags: %s (+%s)", tostring(bestPole and C_Item.GetItemInfo(bestPole) or bestPole),
+            tostring(bestBonus))
         local hasEnchant, expiration, charges, enchantID = GetWeaponEnchantInfo()
         add("  weapon enchant: %s, expires %s ms, charges %s, id %s", tostring(hasEnchant),
             tostring(expiration), tostring(charges), tostring(enchantID))
