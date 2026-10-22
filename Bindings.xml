@@ -1,0 +1,9 @@
+<Bindings>
+	<!-- While fishing mode is on this key is overridden by Action.lua; this body runs only when the mode is off. -->
+	<Binding name="ONEKEYFISHING_ACTION" header="ONEKEYFISHING" category="ADDONS">
+		OneKeyFishing_ActionKeyIdle()
+	</Binding>
+	<Binding name="ONEKEYFISHING_TOGGLE" category="ADDONS">
+		OneKeyFishing_ToggleMode()
+	</Binding>
+</Bindings>

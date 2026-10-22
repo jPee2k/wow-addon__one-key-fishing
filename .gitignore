@@ -1,0 +1,6 @@
+.release/
+*.zip
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
