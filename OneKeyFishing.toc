@@ -12,7 +12,10 @@ Gear.lua
 Bags.lua
 Action.lua
 Mode.lua
+Catch.lua
 UI\CopyWindow.lua
+UI\Indicator.lua
+UI\Toast.lua
 Debug.lua
 UI\Settings.lua
 UI\ItemHooks.lua

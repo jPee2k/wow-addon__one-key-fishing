@@ -18,7 +18,9 @@ local TOGGLES = {
     { key = "gear", label = "Equip fishing pole and fishing gear" },
     { key = "lure", label = "Apply lures automatically" },
     { key = "openContainers", label = "Open clams and fished containers" },
-}
+    { key = "indicator", label = "Show the action indicator and cast timer" },
+    { key = "lockIndicator", label = "Lock the indicator position" },
+    { key = "toasts", label = "Show catch notifications" },}
 
 local mainCategory
 
@@ -87,7 +89,10 @@ local function CreateMainPage()
     for _, toggle in ipairs(TOGGLES) do
         local checkbox = CreateCheckbox(page, toggle.label,
             function() return ns.db.settings[toggle.key] end,
-            function(value) ns.db.settings[toggle.key] = value end)
+            function(value)
+                ns.db.settings[toggle.key] = value
+                ns.Fire("SETTINGS_CHANGED", toggle.key)
+            end)
         checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", anchor == featuresHeader and -2 or 0, -4)
         anchor = checkbox
     end
@@ -100,6 +105,8 @@ local function CreateMainPage()
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
     local apiButton = CreateButton(page, "Run API check", 140, function() ns.RunApiCheck() end)
     apiButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
+    local resetButton = CreateButton(page, "Reset indicator position", 190, function() ns.Indicator.ResetPosition() end)
+    resetButton:SetPoint("LEFT", apiButton, "RIGHT", 8, 0)
 
     page:SetScript("OnShow", function()
         keys:SetText(("Fishing action: %s      Toggle fishing mode: %s"):format(

@@ -43,6 +43,7 @@ read_globals = {
     "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink",
     "GetBindingText", "hooksecurefunc", "C_TooltipInfo", "TooltipDataProcessor",
     "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "unpack",
+    "UnitChannelInfo", "UnitExists", "UnitName", "UnitGUID", "C_NamePlate", "GetLootSlotInfo",
 
     -- Constants
     "WOW_PROJECT_ID", "WOW_PROJECT_MAINLINE", "WOW_PROJECT_CLASSIC", "INVSLOT_MAINHAND",

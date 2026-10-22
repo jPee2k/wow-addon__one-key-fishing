@@ -19,8 +19,7 @@ local function DesiredCVars()
     if settings.bobberIcon then
         cvars.SoftTargetIconGameObject = "1"
         cvars.SoftTargetIconInteract = "1"
-    end
-    return cvars
+    end    return cvars
 end
 
 local function ApplyCVars()

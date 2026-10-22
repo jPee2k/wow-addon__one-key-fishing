@@ -37,7 +37,7 @@ local GLOBALS = {
     "C_AddOns.GetAddOnMetadata", "C_CVar.GetCVar", "C_CVar.SetCVar", "C_EventUtils.IsEventValid",
     "Settings.RegisterCanvasLayoutCategory", "Settings.RegisterCanvasLayoutSubcategory",
     "C_TooltipInfo.GetItemByID", "HandleModifiedItemClick", "TooltipDataProcessor.AddTooltipPostCall",
-    "C_Item.GetItemIconByID",
+    "C_Item.GetItemIconByID", "C_NamePlate.GetNamePlateForUnit", "C_Spell.GetSpellTexture",
     "C_Item.GetItemCount", "C_Item.IsUsableItem", "C_Container.GetContainerNumFreeSlots",
     "C_Container.ContainerIDToInventoryID", "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
 }
@@ -46,6 +46,7 @@ local CVARS = {
     "autoLootDefault", "autoLootKey",
     "SoftTargetInteract", "SoftTargetInteractArc", "SoftTargetInteractRange",
     "SoftTargetIconGameObject", "SoftTargetIconInteract", "SoftTargetIconFriend", "SoftTargetIconEnemy",
+    "SoftTargetNameplateInteract",
     "Sound_EnableMusic", "Sound_EnableAmbience", "Sound_SFXVolume", "Sound_EnableSoundWhenGameIsInBackground",
     "cameraDistanceMaxZoomFactor",
 }

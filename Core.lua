@@ -64,7 +64,11 @@ local DB_DEFAULTS = {
         gear = true,
         lure = true,
         openContainers = true,
+        indicator = true,
+        lockIndicator = false,
+        toasts = true,
     },
+    indicatorPos = nil, -- { point, relativePoint, x, y }
     fishedItems = {}, -- itemID -> true for everything ever looted from fishing
 }
 

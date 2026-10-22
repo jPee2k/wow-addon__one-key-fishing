@@ -6,6 +6,20 @@ ns.FISHING_SPELL_IDS = { 7620, 7731, 7732, 18248 }
 
 ns.FISHING_SKILL_LINE = 356
 
+-- Game object entry of the fishing bobber, as seen in the "softinteract" unit's GUID.
+local BOBBER_OBJECT_ID = "35591"
+
+-- True when the interact key would hit the bobber (not some other object nearby).
+-- The bobber has no nameplate and UnitExists is false for it, but its name and GUID are readable.
+function ns.IsBobberTargeted()
+    local guid = UnitGUID("softinteract")
+    if not guid then
+        return false
+    end
+    local unitType, _, _, _, _, objectID = strsplit("-", guid)
+    return unitType == "GameObject" and objectID == BOBBER_OBJECT_ID
+end
+
 local fishingSpellLookup = {}
 for _, id in ipairs(ns.FISHING_SPELL_IDS) do
     fishingSpellLookup[id] = true
