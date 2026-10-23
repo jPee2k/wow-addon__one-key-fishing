@@ -113,11 +113,25 @@ L["Scan auction prices"] = true
 L["Fishing skill: %d/%d %s%s"] = true
 L["(+%d this session)"] = true
 L["Fishing is not learned."] = true
-L["Values: higher of vendor and auction price (last scan %s ago)"] = true
+L["Values: higher of vendor and auction price (scanned %s)"] = true
+L["%dm"] = true
+L["%dh %02dm"] = true
 L["Values: vendor price (scan the auction house for market prices)"] = true
 L["%d catches, %s"] = true
 L["No catches yet."] = true
 L["show the fishing statistics"] = true
+L["Time"] = true
+L["Results"] = true
+L["Money"] = true
+L["Refresh"] = true
+L["Time in fishing mode. Paused while AFK if that option is on."] = true
+L["Time with the bobber in the water."] = true
+L["Fishing casts made in fishing mode."] = true
+L["Casts that brought loot."] = true
+L["Casts that ended without loot."] = true
+L["Catches per hour of fishing time. Updated with every cast and with Refresh."] = true
+L["Items caught, at the higher of the vendor price and the last scanned auction price."] = true
+L["Value per hour of fishing time. Updated with every cast and with Refresh."] = true
 
 -- Debug.lua
 L["OneKeyFishing - debug report"] = true

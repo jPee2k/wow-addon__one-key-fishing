@@ -20,8 +20,9 @@ function Auction.IsOpen()
     return isOpen
 end
 
-function Auction.IsScanning()
-    return current ~= nil
+-- The auction house is open and no scan is running.
+function Auction.CanScan()
+    return isOpen and current == nil
 end
 
 local function Sorts()
@@ -104,7 +105,7 @@ function Next()
         Send(current, querySerial)
     else
         ns.Print(L["Auction scan finished: %d of %d price(s) found."], scanned, total)
-        ns.Fire("STATS_CHANGED")
+        ns.Fire("PRICES_CHANGED")
     end
 end
 
@@ -150,12 +151,16 @@ end)
 ns.RegisterEvent("AUCTION_HOUSE_CLOSED", function()
     isOpen = false
     querySerial = querySerial + 1 -- a retry or timeout of the stopped scan must not run after reopening
-    if current then
+    local stopped = current ~= nil
+    if stopped then
         ns.Print(L["Auction scan stopped: %d of %d price(s) found."], scanned, total)
     end
     wipe(queue)
     current = nil
     NotifyState()
+    if stopped then
+        ns.Fire("PRICES_CHANGED") -- the prices found so far
+    end
 end)
 
 ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED", function(_, itemID)

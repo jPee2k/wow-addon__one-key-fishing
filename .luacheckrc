@@ -25,7 +25,7 @@ globals = {
 
 read_globals = {
     -- Lua extensions provided by the client
-    "strsplit", "strtrim", "wipe", "unpack", "time",
+    "strsplit", "strtrim", "wipe", "unpack", "time", "date",
 
     -- Frames and UI
     "CreateFrame", "UIParent", "DEFAULT_CHAT_FRAME", "ChatFontNormal", "GameTooltip", "Minimap",
@@ -39,7 +39,7 @@ read_globals = {
 
     -- Global API
     "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",
-    "GetProfessions", "GetProfessionInfo", "GetTime", "GetMoneyString", "SecondsToTime",
+    "GetProfessions", "GetProfessionInfo", "GetTime", "GetMoneyString",
     "GetBindingKey", "GetBindingText", "SetOverrideBinding", "SetOverrideBindingClick", "ClearOverrideBindings",
     "RegisterStateDriver", "hooksecurefunc", "HandleModifiedItemClick",
     "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "GetCursorPosition",

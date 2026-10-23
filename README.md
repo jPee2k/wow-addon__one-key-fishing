@@ -79,8 +79,10 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 
 Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 
-- **Session**, **This zone** and **All time** columns: time fishing, time casting, casts, catches, nothing caught, catches per hour, value and gold per hour.
+- **Session**, **This zone** and **All time** columns, in three sections: **Time** (time fishing, time casting), **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row name to see how it is counted.
 - **Top items** and **top zones**.
+- **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a catch, a miss, a zone change, an auction scan); only the time rows and the current zone in the zone list tick while you fish. The session shows `H:MM:SS`, the zone and all-time columns `1h 23m`.
+- The line under the skill shows when auction prices were last scanned.
 - **Reset session** and **Reset all** ask for confirmation first.
 
 The timer runs only while fishing mode is on. It pauses while you are AFK (you can turn that off).

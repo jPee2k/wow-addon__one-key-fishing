@@ -55,13 +55,7 @@ local function CreateCheckbox(parent, label, getValue, setValue)
     return checkbox
 end
 
-local function CreateButton(parent, text, width, onClick)
-    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    button:SetSize(width, 22)
-    button:SetText(text)
-    button:SetScript("OnClick", onClick)
-    return button
-end
+local CreateButton = ns.CreateButton -- Core.lua
 
 local function KeyText(binding)
     local key = GetBindingKey(binding)
@@ -157,7 +151,7 @@ local function CreateMainPage()
     local scanHint = CreateText(page, "GameFontDisableSmall", L["(open the auction house first)"])
     scanHint:SetPoint("LEFT", scanButton, "RIGHT", 8, 0)
     local function UpdateScanButton()
-        local usable = ns.Auction.IsOpen() and not ns.Auction.IsScanning()
+        local usable = ns.Auction.CanScan()
         scanButton:SetEnabled(usable)
         scanHint:SetShown(not ns.Auction.IsOpen())
     end

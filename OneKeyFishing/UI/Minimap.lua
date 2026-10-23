@@ -21,7 +21,7 @@ local function OpenMenu(owner)
         root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
         root:CreateButton(L["Settings"], ns.SettingsUI.Open)
         local scan = root:CreateButton(L["Scan auction prices"], ns.Auction.Scan)
-        if not ns.Auction.IsOpen() then
+        if not ns.Auction.CanScan() then
             scan:SetEnabled(false)
         end
         root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)

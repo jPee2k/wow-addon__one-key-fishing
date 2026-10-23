@@ -3,6 +3,7 @@
 -- that option is on) and is added to the buckets when it ends, on zone change and on logout.
 -- A session lasts until the next login (not /reload) or until it is reset.
 local _, ns = ...
+local L = ns.L
 
 local Stats = {}
 ns.Stats = Stats
@@ -55,8 +56,20 @@ local function ForEachLiveBucket(fn)
     fn(CurrentZoneBucket())
 end
 
+-- Bumped on every change of the statistics; the statistics window redraws when it changed.
+local version = 0
+
+function Stats.GetVersion()
+    return version
+end
+
+local function Changed()
+    version = version + 1
+end
+
 local function Add(field, amount)
     ForEachLiveBucket(function(bucket) bucket[field] = bucket[field] + amount end)
+    Changed()
 end
 
 ---------------------------------------------------------------------------
@@ -99,6 +112,7 @@ local function OnZoneChanged()
     FlushTime() -- into the zone we are leaving
     zoneKey, zoneName = key, name
     UpdateTimer()
+    Changed()
 end
 
 ---------------------------------------------------------------------------
@@ -117,7 +131,16 @@ end
 -- Seconds -> "H:MM:SS".
 function Stats.FormatTime(seconds)
     seconds = math.floor(seconds or 0)
-    return ("%d:%02d:%02d"):format(seconds / 3600, (seconds / 60) % 60, seconds % 60)
+    return ("%d:%02d:%02d"):format(math.floor(seconds / 3600), math.floor(seconds / 60) % 60, seconds % 60)
+end
+
+-- Seconds -> "45m" or "1h 23m", for totals where seconds would only add noise.
+function Stats.FormatShortTime(seconds)
+    local minutes = math.floor((seconds or 0) / 60)
+    if minutes < 60 then
+        return (L["%dm"]):format(minutes)
+    end
+    return (L["%dh %02dm"]):format(math.floor(minutes / 60), minutes % 60)
 end
 
 function Stats.GetTotal()
@@ -144,7 +167,7 @@ function Stats.ResetSession()
     FlushTime()
     ns.charDB.session = NewSession()
     UpdateTimer()
-    ns.Fire("STATS_CHANGED")
+    Changed()
 end
 
 function Stats.ResetAll()
@@ -152,7 +175,7 @@ function Stats.ResetAll()
     ns.charDB.stats = { total = NewBucket(), zones = {} }
     ns.charDB.session = NewSession()
     UpdateTimer()
-    ns.Fire("STATS_CHANGED")
+    Changed()
 end
 
 ---------------------------------------------------------------------------
@@ -188,12 +211,11 @@ ns.On("FISH_CAUGHT", function(items)
             end)
         end
     end
-    ns.Fire("STATS_CHANGED")
+    Changed()
 end)
 
 ns.On("FISH_MISSED", function()
     Add("misses", 1)
-    ns.Fire("STATS_CHANGED")
 end)
 
 ns.On("MODE_CHANGED", UpdateTimer)
@@ -217,6 +239,7 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin)
     FlushTime() -- after a loading screen: into the zone we came from
     zoneKey, zoneName = ReadZone()
     UpdateTimer()
+    Changed()
 end)
 
 ns.RegisterEvent("ZONE_CHANGED", OnZoneChanged)

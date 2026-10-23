@@ -12,6 +12,15 @@ end
 
 local CHAT_PREFIX = "|cff33ccffOneKeyFishing|r: "
 
+-- A standard UI panel button; shared by the settings and statistics windows.
+function ns.CreateButton(parent, text, width, onClick)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(width, 22)
+    button:SetText(text)
+    button:SetScript("OnClick", onClick)
+    return button
+end
+
 function ns.Print(msg, ...)
     if select("#", ...) > 0 then
         msg = msg:format(...)
