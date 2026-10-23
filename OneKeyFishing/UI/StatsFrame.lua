@@ -35,35 +35,35 @@ local function ColumnTime(column, seconds)
     return column == 1 and FormatTime(seconds) or FormatShortTime(seconds)
 end
 
--- Sections and rows. A row's text(c) gets the column context:
+-- Sections and rows; `key` names a row's cells in frame.cells. A row's text(c) gets the column context:
 -- c.bucket, c.column, c.liveMode, c.liveCast (seconds not yet in the bucket), c.value (Stats.GetValue).
 -- `live` rows are updated every second while the timer runs; the rest only on events.
 local ROWS = {
     { section = L["Time"] },
-    { label = L["Time fishing"], live = true,
+    { key = "timeFishing", label = L["Time fishing"], live = true,
         tip = L["Time in fishing mode. Paused while AFK if that option is on."],
         text = function(c) return ColumnTime(c.column, c.bucket.modeTime + c.liveMode) end },
-    { label = L["Time casting"], live = true,
+    { key = "timeCasting", label = L["Time casting"], live = true,
         tip = L["Time with the bobber in the water."],
         text = function(c) return ColumnTime(c.column, c.bucket.castTime + c.liveCast) end },
     { section = L["Results"] },
-    { label = L["Casts"], tip = L["Fishing casts made in fishing mode."],
+    { key = "casts", label = L["Casts"], tip = L["Fishing casts made in fishing mode."],
         text = function(c) return tostring(c.bucket.casts) end },
-    { label = L["Catches"], tip = L["Casts that brought loot."],
+    { key = "catches", label = L["Catches"], tip = L["Casts that brought loot."],
         text = function(c) return tostring(c.bucket.catches) end },
-    { label = L["Nothing caught"], tip = L["Casts that ended without loot."],
+    { key = "misses", label = L["Nothing caught"], tip = L["Casts that ended without loot."],
         text = function(c) return tostring(c.bucket.misses) end },
-    { label = L["Catches per hour"],
+    { key = "catchesPerHour", label = L["Catches per hour"],
         tip = L["Catches per hour of fishing time. Updated with every cast and with Refresh."],
         text = function(c)
             local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
             return value and ("%.1f"):format(value) or "-"
         end },
     { section = L["Money"] },
-    { label = L["Value"],
+    { key = "value", label = L["Value"],
         tip = L["Items caught, at the higher of the vendor price and the last scanned auction price."],
         text = function(c) return ns.FormatMoney(c.value) end },
-    { label = L["Gold per hour"],
+    { key = "goldPerHour", label = L["Gold per hour"],
         tip = L["Value per hour of fishing time. Updated with every cast and with Refresh."],
         text = function(c)
             local perHour = PerHour(c.value, c.bucket.modeTime + c.liveMode)
@@ -99,9 +99,9 @@ end
 
 -- Rows and section headers from ROWS; returns the y below the last row.
 local function CreateTable(f, headerY)
-    f.cells = {}
+    f.cells = {} -- row key -> its three cells (session, this zone, all time)
     local y = headerY - 4
-    for row, definition in ipairs(ROWS) do
+    for _, definition in ipairs(ROWS) do
         if definition.section then
             y = y - LINE_HEIGHT - SECTION_GAP
             local header = CreateText(f, "GameFontNormalSmall")
@@ -129,12 +129,14 @@ local function CreateTable(f, headerY)
             hover:RegisterForDrag("LeftButton")
             hover:SetScript("OnDragStart", function() f:StartMoving() end)
             hover:SetScript("OnDragStop", function() f:StopMovingOrSizing() end)
-            f.cells[row] = {}
+            assert(definition.key and not f.cells[definition.key], "every ROWS row needs its own key")
+            local cells = {}
+            f.cells[definition.key] = cells
             for column = 1, 3 do
                 local cell = CreateText(f, "GameFontHighlight", "RIGHT")
                 cell:SetPoint("TOPLEFT", COLUMN_X[column], y)
                 cell:SetWidth(COLUMN_WIDTH)
-                f.cells[row][column] = cell
+                cells[column] = cell
             end
         end
     end
@@ -287,10 +289,10 @@ end
 local contexts = { {}, {}, {} }
 
 local function FillCells(liveOnly)
-    for row, definition in ipairs(ROWS) do
+    for _, definition in ipairs(ROWS) do
         if definition.text and (definition.live or not liveOnly) then
             for column, context in ipairs(contexts) do
-                frame.cells[row][column]:SetText(definition.text(context))
+                frame.cells[definition.key][column]:SetText(definition.text(context))
             end
         end
     end

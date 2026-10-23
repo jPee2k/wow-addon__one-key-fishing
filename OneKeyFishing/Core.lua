@@ -6,8 +6,10 @@ ns.name = ADDON_NAME
 
 local GetMetadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 ns.version = GetMetadata and GetMetadata(ADDON_NAME, "Version") or "dev"
-if ns.version == "@project-version@" then
-    ns.version = "dev" -- loaded straight from the repository, not from a built package
+-- Loaded straight from the repository, the TOC still has its version placeholder, which starts with "@". The
+-- placeholder cannot be written out here: the release packager fills it in in every file, this one included.
+if ns.version:sub(1, 1) == "@" then
+    ns.version = "dev"
 end
 
 local CHAT_PREFIX = "|cff33ccffOneKeyFishing|r: "

@@ -1,4 +1,4 @@
-# Checks every push and pull request. A pushed version tag (for example `1.0.0`, equal to the version in
+# Checks and tests every push and pull request. A pushed version tag (for example `1.0.0`, equal to the version in
 # package.json) is packaged by BigWigsMods/packager and uploaded to GitHub Releases and, once the TOC has
 # `## X-Curse-Project-ID` and the CF_API_KEY secret is set, to CurseForge.
 name: Check and release
@@ -20,6 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm test
 
   release:
     needs: check

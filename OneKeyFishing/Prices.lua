@@ -25,11 +25,7 @@ function Prices.GetLastScanTime()
     return latest
 end
 
--- Copper -> "1g 20s 5c" with coin icons where the client supports it.
+-- Copper -> "1g 20s 5c" with coin icons.
 function ns.FormatMoney(copper)
-    copper = math.floor(copper or 0)
-    if GetMoneyString then
-        return GetMoneyString(copper, true)
-    end
-    return ("%dg %ds %dc"):format(copper / 10000, (copper / 100) % 100, copper % 100)
+    return GetMoneyString(math.floor(copper or 0), true)
 end

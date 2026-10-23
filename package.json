@@ -2,7 +2,7 @@
   "name": "onekeyfishing",
   "version": "1.0.0",
   "private": true,
-  "description": "Development tools for the OneKeyFishing World of Warcraft addon (checks and packaging).",
+  "description": "Development tools for the OneKeyFishing World of Warcraft addon (checks, tests and packaging).",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -10,13 +10,15 @@
   },
   "scripts": {
     "check": "node tools/check.mjs",
+    "test": "node tests/run.mjs",
     "dev": "node tools/build.mjs --dev",
-    "build": "node tools/check.mjs && node tools/build.mjs --release",
+    "build": "node tools/build.mjs --release",
     "install-addon": "node tools/build.mjs --dev && node tools/install.mjs",
     "link": "node tools/link.mjs",
     "unlink": "node tools/link.mjs --remove"
   },
   "devDependencies": {
+    "fengari": "0.1.5",
     "fflate": "0.8.3",
     "luaparse": "0.3.1"
   }

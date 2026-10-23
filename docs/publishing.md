@@ -6,7 +6,7 @@ How a release is built and published, and what it is checked against.
 
 1. Update `version` in `package.json` and add a matching `## [x.y.z] - date` entry at the top of
    `CHANGELOG.md` (move the items from `Unreleased`).
-2. `npm run check`, test in game (`npm run install-addon`), commit.
+2. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit.
 3. `npm run build` packages the commit into `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`.
    This zip can be uploaded to CurseForge by hand.
 4. Or tag the commit with the bare version (`git tag 1.0.0`, no `v`) and push the tag. GitHub Actions

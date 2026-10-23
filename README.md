@@ -171,6 +171,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
   OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/
 tools/                  check, build, install and link scripts (Node.js)
+tests/                  Lua tests of the addon code, run in fengari with WoW API stubs
 docs/                   roadmap, publishing guide, plans
 ```
 
@@ -180,10 +181,11 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 |---|---|
 | `npm install` | install the development tools (once) |
 | `npm run check` | Lua syntax, globals, line length, locale keys, TOC and version checks |
+| `npm test` | run the Lua tests in `tests/` (`npm test -- lures` runs only the matching files) |
 | `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: changes show up after a `/reload` |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
-| `npm run build` | run the checks and package the last commit (refuses uncommitted changes) |
+| `npm run build` | run the checks and tests, then package the last commit (refuses uncommitted changes) |
 | `npm run install-addon` | `npm run dev`, then copy the package into the game |
 
 `link`, `unlink` and `install-addon` need the path of the game's `Interface/AddOns` folder. Copy `.env.example`

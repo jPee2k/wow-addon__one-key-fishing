@@ -1,5 +1,6 @@
 // Static checks for the addon (no Lua or luacheck needed):
-//   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length, ASCII-only addon files,
+//   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
+//   ASCII-only Lua, TOC and XML files,
 //   no Cyrillic text anywhere, the addon folder holds only packaged files, TOC file list, locale keys,
 //   and the version in package.json vs CHANGELOG.md.
 import fs from "node:fs";
@@ -26,6 +27,8 @@ const rel = (file) => path.relative(ROOT, file).split(path.sep).join("/");
 // Path inside the addon folder, as the TOC writes it.
 const relAddon = (file) => path.relative(ADDON_DIR, file).split(path.sep).join("/");
 const inAddon = (file) => rel(file).startsWith(`${ADDON}/`);
+// The Lua tests and their stubs (npm test) are the only Lua files allowed outside the addon folder.
+const inTests = (file) => rel(file).startsWith("tests/");
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -58,32 +61,59 @@ function declaredGlobals() {
 
 const files = walk(ROOT);
 const luaFiles = files.filter((file) => file.endsWith(".lua") && inAddon(file));
-for (const file of files.filter((f) => f.endsWith(".lua") && !inAddon(f))) {
+for (const file of files.filter((f) => f.endsWith(".lua") && !inAddon(f) && !inTests(f))) {
   problem(rel(file), `Lua file outside ${ADDON}/`);
 }
 const declared = declaredGlobals();
 const used = new Set();
 
-for (const file of luaFiles) {
+// The release packager (BigWigsMods/packager) replaces keywords such as @project-version@ or @file-hash@ and
+// strips or comments out --@debug@ / --@retail@ ... --@end-...@ blocks in every packaged file, not only in the
+// TOC, so the release would differ from the working folder. Only the TOC may use them.
+const PACKAGER_KEYWORD = /@(project|file)-[a-z-]+@|--\s*@(end-)?[a-z-]+@/;
+
+function checkPackagerKeywords(file, lines) {
+  lines.forEach((line, i) => {
+    if (PACKAGER_KEYWORD.test(line)) {
+      problem(`${rel(file)}:${i + 1}`, "packager keyword or directive (the release build would change it)");
+    }
+  });
+}
+
+// Lua 5.1 syntax and line length (and packager keywords in addon files); returns the parsed chunk, or null
+// after a syntax error.
+function parseLua(file) {
   const source = fs.readFileSync(file, "utf8");
-  let ast;
+  const lines = source.split(/\r?\n/);
+  lines.forEach((line, i) => {
+    if (line.length > MAX_LINE_LENGTH) {
+      problem(`${rel(file)}:${i + 1}`, `line is ${line.length} characters long (max ${MAX_LINE_LENGTH})`);
+    }
+  });
+  if (inAddon(file)) {
+    checkPackagerKeywords(file, lines);
+  }
   try {
-    ast = luaparse.parse(source, { luaVersion: "5.1", scope: true });
+    return luaparse.parse(source, { luaVersion: "5.1", scope: true });
   } catch (err) {
     problem(rel(file), `syntax error: ${err.message}`);
-    continue;
+    return null;
   }
-  for (const name of new Set(ast.globals.map((g) => g.name))) {
+}
+
+for (const file of luaFiles) {
+  const ast = parseLua(file);
+  for (const name of new Set(ast ? ast.globals.map((g) => g.name) : [])) {
     used.add(name);
     if (!declared.has(name) && !LUA_BUILTINS.has(name)) {
       problem(rel(file), `undeclared global "${name}" (add it to .luacheckrc)`);
     }
   }
-  source.split(/\r?\n/).forEach((line, i) => {
-    if (line.length > MAX_LINE_LENGTH) {
-      problem(`${rel(file)}:${i + 1}`, `line is ${line.length} characters long (max ${MAX_LINE_LENGTH})`);
-    }
-  });
+}
+
+// The tests run in fengari with their own stub globals: syntax and line length only.
+for (const file of files.filter((f) => f.endsWith(".lua") && inTests(f))) {
+  parseLua(file);
 }
 
 for (const [name, kind] of declared) {
@@ -92,7 +122,11 @@ for (const [name, kind] of declared) {
   }
 }
 
-// Addon files are plain ASCII; nothing in the repository is written in Cyrillic.
+for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
+  checkPackagerKeywords(file, fs.readFileSync(file, "utf8").split(/\r?\n/));
+}
+
+// Lua, TOC and XML files are plain ASCII; nothing in the repository is written in Cyrillic.
 for (const file of files) {
   const ext = path.extname(file).toLowerCase();
   if (!TEXT_EXTENSIONS.has(ext) || path.basename(file) === "package-lock.json") {
@@ -102,7 +136,7 @@ for (const file of files) {
   const asciiOnly = [".lua", ".toc", ".xml"].includes(ext);
   lines.forEach((line, i) => {
     if (asciiOnly && NON_ASCII.test(line)) {
-      problem(`${rel(file)}:${i + 1}`, "non-ASCII character in an addon file");
+      problem(`${rel(file)}:${i + 1}`, "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
     } else if (CYRILLIC.test(line)) {
       problem(`${rel(file)}:${i + 1}`, "Cyrillic text (the project is written in English)");
     }
