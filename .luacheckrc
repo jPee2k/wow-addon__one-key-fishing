@@ -43,7 +43,7 @@ read_globals = {
     "GetBindingKey", "GetBindingText", "SetOverrideBinding", "SetOverrideBindingClick", "ClearOverrideBindings",
     "RegisterStateDriver", "hooksecurefunc", "HandleModifiedItemClick",
     "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "GetCursorPosition",
-    "GetInventoryItemID", "GetInventoryItemLink", "GetWeaponEnchantInfo", "GetItemCount",
+    "GetInventoryItemID", "GetInventoryItemLink", "GetWeaponEnchantInfo", "GetItemCount", "GetItemCooldown",
     "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
     "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink", "GetLootSlotInfo", "GetLootSourceInfo",
     "UnitChannelInfo", "UnitCastingInfo", "UnitGUID", "UnitIsAFK", "GetZoneText", "GetSubZoneText",

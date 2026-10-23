@@ -147,7 +147,8 @@ Typing commands is optional: everything is also available from the menus. `/onek
   current language. Bind it in the second slot of the same binding while the other language is on, or use a letter,
   number, F-key or mouse button (see [Quick start](#quick-start)).
 - **The indicator shows "No bobber"**: the bobber is not soft-targeted. Turn the camera towards the bobber.
-- **"Cannot apply ..." / "Cannot open ..."**: the lure needs a higher Fishing skill, or the container is locked. The addon skips that item for the rest of the session.
+- **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon skips it until you turn fishing mode on again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the lure is offered again when its cooldown ends.
+- **"Cannot open ..."**: the container is locked. The addon skips it for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the key opens it again.
 - **"No free bag space to take off ..."**: free a bag slot, then leave fishing mode again.
 - **Something else**: see [Reporting bugs](#reporting-bugs).

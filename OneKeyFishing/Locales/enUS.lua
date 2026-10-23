@@ -35,7 +35,7 @@ L["No free bag space to take off %s."] = true
 L["an item"] = true
 
 -- Bags.lua
-L["Cannot apply %s, skipping it for this session."] = true
+L["Cannot apply %s, skipping it until fishing mode is turned on again."] = true
 L["Not enough bag space to loot %s. It will be opened again when you free a bag slot."] = true
 L["Cannot open %s, skipping it for this session."] = true
 

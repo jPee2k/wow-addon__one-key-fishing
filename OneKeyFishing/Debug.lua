@@ -60,6 +60,11 @@ local function BuildReport()
             tostring(ns.IsFishingPole(mainHand)), tostring(mainHand and ns.GetFishingBonus(mainHand)))
         local hasLure, expiration = GetWeaponEnchantInfo()
         add("lure: %s, expires in %s s", tostring(hasLure == true), tostring(expiration and expiration / 1000))
+        add("lure setting: %s, needs lure: %s, next lure: %s", tostring(ns.db.settings.lure),
+            tostring(ns.Bags.NeedsLure()), tostring(ns.Bags.FindLure()))
+        for _, line in ipairs(ns.Bags.DescribeLures()) do
+            add("  lure %s", line)
+        end
         local best, bonus = ns.Gear.FindBestPole()
         add("best pole: %s (+%s), chosen pole: %s, extra items: %d", ItemText(best), tostring(bonus),
             ItemText(ns.Gear.GetChosenPole()), #ns.Gear.GetItems())

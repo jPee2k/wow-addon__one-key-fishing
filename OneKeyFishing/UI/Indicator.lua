@@ -224,8 +224,10 @@ ns.RegisterEvent("PLAYER_EQUIPMENT_CHANGED", Indicator.Update)
 ns.RegisterEvent("UPDATE_BINDINGS", Indicator.Update)
 ns.RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED", Indicator.Update)
 ns.RegisterEvent("UNIT_INVENTORY_CHANGED", function(_, unit)
-    -- Also fires when a lure is applied to the pole.
+    -- Also fires when a lure is applied to the pole or removed from it.
     if unit == "player" then
         Indicator.Update()
+        C_Timer.After(0.5, Indicator.Update) -- the lure state can still be the old one at this event
     end
 end)
+ns.On("LURE_READY", Indicator.Update) -- a lure came off cooldown

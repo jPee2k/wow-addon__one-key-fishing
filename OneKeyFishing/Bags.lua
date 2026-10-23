@@ -30,13 +30,18 @@ local OPEN_FAIL_DELAY = 3
 local LOOT_CLOSE_SETTLE = 1
 
 local GetItemCount = (C_Item and C_Item.GetItemCount) or GetItemCount
+local GetItemCooldown = (C_Container and C_Container.GetItemCooldown) or GetItemCooldown
+
+-- A cooldown this short is the global cooldown, not the lure's own.
+local GLOBAL_COOLDOWN = 1.5
 
 -- A lure attempt counts as failed when the pole still has no lure this long after it
 -- (longer than the lure's own cast time).
 local LURE_FAIL_DELAY = 8
 
 local skippedItems = {} -- itemID -> true for containers that failed to open (e.g. locked) this session
-local skippedLures = {} -- itemID -> true for lures that failed to apply (e.g. skill too low) this session
+-- itemID -> true for lures that failed to apply (e.g. skill too low); cleared when fishing mode is entered.
+local skippedLures = {}
 -- itemID -> free bag slots when its loot could not be taken; skipped until more slots are free.
 local skippedForSpace = {}
 -- The current open attempt: { bag, slot, itemID, count, guid, time, looted, closed }.
@@ -56,29 +61,89 @@ ns.RegisterEvent("UNIT_INVENTORY_CHANGED", function(_, unit)
     end
 end)
 
+-- Seconds until the lure's own cooldown ends; 0 when it can be used.
+local function LureCooldown(itemID)
+    if not GetItemCooldown then
+        return 0
+    end
+    local start, duration = GetItemCooldown(itemID)
+    if not (start and duration) or start == 0 or duration <= GLOBAL_COOLDOWN then
+        return 0
+    end
+    return math.max(0, start + duration - GetTime())
+end
+
 local function CheckLastLure()
     if not lastLure then
         return
     end
-    if GetWeaponEnchantInfo() then
+    if GetWeaponEnchantInfo() or LureCooldown(lastLure.itemID) > 0 then
+        -- It landed, or the game put it on cooldown: either way not a failure.
         lastLure = nil
     elseif GetTime() - lastLure.time >= LURE_FAIL_DELAY then
         skippedLures[lastLure.itemID] = true
-        ns.Print(L["Cannot apply %s, skipping it for this session."],
+        ns.Print(L["Cannot apply %s, skipping it until fishing mode is turned on again."],
             select(2, C_Item.GetItemInfo(lastLure.itemID)) or lastLure.itemID)
         lastLure = nil
     end
 end
 
+-- One pending timer that tells the indicator when the next lure comes off cooldown.
+local lureTimerPending = false
+local function NotifyWhenReady(seconds)
+    if lureTimerPending then
+        return
+    end
+    lureTimerPending = true
+    C_Timer.After(seconds + 0.1, function()
+        lureTimerPending = false
+        ns.Fire("LURE_READY")
+    end)
+end
+
+-- The best lure that can be applied now. Lures on cooldown are passed over; when one of them is ready the
+-- indicator is told (LURE_READY).
 function Bags.FindLure()
     CheckLastLure()
+    local soonest
     for _, itemID in ipairs(LURES) do
         if not skippedLures[itemID] and GetItemCount(itemID) > 0
             and (not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)) then
-            return itemID
+            local cooldown = LureCooldown(itemID)
+            if cooldown == 0 then
+                return itemID
+            end
+            soonest = math.min(soonest or cooldown, cooldown)
         end
     end
+    if soonest then
+        NotifyWhenReady(soonest)
+    end
 end
+
+-- One line per lure in the bags, for the debug report.
+function Bags.DescribeLures()
+    local lines = {}
+    for _, itemID in ipairs(LURES) do
+        local count = GetItemCount(itemID)
+        if count > 0 then
+            table.insert(lines, ("%d x%d, usable: %s, cooldown: %.0f s, skipped: %s"):format(itemID, count,
+                tostring(not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)), LureCooldown(itemID),
+                tostring(skippedLures[itemID] == true)))
+        end
+    end
+    if lastLure then
+        table.insert(lines, ("pending attempt: %d, %.0f s ago"):format(lastLure.itemID, GetTime() - lastLure.time))
+    end
+    return lines
+end
+
+-- A lure skipped by mistake gets another chance with every new fishing mode session.
+ns.On("MODE_CHANGED", function(isActive)
+    if isActive then
+        wipe(skippedLures)
+    end
+end)
 
 -- Repeated presses with the same lure keep the first attempt's time, like NoteOpenAttempt.
 function Bags.NoteLureAttempt(itemID)
