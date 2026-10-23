@@ -33,8 +33,14 @@ It works with a game client in any language. The addon's own interface is in Eng
 ## Quick start
 
 1. Open **Options → Keybindings → AddOns → OneKeyFishing** and bind two keys:
-   - **Fishing action (cast / hook)**, for example `` ` `` or a mouse side button;
+   - **Fishing action (cast / hook)**, for example a letter key such as `R` or a mouse side button;
    - **Toggle fishing mode**, for example `Shift+F`.
+
+   > **Keyboard language.** This is how WoW works, not the addon: punctuation keys (`'` `;` `[` `]` `,` `.` `/` `` ` ``)
+   > are named by the character the current Windows keyboard language types. A `'` bound on English is a different key
+   > for the game on Ukrainian, so the binding stops working after you switch. Every binding has two slots: bind the key
+   > once per language (switch the language between the two). Letters, numbers, F-keys and mouse buttons work on every
+   > language.
 2. Go to the water and press **Toggle fishing mode**. Your pole goes on, the camera zooms in and the indicator appears.
 3. Press the **fishing action** key: you cast.
 4. Wait for the splash and press the **same key** again: you hook and loot the fish.
@@ -135,6 +141,9 @@ Typing commands is optional: everything is also available from the menus. `/onek
 
 - **"No key is bound to 'Fishing action'"**: bind it in Options → Keybindings → AddOns → OneKeyFishing.
 - **"Fishing mode is off"**: the action key only works in fishing mode. Press your toggle key first.
+- **The key stops working after switching the keyboard language**: it is a punctuation key, which WoW names by the
+  current language. Bind it in the second slot of the same binding while the other language is on, or use a letter,
+  number, F-key or mouse button (see [Quick start](#quick-start)).
 - **The indicator shows "No bobber"**: the bobber is not soft-targeted. Turn the camera towards the bobber.
 - **"Cannot apply ..." / "Cannot open ..."**: the lure needs a higher Fishing skill, or the container is locked. The addon skips that item for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the key opens it again.

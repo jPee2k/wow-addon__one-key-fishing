@@ -118,6 +118,14 @@ function Action.Enable()
     fishingSpellID = spellID
     button:SetAttribute("spell", spellID)
     enabled = true
+    -- No CHANNEL_START comes for a cast that began before a /reload or before the mode was switched on.
+    if not channeling then
+        local _, _, _, startMS, _, _, _, channelSpellID = UnitChannelInfo("player")
+        if startMS and ns.IsFishingSpell(channelSpellID) then
+            channeling = true
+            ns.Fire("FISHING_CAST_START", channelSpellID, true)
+        end
+    end
     -- `channeling` is left to CHANNEL_STOP: re-entering during a cast must still bind the hook.
     if channeling then
         BindInteract()

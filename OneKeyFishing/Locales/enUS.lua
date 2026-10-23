@@ -140,6 +140,7 @@ L["Show the minimap button"] = true
 L["not bound"] = true
 L["Keys"] = true
 L["Change them in Options -> Keybindings -> AddOns -> OneKeyFishing."] = true
+L["WoW names punctuation keys (' ; [ , .) by keyboard language: bind them in both slots, once per language."] = true
 L["Features"] = true
 L["Auto loot, bobber icon and gear changes apply the next time you enter fishing mode."] = true
 L["Camera distance while fishing:"] = true

@@ -9,6 +9,8 @@ local SIZE = 44
 local BAR_WIDTH = 90
 local DEFAULT_POSITION = { "CENTER", "CENTER", 0, -180 }
 local HOOK_ICON = "Interface\\Icons\\INV_Misc_Fish_02"
+-- The channel starts on the throw; the bobber needs about 1-2 s to land and become the soft target.
+local BOBBER_GRACE_MS = 3000
 local LABELS = {
     cast = L["Cast"],
     hook = L["Hook!"],
@@ -101,6 +103,35 @@ local function IdleState()
     return "cast", C_Spell.GetSpellTexture(ns.GetFishingSpellID() or ns.FISHING_SPELL_IDS[1])
 end
 
+-- Channel start times (they identify the cast) of the cast whose bobber was targeted, and of the cast whose
+-- grace timer is scheduled. Keyed by cast, so the order of the cast start events does not matter.
+local bobberSeenCast, graceTimerCast
+
+-- True when the hook would miss the bobber: it was targeted in this cast and is lost, or it never showed up
+-- within the grace time. While the bobber is still flying, no warning.
+local function ShowNoBobber()
+    local _, _, _, startMS = UnitChannelInfo("player")
+    if not startMS then
+        return not ns.IsBobberTargeted()
+    end
+    if ns.IsBobberTargeted() then
+        bobberSeenCast = startMS
+        return false
+    end
+    if bobberSeenCast == startMS then
+        return true
+    end
+    local remaining = BOBBER_GRACE_MS - (GetTime() * 1000 - startMS)
+    if remaining <= 0 then
+        return true
+    end
+    if graceTimerCast ~= startMS then
+        graceTimerCast = startMS
+        C_Timer.After(remaining / 1000, Indicator.Update)
+    end
+    return false
+end
+
 local function KeyText()
     local key = GetBindingKey("ONEKEYFISHING_ACTION")
     return key and GetBindingText(key, true) or ""
@@ -119,7 +150,7 @@ function Indicator.Update()
         kind, icon = IdleState()
     end
     frame.icon:SetTexture(icon)
-    if kind == "hook" and not ns.IsBobberTargeted() then
+    if kind == "hook" and ShowNoBobber() then
         -- The key would interact with something else (or nothing): warn instead of "Hook!".
         frame.label:SetText("|cffff4444" .. L["No bobber"] .. "|r")
     else

@@ -157,8 +157,11 @@ end
 ---------------------------------------------------------------------------
 -- Events
 ---------------------------------------------------------------------------
-ns.On("FISHING_CAST_START", function()
-    Add("casts", 1)
+-- `resumed`: a cast picked up after a /reload. It was counted before, and its time so far was flushed on logout.
+ns.On("FISHING_CAST_START", function(_, resumed)
+    if not resumed then
+        Add("casts", 1)
+    end
     castStart = GetTime()
 end)
 

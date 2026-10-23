@@ -91,9 +91,14 @@ local function CreateMainPage()
     local keysHint = CreateText(page, "GameFontDisableSmall",
         L["Change them in Options -> Keybindings -> AddOns -> OneKeyFishing."])
     keysHint:SetPoint("TOPLEFT", keys, "BOTTOMLEFT", 0, -4)
+    -- WoW behaviour: punctuation keys are named by the character the current Windows layout types.
+    local layoutHint = CreateText(page, "GameFontDisableSmall",
+        L["WoW names punctuation keys (' ; [ , .) by keyboard language: bind them in both slots, once per language."])
+    layoutHint:SetPoint("TOPLEFT", keysHint, "BOTTOMLEFT", 0, -2)
+    layoutHint:SetWidth(560)
 
     local featuresHeader = CreateText(page, "GameFontNormal", L["Features"])
-    featuresHeader:SetPoint("TOPLEFT", keysHint, "BOTTOMLEFT", 0, -18)
+    featuresHeader:SetPoint("TOPLEFT", layoutHint, "BOTTOMLEFT", 0, -18)
     -- Two columns so the page fits without scrolling.
     local perColumn = math.ceil(#TOGGLES / 2)
     local anchor, firstColumnLast
