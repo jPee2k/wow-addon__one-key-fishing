@@ -1,8 +1,8 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
 //   ASCII-only Lua, TOC and XML files,
-//   no Cyrillic text anywhere, the addon folder holds only packaged files, TOC file list, locale keys,
-//   and the version in package.json vs CHANGELOG.md.
+//   no Cyrillic text anywhere, the addon folder holds only packaged files, the repository root is packaged
+//   or ignored in .pkgmeta, TOC file list, locale keys, and the version in package.json vs CHANGELOG.md.
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
@@ -174,6 +174,27 @@ if (!fs.existsSync(tocPath)) {
   }
   if (toc.fields.Version && toc.fields.Version !== "@project-version@") {
     problem(tocName, `"## Version" must be @project-version@ (the version comes from package.json)`);
+  }
+}
+
+// The release packager copies the whole repository root into the package folder (package-as and move-folders
+// share the name), so every root entry must be packaged on purpose or listed in the .pkgmeta ignore list.
+// Dotfiles are skipped by the packager itself, git-ignored folders are not in its checkout.
+const pkgmeta = fs.readFileSync(path.join(ROOT, ".pkgmeta"), "utf8");
+const ignoreBlock = pkgmeta.match(/^ignore:\s*\n((?:[ \t]+-[^\n]*\n?)*)/m);
+const ignored = new Set(ignoreBlock ? [...ignoreBlock[1].matchAll(/-\s*(\S+)/g)].map((m) => m[1]) : []);
+const packagedRoot = new Set([ADDON, ...ROOT_EXTRAS]);
+for (const entry of fs.readdirSync(ROOT)) {
+  if (entry.startsWith(".") || SKIP_DIRS.has(entry) || SKIP_FILES.has(entry)) {
+    continue;
+  }
+  if (!packagedRoot.has(entry) && !ignored.has(entry)) {
+    problem(entry, "would be packaged: add it to the ignore list in .pkgmeta");
+  }
+}
+for (const entry of packagedRoot) {
+  if (ignored.has(entry)) {
+    problem(".pkgmeta", `"${entry}" is packaged, it must not be ignored`);
   }
 }
 

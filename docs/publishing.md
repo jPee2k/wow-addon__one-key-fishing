@@ -5,7 +5,9 @@ How a release is built and published, and what it is checked against.
 ## Releasing a version
 
 1. Update `version` in `package.json` and add a matching `## [x.y.z] - date` entry at the top of
-   `CHANGELOG.md` (move the items from `Unreleased`).
+   `CHANGELOG.md`. Changes waiting for a release are collected under `## [Unreleased]`; move them into the
+   version entry and remove that heading, because the packager shows the whole file on the CurseForge file
+   page and the release workflow stops while the heading is there.
 2. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit.
 3. `npm run build` refuses uncommitted changes, runs the checks and tests, and packages the commit into
    `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`. This zip can be uploaded to CurseForge by hand.
@@ -45,7 +47,7 @@ How a release is built and published, and what it is checked against.
 | Requirement | How it is met |
 |---|---|
 | A zip with one top-level folder named like the TOC | `OneKeyFishing/OneKeyFishing.toc` (`tools/build.mjs`, `.pkgmeta`) |
-| No executables or unrelated files | Only the TOC, the files it lists, `Bindings.xml`, `LICENSE`, `README.md`, `CHANGELOG.md` |
+| No executables or unrelated files | Only the TOC, the files it lists, `Bindings.xml`, `LICENSE`, `README.md`, `CHANGELOG.md` (`tools/addon.mjs`; the `ignore` list in `.pkgmeta`, kept complete by `npm run check`) |
 | TOC metadata | `Interface`, `Title`, `Notes`, `Author`, `Version` (filled in at build time), `X-License`, `IconTexture`, Addon Compartment functions |
 | A license | `LICENSE` (MIT) |
 | A changelog for the file page | `CHANGELOG.md` (packager `manual-changelog`) |
