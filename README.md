@@ -132,6 +132,7 @@ Typing commands is optional: everything is also available from the menus. `/fish
 - **"Fishing mode is off"**: the action key only works in fishing mode. Press your toggle key first.
 - **The indicator shows "No bobber"**: the bobber is not soft-targeted. Turn the camera towards the bobber.
 - **"Cannot apply ..." / "Cannot open ..."**: the lure needs a higher Fishing skill, or the container is locked. The addon skips that item for the rest of the session.
+- **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the key opens it again.
 - **"No free bag space to take off ..."**: free a bag slot, then leave fishing mode again.
 - **Something else**: run `/okf debug` and copy the report from the window.
 

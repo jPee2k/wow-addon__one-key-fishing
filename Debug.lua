@@ -38,7 +38,8 @@ local GLOBALS = {
     "Settings.RegisterCanvasLayoutCategory", "Settings.RegisterCanvasLayoutSubcategory",
     "C_TooltipInfo.GetItemByID", "HandleModifiedItemClick", "TooltipDataProcessor.AddTooltipPostCall",
     "C_Item.GetItemIconByID", "C_NamePlate.GetNamePlateForUnit", "C_Spell.GetSpellTexture",
-    "C_Item.GetItemCount", "C_Item.IsUsableItem", "C_Container.GetContainerNumFreeSlots",
+    "C_Item.GetItemCount", "C_Item.IsUsableItem", "C_Item.GetItemGUID",
+    "GetLootSourceInfo", "ItemLocation", "C_Container.GetContainerNumFreeSlots",
     "C_Container.ContainerIDToInventoryID", "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
 }
 
@@ -234,6 +235,18 @@ local function BuildReport()
         local hasEnchant, expiration, charges, enchantID = GetWeaponEnchantInfo()
         add("  weapon enchant: %s, expires %s ms, charges %s, id %s", tostring(hasEnchant),
             tostring(expiration), tostring(charges), tostring(enchantID))
+    end)
+
+    add("")
+    add("-- Fished items in bags --")
+    Probe(lines, "bags", function()
+        local items = ns.Bags.Describe()
+        if #items == 0 then
+            add("  none")
+        end
+        for _, line in ipairs(items) do
+            add("  %s", line)
+        end
     end)
 
     add("")

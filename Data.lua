@@ -45,3 +45,16 @@ function ns.GetFishingSpellID()
         end
     end
 end
+
+-- Calls fn(info, bag, slot) for every item in the regular bags. Stops when fn returns true
+-- and returns that bag, slot.
+function ns.ForEachBagItem(fn)
+    for bag = 0, NUM_BAG_SLOTS or 4 do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and fn(info, bag, slot) then
+                return bag, slot
+            end
+        end
+    end
+end

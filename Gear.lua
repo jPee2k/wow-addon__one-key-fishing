@@ -138,17 +138,6 @@ end
 ---------------------------------------------------------------------------
 -- Pole choice
 ---------------------------------------------------------------------------
-local function ForEachBagItem(fn)
-    for bag = 0, NUM_BAG_SLOTS or 4 do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            local info = C_Container.GetContainerItemInfo(bag, slot)
-            if info then
-                fn(info.itemID, bag, slot)
-            end
-        end
-    end
-end
-
 -- Best pole in bags or in hand: itemID, fishing bonus.
 function Gear.FindBestPole()
     local bestID, bestScore, bestBonus
@@ -164,7 +153,9 @@ function Gear.FindBestPole()
         end
     end
     Consider(GetInventoryItemID("player", MAINHAND_SLOT))
-    ForEachBagItem(Consider)
+    ns.ForEachBagItem(function(info)
+        Consider(info.itemID)
+    end)
     return bestID, bestBonus
 end
 
@@ -265,7 +256,9 @@ function Gear.AddFishingItemsFromBags()
             Consider(GetInventoryItemID("player", slot))
         end
     end
-    ForEachBagItem(Consider)
+    ns.ForEachBagItem(function(info)
+        Consider(info.itemID)
+    end)
     if added > 0 then
         ns.Fire("GEAR_LIST_CHANGED")
     end

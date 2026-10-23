@@ -47,7 +47,7 @@ read_globals = {
     "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink",
     "GetBindingText", "hooksecurefunc", "C_TooltipInfo", "TooltipDataProcessor",
     "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "unpack", "HandleModifiedItemClick",
-    "UnitChannelInfo", "UnitCastingInfo", "UnitExists", "UnitName", "UnitGUID", "C_NamePlate", "GetLootSlotInfo",
+    "UnitChannelInfo", "UnitCastingInfo", "UnitExists", "UnitName", "UnitGUID", "C_NamePlate", "GetLootSlotInfo", "GetLootSourceInfo", "ItemLocation",
     "UnitIsAFK", "GetZoneText", "GetSubZoneText", "GetMoneyString", "RaidNotice_AddMessage", "RaidWarningFrame",
     "ChatTypeInfo", "StaticPopupDialogs", "StaticPopup_Show", "YES", "NO", "time",
     "GetCameraZoom", "CameraZoomIn", "CameraZoomOut", "GetCursorPosition", "AuctionHouseFrame", "SecondsToTime",

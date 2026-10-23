@@ -22,8 +22,11 @@ local CONTAINERS = {
     [15874] = true, -- Soft-shelled Clam
 }
 
--- An open attempt counts as failed when the same stack is still unchanged this long after it.
-local OPEN_FAIL_DELAY = 1.5
+-- An open attempt counts as failed when the same stack is still unchanged this long after it
+-- and no loot window came from it. Generous: the item is used on key up and the loot may lag.
+local OPEN_FAIL_DELAY = 3
+-- After a container's loot window closes, the emptied container leaves the bag a moment later.
+local LOOT_CLOSE_SETTLE = 1
 
 local GetItemCount = (C_Item and C_Item.GetItemCount) or GetItemCount
 
@@ -33,7 +36,12 @@ local LURE_FAIL_DELAY = 8
 
 local skippedItems = {} -- itemID -> true for containers that failed to open (e.g. locked) this session
 local skippedLures = {} -- itemID -> true for lures that failed to apply (e.g. skill too low) this session
+-- itemID -> free bag slots when its loot could not be taken; skipped until more slots are free.
+local skippedForSpace = {}
+-- The current open attempt: { bag, slot, itemID, count, guid, time, looted, closed }.
+-- `looted`: a loot window came from this container. `closed`: when that window closed.
 local lastOpen
+local lootOpen = false -- any loot window is open
 local lastLure -- { itemID, time } of the first attempt with the current lure
 
 function Bags.NeedsLure()
@@ -71,24 +79,56 @@ function Bags.NoteLureAttempt(itemID)
     end
 end
 
+local function FreeBagSlots()
+    local free = 0
+    for bag = 0, NUM_BAG_SLOTS or 4 do
+        local count, bagType = C_Container.GetContainerNumFreeSlots(bag)
+        if bagType == 0 then
+            free = free + count
+        end
+    end
+    return free
+end
+
+-- Called only while no loot window is open.
 local function CheckLastOpen()
-    if not lastOpen or GetTime() - lastOpen.time < OPEN_FAIL_DELAY then
+    if not lastOpen then
         return
     end
     local info = C_Container.GetContainerItemInfo(lastOpen.bag, lastOpen.slot)
-    if info and info.itemID == lastOpen.itemID and info.stackCount == lastOpen.count then
+    if not (info and info.itemID == lastOpen.itemID and info.stackCount == lastOpen.count) then
+        lastOpen = nil -- opened and emptied
+        return
+    end
+    local now = GetTime()
+    if lastOpen.looted then
+        -- Its loot window was closed with loot left in it (full bags): wait until bag space frees up.
+        if lastOpen.closed and now - lastOpen.closed >= LOOT_CLOSE_SETTLE then
+            skippedForSpace[info.itemID] = FreeBagSlots()
+            ns.Print("Not enough bag space to loot %s. It will be opened again when you free a bag slot.",
+                info.hyperlink or info.itemID)
+            lastOpen = nil
+        end
+    elseif now - lastOpen.time >= OPEN_FAIL_DELAY then
         skippedItems[info.itemID] = true
         ns.Print("Cannot open %s, skipping it for this session.", info.hyperlink or info.itemID)
+        lastOpen = nil
     end
-    lastOpen = nil
+end
+
+local function IsFishedContainer(itemID)
+    return CONTAINERS[itemID] or ns.db.fishedItems[itemID]
 end
 
 local function IsOpenable(info)
-    if skippedItems[info.itemID] or info.isLocked then
+    if skippedItems[info.itemID] or info.isLocked or not IsFishedContainer(info.itemID) then
         return false
     end
-    if not (CONTAINERS[info.itemID] or ns.db.fishedItems[info.itemID]) then
-        return false
+    if skippedForSpace[info.itemID] then
+        if FreeBagSlots() <= skippedForSpace[info.itemID] then
+            return false
+        end
+        skippedForSpace[info.itemID] = nil
     end
     -- hasLoot marks right-click-to-open items; fall back to the known list if the field is missing.
     if info.hasLoot == nil then
@@ -98,16 +138,13 @@ local function IsOpenable(info)
 end
 
 -- Returns bag, slot of the first container to open, or nil.
+-- Nothing is opened over an open loot window: that would replace the loot being taken.
 function Bags.FindContainer()
-    CheckLastOpen()
-    for bag = 0, NUM_BAG_SLOTS or 4 do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            local info = C_Container.GetContainerItemInfo(bag, slot)
-            if info and IsOpenable(info) then
-                return bag, slot
-            end
-        end
+    if lootOpen then
+        return nil
     end
+    CheckLastOpen()
+    return ns.ForEachBagItem(IsOpenable)
 end
 
 function Bags.NoteOpenAttempt(bag, slot)
@@ -121,12 +158,65 @@ function Bags.NoteOpenAttempt(bag, slot)
         and lastOpen.count == info.stackCount then
         return
     end
-    lastOpen = { bag = bag, slot = slot, itemID = info.itemID, count = info.stackCount, time = GetTime() }
+    local guid
+    if C_Item.GetItemGUID and ItemLocation then
+        guid = C_Item.GetItemGUID(ItemLocation:CreateFromBagAndSlot(bag, slot))
+    end
+    lastOpen = { bag = bag, slot = slot, itemID = info.itemID, count = info.stackCount, guid = guid,
+        time = GetTime() }
 end
+
+-- Whether the loot window that just opened comes from the container of the current attempt.
+local function IsFromLastOpen()
+    local knownSource = false
+    if lastOpen.guid and GetLootSourceInfo then
+        for i = 1, GetNumLootItems() do
+            local source = GetLootSourceInfo(i)
+            if source == lastOpen.guid then
+                return true
+            end
+            knownSource = knownSource or source ~= nil
+        end
+    end
+    if knownSource then
+        return false -- a corpse, a herb or another container
+    end
+    -- No source GUIDs: assume loot right after the attempt is its loot.
+    return GetTime() - lastOpen.time < OPEN_FAIL_DELAY
+end
+
+-- One line per item in the bags that was caught while fishing or is a known container (for /okf debug).
+function Bags.Describe()
+    local lines = {}
+    ns.ForEachBagItem(function(info, bag, slot)
+        if IsFishedContainer(info.itemID) then
+            table.insert(lines, ("%d/%d %s x%d: hasLoot %s, isLocked %s, skipped %s, waiting for space %s"):format(
+                bag, slot, info.hyperlink or info.itemID, info.stackCount, tostring(info.hasLoot),
+                tostring(info.isLocked), tostring(skippedItems[info.itemID] == true),
+                tostring(skippedForSpace[info.itemID] ~= nil)))
+        end
+    end)
+    return lines
+end
+
+ns.RegisterEvent("LOOT_CLOSED", function()
+    lootOpen = false
+    if lastOpen and lastOpen.looted then
+        lastOpen.closed = GetTime()
+    end
+end)
+
+ns.RegisterEvent("PLAYER_ENTERING_WORLD", function()
+    lootOpen = false
+end)
 
 -- Remember everything caught, so new Forever containers are picked up without updating the list.
 ns.RegisterEvent("LOOT_READY", function()
+    lootOpen = true
     if not IsFishingLoot() then
+        if lastOpen and IsFromLastOpen() then
+            lastOpen.looted, lastOpen.closed = true, nil
+        end
         return
     end
     for i = 1, GetNumLootItems() do

@@ -182,6 +182,12 @@ end)
 ns.On("MODE_CHANGED", Indicator.Update)
 ns.On("ACTION_STATE", Indicator.Update)
 ns.RegisterEvent("BAG_UPDATE_DELAYED", Indicator.Update)
+-- The next action depends on the loot window: no container is opened over it.
+ns.RegisterEvent("LOOT_READY", Indicator.Update)
+ns.RegisterEvent("LOOT_CLOSED", function()
+    Indicator.Update()
+    C_Timer.After(1.2, Indicator.Update) -- after Bags.lua decides about a container left with loot
+end)
 ns.RegisterEvent("PLAYER_EQUIPMENT_CHANGED", Indicator.Update)
 ns.RegisterEvent("UPDATE_BINDINGS", Indicator.Update)
 ns.RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED", Indicator.Update)
