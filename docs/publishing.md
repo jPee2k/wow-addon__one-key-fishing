@@ -2,25 +2,38 @@
 
 How a release is built and published, and what it is checked against.
 
+## Branches
+
+- `develop`: all work happens here. Every push is checked and tested by GitHub Actions.
+- `main`: released code only. It changes only by merging `develop` (a pull request that needs the green
+  `check` job), and release tags go on `main` commits only; the release workflow refuses a tag that is not
+  on `main`.
+
 ## Releasing a version
 
-1. Update `version` in `package.json` and add a matching `## [x.y.z] - date` entry at the top of
+1. On `develop`, update `version` in `package.json` and add a matching `## [x.y.z] - date` entry at the top of
    `CHANGELOG.md`. Changes waiting for a release are collected under `## [Unreleased]`; move them into the
    version entry and remove that heading, because the packager shows the whole file on the CurseForge file
    page and the release workflow stops while the heading is there.
-2. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit.
-3. `npm run build` refuses uncommitted changes, runs the checks and tests, and packages the commit into
-   `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`. This zip can be uploaded to CurseForge by hand.
-4. Or tag the commit with the bare version (`git tag 1.0.0`, no `v`) and push the tag. GitHub Actions
-   (`.github/workflows/release.yml`) runs the checks and tests, checks that the tag matches `package.json`,
+2. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`.
+3. Open a pull request `develop` -> `main` and merge it once the `check` job is green.
+4. On the updated `main`, tag the merge commit with the bare version (`git tag 1.0.0`, no `v`) and push the
+   tag (`git push origin 1.0.0`). GitHub Actions (`.github/workflows/release.yml`) runs the checks and tests,
+   checks that the tag is on `main`, matches `package.json` and the changelog has no `Unreleased` section,
    then BigWigsMods/packager builds the zip with `.pkgmeta`, creates a GitHub release and uploads to
    CurseForge. The packager replaces keywords such as `@project-version@` in every packaged file, not only in
    the TOC; `npm run check` keeps them out of the addon's Lua and XML files, and the local build fills in the
-   version the same way.
+   version the same way. Without `## X-Curse-Project-ID` in the TOC or the `CF_API_KEY` secret, only the
+   GitHub release is made.
+5. Without the workflow: `npm run build` refuses uncommitted changes, runs the checks and tests, and packages
+   the commit into `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`, which can be uploaded to
+   CurseForge by hand.
 
 ## One-time setup (author)
 
-- [ ] Create the GitHub repository and push `main`.
+- [x] Create the GitHub repository and push `develop`.
+- [ ] Create `main` from `develop`, make it the default branch and protect it (pull requests only, the
+      `check` job required, no force pushes or deletion).
 - [ ] Create the CurseForge project "OneKeyFishing" (check that the name is free), category Professions,
       license MIT, description from `README.md`, a few screenshots (indicator, statistics, settings, minimap menu).
 - [ ] Add `## X-Curse-Project-ID: <id>` and `## X-Website: <GitHub URL>` to `OneKeyFishing/OneKeyFishing.toc`.
