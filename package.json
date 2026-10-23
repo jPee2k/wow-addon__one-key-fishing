@@ -4,6 +4,14 @@
   "private": true,
   "description": "Development tools for the OneKeyFishing World of Warcraft addon (checks, tests and packaging).",
   "license": "MIT",
+  "homepage": "https://github.com/jPee2k/wow-addon__one-key-fishing#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jPee2k/wow-addon__one-key-fishing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jPee2k/wow-addon__one-key-fishing/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=18"
