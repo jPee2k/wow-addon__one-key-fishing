@@ -1,4 +1,7 @@
-# Plan: preparing 1.0.0 for publication
+# Plan: preparing 1.0.0 for publication (done)
+
+This plan was carried out before the 1.0.0 release; it is kept as a record. The current state is described in
+`README.md`, `CLAUDE.md` and `docs/publishing.md`.
 
 ## Context
 
@@ -85,7 +88,7 @@ game for development without building; `.pkgmeta` uses `move-folders` to package
 
 ## Stage 7. `docs/`
 
-- `docs/publishing-plan.md` (this plan), `docs/ROADMAP.md`, `docs/publishing.md`, `docs/history/mvp-plan.md`.
+- `docs/publishing-plan.md` (this plan, now `docs/history/publishing-plan.md`), `docs/ROADMAP.md`, `docs/publishing.md`, `docs/history/mvp-plan.md`.
 
 ## Verification
 

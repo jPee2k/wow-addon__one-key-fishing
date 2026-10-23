@@ -7,11 +7,14 @@ How a release is built and published, and what it is checked against.
 1. Update `version` in `package.json` and add a matching `## [x.y.z] - date` entry at the top of
    `CHANGELOG.md` (move the items from `Unreleased`).
 2. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit.
-3. `npm run build` packages the commit into `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`.
-   This zip can be uploaded to CurseForge by hand.
+3. `npm run build` refuses uncommitted changes, runs the checks and tests, and packages the commit into
+   `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`. This zip can be uploaded to CurseForge by hand.
 4. Or tag the commit with the bare version (`git tag 1.0.0`, no `v`) and push the tag. GitHub Actions
-   (`.github/workflows/release.yml`) checks that the tag matches `package.json`, then BigWigsMods/packager
-   builds the zip with `.pkgmeta`, creates a GitHub release and uploads to CurseForge.
+   (`.github/workflows/release.yml`) runs the checks and tests, checks that the tag matches `package.json`,
+   then BigWigsMods/packager builds the zip with `.pkgmeta`, creates a GitHub release and uploads to
+   CurseForge. The packager replaces keywords such as `@project-version@` in every packaged file, not only in
+   the TOC; `npm run check` keeps them out of the addon's Lua and XML files, and the local build fills in the
+   version the same way.
 
 ## One-time setup (author)
 
@@ -43,6 +46,6 @@ How a release is built and published, and what it is checked against.
 |---|---|
 | A zip with one top-level folder named like the TOC | `OneKeyFishing/OneKeyFishing.toc` (`tools/build.mjs`, `.pkgmeta`) |
 | No executables or unrelated files | Only the TOC, the files it lists, `Bindings.xml`, `LICENSE`, `README.md`, `CHANGELOG.md` |
-| TOC metadata | `Interface`, `Title`, `Notes`, `Author`, `Version` (filled in at build time), `X-License` |
+| TOC metadata | `Interface`, `Title`, `Notes`, `Author`, `Version` (filled in at build time), `X-License`, `IconTexture`, Addon Compartment functions |
 | A license | `LICENSE` (MIT) |
 | A changelog for the file page | `CHANGELOG.md` (packager `manual-changelog`) |

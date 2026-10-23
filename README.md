@@ -8,11 +8,11 @@ It works with a game client in any language. The addon's own interface is in Eng
 
 ## Features
 
-- **One key** for everything: cast → hook → loot. The same key also applies a lure and opens fished clams when needed.
+- **One key** for everything: cast → hook → loot. The same key also applies a lure (the best one that is not on cooldown) and opens fished clams when needed.
 - **Fishing mode**: one toggle that sets everything up and puts it all back afterwards.
 - **Gear swap**: equips the best pole in your bags (or the one you chose) plus your fishing items. On exit it restores only the slots it changed.
 - **Auto loot** while fishing, and the soft-target icon over the bobber.
-- **Indicator**: shows what the key will do next (`Cast`, `Hook!`, `Apply lure`, `Open`), a cast bar and a warning when no bobber is targeted.
+- **Indicator**: shows what the key will do next (`Cast`, `Hook!`, `Apply lure`, `Open`), a cast bar and a warning when the bobber is in the water but not targeted.
 - **Catch notifications** for every catch and every miss.
 - **Statistics**: casts, catches, misses, fishing time and value of the catch. Kept per session, per zone and in total.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
@@ -80,7 +80,7 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 
 - **Session**, **This zone** and **All time** columns, in three sections: **Time** (time fishing, time casting), **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row name to see how it is counted.
-- **Top items** and **top zones**.
+- **Top catches** and **zones** of all time.
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a catch, a miss, a zone change, an auction scan); only the time rows and the current zone in the zone list tick while you fish. The session shows `H:MM:SS`, the zone and all-time columns `1h 23m`.
 - The line under the skill shows when auction prices were last scanned.
 - **Reset session** and **Reset all** ask for confirmation first.
@@ -143,10 +143,11 @@ Typing commands is optional: everything is also available from the menus. `/onek
 
 - **"No key is bound to 'Fishing action'"**: bind it in Options → Keybindings → AddOns → OneKeyFishing.
 - **"Fishing mode is off"**: the action key only works in fishing mode. Press your toggle key first.
+- **"The fishing key is paused in combat"**: the mode is on, but the game does not let addons keep the key bound in combat. It works again when the fight ends.
 - **The key stops working after switching the keyboard language**: it is a punctuation key, which WoW names by the
   current language. Bind it in the second slot of the same binding while the other language is on, or use a letter,
   number, F-key or mouse button (see [Quick start](#quick-start)).
-- **The indicator shows "No bobber"**: the bobber is not soft-targeted. Turn the camera towards the bobber.
+- **The indicator shows "No bobber"**: the bobber is in the water but not soft-targeted (or still not after 3 seconds). Turn the camera towards the bobber.
 - **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon skips it until you turn fishing mode on again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the lure is offered again when its cooldown ends.
 - **"Cannot open ..."**: the container is locked. The addon skips it for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the key opens it again.
@@ -172,7 +173,7 @@ OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
   OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/
 tools/                  check, build, install and link scripts (Node.js)
 tests/                  Lua tests of the addon code, run in fengari with WoW API stubs
-docs/                   roadmap, publishing guide, plans
+docs/                   roadmap, publishing guide, finished plans in docs/history/
 ```
 
 The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, macOS and Linux:
@@ -185,7 +186,7 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 | `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: changes show up after a `/reload` |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
-| `npm run build` | run the checks and tests, then package the last commit (refuses uncommitted changes) |
+| `npm run build` | refuse uncommitted changes, run the checks and tests, then package the last commit |
 | `npm run install-addon` | `npm run dev`, then copy the package into the game |
 
 `link`, `unlink` and `install-addon` need the path of the game's `Interface/AddOns` folder. Copy `.env.example`
