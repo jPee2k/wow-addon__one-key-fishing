@@ -41,10 +41,11 @@ How a release is built and published, and what it is checked against.
       `OneKeyFishing/OneKeyFishing.toc` (the website is the page players install from, not the repository).
 - [x] Create a CurseForge API token and add it as the `CF_API_KEY` secret of the GitHub repository.
       `GITHUB_TOKEN` is provided by GitHub Actions automatically.
-- [ ] **Risk**: the addon sits in a subfolder (`move-folders` in `.pkgmeta`, the same layout DBM uses), and
-      CurseForge and the packager must know WoW Forever as a game version and map
-      `## Interface: 16001` to it. Check after the game launches (November 4, 2026). If the automatic upload
-      fails, upload the zip from `npm run build` by hand and pick the game version on the website.
+- [x] Game version: CurseForge lists WoW Forever (game version type 88568; other Forever addons use the beta
+      version 1.60.1). BigWigsMods/packager v2.6.1 maps `## Interface: 16???` to Forever and 16001 to
+      `1.60.1`; without an exact match it takes the closest lower Forever version and warns. Check the game
+      version on the first uploaded file; if the upload fails, upload the zip from `npm run build` by hand and
+      pick the game version on the website.
 
 ## Blizzard UI Add-On Development Policy
 
