@@ -1,6 +1,15 @@
+# Build output and dependencies
+dist/
 .release/
+node_modules/
 *.zip
+
+# Local path of the game's Interface/AddOns folder (see .env.example)
+.env
+
+# Editors and OS
 .vscode/
 .idea/
+.DS_Store
 Thumbs.db
 desktop.ini

@@ -1,6 +1,2 @@
-# Development files stay out of `git archive` packages.
-CLAUDE.md export-ignore
-PLAN.md export-ignore
-.luacheckrc export-ignore
-.gitignore export-ignore
-.gitattributes export-ignore
+# Text files are stored and checked out with LF line endings on every OS.
+* text=auto eol=lf

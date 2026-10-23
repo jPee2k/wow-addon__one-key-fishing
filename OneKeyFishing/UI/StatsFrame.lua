@@ -1,5 +1,6 @@
 -- StatsFrame: session / current zone / all-time statistics, top catches and zones.
 local _, ns = ...
+local L = ns.L
 
 local StatsFrame = {}
 ns.StatsFrame = StatsFrame
@@ -26,17 +27,17 @@ end
 
 -- Each row: label, function(bucket, liveMode, liveCast, value) -> text; value is Stats.GetValue(bucket)
 local ROWS = {
-    { "Time fishing", function(b, live) return FormatTime(b.modeTime + live) end },
-    { "Time casting", function(b, _, liveCast) return FormatTime(b.castTime + liveCast) end },
-    { "Casts", function(b) return tostring(b.casts) end },
-    { "Catches", function(b) return tostring(b.catches) end },
-    { "Nothing caught", function(b) return tostring(b.misses) end },
-    { "Catches per hour", function(b, live)
+    { L["Time fishing"], function(b, live) return FormatTime(b.modeTime + live) end },
+    { L["Time casting"], function(b, _, liveCast) return FormatTime(b.castTime + liveCast) end },
+    { L["Casts"], function(b) return tostring(b.casts) end },
+    { L["Catches"], function(b) return tostring(b.catches) end },
+    { L["Nothing caught"], function(b) return tostring(b.misses) end },
+    { L["Catches per hour"], function(b, live)
         local value = PerHour(b.catches, b.modeTime + live)
         return value and ("%.1f"):format(value) or "-"
     end },
-    { "Value", function(_, _, _, value) return ns.FormatMoney(value) end },
-    { "Gold per hour", function(b, live, _, value)
+    { L["Value"], function(_, _, _, value) return ns.FormatMoney(value) end },
+    { L["Gold per hour"], function(b, live, _, value)
         local perHour = PerHour(value, b.modeTime + live)
         return perHour and ns.FormatMoney(perHour) or "-"
     end },
@@ -80,7 +81,7 @@ local function Create()
 
     local title = CreateText(f, "GameFontHighlight", "CENTER")
     title:SetPoint("TOP", 0, -6)
-    title:SetText("OneKeyFishing - Statistics")
+    title:SetText(L["OneKeyFishing - Statistics"])
 
     f.skill = CreateText(f, "GameFontNormal")
     f.skill:SetPoint("TOPLEFT", LABEL_X, -32)
@@ -89,7 +90,7 @@ local function Create()
 
     -- Table header
     local headerY = -66
-    local headers = { "Session", "This zone", "All time" }
+    local headers = { L["Session"], L["This zone"], L["All time"] }
     for i, text in ipairs(headers) do
         local header = CreateText(f, "GameFontNormal", "RIGHT")
         header:SetPoint("TOPLEFT", COLUMN_X[i], headerY)
@@ -119,7 +120,7 @@ local function Create()
     local itemsY = headerY - (#ROWS + 1) * LINE_HEIGHT - 16
     local itemsHeader = CreateText(f, "GameFontNormal")
     itemsHeader:SetPoint("TOPLEFT", LABEL_X, itemsY)
-    itemsHeader:SetText("Top catches (all time)")
+    itemsHeader:SetText(L["Top catches (all time)"])
     f.itemLines = {}
     for i = 1, TOP_ITEMS do
         local line = CreateFrame("Frame", nil, f)
@@ -153,7 +154,7 @@ local function Create()
     local zonesY = itemsY - (TOP_ITEMS + 1) * LINE_HEIGHT - 12
     local zonesHeader = CreateText(f, "GameFontNormal")
     zonesHeader:SetPoint("TOPLEFT", LABEL_X, zonesY)
-    zonesHeader:SetText("Zones (all time)")
+    zonesHeader:SetText(L["Zones (all time)"])
     f.zoneLines = {}
     for i = 1, TOP_ZONES do
         local name = CreateText(f, "GameFontHighlight")
@@ -169,21 +170,22 @@ local function Create()
     local resetSession = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     resetSession:SetSize(130, 22)
     resetSession:SetPoint("BOTTOMLEFT", 14, 12)
-    resetSession:SetText("Reset session")
+    resetSession:SetText(L["Reset session"])
     resetSession:SetScript("OnClick", function()
-        Confirm("ONEKEYFISHING_RESET_SESSION", "Reset the fishing statistics of this session?", ns.Stats.ResetSession)
+        Confirm("ONEKEYFISHING_RESET_SESSION", L["Reset the fishing statistics of this session?"],
+            ns.Stats.ResetSession)
     end)
     local resetAll = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     resetAll:SetSize(130, 22)
     resetAll:SetPoint("LEFT", resetSession, "RIGHT", 8, 0)
-    resetAll:SetText("Reset all")
+    resetAll:SetText(L["Reset all"])
     resetAll:SetScript("OnClick", function()
-        Confirm("ONEKEYFISHING_RESET_ALL", "Delete ALL fishing statistics of this character?", ns.Stats.ResetAll)
+        Confirm("ONEKEYFISHING_RESET_ALL", L["Delete ALL fishing statistics of this character?"], ns.Stats.ResetAll)
     end)
     f.scan = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     f.scan:SetSize(160, 22)
     f.scan:SetPoint("BOTTOMRIGHT", -14, 12)
-    f.scan:SetText("Scan auction prices")
+    f.scan:SetText(L["Scan auction prices"])
     f.scan:SetScript("OnClick", function() ns.Auction.Scan() end)
 
     local elapsed = 0
@@ -218,19 +220,19 @@ function StatsFrame.Refresh()
     local rank, maxRank = ns.Skill.Get()
     if rank then
         local gained = session.skillStart and rank - session.skillStart or 0
-        frame.skill:SetText(("Fishing skill: %d/%d %s%s"):format(rank, maxRank, ns.Skill.GetRankName(maxRank),
-            gained > 0 and ("  |cff55ff55(+%d this session)|r"):format(gained) or ""))
+        frame.skill:SetText((L["Fishing skill: %d/%d %s%s"]):format(rank, maxRank, ns.Skill.GetRankName(maxRank),
+            gained > 0 and ("  |cff55ff55" .. L["(+%d this session)"]:format(gained) .. "|r") or ""))
     else
-        frame.skill:SetText("Fishing is not learned.")
+        frame.skill:SetText(L["Fishing is not learned."])
     end
     frame.zoneName:SetText(zone.name or "")
 
     local lastScan = ns.Prices.GetLastScanTime()
     if ns.db.settings.auctionPrices and lastScan then
-        frame.prices:SetText(("Values: higher of vendor and auction price (last scan %s ago)"):format(
+        frame.prices:SetText((L["Values: higher of vendor and auction price (last scan %s ago)"]):format(
             SecondsToTime and SecondsToTime(time() - lastScan) or (time() - lastScan) .. "s"))
     else
-        frame.prices:SetText("Values: vendor price (scan the auction house for market prices)")
+        frame.prices:SetText(L["Values: vendor price (scan the auction house for market prices)"])
     end
     frame.scan:SetEnabled(ns.Auction.IsOpen() and not ns.Auction.IsScanning())
 
@@ -269,9 +271,9 @@ function StatsFrame.Refresh()
         local data = zones[zoneKeys[i]]
         if data and data.catches > 0 then
             line.name:SetText(data.name or "?")
-            line.detail:SetText(("%d catches, %s"):format(data.catches, FormatTime(data.modeTime)))
+            line.detail:SetText((L["%d catches, %s"]):format(data.catches, FormatTime(data.modeTime)))
         else
-            line.name:SetText(i == 1 and "|cff888888No catches yet.|r" or "")
+            line.name:SetText(i == 1 and ("|cff888888" .. L["No catches yet."] .. "|r") or "")
             line.detail:SetText("")
         end
     end
@@ -284,4 +286,4 @@ end
 
 ns.On("STATS_CHANGED", StatsFrame.Refresh)
 ns.On("AUCTION_STATE", StatsFrame.Refresh)
-ns.RegisterCommand("stats", "show the fishing statistics", StatsFrame.Toggle)
+ns.RegisterCommand("stats", L["show the fishing statistics"], StatsFrame.Toggle)

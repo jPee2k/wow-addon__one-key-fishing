@@ -3,6 +3,7 @@
 --   OneKeyFishing  - keys, feature toggles, actions
 --   Fishing gear   - chosen pole and the list of extra fishing items
 local _, ns = ...
+local L = ns.L
 
 local SettingsUI = {}
 ns.SettingsUI = SettingsUI
@@ -12,21 +13,21 @@ local ROW_HEIGHT = 26
 local MAX_GEAR_ROWS = 14
 
 local TOGGLES = {
-    { key = "autoLoot", label = "Auto loot while fishing" },
-    { key = "bobberIcon", label = "Show the interact icon over the bobber" },
-    { key = "exitOnCombat", label = "Leave fishing mode when attacked" },
-    { key = "gear", label = "Equip fishing pole and fishing gear" },
-    { key = "lure", label = "Apply lures automatically" },
-    { key = "openContainers", label = "Open clams and fished containers" },
-    { key = "indicator", label = "Show the action indicator and cast timer" },
-    { key = "lockIndicator", label = "Lock the indicator position" },
-    { key = "toasts", label = "Show catch notifications" },
-    { key = "sessionTimer", label = "Show session fishing time under the indicator" },
-    { key = "pauseOnAFK", label = "Pause the fishing timer while AFK" },
-    { key = "skillCapWarning", label = "Warn when the Fishing rank is capped" },
-    { key = "auctionPrices", label = "Use scanned auction prices for catch value" },
-    { key = "camera", label = "Zoom the camera while fishing" },
-    { key = "minimapButton", label = "Show the minimap button" },
+    { key = "autoLoot", label = L["Auto loot while fishing"] },
+    { key = "bobberIcon", label = L["Show the interact icon over the bobber"] },
+    { key = "exitOnCombat", label = L["Leave fishing mode when attacked"] },
+    { key = "gear", label = L["Equip fishing pole and fishing gear"] },
+    { key = "lure", label = L["Apply lures automatically"] },
+    { key = "openContainers", label = L["Open clams and fished containers"] },
+    { key = "indicator", label = L["Show the action indicator and cast timer"] },
+    { key = "lockIndicator", label = L["Lock the indicator position"] },
+    { key = "toasts", label = L["Show catch notifications"] },
+    { key = "sessionTimer", label = L["Show session fishing time under the indicator"] },
+    { key = "pauseOnAFK", label = L["Pause the fishing timer while AFK"] },
+    { key = "skillCapWarning", label = L["Warn when the Fishing rank is capped"] },
+    { key = "auctionPrices", label = L["Use scanned auction prices for catch value"] },
+    { key = "camera", label = L["Zoom the camera while fishing"] },
+    { key = "minimapButton", label = L["Show the minimap button"] },
 }
 local COLUMN_OFFSET = 300
 
@@ -64,7 +65,7 @@ end
 
 local function KeyText(binding)
     local key = GetBindingKey(binding)
-    return key and GetBindingText(key) or "|cffff5555not bound|r"
+    return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
 end
 
 local function ItemDisplay(itemID)
@@ -83,15 +84,15 @@ local function CreateMainPage()
     local version = CreateText(page, "GameFontDisableSmall", "v" .. ns.version)
     version:SetPoint("LEFT", title, "RIGHT", 8, 0)
 
-    local keysHeader = CreateText(page, "GameFontNormal", "Keys")
+    local keysHeader = CreateText(page, "GameFontNormal", L["Keys"])
     keysHeader:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
     local keys = CreateText(page, "GameFontHighlight")
     keys:SetPoint("TOPLEFT", keysHeader, "BOTTOMLEFT", 0, -6)
     local keysHint = CreateText(page, "GameFontDisableSmall",
-        "Change them in Options -> Keybindings -> AddOns -> OneKeyFishing.")
+        L["Change them in Options -> Keybindings -> AddOns -> OneKeyFishing."])
     keysHint:SetPoint("TOPLEFT", keys, "BOTTOMLEFT", 0, -4)
 
-    local featuresHeader = CreateText(page, "GameFontNormal", "Features")
+    local featuresHeader = CreateText(page, "GameFontNormal", L["Features"])
     featuresHeader:SetPoint("TOPLEFT", keysHint, "BOTTOMLEFT", 0, -18)
     -- Two columns so the page fits without scrolling.
     local perColumn = math.ceil(#TOGGLES / 2)
@@ -116,11 +117,11 @@ local function CreateMainPage()
         anchor = checkbox
     end
     local note = CreateText(page, "GameFontDisableSmall",
-        "Auto loot, bobber icon and gear changes apply the next time you enter fishing mode.")
+        L["Auto loot, bobber icon and gear changes apply the next time you enter fishing mode."])
     note:SetPoint("TOPLEFT", firstColumnLast, "BOTTOMLEFT", 2, -6)
 
     -- Camera distance: - value +
-    local cameraLabel = CreateText(page, "GameFontHighlight", "Camera distance while fishing:")
+    local cameraLabel = CreateText(page, "GameFontHighlight", L["Camera distance while fishing:"])
     cameraLabel:SetPoint("TOPLEFT", note, "BOTTOMLEFT", 0, -12)
     local cameraValue = CreateText(page, "GameFontHighlight")
     local function ChangeDistance(step)
@@ -134,19 +135,21 @@ local function CreateMainPage()
     local plus = CreateButton(page, "+", 26, function() ChangeDistance(1) end)
     plus:SetPoint("LEFT", cameraValue, "RIGHT", 8, 0)
 
-    local actionsHeader = CreateText(page, "GameFontNormal", "Actions")
+    local actionsHeader = CreateText(page, "GameFontNormal", L["Actions"])
     actionsHeader:SetPoint("TOPLEFT", cameraLabel, "BOTTOMLEFT", 0, -18)
-    local toggleButton = CreateButton(page, "Toggle fishing mode", 180, function() ns.Mode.Toggle() end)
+    local toggleButton = CreateButton(page, L["Toggle fishing mode"], 180, function() ns.Mode.Toggle() end)
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
-    local apiButton = CreateButton(page, "Run API check", 140, function() ns.RunApiCheck() end)
-    apiButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
-    local statsButton = CreateButton(page, "Open statistics", 140, function() ns.StatsFrame.Toggle() end)
-    statsButton:SetPoint("LEFT", apiButton, "RIGHT", 8, 0)
-    local resetButton = CreateButton(page, "Reset indicator position", 190, function() ns.Indicator.ResetPosition() end)
+    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowReport() end)
+    reportButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
+    local statsButton = CreateButton(page, L["Open statistics"], 140, function() ns.StatsFrame.Toggle() end)
+    statsButton:SetPoint("LEFT", reportButton, "RIGHT", 8, 0)
+    local resetButton = CreateButton(page, L["Reset indicator position"], 190, function()
+        ns.Indicator.ResetPosition()
+    end)
     resetButton:SetPoint("TOPLEFT", toggleButton, "BOTTOMLEFT", 0, -6)
-    local scanButton = CreateButton(page, "Scan auction prices", 160, function() ns.Auction.Scan() end)
+    local scanButton = CreateButton(page, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
     scanButton:SetPoint("LEFT", resetButton, "RIGHT", 8, 0)
-    local scanHint = CreateText(page, "GameFontDisableSmall", "(open the auction house first)")
+    local scanHint = CreateText(page, "GameFontDisableSmall", L["(open the auction house first)"])
     scanHint:SetPoint("LEFT", scanButton, "RIGHT", 8, 0)
     local function UpdateScanButton()
         local usable = ns.Auction.IsOpen() and not ns.Auction.IsScanning()
@@ -158,7 +161,7 @@ local function CreateMainPage()
     page:SetScript("OnShow", function()
         UpdateScanButton()
         cameraValue:SetText(ns.db.settings.cameraDistance)
-        keys:SetText(("Fishing action: %s      Toggle fishing mode: %s"):format(
+        keys:SetText((L["Fishing action: %s      Toggle fishing mode: %s"]):format(
             KeyText("ONEKEYFISHING_ACTION"), KeyText("ONEKEYFISHING_TOGGLE")))
     end)
     return page
@@ -187,7 +190,7 @@ local function CreateGearRow(parent)
     row.slot = CreateText(row, "GameFontDisable")
     row.slot:SetPoint("LEFT", row.name, "RIGHT", 8, 0)
     row.slot:SetWidth(110)
-    row.remove = CreateButton(row, "Remove", 80, function() ns.Gear.RemoveItem(row.itemID) end)
+    row.remove = CreateButton(row, L["Remove"], 80, function() ns.Gear.RemoveItem(row.itemID) end)
     row.remove:SetPoint("RIGHT")
 
     row:SetScript("OnEnter", function(self) ShowItemTooltip(self, self.itemID) end)
@@ -198,27 +201,27 @@ end
 local function CreateGearPage()
     local page = CreateFrame("Frame")
 
-    local title = CreateText(page, "GameFontNormalLarge", "Fishing gear")
+    local title = CreateText(page, "GameFontNormalLarge", L["Fishing gear"])
     title:SetPoint("TOPLEFT", PADDING, -PADDING)
 
     -- Pole
-    local poleHeader = CreateText(page, "GameFontNormal", "Fishing pole")
+    local poleHeader = CreateText(page, "GameFontNormal", L["Fishing pole"])
     poleHeader:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
     local poleText = CreateText(page, "GameFontHighlight")
     poleText:SetPoint("TOPLEFT", poleHeader, "BOTTOMLEFT", 0, -6)
     poleText:SetWidth(520)
-    local autoPoleButton = CreateButton(page, "Use the best pole automatically", 240, function()
+    local autoPoleButton = CreateButton(page, L["Use the best pole automatically"], 240, function()
         ns.Gear.ClearPole()
     end)
     autoPoleButton:SetPoint("TOPLEFT", poleText, "BOTTOMLEFT", 0, -6)
 
     -- Add box
-    local addHeader = CreateText(page, "GameFontNormal", "Add an item")
+    local addHeader = CreateText(page, "GameFontNormal", L["Add an item"])
     addHeader:SetPoint("TOPLEFT", autoPoleButton, "BOTTOMLEFT", 0, -18)
     local addHint = CreateText(page, "GameFontDisableSmall",
-        "Easiest: close this window and Alt+Click an item in your bags or on the character panel.\n" ..
-        "Alt+Click it again to remove it. A fishing pole becomes your chosen pole.\n" ..
-        "Here you can type an item name, or find all items with a fishing bonus automatically.")
+        L["Easiest: close this window and Alt+Click an item in your bags or on the character panel."] .. "\n" ..
+        L["Alt+Click it again to remove it. A fishing pole becomes your chosen pole."] .. "\n" ..
+        L["Here you can type an item name, or find all items with a fishing bonus automatically."])
     addHint:SetPoint("TOPLEFT", addHeader, "BOTTOMLEFT", 0, -4)
 
     local input = CreateFrame("EditBox", nil, page, "InputBoxTemplate")
@@ -229,7 +232,8 @@ local function CreateGearPage()
 
     local function AddItem(itemID)
         if not itemID then
-            status:SetText("|cffff5555Item not found. Check the name, or Alt+Click the item in your bags.|r")
+            status:SetText("|cffff5555" .. L["Item not found. Check the name, or Alt+Click the item in your bags."]
+                .. "|r")
             return
         end
         local ok, message = ns.Gear.AddItem(itemID)
@@ -240,12 +244,12 @@ local function CreateGearPage()
         end
     end
 
-    local addButton = CreateButton(page, "Add", 80, function() AddItem(ns.ParseItem(input:GetText())) end)
+    local addButton = CreateButton(page, L["Add"], 80, function() AddItem(ns.ParseItem(input:GetText())) end)
     addButton:SetPoint("LEFT", input, "RIGHT", 8, 0)
-    local findButton = CreateButton(page, "Find fishing items", 150, function()
+    local findButton = CreateButton(page, L["Find fishing items"], 150, function()
         local added = ns.Gear.AddFishingItemsFromBags()
-        status:SetText(added > 0 and ("|cff55ff55Added %d item(s).|r"):format(added)
-            or "|cffff5555No new items with a fishing bonus found.|r")
+        status:SetText(added > 0 and ("|cff55ff55" .. L["Added %d item(s)."]:format(added) .. "|r")
+            or ("|cffff5555" .. L["No new items with a fishing bonus found."] .. "|r"))
     end)
     findButton:SetPoint("LEFT", addButton, "RIGHT", 8, 0)
     status:SetPoint("TOPLEFT", input, "BOTTOMLEFT", -6, -6)
@@ -254,9 +258,9 @@ local function CreateGearPage()
     input:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
     -- List
-    local listHeader = CreateText(page, "GameFontNormal", "Extra fishing gear")
+    local listHeader = CreateText(page, "GameFontNormal", L["Extra fishing gear"])
     listHeader:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 0, -16)
-    local emptyText = CreateText(page, "GameFontDisable", "No items yet.")
+    local emptyText = CreateText(page, "GameFontDisable", L["No items yet."])
     emptyText:SetPoint("TOPLEFT", listHeader, "BOTTOMLEFT", 0, -8)
 
     local rows = {}
@@ -273,12 +277,12 @@ local function CreateGearPage()
         local chosen = ns.Gear.GetChosenPole()
         if chosen then
             local link = ItemDisplay(chosen)
-            poleText:SetText(("Chosen: %s (+%d)"):format(link, ns.GetFishingBonus(chosen)))
+            poleText:SetText((L["Chosen: %s (+%d)"]):format(link, ns.GetFishingBonus(chosen)))
             autoPoleButton:Show()
         else
             local best, bonus = ns.Gear.FindBestPole()
-            poleText:SetText(best and ("Automatic, best in your bags: %s (+%d)"):format(ItemDisplay(best), bonus)
-                or "Automatic: no fishing pole in your bags.")
+            poleText:SetText(best and (L["Automatic, best in your bags: %s (+%d)"]):format(ItemDisplay(best), bonus)
+                or L["Automatic: no fishing pole in your bags."])
             autoPoleButton:Hide()
         end
 
@@ -318,7 +322,7 @@ function SettingsUI.Open()
         return
     end
     if InCombatLockdown() then
-        ns.Print("Settings cannot be opened in combat.")
+        ns.Print(L["Settings cannot be opened in combat."])
         return
     end
     Settings.OpenToCategory(mainCategory:GetID())
@@ -326,12 +330,12 @@ end
 
 ns.RegisterEvent("PLAYER_LOGIN", function()
     if not (Settings and Settings.RegisterCanvasLayoutCategory) then
-        ns.Print("Settings panel is not available in this client.")
+        ns.Print(L["Settings panel is not available in this client."])
         return
     end
     mainCategory = Settings.RegisterCanvasLayoutCategory(CreateMainPage(), "OneKeyFishing")
-    Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateGearPage(), "Fishing gear")
+    Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateGearPage(), L["Fishing gear"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)
 
-ns.RegisterCommand("config", "open the settings", SettingsUI.Open)
+ns.RegisterCommand("config", L["open the settings"], SettingsUI.Open)

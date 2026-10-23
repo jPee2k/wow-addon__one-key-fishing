@@ -1,0 +1,195 @@
+// Static checks for the addon (no Lua or luacheck needed):
+//   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length, ASCII-only addon files,
+//   no Cyrillic text anywhere, the addon folder holds only packaged files, TOC file list, locale keys,
+//   and the version in package.json vs CHANGELOG.md.
+import fs from "node:fs";
+import path from "node:path";
+import luaparse from "luaparse";
+import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, parseToc } from "./addon.mjs";
+
+const MAX_LINE_LENGTH = 120;
+// Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
+const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
+const SKIP_FILES = new Set([".env"]);
+const TEXT_EXTENSIONS = new Set([".lua", ".toc", ".xml", ".md", ".json", ".yml", ".yaml", ".mjs", ".js", ""]);
+// Globals of the Lua runtime itself; WoW API names belong in .luacheckrc.
+const LUA_BUILTINS = new Set(("_G assert error ipairs pairs next pcall print select tonumber tostring type unpack " +
+  "math string table os coroutine setmetatable getmetatable rawget rawset rawequal xpcall").split(" "));
+
+// Built from code points so this file itself stays free of Cyrillic.
+const NON_ASCII = new RegExp("[^" + String.fromCharCode(0) + "-" + String.fromCharCode(0x7f) + "]");
+const CYRILLIC = new RegExp("[" + String.fromCharCode(0x400) + "-" + String.fromCharCode(0x4ff) + "]");
+
+const problems = [];
+const problem = (where, message) => problems.push(`${where}: ${message}`);
+const rel = (file) => path.relative(ROOT, file).split(path.sep).join("/");
+// Path inside the addon folder, as the TOC writes it.
+const relAddon = (file) => path.relative(ADDON_DIR, file).split(path.sep).join("/");
+const inAddon = (file) => rel(file).startsWith(`${ADDON}/`);
+
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (!SKIP_DIRS.has(entry.name)) {
+        walk(path.join(dir, entry.name), out);
+      }
+    } else if (!SKIP_FILES.has(entry.name)) {
+      out.push(path.join(dir, entry.name));
+    }
+  }
+  return out;
+}
+
+// Names inside `globals = { ... }` and `read_globals = { ... }`.
+function declaredGlobals() {
+  const rc = fs.readFileSync(path.join(ROOT, ".luacheckrc"), "utf8");
+  const names = new Map();
+  for (const block of rc.matchAll(/^(globals|read_globals)\s*=\s*\{([\s\S]*?)^\}/gm)) {
+    const body = block[2].replace(/--[^\n]*/g, "");
+    for (const match of body.matchAll(/"([A-Za-z_][A-Za-z0-9_]*)"/g)) {
+      if (names.has(match[1])) {
+        problem(".luacheckrc", `"${match[1]}" is declared twice`);
+      }
+      names.set(match[1], block[1]);
+    }
+  }
+  return names;
+}
+
+const files = walk(ROOT);
+const luaFiles = files.filter((file) => file.endsWith(".lua") && inAddon(file));
+for (const file of files.filter((f) => f.endsWith(".lua") && !inAddon(f))) {
+  problem(rel(file), `Lua file outside ${ADDON}/`);
+}
+const declared = declaredGlobals();
+const used = new Set();
+
+for (const file of luaFiles) {
+  const source = fs.readFileSync(file, "utf8");
+  let ast;
+  try {
+    ast = luaparse.parse(source, { luaVersion: "5.1", scope: true });
+  } catch (err) {
+    problem(rel(file), `syntax error: ${err.message}`);
+    continue;
+  }
+  for (const name of new Set(ast.globals.map((g) => g.name))) {
+    used.add(name);
+    if (!declared.has(name) && !LUA_BUILTINS.has(name)) {
+      problem(rel(file), `undeclared global "${name}" (add it to .luacheckrc)`);
+    }
+  }
+  source.split(/\r?\n/).forEach((line, i) => {
+    if (line.length > MAX_LINE_LENGTH) {
+      problem(`${rel(file)}:${i + 1}`, `line is ${line.length} characters long (max ${MAX_LINE_LENGTH})`);
+    }
+  });
+}
+
+for (const [name, kind] of declared) {
+  if (!used.has(name)) {
+    problem(".luacheckrc", `${kind} "${name}" is not used by any file`);
+  }
+}
+
+// Addon files are plain ASCII; nothing in the repository is written in Cyrillic.
+for (const file of files) {
+  const ext = path.extname(file).toLowerCase();
+  if (!TEXT_EXTENSIONS.has(ext) || path.basename(file) === "package-lock.json") {
+    continue;
+  }
+  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
+  const asciiOnly = [".lua", ".toc", ".xml"].includes(ext);
+  lines.forEach((line, i) => {
+    if (asciiOnly && NON_ASCII.test(line)) {
+      problem(`${rel(file)}:${i + 1}`, "non-ASCII character in an addon file");
+    } else if (CYRILLIC.test(line)) {
+      problem(`${rel(file)}:${i + 1}`, "Cyrillic text (the project is written in English)");
+    }
+  });
+}
+
+// TOC: every listed file exists, the addon folder holds nothing that is not packaged, the version is filled
+// in at build time.
+const tocName = `${ADDON}/${TOC}`;
+const tocPath = path.join(ADDON_DIR, TOC);
+if (!fs.existsSync(tocPath)) {
+  problem(tocName, "missing");
+} else {
+  const toc = parseToc(fs.readFileSync(tocPath, "utf8"));
+  const packaged = new Set([TOC, ...toc.files, ...ADDON_EXTRAS]);
+  for (const file of [...toc.files, ...ADDON_EXTRAS]) {
+    if (!fs.existsSync(path.join(ADDON_DIR, file))) {
+      problem(tocName, `"${ADDON}/${file}" does not exist`);
+    }
+  }
+  for (const file of ROOT_EXTRAS) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      problem(file, "missing (it is packaged with the addon)");
+    }
+  }
+  for (const file of files.filter(inAddon)) {
+    if (!packaged.has(relAddon(file))) {
+      problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
+    }
+  }
+  for (const field of ["Interface", "Title", "Notes", "Author", "Version"]) {
+    if (!toc.fields[field]) {
+      problem(tocName, `missing "## ${field}"`);
+    }
+  }
+  if (toc.fields.Version && toc.fields.Version !== "@project-version@") {
+    problem(tocName, `"## Version" must be @project-version@ (the version comes from package.json)`);
+  }
+}
+
+// Locales: every L["..."] used in the code is listed in enUS.lua, and every listed key is used.
+// Other locales may only translate keys that exist in enUS.lua.
+const L_KEY = /\bL\["((?:[^"\\]|\\.)*)"\]/g;
+const keysIn = (file) => new Set([...fs.readFileSync(file, "utf8").matchAll(L_KEY)].map((m) => m[1]));
+const baseLocale = path.join(ADDON_DIR, "Locales", "enUS.lua");
+const baseName = rel(baseLocale);
+const isLocale = (file) => relAddon(file).startsWith("Locales/");
+if (!fs.existsSync(baseLocale)) {
+  problem(baseName, "missing");
+} else {
+  const baseKeys = keysIn(baseLocale);
+  const usedKeys = new Set();
+  for (const file of luaFiles.filter((f) => !isLocale(f))) {
+    for (const key of keysIn(file)) {
+      usedKeys.add(key);
+      if (!baseKeys.has(key)) {
+        problem(rel(file), `L["${key}"] is not listed in ${baseName}`);
+      }
+    }
+  }
+  for (const key of baseKeys) {
+    if (!usedKeys.has(key)) {
+      problem(baseName, `L["${key}"] is not used by any file`);
+    }
+  }
+  for (const file of luaFiles.filter((f) => isLocale(f) && f !== baseLocale)) {
+    for (const key of keysIn(file)) {
+      if (!baseKeys.has(key)) {
+        problem(rel(file), `L["${key}"] does not exist in ${baseName}`);
+      }
+    }
+  }
+}
+
+// The newest CHANGELOG entry matches package.json.
+const version = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
+const changelogPath = path.join(ROOT, "CHANGELOG.md");
+if (fs.existsSync(changelogPath)) {
+  const top = fs.readFileSync(changelogPath, "utf8").match(/^## \[(?!Unreleased)([^\]]+)\]/im);
+  if (!top || top[1] !== version) {
+    problem("CHANGELOG.md", `newest entry is ${top ? top[1] : "missing"}, package.json says ${version}`);
+  }
+}
+
+if (problems.length > 0) {
+  console.error(problems.join("\n"));
+  console.error(`\n${problems.length} problem(s) found.`);
+  process.exit(1);
+}
+console.log(`OK: ${luaFiles.length} Lua files, ${declared.size} declared globals, version ${version}.`);

@@ -4,6 +4,7 @@
 -- For every slot it changes, the previous item is remembered in the character DB (survives /reload and
 -- crashes). On exit a slot is restored only if it still holds what the addon put there.
 local _, ns = ...
+local L = ns.L
 
 local Gear = {}
 ns.Gear = Gear
@@ -72,8 +73,8 @@ end
 
 ---------------------------------------------------------------------------
 -- Fishing bonus from the tooltip, locale independent.
--- The skill name comes from the client ("Fishing" / "Рыбная ловля"); its first letter is dropped
--- because tooltips may write it in lower case and string.lower does not handle Cyrillic.
+-- The skill name comes from the client in its own language; its first letter is dropped because
+-- tooltips may write it in lower case and string.lower only handles ASCII letters.
 ---------------------------------------------------------------------------
 local fishingNameKey
 local function FishingNameKey()
@@ -189,19 +190,19 @@ function Gear.AddItem(itemID)
     if ns.IsFishingPole(itemID) then
         ns.charDB.gear.pole = itemID
         ns.Fire("GEAR_LIST_CHANGED")
-        return true, "Fishing pole set."
+        return true, L["Fishing pole set."]
     end
     if not SLOTS_BY_EQUIP_LOC[GetEquipLoc(itemID) or ""] then
-        return false, "This item cannot be used as fishing gear."
+        return false, L["This item cannot be used as fishing gear."]
     end
     for _, existing in ipairs(ns.charDB.gear.items) do
         if existing == itemID then
-            return false, "Already in the list."
+            return false, L["Already in the list."]
         end
     end
     table.insert(ns.charDB.gear.items, itemID)
     ns.Fire("GEAR_LIST_CHANGED")
-    return true, "Added."
+    return true, L["Added."]
 end
 
 function Gear.RemoveItem(itemID)
@@ -230,12 +231,12 @@ end
 function Gear.ToggleItem(itemID)
     if itemID == ns.charDB.gear.pole then
         Gear.ClearPole()
-        return true, "Fishing pole: automatic (best in bags)."
+        return true, L["Fishing pole: automatic (best in bags)."]
     end
     for _, existing in ipairs(ns.charDB.gear.items) do
         if existing == itemID then
             Gear.RemoveItem(itemID)
-            return true, "Removed from fishing gear."
+            return true, L["Removed from fishing gear."]
         end
     end
     return Gear.AddItem(itemID)
@@ -314,10 +315,10 @@ end
 function Gear.Equip()
     local plan, missing = BuildPlan()
     if not plan[MAINHAND_SLOT] then
-        ns.Print("No fishing pole found in your bags.")
+        ns.Print(L["No fishing pole found in your bags."])
     end
     if missing > 0 then
-        ns.Print("%d fishing item(s) are not in your bags.", missing)
+        ns.Print(L["%d fishing item(s) are not in your bags."], missing)
     end
     local swap = ns.charDB.gearSwap or {}
     -- A restore that never landed is live again: the slot still holds the fishing item.
@@ -361,7 +362,7 @@ local function UnequipToBags(slot, reserved)
             return true
         end
     end
-    ns.Print("No free bag space to take off %s.", GetInventoryItemLink("player", slot) or "an item")
+    ns.Print(L["No free bag space to take off %s."], GetInventoryItemLink("player", slot) or L["an item"])
     return false
 end
 
@@ -479,22 +480,3 @@ function ns.ParseItem(text)
     local _, link = C_Item.GetItemInfo((text:gsub("^%[(.*)%]$", "%1")))
     return link and tonumber(link:match("|Hitem:(%d+)"))
 end
-
--- Version 0.1 stored a whole outfit; convert a leftover snapshot so the player is not stuck in it.
--- PLAYER_LOGIN: equipped items are not known yet on ADDON_LOADED.
-ns.RegisterEvent("PLAYER_LOGIN", function()
-    local charDB = ns.charDB
-    charDB.fishingSet = nil
-    if charDB.gearSnapshot then
-        local swap = {}
-        for slot, previous in pairs(charDB.gearSnapshot) do
-            local current = GetInventoryItemID("player", slot)
-            local previousID = previous and C_Item.GetItemInfoInstant(previous)
-            if current ~= previousID then
-                swap[slot] = { previous = previous, equipped = current or false }
-            end
-        end
-        charDB.gearSwap = next(swap) and swap or nil
-        charDB.gearSnapshot = nil
-    end
-end)

@@ -4,6 +4,7 @@
 --   channeling     -> INTERACTTARGET (hook the bobber via soft-target interact)
 -- Override bindings belong to a secure state handler, so they are dropped even inside combat.
 local _, ns = ...
+local L = ns.L
 
 local Action = {}
 ns.Action = Action
@@ -100,15 +101,18 @@ local function BindInteract()
     ns.Fire("ACTION_STATE", "hook")
 end
 
+local NO_KEY_HINT =
+    L["No key is bound to 'Fishing action'. Bind one in Options -> Keybindings -> AddOns -> OneKeyFishing."]
+
 -- Returns false (with a chat hint) when the key cannot work yet.
 function Action.Enable()
     local spellID = ns.GetFishingSpellID()
     if not spellID then
-        ns.Print("You have not learned Fishing.")
+        ns.Print(L["You have not learned Fishing."])
         return false
     end
     if not ReadKeys() then
-        ns.Print("No key is bound to 'Fishing action'. Bind one in Options -> Keybindings -> AddOns -> OneKeyFishing.")
+        ns.Print(NO_KEY_HINT)
         return false
     end
     fishingSpellID = spellID

@@ -1,5 +1,6 @@
 -- Indicator: shows what the fishing key will do next, plus the remaining cast time while the bobber is out.
 local _, ns = ...
+local L = ns.L
 
 local Indicator = {}
 ns.Indicator = Indicator
@@ -9,10 +10,10 @@ local BAR_WIDTH = 90
 local DEFAULT_POSITION = { "CENTER", "CENTER", 0, -180 }
 local HOOK_ICON = "Interface\\Icons\\INV_Misc_Fish_02"
 local LABELS = {
-    cast = "Cast",
-    hook = "Hook!",
-    lure = "Apply lure",
-    open = "Open",
+    cast = L["Cast"],
+    hook = L["Hook!"],
+    lure = L["Apply lure"],
+    open = L["Open"],
 }
 
 local frame = CreateFrame("Frame", "OneKeyFishingIndicator", UIParent, "BackdropTemplate")
@@ -120,7 +121,7 @@ function Indicator.Update()
     frame.icon:SetTexture(icon)
     if kind == "hook" and not ns.IsBobberTargeted() then
         -- The key would interact with something else (or nothing): warn instead of "Hook!".
-        frame.label:SetText("|cffff4444No bobber|r")
+        frame.label:SetText("|cffff4444" .. L["No bobber"] .. "|r")
     else
         frame.label:SetText(LABELS[kind])
     end
@@ -165,7 +166,7 @@ end)
 frame:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:AddLine("OneKeyFishing")
-    GameTooltip:AddLine("Drag to move. Lock it in the settings.", 1, 1, 1)
+    GameTooltip:AddLine(L["Drag to move. Lock it in the settings."], 1, 1, 1)
     GameTooltip:Show()
 end)
 frame:SetScript("OnLeave", function() GameTooltip:Hide() end)

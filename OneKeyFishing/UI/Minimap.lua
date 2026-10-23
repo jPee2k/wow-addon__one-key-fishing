@@ -1,6 +1,7 @@
 -- Minimap: a draggable minimap button and the Addon Compartment entry.
 --   Left-click: toggle fishing mode     Shift+Left-click: statistics     Right-click: menu with every action
 local _, ns = ...
+local L = ns.L
 
 local Minimap_ = {}
 ns.Minimap = Minimap_
@@ -16,50 +17,51 @@ local function OpenMenu(owner)
     end
     MenuUtil.CreateContextMenu(owner, function(_, root)
         root:CreateTitle("OneKeyFishing")
-        root:CreateButton(ns.Mode.IsActive() and "Leave fishing mode" or "Enter fishing mode", ns.Mode.Toggle)
-        root:CreateButton("Statistics", ns.StatsFrame.Toggle)
-        root:CreateButton("Settings", ns.SettingsUI.Open)
-        local scan = root:CreateButton("Scan auction prices", ns.Auction.Scan)
+        root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
+        root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
+        root:CreateButton(L["Settings"], ns.SettingsUI.Open)
+        local scan = root:CreateButton(L["Scan auction prices"], ns.Auction.Scan)
         if not ns.Auction.IsOpen() then
             scan:SetEnabled(false)
         end
-        root:CreateButton("Reset indicator position", ns.Indicator.ResetPosition)
-        root:CreateButton("Run API check", ns.RunApiCheck)
+        root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)
+        root:CreateButton(L["Debug report"], ns.ShowReport)
     end)
 end
 
 local function KeyText(binding)
     local key = GetBindingKey(binding)
-    return key and GetBindingText(key) or "|cffff5555not bound|r"
+    return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
 end
 
 local function ShowTooltip(owner)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
-    GameTooltip:AddLine("OneKeyFishing")
-    GameTooltip:AddLine(ns.Mode.IsActive() and "Fishing mode: |cff55ff55ON|r" or "Fishing mode: |cffaaaaaaOFF|r",
-        1, 1, 1)
+    GameTooltip:AddDoubleLine("OneKeyFishing", ns.version, nil, nil, nil, 0.6, 0.6, 0.6)
+    local state = ns.Mode.IsActive() and ("|cff55ff55" .. L["ON"] .. "|r") or ("|cffaaaaaa" .. L["OFF"] .. "|r")
+    GameTooltip:AddLine(L["Fishing mode: %s"]:format(state), 1, 1, 1)
     local rank, maxRank = ns.Skill.Get()
     if rank then
-        GameTooltip:AddLine(("Fishing skill: %d/%d %s"):format(rank, maxRank, ns.Skill.GetRankName(maxRank)), 1, 1, 1)
+        local text = L["Fishing skill: %d/%d %s"]:format(rank, maxRank, ns.Skill.GetRankName(maxRank))
+        GameTooltip:AddLine(text, 1, 1, 1)
     end
     local session = ns.Stats.GetSession()
     if session then
-        GameTooltip:AddLine(("Session: %d catches, %s"):format(session.catches,
+        GameTooltip:AddLine((L["Session: %d catches, %s"]):format(session.catches,
             ns.Stats.FormatTime(ns.Stats.GetSessionTime())), 1, 1, 1)
     end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddDoubleLine("Fishing key:", KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
-    GameTooltip:AddDoubleLine("Toggle mode key:", KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Fishing key:"], KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Toggle mode key:"], KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("How to use: press the toggle key, then the fishing key to cast,", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("and the same key again when the bobber splashes.", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Alt+Click items in your bags to add fishing gear.", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["How to use: press the toggle key, then the fishing key to cast,"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["and the same key again when the bobber splashes."], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["Alt+Click items in your bags to add fishing gear."], 0.8, 0.8, 0.8)
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Left-click: toggle fishing mode", 0, 1, 0)
-    GameTooltip:AddLine("Shift+Left-click: statistics", 0, 1, 0)
-    GameTooltip:AddLine("Right-click: menu", 0, 1, 0)
+    GameTooltip:AddLine(L["Left-click: toggle fishing mode"], 0, 1, 0)
+    GameTooltip:AddLine(L["Shift+Left-click: statistics"], 0, 1, 0)
+    GameTooltip:AddLine(L["Right-click: menu"], 0, 1, 0)
     if owner == button then
-        GameTooltip:AddLine("Drag: move this button", 0, 1, 0)
+        GameTooltip:AddLine(L["Drag: move this button"], 0, 1, 0)
     end
     GameTooltip:Show()
 end

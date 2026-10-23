@@ -1,5 +1,6 @@
 -- Toast: short messages that rise and fade above the indicator (catches, misses, warnings).
 local _, ns = ...
+local L = ns.L
 
 local POOL_SIZE = 4
 local DURATION = 3
@@ -74,10 +75,10 @@ ns.On("FISH_CAUGHT", function(items)
         table.insert(parts, item.quantity > 1 and ("%s x%d"):format(item.link, item.quantity) or item.link)
     end
     if #parts > 0 then
-        ns.Toast("Caught: " .. table.concat(parts, ", "), 1, 1, 1)
+        ns.Toast(L["Caught: %s"]:format(table.concat(parts, ", ")), 1, 1, 1)
     end
 end)
 
 ns.On("FISH_MISSED", function()
-    ns.Toast("Nothing caught", 1, 0.4, 0.4)
+    ns.Toast(L["Nothing caught"], 1, 0.4, 0.4)
 end)

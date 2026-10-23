@@ -2,6 +2,7 @@
 -- One search query at a time (the auction house throttles queries); each waits for its result
 -- event or times out. Prices are stored account-wide in OneKeyFishingDB.prices.
 local _, ns = ...
+local L = ns.L
 
 local Auction = {}
 ns.Auction = Auction
@@ -50,10 +51,10 @@ local function UpdateButton()
         return
     end
     if current then
-        button:SetText(("Scanning %d/%d"):format(total - #queue, total))
+        button:SetText((L["Scanning %d/%d"]):format(total - #queue, total))
         button:Disable()
     else
-        button:SetText("Scan fish prices")
+        button:SetText(L["Scan fish prices"])
         button:Enable()
     end
 end
@@ -102,14 +103,14 @@ function Next()
     if current then
         Send(current, querySerial)
     else
-        ns.Print("Auction scan finished: %d of %d price(s) found.", scanned, total)
+        ns.Print(L["Auction scan finished: %d of %d price(s) found."], scanned, total)
         ns.Fire("STATS_CHANGED")
     end
 end
 
 function Auction.Scan()
     if not isOpen then
-        ns.Print("Open the auction house first.")
+        ns.Print(L["Open the auction house first."])
         return
     end
     if current then
@@ -121,10 +122,10 @@ function Auction.Scan()
     end
     total, scanned = #queue, 0
     if total == 0 then
-        ns.Print("Nothing to scan yet: catch some fish first.")
+        ns.Print(L["Nothing to scan yet: catch some fish first."])
         return
     end
-    ns.Print("Scanning auction prices of %d item(s)...", total)
+    ns.Print(L["Scanning auction prices of %d item(s)..."], total)
     Next()
 end
 
@@ -149,7 +150,7 @@ end)
 ns.RegisterEvent("AUCTION_HOUSE_CLOSED", function()
     isOpen = false
     if current then
-        ns.Print("Auction scan stopped: %d of %d price(s) found.", scanned, total)
+        ns.Print(L["Auction scan stopped: %d of %d price(s) found."], scanned, total)
     end
     wipe(queue)
     current = nil
@@ -172,4 +173,4 @@ ns.RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED", function(_, itemKey)
     Finish(itemKey.itemID, info and info.buyoutAmount)
 end)
 
-ns.RegisterCommand("scan", "scan auction prices of caught items (auction house must be open)", Auction.Scan)
+ns.RegisterCommand("scan", L["scan auction prices of caught items (auction house must be open)"], Auction.Scan)

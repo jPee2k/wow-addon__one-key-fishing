@@ -1,6 +1,7 @@
 -- ItemHooks: Alt+Click an item (bags, character panel) to add it to or remove it from the fishing gear,
 -- and a line in item tooltips showing its fishing gear status.
 local _, ns = ...
+local L = ns.L
 
 local function ItemIDFromLink(link)
     return type(link) == "string" and tonumber(link:match("|Hitem:(%d+)"))
@@ -39,9 +40,9 @@ local function OnItemTooltip(tooltip, data)
         return
     end
     if ns.Gear.IsFishingGear(itemID) then
-        tooltip:AddLine("OneKeyFishing: fishing gear (Alt+Click to remove)", unpack(TOOLTIP_COLOR))
+        tooltip:AddLine(L["OneKeyFishing: fishing gear (Alt+Click to remove)"], unpack(TOOLTIP_COLOR))
     elseif ns.IsFishingPole(itemID) or ns.GetFishingBonus(itemID) > 0 then
-        tooltip:AddLine("OneKeyFishing: Alt+Click to add to fishing gear", unpack(TOOLTIP_COLOR))
+        tooltip:AddLine(L["OneKeyFishing: Alt+Click to add to fishing gear"], unpack(TOOLTIP_COLOR))
     end
 end
 

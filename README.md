@@ -4,6 +4,8 @@ Fish with one key in **WoW Forever**: the same key casts, hooks the bobber and l
 
 Every action in the game is a real key press. The addon never reacts to a bite by itself, does not listen to sounds and uses no external tools, so it stays within Blizzard's add-on rules.
 
+It works with a game client in any language. The addon's own interface is in English for now.
+
 ## Features
 
 - **One key** for everything: cast → hook → loot. The same key also applies a lure and opens fished clams when needed.
@@ -21,9 +23,12 @@ Every action in the game is a real key press. The addon never reacts to a bite b
 
 ## Installation
 
-1. Unpack `OneKeyFishing.zip` into `World of Warcraft\_forever_\Interface\AddOns`.
-   You should get `Interface\AddOns\OneKeyFishing\OneKeyFishing.toc`.
-2. Start the game or type `/reload`.
+- **CurseForge app**: search for *OneKeyFishing* and install it for WoW Forever.
+- **Manually**:
+  1. Download `OneKeyFishing-<version>.zip` from the releases.
+  2. Unpack it into `World of Warcraft\_forever_\Interface\AddOns`.
+     You should get `Interface\AddOns\OneKeyFishing\OneKeyFishing.toc`.
+  3. Restart the game (a `/reload` does not pick up a newly installed addon).
 
 ## Quick start
 
@@ -86,7 +91,7 @@ The catch value uses the higher of the vendor and the auction price. To use vend
 
 - **Left-click**: toggle fishing mode.
 - **Shift+Left-click**: statistics.
-- **Right-click**: menu with all actions (mode, statistics, settings, auction scan, reset indicator position, API check).
+- **Right-click**: menu with all actions (mode, statistics, settings, auction scan, reset indicator position, debug report).
 - **Drag**: move the button around the minimap.
 - The tooltip shows the mode, your Fishing skill, the session time, your key bindings and short instructions.
 - The button is grey while fishing mode is off.
@@ -115,7 +120,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
 
 ## Commands
 
-Typing commands is optional: everything is also available from the menus. `/fish` works the same as `/okf`.
+Typing commands is optional: everything is also available from the menus. `/onekeyfishing` works the same as `/okf`.
 
 | Command | What it does |
 |---|---|
@@ -124,7 +129,7 @@ Typing commands is optional: everything is also available from the menus. `/fish
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
 | `/okf scan` | scan auction prices (auction house must be open) |
-| `/okf debug` | show the API check report (useful for bug reports) |
+| `/okf debug` | show a report to copy into a bug report |
 
 ## Troubleshooting
 
@@ -134,10 +139,47 @@ Typing commands is optional: everything is also available from the menus. `/fish
 - **"Cannot apply ..." / "Cannot open ..."**: the lure needs a higher Fishing skill, or the container is locked. The addon skips that item for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the key opens it again.
 - **"No free bag space to take off ..."**: free a bag slot, then leave fishing mode again.
-- **Something else**: run `/okf debug` and copy the report from the window.
+- **Something else**: see [Reporting bugs](#reporting-bugs).
+
+## Reporting bugs
+
+1. Type `/okf debug` (or use **Debug report** in the minimap menu or the settings).
+2. Click the text in the window, press Ctrl+A and Ctrl+C.
+3. Open an issue with the report, what you did and what happened. Copy any Lua error text as well.
 
 ## Requirements
 
-- WoW Forever (Interface 16001).
+- WoW Forever (Interface 16001), any client language.
 - The Fishing skill.
 - No other addons or libraries.
+
+## Development
+
+```
+OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
+  OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/
+tools/                  check, build, install and link scripts (Node.js)
+docs/                   roadmap, publishing guide, plans
+```
+
+The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, macOS and Linux:
+
+| Command | What it does |
+|---|---|
+| `npm install` | install the development tools (once) |
+| `npm run check` | Lua syntax, globals, line length, locale keys, TOC and version checks |
+| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: changes show up after a `/reload` |
+| `npm run unlink` | remove that link |
+| `npm run dev` | package the working folder into `dist/` (folder + zip) |
+| `npm run build` | run the checks and package the last commit (refuses uncommitted changes) |
+| `npm run install-addon` | `npm run dev`, then copy the package into the game |
+
+`link`, `unlink` and `install-addon` need the path of the game's `Interface/AddOns` folder. Copy `.env.example`
+to `.env` (it is not committed) and fill in `WOW_ADDONS_DIR`, or set the same environment variable.
+
+Releases are built from version tags by GitHub Actions; see [docs/publishing.md](docs/publishing.md).
+Plans for later versions are in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## License
+
+[MIT](LICENSE)

@@ -13,7 +13,6 @@ globals = {
     "SLASH_ONEKEYFISHING2",
     "SlashCmdList",
     "UISpecialFrames",
-    "OneKeyFishingCopyWindow",
     "BINDING_HEADER_ONEKEYFISHING",
     "BINDING_NAME_ONEKEYFISHING_ACTION",
     "BINDING_NAME_ONEKEYFISHING_TOGGLE",
@@ -22,37 +21,35 @@ globals = {
     "OneKeyFishing_OnAddonCompartmentClick",
     "OneKeyFishing_OnAddonCompartmentEnter",
     "OneKeyFishing_OnAddonCompartmentLeave",
-    "OneKeyFishingStatsFrame",
 }
 
 read_globals = {
     -- Lua extensions provided by the client
-    "strsplit", "strtrim", "wipe", "tinsert", "tremove", "format",
+    "strsplit", "strtrim", "wipe", "unpack", "time",
 
     -- Frames and UI
     "CreateFrame", "UIParent", "DEFAULT_CHAT_FRAME", "ChatFontNormal", "GameTooltip", "Minimap",
-    "AddonCompartmentFrame", "Settings", "MenuUtil", "Enum",
+    "AddonCompartmentFrame", "AuctionHouseFrame", "RaidWarningFrame", "Settings", "MenuUtil", "Enum",
+    "StaticPopupDialogs", "StaticPopup_Show", "RaidNotice_AddMessage", "ChatTypeInfo", "YES", "NO",
+    "TooltipDataProcessor", "ItemLocation",
 
     -- Namespaced APIs
-    "C_AddOns", "C_CVar", "C_Spell", "C_SpellBook", "C_Item", "C_Container", "C_EquipmentSet",
-    "C_AuctionHouse", "C_Map", "C_TradeSkillUI", "C_EventUtils",
+    "C_AddOns", "C_CVar", "C_Spell", "C_SpellBook", "C_Item", "C_Container", "C_AuctionHouse", "C_Map",
+    "C_Timer", "C_TooltipInfo",
 
     -- Global API
-    "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "GetCVar", "InCombatLockdown",
-    "GetNumBindings", "GetBinding", "GetSpellInfo", "IsSpellKnown", "IsPlayerSpell",
-    "GetProfessions", "GetProfessionInfo", "GetNumSkillLines", "GetSkillLineInfo",
-    "GetInventoryItemID", "GetInventoryItemLink", "GetItemInfoInstant", "GetWeaponEnchantInfo",
-    "GetTime", "GetBindingKey", "SetOverrideBinding", "SetOverrideBindingClick", "ClearOverrideBindings",
-    "RegisterStateDriver", "C_Timer", "GetItemCount", "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
-    "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink",
-    "GetBindingText", "hooksecurefunc", "C_TooltipInfo", "TooltipDataProcessor",
-    "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "unpack", "HandleModifiedItemClick",
-    "UnitChannelInfo", "UnitCastingInfo", "UnitExists", "UnitName", "UnitGUID", "C_NamePlate", "GetLootSlotInfo", "GetLootSourceInfo", "ItemLocation",
-    "UnitIsAFK", "GetZoneText", "GetSubZoneText", "GetMoneyString", "RaidNotice_AddMessage", "RaidWarningFrame",
-    "ChatTypeInfo", "StaticPopupDialogs", "StaticPopup_Show", "YES", "NO", "time",
-    "GetCameraZoom", "CameraZoomIn", "CameraZoomOut", "GetCursorPosition", "AuctionHouseFrame", "SecondsToTime",
+    "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",
+    "GetProfessions", "GetProfessionInfo", "GetTime", "GetMoneyString", "SecondsToTime",
+    "GetBindingKey", "GetBindingText", "SetOverrideBinding", "SetOverrideBindingClick", "ClearOverrideBindings",
+    "RegisterStateDriver", "hooksecurefunc", "HandleModifiedItemClick",
+    "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "GetCursorPosition",
+    "GetInventoryItemID", "GetInventoryItemLink", "GetWeaponEnchantInfo", "GetItemCount",
+    "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
+    "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink", "GetLootSlotInfo", "GetLootSourceInfo",
+    "UnitChannelInfo", "UnitCastingInfo", "UnitGUID", "UnitIsAFK", "GetZoneText", "GetSubZoneText",
+    "GetCameraZoom", "CameraZoomIn", "CameraZoomOut",
 
     -- Constants
-    "WOW_PROJECT_ID", "WOW_PROJECT_MAINLINE", "WOW_PROJECT_CLASSIC", "INVSLOT_MAINHAND",
-    "INVSLOT_OFFHAND", "INVSLOT_RANGED", "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED", "NUM_BAG_SLOTS",
+    "WOW_PROJECT_ID", "INVSLOT_MAINHAND", "INVSLOT_OFFHAND", "INVSLOT_RANGED",
+    "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED", "NUM_BAG_SLOTS",
 }

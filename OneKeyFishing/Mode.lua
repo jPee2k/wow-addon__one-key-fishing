@@ -2,6 +2,7 @@
 -- Every CVar changed on enter is saved to the character DB first, so leaving the mode,
 -- logging out, or even a crash followed by the next login restores the original values.
 local _, ns = ...
+local L = ns.L
 
 local Mode = {}
 ns.Mode = Mode
@@ -60,7 +61,7 @@ function Mode.Enter()
         return
     end
     if InCombatLockdown() then
-        ns.Print("Cannot enter fishing mode in combat.")
+        ns.Print(L["Cannot enter fishing mode in combat."])
         return
     end
     if not ns.Action.Enable() then
@@ -73,7 +74,7 @@ function Mode.Enter()
     ApplyCVars()
     active = true
     pendingExit = false
-    ns.Print("Fishing mode |cff00ff00ON|r.")
+    ns.Print(L["Fishing mode %s."], "|cff00ff00" .. L["ON"] .. "|r")
     ns.Fire("MODE_CHANGED", true)
 end
 
@@ -92,7 +93,7 @@ function Mode.Exit()
     RestoreCVars()
     active = false
     pendingExit = false
-    ns.Print("Fishing mode |cffff3333OFF|r.")
+    ns.Print(L["Fishing mode %s."], "|cffff3333" .. L["OFF"] .. "|r")
     ns.Fire("MODE_CHANGED", false)
 end
 
@@ -124,7 +125,7 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     -- Left over from a session that ended without leaving the mode (crash, disconnect).
     if ns.charDB.savedCVars then
         RestoreCVars()
-        ns.Print("Restored game settings from an unfinished fishing session.")
+        ns.Print(L["Restored game settings from an unfinished fishing session."])
     end
 end)
 
@@ -166,8 +167,8 @@ local lastHint = 0
 function OneKeyFishing_ActionKeyIdle()
     if GetTime() - lastHint > 5 then
         lastHint = GetTime()
-        ns.Print("Fishing mode is off. Press your 'Toggle fishing mode' key first.")
+        ns.Print(L["Fishing mode is off. Press your 'Toggle fishing mode' key first."])
     end
 end
 
-ns.RegisterCommand("toggle", "enter or leave fishing mode", Mode.Toggle)
+ns.RegisterCommand("toggle", L["enter or leave fishing mode"], Mode.Toggle)

@@ -1,5 +1,6 @@
 -- CopyWindow: a movable window with read-only, selectable text (Ctrl+A, Ctrl+C).
 local _, ns = ...
+local L = ns.L
 
 local WINDOW_NAME = "OneKeyFishingCopyWindow"
 
@@ -37,7 +38,7 @@ local function CreateWindow()
 
     frame.hint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     frame.hint:SetPoint("BOTTOMLEFT", 14, 10)
-    frame.hint:SetText("Click the text, then Ctrl+A and Ctrl+C to copy.")
+    frame.hint:SetText(L["Click the text, then Ctrl+A and Ctrl+C to copy."])
 
     local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 14, -32)

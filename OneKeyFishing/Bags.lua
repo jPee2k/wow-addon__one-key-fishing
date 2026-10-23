@@ -1,5 +1,6 @@
 -- Bags: lures to apply and fished containers (clams) to open.
 local _, ns = ...
+local L = ns.L
 
 local Bags = {}
 ns.Bags = Bags
@@ -56,7 +57,7 @@ local function CheckLastLure()
         lastLure = nil
     elseif GetTime() - lastLure.time >= LURE_FAIL_DELAY then
         skippedLures[lastLure.itemID] = true
-        ns.Print("Cannot apply %s, skipping it for this session.",
+        ns.Print(L["Cannot apply %s, skipping it for this session."],
             select(2, C_Item.GetItemInfo(lastLure.itemID)) or lastLure.itemID)
         lastLure = nil
     end
@@ -105,13 +106,13 @@ local function CheckLastOpen()
         -- Its loot window was closed with loot left in it (full bags): wait until bag space frees up.
         if lastOpen.closed and now - lastOpen.closed >= LOOT_CLOSE_SETTLE then
             skippedForSpace[info.itemID] = FreeBagSlots()
-            ns.Print("Not enough bag space to loot %s. It will be opened again when you free a bag slot.",
+            ns.Print(L["Not enough bag space to loot %s. It will be opened again when you free a bag slot."],
                 info.hyperlink or info.itemID)
             lastOpen = nil
         end
     elseif now - lastOpen.time >= OPEN_FAIL_DELAY then
         skippedItems[info.itemID] = true
-        ns.Print("Cannot open %s, skipping it for this session.", info.hyperlink or info.itemID)
+        ns.Print(L["Cannot open %s, skipping it for this session."], info.hyperlink or info.itemID)
         lastOpen = nil
     end
 end

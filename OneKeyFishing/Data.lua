@@ -1,4 +1,4 @@
--- Data: static game data. The client may be localized (e.g. ruRU), so everything is matched by ID, never by name.
+-- Data: static game data. The client can run in any language, so everything is matched by ID, never by name.
 local _, ns = ...
 
 -- Fishing spell ranks, lowest to highest: Apprentice, Journeyman, Expert, Artisan.

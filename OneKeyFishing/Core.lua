@@ -1,10 +1,14 @@
 -- Core: namespace, event dispatch, saved variables and slash commands.
 local ADDON_NAME, ns = ...
+local L = ns.L
 
 ns.name = ADDON_NAME
 
 local GetMetadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 ns.version = GetMetadata and GetMetadata(ADDON_NAME, "Version") or "dev"
+if ns.version == "@project-version@" then
+    ns.version = "dev" -- loaded straight from the repository, not from a built package
+end
 
 local CHAT_PREFIX = "|cff33ccffOneKeyFishing|r: "
 
@@ -49,8 +53,8 @@ end
 
 -- Key binding labels (Options -> Keybindings -> AddOns)
 BINDING_HEADER_ONEKEYFISHING = "OneKeyFishing"
-BINDING_NAME_ONEKEYFISHING_ACTION = "Fishing action (cast / hook)"
-BINDING_NAME_ONEKEYFISHING_TOGGLE = "Toggle fishing mode"
+BINDING_NAME_ONEKEYFISHING_ACTION = L["Fishing action (cast / hook)"]
+BINDING_NAME_ONEKEYFISHING_TOGGLE = L["Toggle fishing mode"]
 
 -- Saved variables
 local DB_SCHEMA = 1
@@ -105,12 +109,44 @@ local function ApplyDefaults(target, defaults)
     end
 end
 
+-- Upgrades of the saved data layout: MIGRATIONS[n] turns schema n - 1 into schema n.
+-- Bump DB_SCHEMA and add an entry whenever a saved field is renamed, moved or reshaped.
+local MIGRATIONS = {
+    db = {},
+    charDB = {},
+}
+
+-- Runs the pending migrations; returns false when the data comes from a newer version of the addon.
+local function Migrate(data, migrations)
+    if next(data) == nil then
+        data.schema = DB_SCHEMA -- new data, nothing to upgrade
+        return true
+    end
+    local schema = data.schema or 1
+    if schema > DB_SCHEMA then
+        return false
+    end
+    for version = schema + 1, DB_SCHEMA do
+        -- A schema bump that only adds fields needs no entry: ApplyDefaults fills them in.
+        if migrations[version] then
+            migrations[version](data)
+        end
+    end
+    data.schema = DB_SCHEMA
+    return true
+end
+
 ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     if loadedName ~= ADDON_NAME then
         return
     end
     OneKeyFishingDB = OneKeyFishingDB or {}
     OneKeyFishingCharDB = OneKeyFishingCharDB or {}
+    local dbOk = Migrate(OneKeyFishingDB, MIGRATIONS.db)
+    local charOk = Migrate(OneKeyFishingCharDB, MIGRATIONS.charDB)
+    if not (dbOk and charOk) then
+        ns.Print(L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."])
+    end
     ApplyDefaults(OneKeyFishingDB, DB_DEFAULTS)
     ApplyDefaults(OneKeyFishingCharDB, CHAR_DB_DEFAULTS)
     ns.db = OneKeyFishingDB
@@ -126,7 +162,7 @@ function ns.RegisterCommand(name, description, fn)
 end
 
 local function PrintHelp()
-    ns.Print("v%s commands:", ns.version)
+    ns.Print(L["v%s commands:"], ns.version)
     local names = {}
     for name in pairs(ns.commands) do
         table.insert(names, name)
@@ -138,7 +174,7 @@ local function PrintHelp()
 end
 
 SLASH_ONEKEYFISHING1 = "/okf"
-SLASH_ONEKEYFISHING2 = "/fish"
+SLASH_ONEKEYFISHING2 = "/onekeyfishing"
 SlashCmdList.ONEKEYFISHING = function(input)
     local name, rest = (input or ""):match("^%s*(%S*)%s*(.-)%s*$")
     name = name:lower()

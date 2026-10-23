@@ -1,5 +1,6 @@
 -- Skill: Fishing skill and a warning when the current rank is (almost) capped and the next rank must be learned.
 local _, ns = ...
+local L = ns.L
 
 local Skill = {}
 ns.Skill = Skill
@@ -8,17 +9,20 @@ ns.Skill = Skill
 local WARN_BEFORE = 5
 
 local RANK_NAMES = {
-    [75] = "Apprentice",
-    [150] = "Journeyman",
-    [225] = "Expert",
-    [300] = "Artisan",
+    [75] = L["Apprentice"],
+    [150] = L["Journeyman"],
+    [225] = L["Expert"],
+    [300] = L["Artisan"],
 }
 
 -- Where to learn the rank that follows each cap. From the original game; Forever may differ.
 local NEXT_RANK = {
-    [75] = { name = "Journeyman", where = "a fishing trainer" },
-    [150] = { name = "Expert", where = "the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)" },
-    [225] = { name = "Artisan", where = "the quest from Nat Pagle (Dustwallow Marsh)" },
+    [75] = { name = L["Journeyman"], where = L["a fishing trainer"] },
+    [150] = {
+        name = L["Expert"],
+        where = L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"],
+    },
+    [225] = { name = L["Artisan"], where = L["the quest from Nat Pagle (Dustwallow Marsh)"] },
 }
 
 local warned = {} -- maxRank -> "near" | "cap", for this session
@@ -66,12 +70,12 @@ local function Check(repeatCap)
     if rank >= maxRank then
         if repeatCap or warned[maxRank] ~= "cap" then
             warned[maxRank] = "cap"
-            Announce(("Fishing skill capped (%d/%d): learn %s Fishing from %s."):format(
+            Announce((L["Fishing skill capped (%d/%d): learn %s Fishing from %s."]):format(
                 rank, maxRank, nextRank.name, nextRank.where), true)
         end
     elseif maxRank - rank <= WARN_BEFORE and not warned[maxRank] then
         warned[maxRank] = "near"
-        Announce(("Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."):format(
+        Announce((L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."]):format(
             rank, maxRank, maxRank - rank, nextRank.name, nextRank.where), false)
     end
 end
