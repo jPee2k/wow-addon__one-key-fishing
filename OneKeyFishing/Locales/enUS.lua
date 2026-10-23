@@ -51,6 +51,8 @@ L["ON"] = true
 L["OFF"] = true
 L["Restored game settings from an unfinished fishing session."] = true
 L["Fishing mode is off. Press your 'Toggle fishing mode' key first."] = true
+L["The fishing key is paused in combat."] = true
+L["Leaving fishing mode after combat."] = true
 L["enter or leave fishing mode"] = true
 
 -- Auction.lua

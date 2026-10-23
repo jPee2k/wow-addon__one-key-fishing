@@ -49,6 +49,13 @@ function Bags.NeedsLure()
     return ns.IsFishingPoleEquipped() and not GetWeaponEnchantInfo()
 end
 
+-- The lure landed: when it wears off later, that is not a failed attempt.
+ns.RegisterEvent("UNIT_INVENTORY_CHANGED", function(_, unit)
+    if unit == "player" and lastLure and GetWeaponEnchantInfo() then
+        lastLure = nil
+    end
+end)
+
 local function CheckLastLure()
     if not lastLure then
         return

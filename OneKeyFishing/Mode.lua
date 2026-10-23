@@ -9,6 +9,7 @@ ns.Mode = Mode
 
 local active = false
 local pendingExit = false
+local restoreAfterCombat = false -- the mode could not resume in combat: only the weapons came back
 
 local function DesiredCVars()
     local settings = ns.db.settings
@@ -84,7 +85,11 @@ function Mode.Exit()
     end
     -- Bindings are already dropped by the secure combat handler; finish the rest after combat.
     if InCombatLockdown() then
-        pendingExit = true
+        if not pendingExit then
+            pendingExit = true
+            ns.Gear.RestoreWeapons()
+            ns.Print(L["Leaving fishing mode after combat."])
+        end
         return
     end
     ns.Action.Disable()
@@ -118,6 +123,9 @@ ns.RegisterEvent("PLAYER_REGEN_ENABLED", function()
         Mode.Exit()
     elseif active then
         ns.Action.Rebind()
+    elseif restoreAfterCombat then
+        restoreAfterCombat = false
+        ns.Gear.Restore()
     end
 end)
 
@@ -150,9 +158,19 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
     C_Timer.After(RESUME_DELAY, function()
         if resume then
             Mode.Enter()
-        elseif not active and ns.Gear.HasPendingRestore() then
-            -- Logged out or crashed in fishing gear: put the normal gear back.
-            ns.Gear.Restore()
+        end
+        if not active then
+            -- Logged out or crashed in fishing gear, or the mode could not resume (e.g. in combat):
+            -- put the normal gear and camera back.
+            if ns.Gear.HasPendingRestore() then
+                if InCombatLockdown() then
+                    ns.Gear.RestoreWeapons()
+                    restoreAfterCombat = true
+                else
+                    ns.Gear.Restore()
+                end
+            end
+            ns.Camera.Restore()
         end
     end)
 end)
@@ -165,9 +183,17 @@ end
 -- The action key only does something while the mode is on; outside of it, explain why.
 local lastHint = 0
 function OneKeyFishing_ActionKeyIdle()
-    if GetTime() - lastHint > 5 then
+    local message
+    if not active then
+        message = L["Fishing mode is off. Press your 'Toggle fishing mode' key first."]
+    elseif pendingExit then
+        message = L["Leaving fishing mode after combat."]
+    elseif InCombatLockdown() then
+        message = L["The fishing key is paused in combat."] -- combat dropped the key's bindings
+    end
+    if message and GetTime() - lastHint > 5 then
         lastHint = GetTime()
-        ns.Print(L["Fishing mode is off. Press your 'Toggle fishing mode' key first."])
+        ns.Print(message)
     end
 end
 

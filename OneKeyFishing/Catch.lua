@@ -5,14 +5,14 @@ local _, ns = ...
 local LOOT_GRACE = 1
 
 local castID = 0
-local caughtCastID = 0
+local caughtCastID = 0 -- the last cast settled as caught or missed; casts up to it take no more loot
 
 ns.On("FISHING_CAST_START", function()
     castID = castID + 1
 end)
 
 ns.RegisterEvent("LOOT_READY", function()
-    if not IsFishingLoot() or caughtCastID == castID or castID == 0 then
+    if not IsFishingLoot() or caughtCastID >= castID then
         return
     end
     caughtCastID = castID
@@ -30,7 +30,8 @@ end)
 ns.On("FISHING_CAST_STOP", function()
     local stoppedID = castID
     C_Timer.After(LOOT_GRACE, function()
-        if caughtCastID ~= stoppedID and castID == stoppedID then
+        -- Also when the next cast already started: a quick recast must not hide the miss.
+        if caughtCastID < stoppedID then
             -- Settled as a miss: later fishing loot (e.g. fishing outside the mode) must not count for it.
             caughtCastID = stoppedID
             ns.Fire("FISH_MISSED")

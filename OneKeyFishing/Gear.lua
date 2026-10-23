@@ -432,7 +432,8 @@ end
 ns.RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function(_, slot)
     local swap = ns.charDB.gearSwap
     local entry = swap and swap[slot]
-    if entry and entry.restoring and GetInventoryItemID("player", slot) ~= entry.equipped then
+    -- `equipped == false` means we left the slot empty, so an empty slot is still ours.
+    if entry and entry.restoring and (GetInventoryItemID("player", slot) or false) ~= entry.equipped then
         swap[slot] = nil
         ns.charDB.gearSwap = next(swap) and swap or nil
     end

@@ -73,15 +73,20 @@ button:SetScript("PreClick", function(self)
     end
 end)
 
-local function ReadKeys()
-    wipe(keys)
+local function BoundKeys()
+    local list = {}
     local key1, key2 = GetBindingKey("ONEKEYFISHING_ACTION")
     if key1 then
-        table.insert(keys, key1)
+        table.insert(list, key1)
     end
     if key2 then
-        table.insert(keys, key2)
+        table.insert(list, key2)
     end
+    return list
+end
+
+local function ReadKeys()
+    keys = BoundKeys()
     return #keys > 0
 end
 
@@ -123,7 +128,7 @@ function Action.Enable()
         local _, _, _, startMS, _, _, _, channelSpellID = UnitChannelInfo("player")
         if startMS and ns.IsFishingSpell(channelSpellID) then
             channeling = true
-            ns.Fire("FISHING_CAST_START", channelSpellID, true)
+            ns.Fire("FISHING_CAST_START", channelSpellID)
         end
     end
     -- `channeling` is left to CHANNEL_STOP: re-entering during a cast must still bind the hook.
@@ -144,17 +149,36 @@ function Action.Disable()
     ns.Fire("ACTION_STATE", nil)
 end
 
--- Restores the right binding after combat dropped it.
+-- Re-reads the keys after the player changed the binding while the mode is on. Returns true if they changed.
+-- With every key unbound the old ones are kept until the mode is left.
+local function RefreshKeys()
+    local fresh = BoundKeys()
+    if #fresh == 0 or (fresh[1] == keys[1] and fresh[2] == keys[2]) then
+        return false
+    end
+    keys = fresh
+    return true
+end
+
+-- Restores the right binding after combat dropped it or the keys changed.
 function Action.Rebind()
     if not enabled or InCombatLockdown() then
         return
     end
+    RefreshKeys()
     if channeling then
         BindInteract()
     else
         BindCast()
     end
 end
+
+-- Our own overrides fire this event too, so rebind only when the keys really changed.
+ns.RegisterEvent("UPDATE_BINDINGS", function()
+    if enabled and not InCombatLockdown() and RefreshKeys() then
+        Action.Rebind()
+    end
+end)
 
 function Action.IsChanneling()
     return channeling

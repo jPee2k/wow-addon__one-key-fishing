@@ -10,6 +10,7 @@ ns.Stats = Stats
 local zoneKey, zoneName
 local segmentStart -- GetTime() when the running time segment began
 local castStart -- GetTime() when the current cast began
+local castChannelStart -- channel start time (ms) of the current cast, which identifies it across a /reload
 
 local function NewBucket()
     return { casts = 0, catches = 0, misses = 0, modeTime = 0, castTime = 0, items = {} }
@@ -157,15 +158,20 @@ end
 ---------------------------------------------------------------------------
 -- Events
 ---------------------------------------------------------------------------
--- `resumed`: a cast picked up after a /reload. It was counted before, and its time so far was flushed on logout.
-ns.On("FISHING_CAST_START", function(_, resumed)
-    if not resumed then
+-- A cast picked up again after a /reload was already counted: the channel start time identifies it.
+-- Its time so far was flushed on logout, so its time counts from now.
+ns.On("FISHING_CAST_START", function()
+    local _, _, _, startMS = UnitChannelInfo("player")
+    if not (startMS and startMS == ns.charDB.countedCast) then
         Add("casts", 1)
     end
+    ns.charDB.countedCast = nil
+    castChannelStart = startMS
     castStart = GetTime()
 end)
 
 ns.On("FISHING_CAST_STOP", function()
+    castChannelStart = nil
     if castStart then
         Add("castTime", GetTime() - castStart)
         castStart = nil
@@ -216,6 +222,9 @@ end)
 ns.RegisterEvent("ZONE_CHANGED", OnZoneChanged)
 ns.RegisterEvent("ZONE_CHANGED_INDOORS", OnZoneChanged)
 ns.RegisterEvent("ZONE_CHANGED_NEW_AREA", OnZoneChanged)
-ns.RegisterEvent("PLAYER_LOGOUT", FlushTime)
+ns.RegisterEvent("PLAYER_LOGOUT", function()
+    FlushTime()
+    ns.charDB.countedCast = castChannelStart -- a cast still running across a /reload is not counted again
+end)
 -- Loading screens do not count as fishing time; PLAYER_ENTERING_WORLD restarts the timer.
 ns.RegisterEvent("PLAYER_LEAVING_WORLD", FlushTime)

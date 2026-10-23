@@ -149,6 +149,7 @@ end)
 
 ns.RegisterEvent("AUCTION_HOUSE_CLOSED", function()
     isOpen = false
+    querySerial = querySerial + 1 -- a retry or timeout of the stopped scan must not run after reopening
     if current then
         ns.Print(L["Auction scan stopped: %d of %d price(s) found."], scanned, total)
     end
