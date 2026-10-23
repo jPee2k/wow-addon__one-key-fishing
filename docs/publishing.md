@@ -32,17 +32,20 @@ How a release is built and published, and what it is checked against.
 ## One-time setup (author)
 
 - [x] Create the GitHub repository and push `develop`.
-- [ ] Create `main` from `develop`, make it the default branch and protect it (pull requests only, the
+- [x] Create `main` from `develop`, make it the default branch and protect it (pull requests only, the
       `check` job required, no force pushes or deletion).
-- [ ] Create the CurseForge project "OneKeyFishing" (check that the name is free), category Professions,
-      license MIT, description from `README.md`, a few screenshots (indicator, statistics, settings, minimap menu).
-- [ ] Add `## X-Curse-Project-ID: <id>` and `## X-Website: <GitHub URL>` to `OneKeyFishing/OneKeyFishing.toc`.
-- [ ] Create a CurseForge API token and add it as the `CF_API_KEY` secret of the GitHub repository.
+- [x] Create the CurseForge project "OneKeyFishing" (ID 1761796, https://www.curseforge.com/wow/addons/onekeyfishing),
+      category Professions, license MIT, description from `README.md`.
+- [ ] Add a few screenshots to the CurseForge project (indicator, statistics, settings, minimap menu).
+- [x] Add `## X-Curse-Project-ID: <id>` and `## X-Website: <CurseForge project page URL>` to
+      `OneKeyFishing/OneKeyFishing.toc` (the website is the page players install from, not the repository).
+- [x] Create a CurseForge API token and add it as the `CF_API_KEY` secret of the GitHub repository.
       `GITHUB_TOKEN` is provided by GitHub Actions automatically.
-- [ ] **Risk**: the addon sits in a subfolder (`move-folders` in `.pkgmeta`, the same layout DBM uses), and
-      CurseForge and the packager must know WoW Forever as a game version and map
-      `## Interface: 16001` to it. Check after the game launches (November 4, 2026). If the automatic upload
-      fails, upload the zip from `npm run build` by hand and pick the game version on the website.
+- [x] Game version: CurseForge lists WoW Forever (game version type 88568; other Forever addons use the beta
+      version 1.60.1). BigWigsMods/packager v2.6.1 maps `## Interface: 16???` to Forever and 16001 to
+      `1.60.1`; without an exact match it takes the closest lower Forever version and warns. Check the game
+      version on the first uploaded file; if the upload fails, upload the zip from `npm run build` by hand and
+      pick the game version on the website.
 
 ## Blizzard UI Add-On Development Policy
 

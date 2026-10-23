@@ -1,9 +1,11 @@
 ## Interface: 16001
 ## Title: OneKeyFishing
 ## Notes: One-key fishing helper for WoW Forever: cast, hook and loot with a single key.
-## Author: jPee
+## Author: AveForged
 ## Version: @project-version@
 ## X-License: MIT
+## X-Curse-Project-ID: 1761796
+## X-Website: https://www.curseforge.com/wow/addons/onekeyfishing
 ## IconTexture: Interface\Icons\Trade_Fishing
 ## SavedVariables: OneKeyFishingDB
 ## SavedVariablesPerCharacter: OneKeyFishingCharDB
