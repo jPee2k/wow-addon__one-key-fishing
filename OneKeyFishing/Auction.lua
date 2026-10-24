@@ -135,10 +135,14 @@ local function EnsureButton()
     if button or not AuctionHouseFrame then
         return
     end
-    button = CreateFrame("Button", nil, AuctionHouseFrame, "UIPanelButtonTemplate")
-    button:SetSize(150, 22)
+    button = ns.CreateButton(AuctionHouseFrame, "", 150, Auction.Scan)
+    -- Wide enough for the longest text it shows, so it keeps its size while the count goes up.
+    for _, text in ipairs({ L["Scan fish prices"], (L["Scanning %d/%d"]):format(999, 999) }) do
+        button:SetText(text)
+        ns.FitButton(button)
+        button.minWidth = button:GetWidth() or button.minWidth
+    end
     button:SetPoint("BOTTOMRIGHT", AuctionHouseFrame, "TOPRIGHT", -24, 2)
-    button:SetScript("OnClick", Auction.Scan)
     UpdateButton()
 end
 
@@ -179,4 +183,6 @@ ns.RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED", function(_, itemKey)
     Finish(itemKey.itemID, info and info.buyoutAmount)
 end)
 
-ns.RegisterCommand("scan", L["scan auction prices of caught items (auction house must be open)"], Auction.Scan)
+ns.RegisterCommand("scan", function()
+    return L["scan auction prices of caught items (auction house must be open)"]
+end, Auction.Scan)

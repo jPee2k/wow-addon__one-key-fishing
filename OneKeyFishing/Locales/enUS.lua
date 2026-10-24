@@ -1,20 +1,11 @@
--- English strings, the base locale. Keys are the English text itself and every entry is `true`
--- ("use the key"); a missing entry also falls back to its key, so the addon never shows a blank.
--- A translation goes into Locales/<locale>.lua (loaded after this file) and sets L[english] = translation
--- only when GetLocale() matches. `npm run check` keeps this list in sync with the code.
+-- English, the base language. Keys are the English text itself and every entry is `true` ("use the key").
+-- Every text the code looks up through L is listed here and vice versa (`npm run check`). A translation is a
+-- Locales/<code>.lua file listed after this one in the TOC; it registers itself through ns.AddTranslation
+-- (see Localization.lua and docs/languages.md).
 local _, ns = ...
+local L = ns.L
 
--- The strings live in a separate table so every assignment goes through __newindex.
-local strings = {}
-local L = setmetatable({}, {
-    __index = function(_, key)
-        return strings[key] or key
-    end,
-    __newindex = function(_, key, value)
-        strings[key] = value == true and key or value
-    end,
-})
-ns.L = L
+ns.AddTranslation("enUS", "English", function() end)
 
 -- Core.lua
 L["Fishing action (cast / hook)"] = true
@@ -187,6 +178,14 @@ L["Automatic: no fishing pole in your bags."] = true
 L["Settings cannot be opened in combat."] = true
 L["Settings panel is not available in this client."] = true
 L["open the settings"] = true
+L["Language:"] = true
+L["Interface language"] = true
+L["Game client language"] = true
+L["Korean and Chinese may show as squares on a game client in another language."] = true
+L["Pick English to get a readable interface back."] = true
+L["The language changes after reloading the interface."] = true
+L["Reload now"] = true
+L["Later"] = true
 
 -- UI/ItemHooks.lua
 L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = true

@@ -38,6 +38,8 @@ local function BuildReport()
     local version, build, _, interface = GetBuildInfo()
     table.insert(lines, ("Game %s (%s), interface %s, project %s, locale %s"):format(tostring(version),
         tostring(build), tostring(interface), tostring(WOW_PROJECT_ID), GetLocale()))
+    table.insert(lines, ("Language: %s (in use: %s)"):format(tostring(ns.db.settings.language),
+        tostring(ns.language)))
 
     Section(lines, "Mode", function()
         add("fishing mode: %s, leaving after combat: %s, channeling: %s, in combat: %s",
@@ -116,4 +118,4 @@ function ns.ShowReport()
     ns.ShowCopyWindow(L["OneKeyFishing - debug report"], BuildReport())
 end
 
-ns.RegisterCommand("debug", L["show a report to copy into a bug report"], ns.ShowReport)
+ns.RegisterCommand("debug", function() return L["show a report to copy into a bug report"] end, ns.ShowReport)

@@ -1,7 +1,6 @@
--- Core.lua: the locale table and the saved-variable migrations.
+-- Core.lua: the saved-variable migrations.
 
-load_files({ "Locales/enUS.lua", "Core.lua" })
-local L = ns.L
+load_files({ "Localization.lua", "Locales/enUS.lua", "Core.lua" })
 
 -- Logs in with the given saved data; returns the chat lines printed while loading.
 local function LoadWith(db, charDB)
@@ -10,20 +9,6 @@ local function LoadWith(db, charDB)
     fire("ADDON_LOADED", "OneKeyFishing")
     return chat
 end
-
-test("locale: a listed key returns the English text", function()
-    eq(L["Cast"], "Cast")
-end)
-
-test("locale: an unlisted key falls back to itself", function()
-    eq(L["Something unlisted"], "Something unlisted")
-end)
-
-test("locale: a translation replaces the English text", function()
-    L["Cast"] = "Cast (translated)"
-    eq(L["Cast"], "Cast (translated)")
-    L["Cast"] = true
-end)
 
 test("migrations: a new player gets the current schema and the defaults", function()
     local printed = LoadWith(nil, nil)

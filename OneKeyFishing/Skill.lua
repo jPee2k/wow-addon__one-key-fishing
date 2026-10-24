@@ -8,22 +8,31 @@ ns.Skill = Skill
 -- Points before the cap at which the first warning appears.
 local WARN_BEFORE = 5
 
-local RANK_NAMES = {
-    [75] = L["Apprentice"],
-    [150] = L["Journeyman"],
-    [225] = L["Expert"],
-    [300] = L["Artisan"],
-}
+-- The rank tables are built on first use: the texts need the language, which is set after the files load.
+local rankNames, nextRanks
+
+local function RankNames()
+    rankNames = rankNames or {
+        [75] = L["Apprentice"],
+        [150] = L["Journeyman"],
+        [225] = L["Expert"],
+        [300] = L["Artisan"],
+    }
+    return rankNames
+end
 
 -- Where to learn the rank that follows each cap. From the original game; Forever may differ.
-local NEXT_RANK = {
-    [75] = { name = L["Journeyman"], where = L["a fishing trainer"] },
-    [150] = {
-        name = L["Expert"],
-        where = L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"],
-    },
-    [225] = { name = L["Artisan"], where = L["the quest from Nat Pagle (Dustwallow Marsh)"] },
-}
+local function NextRanks()
+    nextRanks = nextRanks or {
+        [75] = { name = L["Journeyman"], where = L["a fishing trainer"] },
+        [150] = {
+            name = L["Expert"],
+            where = L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"],
+        },
+        [225] = { name = L["Artisan"], where = L["the quest from Nat Pagle (Dustwallow Marsh)"] },
+    }
+    return nextRanks
+end
 
 local warned = {} -- maxRank -> "near" | "cap", for this session
 
@@ -41,7 +50,7 @@ function Skill.Get()
 end
 
 function Skill.GetRankName(maxRank)
-    return RANK_NAMES[maxRank] or ""
+    return RankNames()[maxRank] or ""
 end
 
 local function Announce(text, loud)
@@ -63,7 +72,7 @@ local function Check(repeatCap)
         session.skillStart = rank
     end
 
-    local nextRank = NEXT_RANK[maxRank]
+    local nextRank = NextRanks()[maxRank]
     if not nextRank or not ns.db.settings.skillCapWarning then
         return
     end

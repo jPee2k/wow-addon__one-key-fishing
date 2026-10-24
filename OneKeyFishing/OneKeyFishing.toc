@@ -13,7 +13,17 @@
 ## AddonCompartmentFuncOnEnter: OneKeyFishing_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: OneKeyFishing_OnAddonCompartmentLeave
 
+Localization.lua
 Locales\enUS.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\ukUA.lua
+Locales\koKR.lua
+Locales\ptBR.lua
+Locales\zhTW.lua
+Locales\zhCN.lua
 Core.lua
 Data.lua
 Gear.lua
