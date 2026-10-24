@@ -1,7 +1,8 @@
 # BigWigsMods/packager configuration (used by .github/workflows/release.yml).
 # The addon lives in the OneKeyFishing/ folder of the repository; move-folders makes that folder the
 # package. The rest of the repository root lands in the same folder, so `ignore` leaves out the tools, docs
-# and project files (dotfiles are skipped by the packager itself); `npm run check` keeps the list complete.
+# and project files (dotfiles are skipped by the packager itself; the AI tooling folders are listed anyway);
+# `npm run check` keeps the list complete.
 # The local equivalent is `npm run build`.
 package-as: OneKeyFishing
 
@@ -20,3 +21,5 @@ ignore:
   - tests
   - docs
   - dist
+  - .claude
+  - .specify
