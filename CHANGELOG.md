@@ -4,6 +4,22 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The addon speaks your language: English, Deutsch, Español (EU), Español (AL), Français, Українська, 한국어,
+  Português, 繁體中文 and 简体中文. It follows the game client's language (English when there is no translation,
+  also on a Russian client).
+- Language setting at the top right of the settings page: pick a language by its own name, or "Game client
+  language". Українська is available this way. A change applies after a reload, which the addon offers.
+
+### Changed
+
+- Buttons grow to fit longer texts; long statistics labels are cut at the first column (the tooltip shows them
+  in full).
+- `/okf debug` shows the language setting, the language in use and the client language.
+
 ## [1.0.0] - 2026-10-23
 
 First public release, for WoW Forever.

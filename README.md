@@ -4,7 +4,7 @@ Fish with one key in **WoW Forever**: the same key casts, hooks the bobber and l
 
 Every action in the game is a real key press. The addon never reacts to a bite by itself, does not listen to sounds and uses no external tools, so it stays within Blizzard's add-on rules.
 
-It works with a game client in any language. The addon's own interface is in English for now.
+It works with a game client in any language. The addon speaks English, Deutsch, Español (EU), Español (AL), Français, Українська, 한국어, Português, 繁體中文 and 简体中文: it follows your game client's language, or the one you pick in the settings.
 
 ## Features
 
@@ -125,6 +125,8 @@ The same entry is in the Addon Compartment (the addons button next to the minima
 - Use scanned auction prices for catch value
 - Zoom the camera while fishing (set the distance with **−** and **+**)
 - Show the minimap button
+
+**Language** (top right of the page): **Game client language** follows your client and uses English when there is no translation for it (a Russian client gets English). Pick a language from the menu to use it instead; Українська is only available this way, because the game has no Ukrainian client. The new language shows after a reload: the addon asks **Reload now** or **Later**. Korean and Chinese may show as squares on a client in another language; pick **English** to get a readable interface back. See [docs/languages.md](docs/languages.md).
 
 ## Commands
 

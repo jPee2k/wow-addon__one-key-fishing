@@ -1,8 +1,8 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
-//   ASCII-only Lua, TOC and XML files,
-//   no Cyrillic text anywhere, the addon folder holds only packaged files, the repository root is packaged
-//   or ignored in .pkgmeta, TOC file list, locale keys, and the version in package.json vs CHANGELOG.md.
+//   ASCII-only Lua, TOC and XML files (translations excepted), the addon folder holds only packaged files, the
+//   repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, and the version in
+//   package.json vs CHANGELOG.md.
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
@@ -12,14 +12,11 @@ const MAX_LINE_LENGTH = 120;
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
-const TEXT_EXTENSIONS = new Set([".lua", ".toc", ".xml", ".md", ".json", ".yml", ".yaml", ".mjs", ".js", ""]);
 // Globals of the Lua runtime itself; WoW API names belong in .luacheckrc.
 const LUA_BUILTINS = new Set(("_G assert error ipairs pairs next pcall print select tonumber tostring type unpack " +
   "math string table os coroutine setmetatable getmetatable rawget rawset rawequal xpcall").split(" "));
 
-// Built from code points so this file itself stays free of Cyrillic.
-const NON_ASCII = new RegExp("[^" + String.fromCharCode(0) + "-" + String.fromCharCode(0x7f) + "]");
-const CYRILLIC = new RegExp("[" + String.fromCharCode(0x400) + "-" + String.fromCharCode(0x4ff) + "]");
+const NON_ASCII = /[^\x00-\x7f]/;
 
 const problems = [];
 const problem = (where, message) => problems.push(`${where}: ${message}`);
@@ -80,8 +77,21 @@ function checkPackagerKeywords(file, lines) {
   });
 }
 
-// Lua 5.1 syntax and line length (and packager keywords in addon files); returns the parsed chunk, or null
-// after a syntax error.
+// A font file set with SetFont draws only the scripts that file has (also through a variable or
+// STANDARD_TEXT_FONT); the game's font objects (GameFontNormal, ... through a template or SetFontObject) pick a
+// Korean, Chinese or Cyrillic font when the text needs it, so the translations stay readable.
+const SET_FONT = /[:.]SetFont\s*\(/;
+
+function checkFontPaths(file, lines) {
+  lines.forEach((line, i) => {
+    if (SET_FONT.test(line)) {
+      problem(`${rel(file)}:${i + 1}`, "SetFont (use the game's font objects: a template or SetFontObject)");
+    }
+  });
+}
+
+// Lua 5.1 syntax and line length (and packager keywords and font paths in addon files); returns the parsed
+// chunk, or null after a syntax error.
 function parseLua(file) {
   const source = fs.readFileSync(file, "utf8");
   const lines = source.split(/\r?\n/);
@@ -92,6 +102,7 @@ function parseLua(file) {
   });
   if (inAddon(file)) {
     checkPackagerKeywords(file, lines);
+    checkFontPaths(file, lines);
   }
   try {
     return luaparse.parse(source, { luaVersion: "5.1", scope: true });
@@ -126,19 +137,17 @@ for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
   checkPackagerKeywords(file, fs.readFileSync(file, "utf8").split(/\r?\n/));
 }
 
-// Lua, TOC and XML files are plain ASCII; nothing in the repository is written in Cyrillic.
+// Lua, TOC and XML files are plain ASCII. Translations are the exception: Locales/<code>.lua (all but enUS.lua)
+// is UTF-8 text in its own language.
+const isTranslation = (file) =>
+  inAddon(file) && relAddon(file).startsWith("Locales/") && relAddon(file) !== "Locales/enUS.lua";
 for (const file of files) {
-  const ext = path.extname(file).toLowerCase();
-  if (!TEXT_EXTENSIONS.has(ext) || path.basename(file) === "package-lock.json") {
+  if (![".lua", ".toc", ".xml"].includes(path.extname(file).toLowerCase()) || isTranslation(file)) {
     continue;
   }
-  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
-  const asciiOnly = [".lua", ".toc", ".xml"].includes(ext);
-  lines.forEach((line, i) => {
-    if (asciiOnly && NON_ASCII.test(line)) {
+  fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
+    if (NON_ASCII.test(line)) {
       problem(`${rel(file)}:${i + 1}`, "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
-    } else if (CYRILLIC.test(line)) {
-      problem(`${rel(file)}:${i + 1}`, "Cyrillic text (the project is written in English)");
     }
   });
 }

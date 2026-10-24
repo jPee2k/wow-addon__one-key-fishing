@@ -11,12 +11,17 @@ local DEFAULT_POSITION = { "CENTER", "CENTER", 0, -180 }
 local HOOK_ICON = "Interface\\Icons\\INV_Misc_Fish_02"
 -- The channel starts on the throw; the bobber needs about 1-2 s to land and become the soft target.
 local BOBBER_GRACE_MS = 3000
-local LABELS = {
-    cast = L["Cast"],
-    hook = L["Hook!"],
-    lure = L["Apply lure"],
-    open = L["Open"],
-}
+local labels -- built on first use: the texts need the language, which is set after the files load
+
+local function Label(kind)
+    labels = labels or {
+        cast = L["Cast"],
+        hook = L["Hook!"],
+        lure = L["Apply lure"],
+        open = L["Open"],
+    }
+    return labels[kind]
+end
 
 local frame = CreateFrame("Frame", "OneKeyFishingIndicator", UIParent, "BackdropTemplate")
 Indicator.frame = frame
@@ -154,7 +159,7 @@ function Indicator.Update()
         -- The key would interact with something else (or nothing): warn instead of "Hook!".
         frame.label:SetText("|cffff4444" .. L["No bobber"] .. "|r")
     else
-        frame.label:SetText(LABELS[kind])
+        frame.label:SetText(Label(kind))
     end
     frame.key:SetText(KeyText())
     if kind == "hook" then

@@ -25,9 +25,14 @@ The game client can run in any language, so the addon MUST NOT depend on localiz
 - Where only localized text exists (tooltips), parsing MUST derive the needle from the client's
   own localized data and MUST tolerate case changes in non-ASCII text.
 - Every visible string MUST go through `ns.L` with a literal English key; color codes stay
-  outside the strings; enUS keys and code usage MUST stay in sync. The debug report is the only
-  deliberate exception.
-- Everything in the repository (code, comments, docs, commit messages) is written in English.
+  outside the strings; enUS keys and code usage MUST stay in sync. The only deliberate
+  exceptions are shown as they are, without `ns.L`: the debug report, language names written in
+  their own language (the language setting), and the addon name "OneKeyFishing" with its
+  version string.
+- English is the development language: code, comments, docs, specs, commit messages, branch
+  names and pull requests are written in English, whatever language the conversation is in.
+  The only exceptions are the translations and language names written in their own language
+  (`docs/languages.md`).
 
 Rationale: a fishing addon that works only on English clients fails most of its audience silently.
 
@@ -87,8 +92,9 @@ Rationale: a small addon stays maintainable only while each module has one clear
 
 - Shipped files live in `OneKeyFishing/` and are exactly the TOC, the files it lists and
   `Bindings.xml`; the package adds only `LICENSE`, `README.md` and `CHANGELOG.md`.
-- Lua, TOC and XML files are ASCII-only, lines are at most 120 characters, and no Cyrillic
-  appears anywhere in the repository.
+- Lua, TOC and XML files are ASCII-only and lines are at most 120 characters. Translation
+  files (`Locales/<code>.lua` other than `enUS.lua`) are the exception: UTF-8 text in its own
+  language.
 - Addon Lua and XML MUST NOT contain packager keywords (`@project-version@`, `--@debug@` blocks).
 - Every repository root entry is either packaged or listed in the `.pkgmeta` `ignore` list.
 - Tooling requires Node.js 18+; `npm run check` enforces the rules above.
@@ -116,4 +122,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-10-24
+**Version**: 1.2.1 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-10-24

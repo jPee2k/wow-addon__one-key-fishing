@@ -37,57 +37,48 @@ end
 
 -- Sections and rows; `key` names a row's cells in frame.cells. A row's text(c) gets the column context:
 -- c.bucket, c.column, c.liveMode, c.liveCast (seconds not yet in the bucket), c.value (Stats.GetValue).
--- `live` rows are updated every second while the timer runs; the rest only on events.
-local ROWS = {
-    { section = L["Time"] },
-    { key = "timeFishing", label = L["Time fishing"], live = true,
-        tip = L["Time in fishing mode. Paused while AFK if that option is on."],
-        text = function(c) return ColumnTime(c.column, c.bucket.modeTime + c.liveMode) end },
-    { key = "timeCasting", label = L["Time casting"], live = true,
-        tip = L["Time with the bobber in the water."],
-        text = function(c) return ColumnTime(c.column, c.bucket.castTime + c.liveCast) end },
-    { section = L["Results"] },
-    { key = "casts", label = L["Casts"], tip = L["Fishing casts made in fishing mode."],
-        text = function(c) return tostring(c.bucket.casts) end },
-    { key = "catches", label = L["Catches"], tip = L["Casts that brought loot."],
-        text = function(c) return tostring(c.bucket.catches) end },
-    { key = "misses", label = L["Nothing caught"], tip = L["Casts that ended without loot."],
-        text = function(c) return tostring(c.bucket.misses) end },
-    { key = "catchesPerHour", label = L["Catches per hour"],
-        tip = L["Catches per hour of fishing time. Updated with every cast and with Refresh."],
-        text = function(c)
-            local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
-            return value and ("%.1f"):format(value) or "-"
-        end },
-    { section = L["Money"] },
-    { key = "value", label = L["Value"],
-        tip = L["Items caught, at the higher of the vendor price and the last scanned auction price."],
-        text = function(c) return ns.FormatMoney(c.value) end },
-    { key = "goldPerHour", label = L["Gold per hour"],
-        tip = L["Value per hour of fishing time. Updated with every cast and with Refresh."],
-        text = function(c)
-            local perHour = PerHour(c.value, c.bucket.modeTime + c.liveMode)
-            return perHour and ns.FormatMoney(perHour) or "-"
-        end },
-}
+-- `live` rows are updated every second while the timer runs; the rest only on events. Built by Create(): the
+-- labels need the language, which is set after the files load.
+local ROWS
+local function BuildRows()
+    return {
+        { section = L["Time"] },
+        { key = "timeFishing", label = L["Time fishing"], live = true,
+            tip = L["Time in fishing mode. Paused while AFK if that option is on."],
+            text = function(c) return ColumnTime(c.column, c.bucket.modeTime + c.liveMode) end },
+        { key = "timeCasting", label = L["Time casting"], live = true,
+            tip = L["Time with the bobber in the water."],
+            text = function(c) return ColumnTime(c.column, c.bucket.castTime + c.liveCast) end },
+        { section = L["Results"] },
+        { key = "casts", label = L["Casts"], tip = L["Fishing casts made in fishing mode."],
+            text = function(c) return tostring(c.bucket.casts) end },
+        { key = "catches", label = L["Catches"], tip = L["Casts that brought loot."],
+            text = function(c) return tostring(c.bucket.catches) end },
+        { key = "misses", label = L["Nothing caught"], tip = L["Casts that ended without loot."],
+            text = function(c) return tostring(c.bucket.misses) end },
+        { key = "catchesPerHour", label = L["Catches per hour"],
+            tip = L["Catches per hour of fishing time. Updated with every cast and with Refresh."],
+            text = function(c)
+                local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
+                return value and ("%.1f"):format(value) or "-"
+            end },
+        { section = L["Money"] },
+        { key = "value", label = L["Value"],
+            tip = L["Items caught, at the higher of the vendor price and the last scanned auction price."],
+            text = function(c) return ns.FormatMoney(c.value) end },
+        { key = "goldPerHour", label = L["Gold per hour"],
+            tip = L["Value per hour of fishing time. Updated with every cast and with Refresh."],
+            text = function(c)
+                local perHour = PerHour(c.value, c.bucket.modeTime + c.liveMode)
+                return perHour and ns.FormatMoney(perHour) or "-"
+            end },
+    }
+end
 
 local function CreateText(parent, template, justify)
     local fontString = parent:CreateFontString(nil, "OVERLAY", template)
     fontString:SetJustifyH(justify or "LEFT")
     return fontString
-end
-
-local function Confirm(key, text, onAccept)
-    StaticPopupDialogs[key] = {
-        text = text,
-        button1 = YES,
-        button2 = NO,
-        OnAccept = onAccept,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-    StaticPopup_Show(key)
 end
 
 local function ShowRowTooltip(self)
@@ -117,6 +108,9 @@ local function CreateTable(f, headerY)
             local label = CreateText(f, "GameFontHighlight")
             label:SetPoint("TOPLEFT", LABEL_X, y)
             label:SetText(definition.label)
+            -- A long translation is cut at the first column; the row tooltip shows it in full.
+            label:SetWidth(COLUMN_X[1] - LABEL_X - 8)
+            label:SetWordWrap(false)
             -- Font strings take no mouse input: a frame over the label shows the explanation.
             local hover = CreateFrame("Frame", nil, f)
             hover:SetPoint("TOPLEFT", LABEL_X, y)
@@ -144,6 +138,7 @@ local function CreateTable(f, headerY)
 end
 
 local function Create()
+    ROWS = BuildRows()
     local ok, f = pcall(CreateFrame, "Frame", nil, UIParent, "BasicFrameTemplateWithInset")
     if not ok then
         f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
@@ -236,14 +231,14 @@ local function Create()
 
     -- Buttons
     local resetSession = CreateButton(f, L["Reset session"], 130, function()
-        Confirm("ONEKEYFISHING_RESET_SESSION", L["Reset the fishing statistics of this session?"], function()
+        ns.ShowPopup("ONEKEYFISHING_RESET_SESSION", L["Reset the fishing statistics of this session?"], function()
             ns.Stats.ResetSession()
             StatsFrame.Refresh() -- right away: the old buckets are gone
         end)
     end)
     resetSession:SetPoint("BOTTOMLEFT", 14, 12)
     local resetAll = CreateButton(f, L["Reset all"], 130, function()
-        Confirm("ONEKEYFISHING_RESET_ALL", L["Delete ALL fishing statistics of this character?"], function()
+        ns.ShowPopup("ONEKEYFISHING_RESET_ALL", L["Delete ALL fishing statistics of this character?"], function()
             ns.Stats.ResetAll()
             StatsFrame.Refresh()
         end)
@@ -253,6 +248,17 @@ local function Create()
     refresh:SetPoint("LEFT", resetAll, "RIGHT", 8, 0)
     f.scan = CreateButton(f, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
     f.scan:SetPoint("BOTTOMRIGHT", -14, 12)
+    -- Translated buttons can be too wide: the window widens for the three left buttons, and the Scan button gets
+    -- a row of its own (the window grows by that row, so the zone list stays clear of it).
+    local leftRow = 14 + (resetSession:GetWidth() or 0) + 8 + (resetAll:GetWidth() or 0) + 8
+        + (refresh:GetWidth() or 0) + 14
+    local width = math.max(WIDTH, leftRow)
+    f:SetWidth(width)
+    if leftRow + 8 + (f.scan:GetWidth() or 0) > width then
+        f:SetHeight(HEIGHT + 28)
+        f.scan:ClearAllPoints()
+        f.scan:SetPoint("BOTTOMRIGHT", -14, 40)
+    end
 
     local elapsed = 0
     f:SetScript("OnUpdate", function(_, delta)
@@ -438,4 +444,4 @@ ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
     end
 end)
 
-ns.RegisterCommand("stats", L["show the fishing statistics"], StatsFrame.Toggle)
+ns.RegisterCommand("stats", function() return L["show the fishing statistics"] end, StatsFrame.Toggle)

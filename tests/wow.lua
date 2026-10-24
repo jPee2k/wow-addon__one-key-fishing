@@ -14,6 +14,7 @@
 --   in_combat = true                    InCombatLockdown
 --   loot = { fishing = true, items = { { itemID, quantity } } }   the open loot window (fire LOOT_READY)
 --   addon_version = "@project-version@"   the TOC's Version field (C_AddOns.GetAddOnMetadata)
+--   CLIENT_LOCALE = "deDE"              GetLocale (the game client's language), set before load_addon()
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -373,6 +374,31 @@ function accept_popup()
     StaticPopupDialogs[key].OnAccept()
 end
 
+-- Declines the popup that was shown last (its second button).
+function cancel_popup()
+    local key = assert(rawget(_G, "last_popup"), "no popup was shown")
+    if StaticPopupDialogs[key].OnCancel then
+        StaticPopupDialogs[key].OnCancel()
+    end
+end
+
+function StaticPopup_Hide(key)
+    if rawget(_G, "last_popup") == key then
+        last_popup = nil
+    end
+end
+
+-- Forgets the last popup, so a test can assert that no new one was shown.
+function reset_popup()
+    last_popup = nil
+end
+
+-- ReloadUI only counts: reload_count is how often the addon asked for a reload.
+reload_count = 0
+function ReloadUI()
+    reload_count = reload_count + 1
+end
+
 Settings = {
     RegisterCanvasLayoutCategory = function()
         return { GetID = function() return 1 end }
@@ -554,8 +580,9 @@ function GetSubZoneText()
     return ""
 end
 
+CLIENT_LOCALE = "enUS"
 function GetLocale()
-    return "enUS"
+    return CLIENT_LOCALE
 end
 
 function GetBuildInfo()
@@ -611,6 +638,19 @@ function load_files(files)
         local chunk = assert(loadfile(ADDON_DIR .. "/" .. file))
         chunk("OneKeyFishing", ns)
     end
+end
+
+-- Reads Locales/<code>.lua on its own: returns the native name and the translated texts (key -> text).
+function load_translation(code)
+    local name, texts = nil, {}
+    assert(loadfile(ADDON_DIR .. "/Locales/" .. code .. ".lua"))("OneKeyFishing", {
+        AddTranslation = function(registered, nativeName, fill)
+            assert(registered == code, code .. ".lua registers " .. tostring(registered))
+            name = nativeName
+            fill(texts)
+        end,
+    })
+    return name, texts
 end
 
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.

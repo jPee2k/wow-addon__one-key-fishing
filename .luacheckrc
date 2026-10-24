@@ -30,7 +30,8 @@ read_globals = {
     -- Frames and UI
     "CreateFrame", "UIParent", "DEFAULT_CHAT_FRAME", "ChatFontNormal", "GameTooltip", "Minimap",
     "AddonCompartmentFrame", "AuctionHouseFrame", "RaidWarningFrame", "Settings", "MenuUtil", "Enum",
-    "StaticPopupDialogs", "StaticPopup_Show", "RaidNotice_AddMessage", "ChatTypeInfo", "YES", "NO",
+    "StaticPopupDialogs", "StaticPopup_Show", "StaticPopup_Hide", "ReloadUI", "RaidNotice_AddMessage",
+    "ChatTypeInfo", "YES", "NO",
     "TooltipDataProcessor", "ItemLocation",
 
     -- Namespaced APIs
