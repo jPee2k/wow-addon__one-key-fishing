@@ -323,10 +323,10 @@ end)
 test("the game refusing every path: unavailable", function()
     in_guild, group_type = true, "party"
     addon_send_result.default, bn_send_result = 9, 9
-    for _ = 1, 5 do
+    for i = 1, 5 do -- one player counts once, so five of them on each path
         ns.Comm.Broadcast("H abcd 0 1 aaaaaaa")
-        ns.Comm.Send("w:Someone", "Wab")
-        ns.Comm.Send("b:5", "Wab")
+        ns.Comm.Send("w:Someone" .. i, "Wab")
+        ns.Comm.Send("b:" .. (10 + i), "Wab")
     end
     advance(60)
     eq(Share.GetStatus().state, "unavailable", "state")

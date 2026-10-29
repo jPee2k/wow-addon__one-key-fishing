@@ -88,7 +88,8 @@ function ns.OpenRadioMenu(owner, choices, isSelected, choose)
 end
 
 -- A two-button popup (Yes / No unless other texts are given); onAccept runs on the first button, onCancel on
--- the second, onHide whenever the popup closes (either button or Escape).
+-- the second, onHide whenever the popup closes (either button or Escape). Returns the dialog, or nil when the game
+-- had no free dialog frame (other addons' prompts): nothing is shown then.
 function ns.ShowPopup(key, text, onAccept, acceptText, cancelText, onCancel, onHide)
     StaticPopupDialogs[key] = {
         text = text,
@@ -102,7 +103,7 @@ function ns.ShowPopup(key, text, onAccept, acceptText, cancelText, onCancel, onH
         whileDead = true,
         hideOnEscape = true,
     }
-    StaticPopup_Show(key)
+    return StaticPopup_Show(key)
 end
 
 function ns.Print(msg, ...)

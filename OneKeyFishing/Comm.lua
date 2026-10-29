@@ -17,7 +17,9 @@ local WHISPER_PACE = 0.5 -- seconds between whispers and Battle.net messages
 local BUDGET = 50 * 1024 -- bytes sent per BUDGET_MINUTES, counted per minute; above it only BYE goes out
 local BUDGET_MINUTES = 60
 Comm.BUDGET = BUDGET -- Share.lua derives its per-sender limits from it
-local THROTTLE_BACKOFF, MAX_THROTTLE_BACKOFF = 2, 60 -- seconds, doubling while the game reports a throttle
+-- Seconds of hold after a throttle result, doubling while it repeats. The cap stays under the protocol's 15 s
+-- session and part timeouts (Share.lua): a longer hold mid-session makes the peer give up and drop what it got.
+local THROTTLE_BACKOFF, MAX_THROTTLE_BACKOFF = 2, 8
 local LOCKDOWN_BACKOFF, MAX_LOCKDOWN_BACKOFF = 60, 15 * 60 -- seconds of pause after AddOnMessageLockdown
 local PART_TIMEOUT = 15 -- seconds without a new part before an unfinished message is dropped
 local PART_BUFFER = 64 * 1024 -- bytes of parts kept per sender
@@ -204,6 +206,17 @@ local function Refused(name)
     end
 end
 
+-- The game could not deliver to the message's player (whispers and Battle.net only): the rest queued to them would
+-- fail the same way, so it is dropped, and the offline handlers drop the session with them and pause them.
+local function Unreachable(message)
+    if message.address then
+        DropWhere(function(other) return other.address == message.address end)
+        for _, fn in ipairs(offlineHandlers) do
+            fn(message.address)
+        end
+    end
+end
+
 local function SendNow(message)
     local ok, result
     if message.path == "bnet" then
@@ -264,14 +277,14 @@ local function Deliver(message)
         UpdatePause()
     elseif result == TARGET_OFFLINE then
         -- VERIFY(V12): a whisper to a player who just went offline returns TargetOffline
-        if message.address then -- only whispers and Battle.net have one
-            DropWhere(function(other) return other.address == message.address end)
-            for _, fn in ipairs(offlineHandlers) do
-                fn(message.address)
-            end
+        Unreachable(message)
+    elseif result ~= NOT_IN_GUILD and result ~= NOT_IN_GROUP then
+        -- Any other refusal. For one player it counts once against the path, not once per queued part: an
+        -- unreachable player (reported with another code than TargetOffline) must not leave the path out.
+        Unreachable(message)
+        if not message.greeting then
+            Refused(message.path)
         end
-    elseif result ~= NOT_IN_GUILD and result ~= NOT_IN_GROUP and not message.greeting then
-        Refused(message.path)
     end
 end
 

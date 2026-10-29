@@ -26,8 +26,8 @@ test("a later success on a path not tried yet clears it for good", function()
     advance(1)
     eq(Share.GetStatus().state, "alone", "the game takes this account's messages")
     addon_send_result.default = 9
-    for _ = 1, 5 do
-        Comm.Send("w:Someone-Realm", "Wab")
+    for i = 1, 5 do
+        Comm.Send("w:Someone" .. i .. "-Realm", "Wab") -- one player counts once
     end
     advance(5)
     eq(Comm.GetPaths().whisper.disabled, true, "whispers refused since")

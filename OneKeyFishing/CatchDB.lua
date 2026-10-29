@@ -250,8 +250,13 @@ function CatchDB.FlushSeq()
     end
 end
 
-local function Changed()
+-- countsForSeq: false for a cast under a build the game gave no version for ("unknown"): that build never goes to
+-- a peer (Share.lua, Store.ForSending), and a peer refuses a seq above the casts it gets.
+local function Changed(countsForSeq)
     version = version + 1
+    if not countsForSeq then
+        return
+    end
     seqWaiting = true
     if not lastSeqBump or GetTime() - lastSeqBump >= SEQ_INTERVAL then
         BumpSeq()
@@ -276,8 +281,8 @@ local function HasPlace(record, key)
     return false
 end
 
--- The cells a change goes into: mine and the own record under the current game version. A place new to an own
--- record of ROLL_PLACES places rolls the record first.
+-- The cells a change goes into (mine and the own record under the current game version) and that version. A place
+-- new to an own record of ROLL_PLACES places rolls the record first.
 local function TargetCells(key)
     local own = OwnRecord()
     if not HasPlace(own, key) and CatchDB.CountPlaces(own, ROLL_PLACES) >= ROLL_PLACES then
@@ -289,7 +294,7 @@ local function TargetCells(key)
     local builds = OwnRecord().builds
     local build = BuildKey()
     builds[build] = builds[build] or {}
-    return { Cell(ns.db.shared.mine, key), Cell(builds[build], key) }
+    return { Cell(ns.db.shared.mine, key), Cell(builds[build], key) }, build
 end
 
 -- Item ID -> pieces of one catch, each capped at MAX_PIECES.
@@ -319,7 +324,8 @@ end
 -- Adds a settled cast (caught: item ID -> pieces, or nil for a miss) to both tables.
 local function Settle(cast, caught, fromPool)
     local seconds = math.max(1, math.floor((cast.stop or GetTime()) - cast.start + 0.5))
-    for _, cell in ipairs(TargetCells(cast.key)) do
+    local cells, build = TargetCells(cast.key)
+    for _, cell in ipairs(cells) do
         cell.t = cell.t + seconds
         if cast.x then
             cell.px = (cell.px or 0) + math.floor(cast.x * 1000 + 0.5)
@@ -337,7 +343,7 @@ local function Settle(cast, caught, fromPool)
             cell.m = cell.m + 1
         end
     end
-    Changed()
+    Changed(CatchDB.IsBuild(build))
 end
 
 ---------------------------------------------------------------------------

@@ -92,7 +92,10 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 
 A path (`guild`, `group`, `whisper`, `bnet`) that the game refuses 5 times in a row (any result but `Success`, the
 throttle codes, `AddOnMessageLockdown`, `TargetOffline`, `NotInGuild` and `NotInGroup`) is left out until logout; a
-success resets the count. Peers reached only by a left-out path are not contacted. With every path left out the
+success resets the count. A refusal of a whisper or Battle.net message counts once for that player: the rest queued
+to them is dropped and they are treated as offline (`TargetOffline`: the session with them ends, no session with
+them for 30 min), so one unreachable player, whatever code the game reports, never costs more than one refusal.
+Peers reached only by a left-out path are not contacted. With every path left out the
 exchange is unavailable until logout. The state also says unavailable while nothing went out since the login and
 every path tried with more than a greeting is left out (a Trial account in a guild never tries the other paths);
 this is a state only, so a later success on a path not tried yet clears it.

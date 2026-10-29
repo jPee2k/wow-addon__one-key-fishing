@@ -109,7 +109,7 @@ test("a broadcast goes to the raid in a raid, and nowhere outside guild and grou
     group_type = nil
 end)
 
-test("throttle results put the message back and wait 2 s, then 4 s", function()
+test("throttle results put the message back and wait 2 s, then 4 s, then 8 s at most", function()
     addon_send_result.WHISPER = 3
     local before = #addon_sent
     Comm.Send("w:Peer", "Wab")
@@ -121,11 +121,19 @@ test("throttle results put the message back and wait 2 s, then 4 s", function()
     eq(#sentSince(before), 2, "second try after 2 s")
     advance(3.7)
     eq(#sentSince(before), 2, "then waits 4 s")
+    advance(0.4)
+    eq(#sentSince(before), 3, "third try after 4 s")
+    advance(7.6)
+    eq(#sentSince(before), 3, "then waits 8 s")
+    advance(0.4)
+    eq(#sentSince(before), 4, "fourth try after 8 s")
+    advance(7.6)
+    eq(#sentSince(before), 4, "and 8 s again: never longer than the 15 s a peer waits")
     addon_send_result.WHISPER = nil
-    advance(0.2)
-    eq(#sentSince(before), 3, "third try goes through")
+    advance(0.4)
+    eq(#sentSince(before), 5, "fifth try goes through")
     advance(10)
-    eq(#sentSince(before), 3, "and is not sent again")
+    eq(#sentSince(before), 5, "and is not sent again")
 end)
 
 test("AddOnMessageLockdown pauses for 60 s, doubling while it repeats", function()
@@ -157,6 +165,24 @@ test("TargetOffline reports the address to the offline handlers", function()
     advance(0)
     eq(offline[#offline], "w:Gone-Realm", "reported")
     addon_send_result.WHISPER = nil
+end)
+
+test("another refusal for one player drops the rest to that player, reports them offline and counts once",
+    function()
+    wipe(offline)
+    addon_send_result.WHISPER = 9
+    local before = #addon_sent
+    Comm.Send("w:Gone-Realm", "Rab " .. ("z"):rep(1000)) -- five parts
+    Comm.Send("w:Gone-Realm", "Bab sent")
+    drain(10)
+    eq(#sentSince(before), 1, "only the first part was tried")
+    eq(offline[1], "w:Gone-Realm", "reported as offline: the rest would fail the same way")
+    eq(Comm.IsSending("w:Gone-Realm"), false, "nothing left in the queue for them")
+    eq(Comm.GetPaths().whisper.failures, 1, "one refusal for the path, not one per part")
+    addon_send_result.WHISPER = nil
+    Comm.Send("w:Here-Realm", "Wab")
+    drain(2)
+    eq(Comm.GetPaths().whisper.failures, 0, "a success resets the count")
 end)
 
 test("pause reasons: combat, instance, loading screen, restrictions; nothing goes out or comes in", function()
@@ -333,8 +359,8 @@ end)
 test("five refusals in a row leave a path out; a success resets the count; codes 3, 8, 10, 11, 12 never count",
     function()
     addon_send_result.WHISPER = 9
-    for _ = 1, 4 do
-        Comm.Send("w:Peer", "Wab")
+    for i = 1, 4 do
+        Comm.Send("w:Peer" .. i, "Wab") -- one player counts once, so five players
     end
     advance(5)
     eq(Comm.GetPaths().whisper.failures, 4, "four refusals")
@@ -347,8 +373,8 @@ test("five refusals in a row leave a path out; a success resets the count; codes
     advance(1)
     eq(Comm.GetPaths().whisper.failures, 0, "NotInGuild does not count")
     addon_send_result.WHISPER = 9
-    for _ = 1, 5 do
-        Comm.Send("w:Peer", "Wab")
+    for i = 1, 5 do
+        Comm.Send("w:Peer" .. i, "Wab")
     end
     advance(5)
     eq(Comm.GetPaths().whisper.disabled, true, "left out")
@@ -364,9 +390,9 @@ test("with every path left out the exchange is unavailable until logout", functi
     in_guild, group_type = true, "party"
     addon_send_result.default = 9
     bn_send_result = 9
-    for _ = 1, 5 do
+    for i = 1, 5 do
         Comm.Broadcast("H abcd 0 1 aaaaaaa")
-        Comm.Send("b:11", "Wab")
+        Comm.Send("b:" .. (10 + i), "Wab")
     end
     advance(40)
     eq(Comm.GetPause(), "unavailable", "unavailable")

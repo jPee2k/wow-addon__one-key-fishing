@@ -166,11 +166,14 @@ an API.
   | Total sent | 50 KB per hour per client (SC-005), headers included; above it only `BYE` is sent |
   | Timeout | 15 s without a message from the peer: the session is dropped, the peer paused for 30 min |
 
-  `AddonMessageThrottle` and `ChannelThrottle` put the message back and pause sending for 2 s, doubling up to 60 s;
-  `AddOnMessageLockdown` pauses the exchange (R8) for 60 s, doubling up to 15 min; `TargetOffline` ends the session
-  with that peer silently; `NotInGuild` and `NotInGroup` drop the message (the player just left); any other failure
-  drops the message and counts against its path. Five refusals in a row on one path (`guild`, `group`, `whisper`,
-  `bnet`) leave that path out until logout; a success resets the count. When every path is left out, the exchange
+  `AddonMessageThrottle` and `ChannelThrottle` put the message back and pause sending for 2 s, doubling up to 8 s
+  (under the 15 s session and part timeouts, or the peer gives up while this side waits); `AddOnMessageLockdown`
+  pauses the exchange (R8) for 60 s, doubling up to 15 min; `TargetOffline` ends the session with that peer silently;
+  `NotInGuild` and `NotInGroup` drop the message (the player just left); any other failure drops the message and
+  counts against its path, once per player for a whisper or Battle.net target (the rest queued to them is dropped
+  and they count as offline, so one unreachable player never costs more than one refusal). Five refusals in a row
+  on one path (`guild`, `group`, `whisper`, `bnet`) leave that path out until logout; a success resets the count.
+  When every path is left out, the exchange
   is unavailable until logout and the status says so (a Trial or Veteran account cannot send addon data; a path
   that does not work in Forever, V10, V13).
 - **Rationale**: the game allows 10 messages per prefix with 1 more per second, whispers outside instances
