@@ -1190,7 +1190,8 @@ ns.RegisterEvent("PLAYER_LOGIN", Start)
 -- The one-time popup: nothing is exchanged before the player closed it
 ---------------------------------------------------------------------------
 local NOTICE_DELAY = 2 -- seconds after entering the world when no loading screen event comes
-local noticeShown, noticeAfterCombat = false, false
+local NOTICE_RETRY = 30 -- seconds until the next try when the game had no free dialog frame
+local noticeShown, noticeAfterCombat, noticeRetry = false, false, false
 
 local function ShowNotice()
     if ns.db.shareNotice or noticeShown or not Share.IsEnabled() then
@@ -1200,14 +1201,13 @@ local function ShowNotice()
         noticeAfterCombat = true
         return
     end
-    noticeShown = true
     -- Three sentences, so each key fits a line; part 3 (the public channel) changes only the first.
     local text = table.concat({
         L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."],
         L["No character names are sent, but the players you exchange with can tell which ID is yours."],
         L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."],
     }, " ")
-    ns.ShowPopup(NOTICE_POPUP, text, nil, L["Got it"], L["Settings"],
+    local dialog = ns.ShowPopup(NOTICE_POPUP, text, nil, L["Got it"], L["Settings"],
         function() ns.SettingsUI.OpenShare() end,
         function()
             -- Any button or Escape; not the whole interface hidden (Alt+Z, a cinematic), which hides the popup too.
@@ -1216,6 +1216,16 @@ local function ShowNotice()
                 Start()
             end
         end)
+    if dialog then
+        noticeShown = true
+    elseif not noticeRetry then
+        -- Every dialog frame was taken (other addons' prompts at login): the exchange waits for the notice.
+        noticeRetry = true
+        C_Timer.After(NOTICE_RETRY, function()
+            noticeRetry = false
+            ShowNotice()
+        end)
+    end
 end
 
 local function ShowNoticeSoon()

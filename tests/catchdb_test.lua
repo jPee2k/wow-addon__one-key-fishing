@@ -178,6 +178,23 @@ test("the record's seq grows at most once a minute, and on logout", function()
     eq(record().seq, seq + 2, "nothing waiting, no bump")
 end)
 
+test("a cast the game gives no version for is recorded, but does not bump the seq", function()
+    fire("PLAYER_LOGOUT") -- nothing waiting
+    local seq = record().seq
+    advance(61)
+    build_version = ""
+    cast({ { FISH, 1 } })
+    eq(record().builds.unknown[KEY].c, 1, "recorded under \"unknown\"")
+    eq(record().seq, seq, "no bump: that build never reaches a peer, who refuses a seq above the casts it gets")
+    fire("PLAYER_LOGOUT")
+    eq(record().seq, seq, "nothing waiting")
+    build_version = "1.60.1"
+    cast({ { FISH, 1 } })
+    eq(record().seq, seq + 1, "a cast under a game version bumps")
+    eq((CatchDB.CheckRecord(ns.Share.Store.ForSending(record()))), true, "the record as sent passes a peer's check")
+    record().builds.unknown = nil
+end)
+
 ---------------------------------------------------------------------------
 -- Pools
 ---------------------------------------------------------------------------

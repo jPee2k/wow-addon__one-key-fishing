@@ -61,7 +61,7 @@ OneKeyFishingDB.shared = {
     ["k7f2q6xa"] = {
       id = "k7f2q6xa",
       epoch = 3,                      -- seed epoch the record started against
-      seq = 41,                       -- grows at most once a minute and on logout
+      seq = 41,                       -- grows at most once a minute and on logout (not for a cast under "unknown")
       builds = {                      -- game version -> place key -> cell
         ["1.60.1"] = { ["1415:3:47"] = cell },
       },
@@ -135,8 +135,9 @@ FISH_MISSED         -> the named cast is settled: m + 1
                        logout within the second Catch.lua waits for a miss) adds nothing.
 ```
 
-Both `mine` and the own record (under the current `GetBuildInfo()` version) receive every change; `seq` and the
-`CatchDB` version are bumped.
+Both `mine` and the own record (under the current `GetBuildInfo()` version) receive every change; the `CatchDB`
+version is bumped, and `seq` too unless the version is `"unknown"`: that build never goes to a peer
+(`Share.Store.ForSending` leaves it out), and a peer refuses a `seq` above the casts it gets.
 
 ## Views
 

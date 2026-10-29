@@ -233,7 +233,8 @@ or three players see each other's catches, and nothing shows in chat.
     dropped.
   - **Pace:** two broadcasts are 2 s apart in `addon_sent`; whispers go at most 2 per second.
   - **Budget:** after 50 KB in 60 minutes `Comm.CanSend()` is false. It turns true again as the minutes roll out.
-  - **Throttle results:** result 3 or 8 re-queues the message and waits 2 s, then 4 s, and so on up to 60 s.
+  - **Throttle results:** result 3 or 8 re-queues the message and waits 2 s, then 4 s, then 8 s at most (under the
+    15 s session and part timeouts; the cap was 60 s until the review of 2026-10-30).
   - **Lockdown result:** result 11 makes `Comm.GetPause()` return `"lockdown"` for 60 s, doubling to 15 min while it
     repeats.
   - **Offline result:** result 12 reports the address to the handler registered with `Comm.OnOffline`.
@@ -308,7 +309,7 @@ or three players see each other's catches, and nothing shows in chat.
     | Broadcast pace | 2 s |
     | Whisper pace | 0.5 s |
     | Budget | 50 KB per 60 min, counted per minute |
-    | Throttle back-off | 2 s to 60 s |
+    | Throttle back-off | 2 s to 8 s |
     | Lockdown back-off | 60 s to 15 min |
     | Part timeout | 15 s |
     | Part buffer | 64 KB per sender |

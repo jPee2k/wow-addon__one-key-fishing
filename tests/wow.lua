@@ -30,6 +30,7 @@
 --                                       the fallback without the game's tab functions
 --   known_items = { [itemID] = true }   C_Item.GetItemInfoInstant knows only these item IDs (nil: every ID)
 --   settings_pages[name] = frame        the canvas pages registered as settings subcategories (read only)
+--   popup_frames_busy = true            StaticPopup_Show shows nothing and returns nil (every dialog frame taken)
 -- The catch exchange (Comm.lua, Share.lua):
 --   addon_prefixes[prefix] = true       prefixes registered with C_ChatInfo.RegisterAddonMessagePrefix (read)
 --   addon_sent                          C_ChatInfo.SendAddonMessage calls, { prefix, text, chatType, target, at }
@@ -424,10 +425,16 @@ DEFAULT_CHAT_FRAME = {
 }
 UISpecialFrames, SlashCmdList, StaticPopupDialogs = {}, {}, {}
 
--- Accepts the popup that was shown last (StaticPopup_Show(key)). As in the game, the popup hides after either
+-- Shows a popup: records it as the last one and returns a dialog, as the game does; nil and nothing shown while
+-- popup_frames_busy is true (in the game: every dialog frame is taken). As in the game, the popup hides after either
 -- button, so its OnHide runs too.
+popup_frames_busy = false
 function StaticPopup_Show(key)
+    if popup_frames_busy == true then
+        return nil
+    end
     last_popup = key
+    return { which = key }
 end
 
 local function HidePopup(key)
