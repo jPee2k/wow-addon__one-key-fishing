@@ -39,6 +39,52 @@ function ns.CreateButton(parent, text, width, onClick)
     return button
 end
 
+-- A font string with the game's font object `template` (it picks a font for the text's script).
+function ns.CreateText(parent, template, justify)
+    local fontString = parent:CreateFontString(nil, "OVERLAY", template)
+    fontString:SetJustifyH(justify or "LEFT")
+    return fontString
+end
+
+-- An item's link (or name, or "item:<id>" until the client knows it) and icon.
+function ns.ItemDisplay(itemID)
+    local name, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
+    return link or name or ("item:" .. itemID), icon or C_Item.GetItemIconByID(itemID)
+end
+
+-- The item tooltip of a row; withPrice adds the auction price when it is not used for values (Prices.lua).
+function ns.ShowItemTooltip(owner, itemID, withPrice)
+    if not itemID then
+        return -- an empty row: the game's tooltip refuses a nil item
+    end
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:SetItemByID(itemID)
+    if withPrice then
+        ns.Prices.AddTooltipLine(GameTooltip, itemID)
+    end
+    GameTooltip:Show()
+end
+
+local CHECK_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t "
+
+-- A menu of choices ({ value, text }) with the selected one marked; choose(value) runs on a click.
+function ns.OpenRadioMenu(owner, choices, isSelected, choose)
+    if not (MenuUtil and MenuUtil.CreateContextMenu) then
+        return
+    end
+    MenuUtil.CreateContextMenu(owner, function(_, root)
+        for _, choice in ipairs(choices) do
+            local function IsSelected() return isSelected(choice.value) end
+            local function Select() choose(choice.value) end
+            if root.CreateRadio then
+                root:CreateRadio(choice.text, IsSelected, Select)
+            else
+                root:CreateButton((IsSelected() and CHECK_MARK or "") .. choice.text, Select)
+            end
+        end
+    end)
+end
+
 -- A two-button popup (Yes / No unless other texts are given); onAccept runs on the first button. The default
 -- texts are the addon's: the game's YES / NO are in the client's language, which may not be the addon's.
 function ns.ShowPopup(key, text, onAccept, acceptText, cancelText)
@@ -158,10 +204,15 @@ local DB_DEFAULTS = {
         language = "auto", -- "auto" (the game client's language) or a language code, see Localization.lua
         languageHintShown = false, -- the one-time hint for clients without a translation was shown
     },
-    prices = {}, -- itemID -> { price = copper, time = time() } from auction scans
+    prices = {}, -- itemID -> { price = copper, quantity = pieces, lots = auctions, time = time() } from scans
     minimapAngle = 220,
     indicatorPos = nil, -- { point, relativePoint, x, y }
     fishedItems = {}, -- itemID -> true for everything ever looted from fishing
+    statsTab = "stats", -- the last open tab of the statistics window: "stats" | "here"
+    shared = { -- the catch database (CatchDB.lua); myID is created there
+        mine = {}, -- place key -> cell: this account's catches, never reset
+        records = {}, -- contribution ID -> record; in 1.1.0 only this account's own
+    },
 }
 
 local CHAR_DB_DEFAULTS = {
@@ -250,25 +301,20 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
         ukrainian.name)
 end)
 
--- Slash commands. Every command is also reachable from the menus;
--- these exist only as a fallback. The description is a function returning the text, because commands are
--- registered while the files load, before the language is known.
-ns.commands = {}
-
-function ns.RegisterCommand(name, description, fn)
-    assert(type(description) == "function", "the description of /okf " .. name .. " must be a function")
-    ns.commands[name] = { description = description, fn = fn }
+-- Slash commands, declared in Commands.lua (ns.COMMANDS, sorted by name). Every command is also reachable from
+-- the menus; these exist only as a fallback. Names, descriptions and the help are English on every client.
+local function FindCommand(name)
+    for _, command in ipairs(ns.COMMANDS) do
+        if command.name == name then
+            return command
+        end
+    end
 end
 
 local function PrintHelp()
-    ns.Print(L["v%s commands:"], ns.version)
-    local names = {}
-    for name in pairs(ns.commands) do
-        table.insert(names, name)
-    end
-    table.sort(names)
-    for _, name in ipairs(names) do
-        DEFAULT_CHAT_FRAME:AddMessage(("  /okf %s - %s"):format(name, ns.commands[name].description()))
+    ns.Print("v%s commands:", ns.version)
+    for _, command in ipairs(ns.COMMANDS) do
+        DEFAULT_CHAT_FRAME:AddMessage(("  /okf %s - %s"):format(command.name, command.description))
     end
 end
 
@@ -277,9 +323,9 @@ SLASH_ONEKEYFISHING2 = "/onekeyfishing"
 SlashCmdList.ONEKEYFISHING = function(input)
     local name, rest = (input or ""):match("^%s*(%S*)%s*(.-)%s*$")
     name = name:lower()
-    local command = ns.commands[name]
+    local command = FindCommand(name)
     if command then
-        command.fn(rest)
+        command.run(rest)
     else
         PrintHelp()
     end

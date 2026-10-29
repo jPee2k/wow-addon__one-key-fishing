@@ -7,7 +7,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Toggle fishing mode"] = "낚시 모드 전환"
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "저장된 데이터가 더 새로운 버전의 OneKeyFishing에서 만들어졌습니다. 문제를 피하려면 애드온을 업데이트하세요."
-    L["v%s commands:"] = "v%s 명령어:"
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "게임 클라이언트에 맞는 번역이 없어 애드온이 영어로 표시됩니다. " ..
         "%s 등 다른 언어는 /okf config에서 고를 수 있습니다."
@@ -46,7 +45,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
         "낚시 모드가 꺼져 있습니다. 먼저 '낚시 모드 전환' 키를 누르세요."
     L["The fishing key is paused in combat."] = "전투 중에는 낚시 키가 일시 중지됩니다."
     L["Leaving fishing mode after combat."] = "전투가 끝나면 낚시 모드를 종료합니다."
-    L["enter or leave fishing mode"] = "낚시 모드 켜기 또는 끄기"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "검색 중 %d/%d"
@@ -56,8 +54,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Nothing to scan yet: catch some fish first."] = "아직 검색할 것이 없습니다. 먼저 물고기를 낚으세요."
     L["Scanning auction prices of %d item(s)..."] = "아이템 %d개의 경매장 가격 검색 중..."
     L["Auction scan stopped: %d of %d price(s) found."] = "경매장 검색 중지: %d/%d개 가격 확인."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "낚은 아이템의 경매장 가격 검색 (경매장이 열려 있어야 함)"
 
     -- Skill.lua
     L["Apprentice"] = "수습"
@@ -129,7 +125,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
         "가치: 상점 판매가 (시세를 보려면 경매장을 검색하세요)"
     L["%d catches, %s"] = "어획 %d회, %s"
     L["No catches yet."] = "아직 어획이 없습니다."
-    L["show the fishing statistics"] = "낚시 통계 보기"
     L["Time"] = "시간"
     L["Results"] = "결과"
     L["Money"] = "골드"
@@ -142,14 +137,40 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Casts that ended without loot."] = "전리품 없이 끝난 던지기입니다."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "낚시 시간 1시간당 어획입니다. 던질 때마다, 그리고 새로고침할 때 갱신됩니다."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "낚은 아이템의 가치입니다. 상점 판매가와 마지막으로 검색한 경매장 가격 중 높은 값으로 계산합니다."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "낚은 아이템의 가치입니다. 상점 판매가와 경매장 가격 중 높은 값으로 계산하며, 매물이 적으면 상점 판매가를 씁니다."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "낚시 시간 1시간당 가치입니다. 던질 때마다, 그리고 새로고침할 때 갱신됩니다."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "통계"
+    L["What can be caught here"] = "여기서 낚이는 것"
+    L["Skill: %s"] = "숙련도: %s"
+    L["All skill levels"] = "모든 숙련도"
+    L["Source: %s"] = "출처: %s"
+    L["All"] = "전체"
+    L["Only mine"] = "내 것만"
+    L["%d catches"] = "어획 %d회"
+    L["Nothing caught: %s"] = "아무것도 낚지 못함: %s"
+    L["Numbers for the whole map: few catches at this spot."] = "지도 전체 수치: 이 지점의 어획이 적습니다."
+    L["Little data"] = "데이터 부족"
+    L["Nothing has been caught here yet."] = "아직 여기서 낚은 것이 없습니다."
+    L["Try \"All skill levels\": little data for your skill."] = "'모든 숙련도'를 선택해 보세요: 현재 숙련도의 데이터가 부족합니다."
+    L["and %d more"] = "외 %d개"
+    L["No bundled data in this version: only your own catches are shown."] = "이 버전에는 기본 제공 데이터가 없습니다: 내 어획만 표시됩니다."
+    L["The game does not show this place on the map."] = "게임이 이 장소를 지도에 표시하지 않습니다."
+    L["Item"] = "아이템"
+    L["Chance"] = "확률"
+    L["Per catch"] = "어획당"
+    L["Price"] = "가격"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "매물 적음"
+    L["Auction price: %s (few lots)"] = "경매장 가격: %s (매물 적음)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 디버그 보고서"
-    L["show a report to copy into a bug report"] = "버그 제보에 붙여 넣을 보고서 보기"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "낚시 중 자동 획득"
@@ -207,7 +228,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Automatic: no fishing pole in your bags."] = "자동: 가방에 낚싯대가 없습니다."
     L["Settings cannot be opened in combat."] = "전투 중에는 설정을 열 수 없습니다."
     L["Settings panel is not available in this client."] = "이 클라이언트에서는 설정 창을 사용할 수 없습니다."
-    L["open the settings"] = "설정 열기"
     L["Language:"] = "언어:"
     L["Interface language"] = "인터페이스 언어"
     L["Game client language"] = "게임 클라이언트 언어"

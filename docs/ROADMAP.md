@@ -6,7 +6,10 @@ bobber by itself.
 
 ## 1. Shared fishing database
 
-What can be caught where, for every zone and fishing spot of the world.
+What can be caught where, for every zone and fishing spot of the world. Planned in four releases in
+[shared-db-plan.md](shared-db-plan.md); 1.1.0 (own data, the "What can be caught here" tab and a bundled
+database refreshed by `npm run harvest`) is built in `specs/002-local-catch-db` and waits for the in-game checks
+after the game launch. The notes below are the original idea.
 
 - Built from the catches players record with the addon (the addon already stores caught items per zone and
   subzone in `OneKeyFishingCharDB.stats.zones`).
@@ -20,7 +23,8 @@ What can be caught where, for every zone and fishing spot of the world.
 
 ## 2. Catch chances
 
-The chance to catch each item at the current spot.
+The chance to catch each item at the current spot. Covered for the statistics window by 1.1.0 (see item 1);
+the minimap and item tooltips follow in a later release of the plan.
 
 - From your own statistics (catches per item / all catches in the zone) and from the shared database.
 - Shown in the statistics window and, optionally, in the minimap tooltip.

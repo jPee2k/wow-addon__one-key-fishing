@@ -4,6 +4,25 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- "What can be caught here", a second tab in the statistics window: the items of the spot you stand at, with
+  their chance, pieces per catch and price, the number of catches behind them and the share of casts that catch
+  nothing. Few catches at a spot: the whole map; few on the map too: "Little data". Filters for the skill range
+  and for the source (all, or only your own catches).
+- A catch database bundled with every release, so the tab has numbers from the first login. Your own catches
+  are recorded for it per map, grid cell and skill range, anonymously (no names, no exact positions).
+
+### Changed
+
+- `/okf debug` has a catch database section.
+- Auction prices: the average of the cheapest fifth of the pieces on sale instead of the cheapest lot, so one
+  lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 auctions on
+  sale the price is marked "(few lots)" and the catch value uses the vendor price.
+- Slash commands and the `/okf` help are always in English, whatever the interface language.
+
 ## [1.1.0] - 2026-11-05
 
 ### Added

@@ -8,7 +8,6 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "Vos données sauvegardées viennent d'une version plus récente de OneKeyFishing. " ..
         "Mettez l'addon à jour pour éviter les problèmes."
-    L["v%s commands:"] = "Commandes v%s :"
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "Il n'y a pas de traduction pour votre client de jeu, l'addon est donc en anglais. " ..
         "D'autres langues, comme %s, sont dans /okf config."
@@ -50,7 +49,6 @@ ns.AddTranslation("frFR", "Français", function(L)
         "Le mode pêche est désactivé. Appuyez d'abord sur votre touche « Activer/désactiver le mode pêche »."
     L["The fishing key is paused in combat."] = "La touche de pêche est en pause pendant le combat."
     L["Leaving fishing mode after combat."] = "Sortie du mode pêche après le combat."
-    L["enter or leave fishing mode"] = "activer ou désactiver le mode pêche"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "Analyse %d/%d"
@@ -63,8 +61,6 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Scanning auction prices of %d item(s)..."] = "Analyse des prix de %d objet(s) à l'hôtel des ventes..."
     L["Auction scan stopped: %d of %d price(s) found."] =
         "Analyse de l'hôtel des ventes interrompue : %d prix trouvé(s) sur %d."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "analyser les prix des prises à l'hôtel des ventes (l'hôtel des ventes doit être ouvert)"
 
     -- Skill.lua
     L["Apprentice"] = "Apprenti"
@@ -139,7 +135,6 @@ ns.AddTranslation("frFR", "Français", function(L)
         "Valeurs : prix marchand (analysez l'hôtel des ventes pour les prix du marché)"
     L["%d catches, %s"] = "%d prises, %s"
     L["No catches yet."] = "Aucune prise pour l'instant."
-    L["show the fishing statistics"] = "afficher les statistiques de pêche"
     L["Time"] = "Temps"
     L["Results"] = "Résultats"
     L["Money"] = "Argent"
@@ -152,14 +147,44 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Casts that ended without loot."] = "Lancers terminés sans butin."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "Prises par heure de pêche. Mis à jour à chaque lancer et avec Actualiser."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "Objets pêchés, au plus élevé du prix marchand et du dernier prix analysé à l'hôtel des ventes."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "Objets pêchés, au plus élevé du prix marchand et du prix à l'hôtel des ventes ; avec peu de lots, le prix " ..
+        "marchand."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "Valeur par heure de pêche. Mise à jour à chaque lancer et avec Actualiser."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "Statistiques"
+    L["What can be caught here"] = "Ce qu'on pêche ici"
+    L["Skill: %s"] = "Compétence : %s"
+    L["All skill levels"] = "Tous les niveaux de compétence"
+    L["Source: %s"] = "Source : %s"
+    L["All"] = "Tout"
+    L["Only mine"] = "Seulement les miennes"
+    L["%d catches"] = "%d prises"
+    L["Nothing caught: %s"] = "Rien de pêché : %s"
+    L["Numbers for the whole map: few catches at this spot."] =
+        "Chiffres de toute la carte : trop peu de prises à cet endroit."
+    L["Little data"] = "Peu de données"
+    L["Nothing has been caught here yet."] = "Rien n'a encore été pêché ici."
+    L["Try \"All skill levels\": little data for your skill."] =
+        "Essayez « Tous les niveaux de compétence » : peu de données pour votre compétence."
+    L["and %d more"] = "et %d de plus"
+    L["No bundled data in this version: only your own catches are shown."] =
+        "Aucune donnée incluse dans cette version : seules vos propres prises sont affichées."
+    L["The game does not show this place on the map."] = "Le jeu n'affiche pas cet endroit sur la carte."
+    L["Item"] = "Objet"
+    L["Chance"] = "Chance"
+    L["Per catch"] = "Par prise"
+    L["Price"] = "Prix"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "peu de lots"
+    L["Auction price: %s (few lots)"] = "Prix à l'hôtel des ventes : %s (peu de lots)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - rapport de débogage"
-    L["show a report to copy into a bug report"] = "afficher un rapport à copier dans un signalement de bug"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "Butin automatique pendant la pêche"
@@ -220,7 +245,6 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Automatic: no fishing pole in your bags."] = "Automatique : aucune canne à pêche dans vos sacs."
     L["Settings cannot be opened in combat."] = "Les options ne peuvent pas être ouvertes en combat."
     L["Settings panel is not available in this client."] = "Le panneau des options n'est pas disponible sur ce client."
-    L["open the settings"] = "ouvrir les options"
     L["Language:"] = "Langue :"
     L["Interface language"] = "Langue de l'interface"
     L["Game client language"] = "Langue du client de jeu"

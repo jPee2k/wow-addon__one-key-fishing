@@ -7,7 +7,6 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Toggle fishing mode"] = "切换钓鱼模式"
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "你的存档数据来自更新版本的 OneKeyFishing。请更新插件以免出现问题。"
-    L["v%s commands:"] = "v%s 命令："
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "你的游戏客户端没有对应的翻译，因此插件显示为英文。" ..
         "其他语言（例如 %s）可在 /okf config 中选择。"
@@ -45,7 +44,6 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Fishing mode is off. Press your 'Toggle fishing mode' key first."] = "钓鱼模式未开启。请先按“切换钓鱼模式”键。"
     L["The fishing key is paused in combat."] = "战斗中钓鱼键暂停使用。"
     L["Leaving fishing mode after combat."] = "战斗结束后将退出钓鱼模式。"
-    L["enter or leave fishing mode"] = "进入或退出钓鱼模式"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "扫描中 %d/%d"
@@ -55,7 +53,6 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Nothing to scan yet: catch some fish first."] = "还没有可扫描的物品：先去钓点鱼吧。"
     L["Scanning auction prices of %d item(s)..."] = "正在扫描%d件物品的拍卖价格……"
     L["Auction scan stopped: %d of %d price(s) found."] = "拍卖扫描已停止：找到 %d/%d 个价格。"
-    L["scan auction prices of caught items (auction house must be open)"] = "扫描钓到物品的拍卖价格（需打开拍卖行）"
 
     -- Skill.lua
     L["Apprentice"] = "初级"
@@ -125,7 +122,6 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] = "价值：商人价格（扫描拍卖行以获取市场价格）"
     L["%d catches, %s"] = "%d次渔获，%s"
     L["No catches yet."] = "还没有渔获。"
-    L["show the fishing statistics"] = "显示钓鱼统计"
     L["Time"] = "时间"
     L["Results"] = "结果"
     L["Money"] = "金钱"
@@ -137,14 +133,40 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Casts that ended without loot."] = "没有收获的抛竿。"
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "按钓鱼时间计算的每小时渔获。每次抛竿和点击刷新时更新。"
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "钓到的物品价值，取商人价格与最近扫描的拍卖价格中较高者。"
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "钓到的物品价值，取商人价格与拍卖价格中较高者；挂单少时用商人价格。"
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "按钓鱼时间计算的每小时价值。每次抛竿和点击刷新时更新。"
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "统计"
+    L["What can be caught here"] = "这里能钓到什么"
+    L["Skill: %s"] = "技能：%s"
+    L["All skill levels"] = "所有技能等级"
+    L["Source: %s"] = "来源：%s"
+    L["All"] = "全部"
+    L["Only mine"] = "仅我的"
+    L["%d catches"] = "%d次渔获"
+    L["Nothing caught: %s"] = "什么也没钓到：%s"
+    L["Numbers for the whole map: few catches at this spot."] = "整张地图的数据：此处渔获太少。"
+    L["Little data"] = "数据不足"
+    L["Nothing has been caught here yet."] = "这里还没有钓到过东西。"
+    L["Try \"All skill levels\": little data for your skill."] = "试试“所有技能等级”：你的技能等级数据不足。"
+    L["and %d more"] = "还有%d项"
+    L["No bundled data in this version: only your own catches are shown."] = "此版本没有内置数据：只显示你自己的渔获。"
+    L["The game does not show this place on the map."] = "游戏没有在地图上显示这个地方。"
+    L["Item"] = "物品"
+    L["Chance"] = "几率"
+    L["Per catch"] = "每次"
+    L["Price"] = "价格"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "挂单少"
+    L["Auction price: %s (few lots)"] = "拍卖价格：%s（挂单少）"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 调试报告"
-    L["show a report to copy into a bug report"] = "显示可复制到错误报告中的报告"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "钓鱼时自动拾取"
@@ -202,7 +224,6 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Automatic: no fishing pole in your bags."] = "自动：背包中没有鱼竿。"
     L["Settings cannot be opened in combat."] = "战斗中无法打开设置。"
     L["Settings panel is not available in this client."] = "此客户端无法使用设置面板。"
-    L["open the settings"] = "打开设置"
     L["Language:"] = "语言："
     L["Interface language"] = "界面语言"
     L["Game client language"] = "游戏客户端语言"

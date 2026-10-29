@@ -30,8 +30,8 @@ The same shape in `mine`, in a contribution and (with `k`) in the seed.
     [6291] = { 64, 71 },
     [6303] = { 41, 41 },
   },
-  p = { c = 30, m = 2, i = { [6291] = { 20, 22 } } }, -- pool part, already included above; only when pools
-                                                       -- can be told apart (spike)
+  p = { c = 30, i = { [6291] = { 20, 22 } } }, -- pool catches, already included above; only when pools can
+                                                -- be told apart (spike); no misses (a miss has no loot source)
   k = 14,                   -- seed only: number of contributions summed into the cell
 }
 ```
@@ -50,7 +50,7 @@ Validation (addon on write, `harvest` on read): all counts are non-negative inte
 ## Saved data
 
 ```lua
-OneKeyFishingDB.schema = 2            -- was 1; only new fields, no migration function
+OneKeyFishingDB.schema = 1            -- unchanged: only new fields, filled by ApplyDefaults
 OneKeyFishingDB.statsTab = "stats"    -- "stats" | "here": the last open tab of the statistics window
 OneKeyFishingDB.shared = {
   myID = "k7f2q9xa",                  -- 8 random base32 characters, created once per account
@@ -70,7 +70,8 @@ OneKeyFishingDB.shared = {
 }
 OneKeyFishingDB.prices[itemID] = {
   price = 21500,                      -- copper: average of the cheapest 20% of listed pieces
-  quantity = 140,                     -- pieces listed at scan time; nil for prices saved by 1.0.0
+  quantity = 140,                     -- pieces listed at scan time, at most those loaded; nil for 1.0.0 prices
+  lots = 12,                          -- result rows (price points) on sale; nil for 1.0.0 prices
   time = 1761234567,
 }
 ```
@@ -111,9 +112,11 @@ A cast:
 ```text
 FISHING_CAST_START  -> place key and position read and kept for this cast; always, also for a cast picked up after
                        a /reload (nothing is counted here, so nothing can count twice; t runs from the pickup)
-FISH_CAUGHT         -> c + 1, items added, pool part if the loot came from a pool
-FISH_MISSED         -> m + 1
-FISHING_CAST_STOP   -> t + seconds of the cast; px/py + position
+FISHING_CAST_STOP   -> the cast's stop time is kept
+FISH_CAUGHT         -> the named cast is settled: c + 1, items added, pool part if the loot came from a pool
+FISH_MISSED         -> the named cast is settled: m + 1
+(on settling)       -> t + seconds from start to stop (at least 1); px/py + position. A cast never settled (a
+                       logout within the second Catch.lua waits for a miss) adds nothing.
 ```
 
 Both `mine` and the own record (under the current `GetBuildInfo()` version) receive every change; `seq` and the
@@ -123,7 +126,7 @@ Both `mine` and the own record (under the current `GetBuildInfo()` version) rece
 
 | Filter | Data summed for a place key |
 | --- | --- |
-| Source "All" | seed cell + own record cells of every build (old-build cells of maps in `seed.resets` left out) |
+| Source "All" | seed cell + own record cells of every build (cells of maps in `seed.resets` from older builds, and from "unknown", left out) |
 | Source "Only mine" | `mine` cell |
 | Skill: a range | keys with that range |
 | Skill: "All" | keys of ranges 0 to 4 |

@@ -1,10 +1,11 @@
-// Runs the Lua tests: every tests/*_test.lua in its own fresh Lua state, after tests/wow.lua (WoW API stubs).
+// Runs the Lua tests: every tests/*_test.lua in its own fresh Lua state, after tests/wow.lua (WoW API stubs);
+// then the Node tests: every tests/*_test.mjs, which exports `tests`, a list of { name, fn } (fn may be async).
 //   npm test             all test files
 //   npm test -- lures    only the files whose name contains "lures"
 // Exits with code 1 when a test fails.
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { ADDON_DIR, TOC, parseToc } from "../tools/addon.mjs";
 import { getGlobalNumber, newState, run, setGlobalList, setGlobalString } from "./lua.mjs";
 
@@ -13,11 +14,13 @@ const filter = process.argv[2];
 
 const tocFiles = parseToc(fs.readFileSync(path.join(ADDON_DIR, TOC), "utf8")).files;
 const stubs = fs.readFileSync(path.join(TESTS_DIR, "wow.lua"), "utf8");
-const testFiles = fs.readdirSync(TESTS_DIR)
-  .filter((name) => name.endsWith("_test.lua") && (!filter || name.includes(filter)))
+const matching = (suffix) => fs.readdirSync(TESTS_DIR)
+  .filter((name) => name.endsWith(suffix) && (!filter || name.includes(filter)))
   .sort();
+const testFiles = matching("_test.lua");
+const nodeTestFiles = matching("_test.mjs");
 
-if (testFiles.length === 0) {
+if (testFiles.length + nodeTestFiles.length === 0) {
   console.error(`No test files${filter ? ` matching "${filter}"` : ""} in tests/`);
 }
 
@@ -47,6 +50,33 @@ for (const name of testFiles) {
   }
 }
 
+for (const name of nodeTestFiles) {
+  console.log(name);
+  let tests;
+  try {
+    ({ tests } = await import(pathToFileURL(path.join(TESTS_DIR, name)).href));
+  } catch (error) {
+    console.log(`  FAIL ${name} could not be loaded: ${error.message}`);
+    failed += 1;
+    continue;
+  }
+  if (!Array.isArray(tests) || tests.length === 0) {
+    console.log(`  FAIL ${name} exports no tests`);
+    failed += 1;
+    continue;
+  }
+  for (const { name: testName, fn } of tests) {
+    try {
+      await fn();
+      console.log(`  ok   ${testName}`);
+      passed += 1;
+    } catch (error) {
+      console.log(`  FAIL ${testName}\n${error && error.stack ? error.stack : error}`);
+      failed += 1;
+    }
+  }
+}
+
 console.log(`\n${passed} passed, ${failed} failed`);
 // exitCode instead of process.exit(): the output above is fully written before Node exits.
-process.exitCode = failed > 0 || testFiles.length === 0 ? 1 : 0;
+process.exitCode = failed > 0 || testFiles.length + nodeTestFiles.length === 0 ? 1 : 0;

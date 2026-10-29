@@ -141,7 +141,7 @@ test("the rank name comes from the spell subtext when the client has it", functi
 end)
 
 test("Artisan at 225: only the cap notice, with the level and a map link", function()
-    known_maps[1445], pin_maps[1445] = true, true
+    pin_maps[1445] = true
     player_level = 30
     fishing_skill = { 225, 225 }
     fire("SKILL_LINES_CHANGED")

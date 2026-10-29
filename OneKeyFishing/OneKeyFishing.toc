@@ -54,12 +54,17 @@ Prices.lua
 Auction.lua
 Skill.lua
 Stats.lua
+SeedData.lua
+CatchDB.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
 UI\MapPin.lua
+UI\CatchHere.lua
 UI\StatsFrame.lua
 Debug.lua
+Spike.lua
 UI\Settings.lua
 UI\ItemHooks.lua
 UI\Minimap.lua
+Commands.lua

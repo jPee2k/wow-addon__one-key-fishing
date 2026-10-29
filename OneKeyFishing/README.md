@@ -53,6 +53,8 @@ One fishing round:
 - **Catch notifications** for every catch and every miss.
 - **Statistics**: casts, catches, misses, fishing time and the value of the catch, per session, per zone and in
   total.
+- **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price,
+  from your own catches and from the catch database that comes with the addon.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
@@ -79,7 +81,8 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 
 ## Statistics
 
-Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
+Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has two tabs at the
+bottom, **Statistics** and **What can be caught here**; it opens on the one you used last.
 
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
   **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
@@ -94,6 +97,27 @@ Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 - **Reset session** and **Reset all** ask for confirmation first.
 
 The timer runs only while fishing mode is on. It pauses while you are AFK (you can turn that off).
+
+## What can be caught here
+
+The second tab of the statistics window lists what the spot you stand at gives:
+
+- every item caught there, with its **chance** (how many catches contained it), the **pieces per catch** and its
+  **price**, plus how many catches the numbers are based on and how often a cast there catches nothing;
+- a spot is a part of the map (the map is split into a 10 by 10 grid). When a spot has fewer than 50 catches, the
+  tab shows the whole map and says so; with fewer than 50 there too, it shows **Little data** instead of
+  percentages;
+- **Skill**: your own skill range by default (0-74, 75-149, 150-224, 225-299, 300+), or any other range, or all
+  of them;
+- **Source**: **All** (your catches plus the catch database bundled with the addon) or **Only mine**.
+
+The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far,
+so the tab has numbers from your first login; your own catches are added to them, nothing is counted twice.
+
+What is stored: per place only counts (catches, misses, casting time, items) and an average position inside the
+grid cell, under a random ID of your account. No character names, guild, exact positions, times or gear. The data
+stays in your saved variables; it reaches the bundled database only if you send your saved file to the author
+yourself.
 
 ## The next Fishing rank
 
@@ -120,6 +144,11 @@ The timer runs only while fishing mode is on. It pauses while you are AFK (you c
 1. Open the auction house.
 2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
 3. The addon looks up every item you have ever caught, one at a time.
+
+The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far
+below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 auctions are on sale
+(one seller's stack is not a market), the price is shown with **(few lots)** and the catch value uses the vendor
+price instead.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
 scanned auction prices for catch value**.

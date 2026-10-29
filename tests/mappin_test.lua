@@ -4,15 +4,16 @@ load_addon()
 
 local MapPin = ns.MapPin
 local MAPS = { 1434, 224 } -- candidates: the Classic map ID first, then the modern one
+map_info_missing[1434], map_info_missing[224] = true, true -- unknown to the client until a test says otherwise
 
 test("no target while the client knows none of the candidate maps", function()
     eq(MapPin.Target(MAPS, 0.274, 0.77), nil, "target")
 end)
 
 test("the first candidate the client knows and allows pins on wins", function()
-    known_maps[224], pin_maps[224] = true, true
+    map_info_missing[224], pin_maps[224] = nil, true
     eq(MapPin.Target(MAPS, 0.274, 0.77).mapID, 224, "only the modern map works")
-    known_maps[1434] = true
+    map_info_missing[1434] = nil
     eq(MapPin.Target(MAPS, 0.274, 0.77).mapID, 224, "a known map without pins is skipped")
     pin_maps[1434] = true
     local target = MapPin.Target(MAPS, 0.274, 0.77)

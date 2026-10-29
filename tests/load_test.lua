@@ -15,21 +15,28 @@ test("every module is in the namespace", function()
     end
 end)
 
-test("every slash command has a description", function()
+test("every slash command is declared in Commands.lua, sorted, with an English description", function()
     local names = {}
-    for name, command in pairs(ns.commands) do
-        local description = type(command.description) == "function" and command.description()
-        assert(type(description) == "string" and description ~= "", "description of " .. name)
-        table.insert(names, name)
+    for _, command in ipairs(ns.COMMANDS) do
+        assert(type(command.description) == "string" and command.description ~= "", "description of " .. command.name)
+        assert(not command.description:find("[\128-\255]"), "English (ASCII) description of " .. command.name)
+        assert(type(command.run) == "function", "run of " .. command.name)
+        table.insert(names, command.name)
     end
-    table.sort(names)
-    eq(table.concat(names, " "), "config debug scan stats toggle", "commands")
+    local sorted = { unpack(names) }
+    table.sort(sorted)
+    eq(table.concat(names, " "), table.concat(sorted, " "), "commands in name order")
+    local all = " " .. table.concat(names, " ") .. " "
+    for _, name in ipairs({ "config", "debug", "scan", "stats", "toggle" }) do
+        assert(all:find(" " .. name .. " ", 1, true), "/okf " .. name)
+    end
 end)
 
-test("a command description must be a function (a text would be looked up while the files load)", function()
-    local ok = pcall(ns.RegisterCommand, "zz", "plain description", function() end)
-    eq(ok, false, "rejected")
-    eq(ns.commands.zz, nil, "not registered")
+test("an unknown command prints the help", function()
+    wipe(chat)
+    SlashCmdList.ONEKEYFISHING("nonsense")
+    assert(chat_contains("v1.0.0-test commands:"), "help header")
+    assert(chat_contains("/okf stats - show the fishing statistics"), "a command line")
 end)
 
 test("the version comes from the TOC's Version field", function()

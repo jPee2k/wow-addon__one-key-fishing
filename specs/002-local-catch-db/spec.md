@@ -142,6 +142,8 @@ a few pieces on sale; compare the shown prices and catch values with the expecte
 
 - The player's position on the map is not available (some caves or dungeons): the catch is recorded for the whole
   map, not for a spot.
+- The game gives no map for the player at all (some instances, transitions): the tab says that the game does not
+  show this place on the map.
 - The player moves to another spot or map while the tab is open: the tab switches to the new spot.
 - The player's fishing rank crosses into the next skill range while the tab is open: the filter follows the new
   range only if the player has not picked a range by hand since login; a hand-picked range stays until the next
@@ -223,7 +225,8 @@ a few pieces on sale; compare the shown prices and catch values with the expecte
 
 - **FR-025**: The auction price of an item MUST be the average unit price of the cheapest 20% of all pieces on sale,
   instead of the lowest lot.
-- **FR-026**: With fewer than 5 pieces on sale, the price MUST be marked as based on few lots, and catch value totals
+- **FR-026**: With fewer than 5 pieces or fewer than 3 auctions on sale, the price MUST be marked as based on few
+  lots, and catch value totals
   MUST use the vendor price for that item.
 - **FR-027**: The shown value MUST stay the higher of the vendor and the auction price; this MUST apply to the new tab
   and to the existing statistics.

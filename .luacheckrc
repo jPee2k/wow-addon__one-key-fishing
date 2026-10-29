@@ -33,10 +33,12 @@ read_globals = {
     "StaticPopupDialogs", "StaticPopup_Show", "StaticPopup_Hide", "ReloadUI", "RaidNotice_AddMessage",
     "ChatTypeInfo",
     "TooltipDataProcessor", "ItemLocation",
+    "PanelTemplates_SetTab", "PanelTemplates_SetNumTabs", "PanelTemplates_TabResize",
 
     -- Namespaced APIs
     "C_AddOns", "C_CVar", "C_Spell", "C_SpellBook", "C_Item", "C_Container", "C_AuctionHouse", "C_Map",
     "C_Timer", "C_TooltipInfo", "C_QuestLog", "C_SuperTrack", "C_GameRules", "UiMapPoint", "OpenWorldMap",
+    "C_RestrictedActions",
 
     -- Global API
     "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",

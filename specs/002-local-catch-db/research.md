@@ -95,7 +95,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
      file is never executed, so a friend's file cannot run code.
   3. Validates every record (contracts/harvest-command.md) and rejects failing ones with a reason.
   4. Merges into `seed/contributions.json` (repository, not packaged), keyed by `id@epoch`: a record replaces the
-     stored one only with a higher `seq`, so running twice changes nothing.
+     stored one only with a higher `seq`, so the same input never counts twice; a run that changes no sums
+     leaves the seed and its epoch alone.
   5. Sums all stored contributions (dropping old-build cells of reset maps) into `OneKeyFishing/SeedData.lua` with
      `epoch + 1`, the `absorbed` map `id -> epoch`, sorted keys and lines up to 120 characters.
   6. Prints the report; stops with an error instead of writing a file over 1 MB.
@@ -112,7 +113,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   price of the first 20% of all listed pieces (`ceil(total * 0.2)`, at least 1); `total` from
   `GetCommoditySearchResultsQuantity` when available, else the loaded quantities. Non-commodity results use
   `buyoutAmount / quantity`, skipping bid-only results. Stored as `prices[itemID] = { price, quantity, time }`.
-  `Prices.Get` (value sums) returns the vendor price when `quantity < 5`; `Prices.GetAuction` returns the price and
+  `Prices.Get` (value sums) returns the vendor price on few lots (`quantity < 5` or `lots < 3`, `lots` = the
+  result rows on sale, i.e. price points, so one seller's stack alone is not a market); `Prices.GetAuction` returns the price and
   a "few lots" flag for display. Prices saved by 1.0.0 have no `quantity` and are used as they are until rescanned.
 - **Rationale**: FR-025 to FR-027; a single cheap or expensive lot moves the average of the cheapest 20% very little
   (SC-005).
@@ -138,9 +140,9 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 ## R8. Saved data and schema
 
 - **Decision**: `OneKeyFishingDB.shared = { myID, mine, records }` and `OneKeyFishingDB.statsTab`, added through
-  `DB_DEFAULTS`; `myID` is created on first load (8 random base32 characters). `DB_SCHEMA` goes to 2 without a
-  migration function (only new fields), so 1.0.0 warns if it loads 1.1.0 data. `prices` entries gain an optional
-  `quantity`.
+  `DB_DEFAULTS`; `myID` is created on first load (8 random base32 characters). `DB_SCHEMA` stays 1: only new
+  fields, which `ApplyDefaults` fills (a bump would make 1.0.0 warn about "newer data" that it can read fine).
+  `prices` entries gain an optional `quantity` and `lots`.
 - **Rationale**: Principle III; ApplyDefaults fills new keys without overwriting; existing statistics are untouched
   (FR-008, SC-007).
 

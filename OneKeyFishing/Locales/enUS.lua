@@ -11,7 +11,6 @@ ns.AddTranslation("enUS", "English", function() end)
 L["Fishing action (cast / hook)"] = true
 L["Toggle fishing mode"] = true
 L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] = true
-L["v%s commands:"] = true
 L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] = true
 
 -- Gear.lua
@@ -45,7 +44,6 @@ L["Restored game settings from an unfinished fishing session."] = true
 L["Fishing mode is off. Press your 'Toggle fishing mode' key first."] = true
 L["The fishing key is paused in combat."] = true
 L["Leaving fishing mode after combat."] = true
-L["enter or leave fishing mode"] = true
 
 -- Auction.lua
 L["Scanning %d/%d"] = true
@@ -55,7 +53,6 @@ L["Open the auction house first."] = true
 L["Nothing to scan yet: catch some fish first."] = true
 L["Scanning auction prices of %d item(s)..."] = true
 L["Auction scan stopped: %d of %d price(s) found."] = true
-L["scan auction prices of caught items (auction house must be open)"] = true
 
 -- Skill.lua
 L["Apprentice"] = true
@@ -124,7 +121,6 @@ L["%dh %02dm"] = true
 L["Values: vendor price (scan the auction house for market prices)"] = true
 L["%d catches, %s"] = true
 L["No catches yet."] = true
-L["show the fishing statistics"] = true
 L["Time"] = true
 L["Results"] = true
 L["Money"] = true
@@ -135,12 +131,38 @@ L["Fishing casts made in fishing mode."] = true
 L["Casts that brought loot."] = true
 L["Casts that ended without loot."] = true
 L["Catches per hour of fishing time. Updated with every cast and with Refresh."] = true
-L["Items caught, at the higher of the vendor price and the last scanned auction price."] = true
+L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] = true
 L["Value per hour of fishing time. Updated with every cast and with Refresh."] = true
+
+-- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+L["Statistics"] = true
+L["What can be caught here"] = true
+L["Skill: %s"] = true
+L["All skill levels"] = true
+L["Source: %s"] = true
+L["All"] = true
+L["Only mine"] = true
+L["%d catches"] = true
+L["Nothing caught: %s"] = true
+L["Numbers for the whole map: few catches at this spot."] = true
+L["Little data"] = true
+L["Nothing has been caught here yet."] = true
+L["Try \"All skill levels\": little data for your skill."] = true
+L["and %d more"] = true
+L["No bundled data in this version: only your own catches are shown."] = true
+L["The game does not show this place on the map."] = true
+L["Item"] = true
+L["Chance"] = true
+L["Per catch"] = true
+L["Price"] = true
+
+
+-- Prices (the few-lots mark in both tabs)
+L["few lots"] = true
+L["Auction price: %s (few lots)"] = true
 
 -- Debug.lua
 L["OneKeyFishing - debug report"] = true
-L["show a report to copy into a bug report"] = true
 
 -- UI/Settings.lua
 L["Auto loot while fishing"] = true
@@ -191,7 +213,6 @@ L["Automatic, best in your bags: %s (+%d)"] = true
 L["Automatic: no fishing pole in your bags."] = true
 L["Settings cannot be opened in combat."] = true
 L["Settings panel is not available in this client."] = true
-L["open the settings"] = true
 L["Language:"] = true
 L["Interface language"] = true
 L["Game client language"] = true
