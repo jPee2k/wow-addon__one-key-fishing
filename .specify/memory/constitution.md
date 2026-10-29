@@ -27,8 +27,10 @@ The game client can run in any language, so the addon MUST NOT depend on localiz
 - Every visible string MUST go through `ns.L` with a literal English key; color codes stay
   outside the strings; enUS keys and code usage MUST stay in sync. The only deliberate
   exceptions are shown as they are, without `ns.L`: the debug report, language names written in
-  their own language (the language setting), and the addon name "OneKeyFishing" with its
-  version string.
+  their own language (the language setting), the addon name "OneKeyFishing" with its version
+  string, and slash commands: the `/okf` command names, their help descriptions and the `/okf`
+  help output are always English, on every client and interface language, because players type
+  them in English.
 - English is the development language: code, comments, docs, specs, commit messages, branch
   names and pull requests are written in English, whatever language the conversation is in.
   The only exceptions are the translations and language names written in their own language
@@ -83,6 +85,9 @@ player sees the code.
   and a module MAY call a later module only at runtime.
 - Modules communicate through `ns.On` / `ns.Fire` messages and documented functions; a new
   message MUST be listed in `CLAUDE.md`.
+- All slash commands MUST be declared in one place, `OneKeyFishing/Commands.lua`, which lists
+  every command with its English description and the module function it calls at runtime;
+  modules MUST NOT register commands themselves.
 - Prefer the smallest change that solves the problem; new settings, frames or abstractions need
   a concrete player need, not a hypothetical one.
 
@@ -122,4 +127,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.2.1 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-10-24
+**Version**: 1.3.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-10-29

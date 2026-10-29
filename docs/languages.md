@@ -45,8 +45,9 @@ The translations other than Ukrainian have not been reviewed by native speakers 
 - The setting is account-wide (`OneKeyFishingDB.settings.language`, `"auto"` or a code). A stored code that a
   later version no longer ships counts as "Game client language".
 - A text that a translation does not have falls back to English.
-- Not translated on purpose: the debug report (`/okf debug`, it goes into bug reports), slash command names,
-  the addon name and the language names. Item, zone and spell names come from the game client in its language.
+- Not translated on purpose: the debug report (`/okf debug`, it goes into bug reports), slash commands (names,
+  help descriptions and the `/okf` help output: players type them in English), the addon name and the language
+  names. Item, zone and spell names come from the game client in its language.
 
 ## Translation files
 
