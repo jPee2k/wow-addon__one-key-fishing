@@ -787,9 +787,10 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
         shared.myID = ns.RandomBase32(ID_LENGTH)
     end
     local record = shared.records[shared.myID]
-    -- A damaged record (edited by hand, an interrupted write) would break every catch: it starts over.
+    -- A damaged record (edited by hand, an interrupted write) would break every catch, or every HELLO when its ID
+    -- is not the account's: it starts over.
     if type(record) ~= "table" or type(record.builds) ~= "table" or type(record.seq) ~= "number"
-        or type(record.epoch) ~= "number" then
+        or type(record.epoch) ~= "number" or record.id ~= shared.myID then
         shared.records[shared.myID] = nil
         Roll()
     -- A record the seed holds (in part or whole) rolls, so it does not count twice next to the seed; what the seed

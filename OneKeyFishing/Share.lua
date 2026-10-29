@@ -599,9 +599,11 @@ function Node:ConsiderSession(address, peer)
             return
         end
         local session = self:NewSession(ns.RandomBase32(2, self.env.random), address, "initiator")
+        if not self:Send(address, "S" .. session.sid .. " " .. table.concat(self:Summary().hashTexts)) then
+            return -- no session ran (the budget, a path left out): the cooldowns stay free for the next HELLO
+        end
         self.lastStart = now
         peer.previousSession, peer.lastSession = peer.lastSession, now
-        self:Send(address, "S" .. session.sid .. " " .. table.concat(self:Summary().hashTexts))
         self:ArmTimeout(session)
     end)
 end
@@ -805,19 +807,30 @@ function Node:SendRecords(session)
         if count >= SESSION_RECORDS then
             break -- the rest comes in a later session
         end
-        -- Others' records passed the check when they were stored; those of the own ID only go when a peer takes them.
+        -- Those of the own ID only go when a peer takes them. Others' records passed the check when they were
+        -- stored, and are checked again: one damaged in the saved file since would get this client ignored by the
+        -- peer, so it is dropped instead (an item this client does not know is no damage).
         local record, data = Store.Get(self.store, unit), nil
         if record and record.id == self.store.myID then
             data = self:OwnData(record)
         elseif record then
-            data = self.env.encode(Store.ForSending(record))
+            local ok, _, unknownItem = ns.CatchDB.CheckRecord(record)
+            if ok or unknownItem then
+                data = self.env.encode(Store.ForSending(record))
+            else
+                self.store.records[unit] = nil
+                Changed({ unit })
+            end
         end
         if data and #data <= MAX_RECORD_BYTES then
-            -- Within the session size, and only what the budget still lets go out whole.
-            if (sent > 0 and sent + #data > SESSION_BYTES) or not self.env.canSend(#data) then
+            -- Within the session size, and only what the budget still lets go out whole: checked once, on the text
+            -- as it goes out, so Node:Send never ends the session with BYE limit here; the records just end, and
+            -- the rest comes in a later session. A failed send ended the session: nothing more goes.
+            local text = "R" .. session.sid .. " " .. data
+            if (sent > 0 and sent + #data > SESSION_BYTES) or not self.env.canSend(#text)
+                or not self:Send(session.peer, text) then
                 break
             end
-            self:Send(session.peer, "R" .. session.sid .. " " .. data)
             sent, count = sent + #data, count + 1
         end
     end

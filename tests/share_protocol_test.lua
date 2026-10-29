@@ -39,6 +39,7 @@ end
 
 -- A node named `name` with its own record of `catches` at place `key`. opts: guild, group (names of the shared
 -- guild / group), bnet (its game account ID), friends (addresses it greets), random (the node's math.random).
+-- A test sets info.overBudget (canSend false) or info.room (the largest message canSend lets out).
 local function NewNode(name, id, opts)
     opts = opts or {}
     local info = { name = name, bnet = opts.bnet, guild = opts.guild, group = opts.group,
@@ -72,7 +73,7 @@ local function NewNode(name, id, opts)
                 fn(address)
             end
         end,
-        canSend = function() return not info.overBudget end,
+        canSend = function(bytes) return not info.overBudget and (bytes or 0) <= (info.room or math.huge) end,
         absorbed = function() return info.absorbed or {} end,
         seedEpoch = function() return 0 end,
         encode = Share.Encode,
@@ -737,4 +738,71 @@ test("a record of the own ID frozen by a roll goes to peers like the live one, a
     eq(d.store.records[C_ID .. "@5"], nil, "not sent")
     eq(d.node.peers["w:C"].ignored, nil, "C is not ignored")
     eq(c.node:HashText(), d.node:HashText(), "the hashes still match")
+end)
+
+-- The BYEs and records A sent to B, in order: "limit", "sent", "done" and "R" for a record.
+local function SentByA()
+    local out = {}
+    for _, entry in ipairs(net.log) do
+        if entry.from == "A" and entry.to == "B" then
+            local reason = entry.text:match("^B%w%w (%a+)$")
+            if reason or entry.text:find("^R") then
+                table.insert(out, reason or "R")
+            end
+        end
+    end
+    return table.concat(out, " ")
+end
+
+test("a record the budget cannot let out whole ends the records quietly, and nothing goes after the BYE", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p" })
+    local b = NewNode("B", B_ID, { group = "p" })
+    eq(Store.Accept(a.store, OwnRecord("eeeeeeee", "1415:3:47", 1), GetTime(), {}), "new", "a smaller relayed record")
+    a.room = #a.node:OwnData(a.store.records[A_ID]) -- the own record's data fits, the message around it does not
+    Rounds(1)
+    assert(not SentByA():find("limit"), "no BYE limit, the records just end: " .. SentByA())
+    assert(not SentByA():find("%a+ R"), "no record after a BYE: " .. SentByA())
+    assert(a.store.records[B_ID .. "@0"], "B's record reached A")
+    eq(b.store.records[A_ID .. "@0"], nil, "A's own record waits for budget")
+    eq(b.store.records["eeeeeeee@0"], nil, "and so does the one behind it")
+    eq(b.node.peers["w:A"].ignored, nil, "A is not ignored")
+end)
+
+test("a SUM the budget cannot send starts no session and burns no cooldown", function()
+    local function random(...)
+        local low, high = ...
+        if low == 2 and high == 20 then
+            return 2
+        end
+        return math.random(...)
+    end
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p", random = random })
+    local b = NewNode("B", B_ID, { group = "p" })
+    a.room = 100 -- a HELLO fits, the 228-byte SUM does not
+    a.node:Hello()
+    advance(0.2)
+    b.node:Hello()
+    advance(5) -- A heard B at 0.3 and tried at 2.3; B heard A at 0.1 and waits 2-20 s
+    eq(a.node.session, nil, "no session")
+    eq(a.node.lastStart, nil, "no session start counted")
+    eq(a.node.peers["w:B"].lastSession, nil, "no cooldown with B")
+    a.room = nil
+    advance(600)
+    eq(UnitsText(a), UnitsText(b), "converged once the budget is back")
+end)
+
+test("a relayed record damaged in the saved file is dropped, not sent: the peer does not ignore this client",
+    function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p" })
+    local b = NewNode("B", B_ID, { group = "p" })
+    eq(Store.Accept(a.store, OwnRecord("ffffffff", "1415:3:47", 2), GetTime(), {}), "new", "stored")
+    a.store.records["ffffffff@0"].builds["1.60.1"]["1415:3:47"].t = nil -- damaged since
+    Rounds(2)
+    eq(a.store.records["ffffffff@0"], nil, "dropped")
+    eq(b.store.records["ffffffff@0"], nil, "not sent")
+    eq(b.node.peers["w:A"].ignored, nil, "A is not ignored")
+    eq(UnitsText(a), UnitsText(b), "the rest converged")
 end)

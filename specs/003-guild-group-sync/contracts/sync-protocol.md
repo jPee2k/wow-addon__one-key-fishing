@@ -59,6 +59,8 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 - Each received `REC` is decoded and checked (research R6) one per frame step, then stored per `id@epoch`
   (data-model.md). A `REC` that was not wanted, does not decode or fails the check makes the sender ignored until
   logout; the session ends.
+- A relayed record is checked again before it is sent (it passed the check when it was stored, but the saved file
+  may have been damaged since): a damaged one is dropped, not sent, so an honest client is never ignored for it.
 - No message from the peer for 15 s: the session is dropped without a message and the peer is paused for 30 min,
   or until its next `HELLO` (a peer that paused for combat greets again when the pause ends).
   `TargetOffline` on a send has the same effect.
@@ -67,12 +69,15 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
   tries again after `A`'s next `HELLO`.
 - The cooldowns are kept by the initiator; the responder keeps its side too: a `SUM` from a peer it answered with
   a `DIFF` less than 8 min ago (the 10 min group cooldown less 2 min for the initiator's queue) gets `BYE busy`, so a
-  peer that ignores the cooldowns cannot spend the hourly budget on `DIFF`s.
+  peer that ignores the cooldowns cannot spend the hourly budget on `DIFF`s. A `SUM` that could not be sent (the
+  budget, a path left out) starts no session and spends no cooldown.
 - Crossing `SUM`s: when `A` and `B` heard each other and each sent `SUM` to the other, the one with the smaller node
   tag (from the other's `HELLO`, compared as strings) stays the initiator and drops the other's `SUM` without an
   answer; the other drops its own session and answers the `SUM` as the responder. Equal tags: both drop their
   sessions and wait for the next `HELLO`.
-- Units wanted but not sent because of the 8 KB limit come in a later session.
+- Units wanted but not sent because of the 8 KB limit, or because the hourly budget would not let the next record
+  out whole, come in a later session: the records just end, with `BYE sent` / `BYE done` as usual (`BYE limit` is
+  for a `SUM`, `DIFF` or `WANT` the budget cannot carry).
 - A session in which neither side wanted anything (the two hold sets that never agree: another bundled seed, a
   record evicted for the size limit) is not started again with that peer until one of the two hashes changes.
 - A record refused only because the receiving client does not know one of its items (a new item, a client not
