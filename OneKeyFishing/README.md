@@ -54,7 +54,10 @@ One fishing round:
 - **Statistics**: casts, catches, misses, fishing time and the value of the catch, per session, per zone and in
   total.
 - **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price,
-  from your own catches and from the catch database that comes with the addon.
+  from your own catches, the catch database that comes with the addon and the catches of the addon users you play
+  with.
+- **Shared catch database**: catch counts travel anonymously between addon users in your guild, group and friends
+  list, in the background. One setting turns it off.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
@@ -109,15 +112,42 @@ The second tab of the statistics window lists what the spot you stand at gives:
   percentages;
 - **Skill**: your own skill range by default (0-74, 75-149, 150-224, 225-299, 300+), or any other range, or all
   of them;
-- **Source**: **All** (your catches plus the catch database bundled with the addon) or **Only mine**.
+- **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
+  you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from
+  3 players");
+- a quiet line at the bottom shows the state of the [shared catch database](#shared-catch-database).
 
 The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far,
 so the tab has numbers from your first login; your own catches are added to them, nothing is counted twice.
 
 What is stored: per place only counts (catches, misses, casting time, items) and an average position inside the
-grid cell, under a random ID of your account. No character names, guild, exact positions, times or gear. The data
-stays in your saved variables; it reaches the bundled database only if you send your saved file to the author
-yourself.
+grid cell, under a random ID of your account. No character names, guild, exact positions, times or gear. With the
+[shared catch database](#shared-catch-database) on, the same counts go to the addon users you play with; they also
+reach the bundled database through the author's own client.
+
+## Shared catch database
+
+Players who fish together see each other's catches right away, without waiting for the next release:
+
+- **With whom**: addon users in your guild, your party or raid, and your online friends (character friends and
+  Battle.net friends playing WoW Forever). Data also travels further: what a guild mate got from their friends
+  reaches you too.
+- **What**: the catch counts described above, under the random ID of your account. **No character names** are
+  sent with them, and the names of the players you exchange with are never saved.
+- **When**: in the background whenever you are online, also outside fishing mode. It pauses in combat, in
+  instances, on loading screens and where the game restricts addon messages, and stays within a small traffic
+  budget (at most 50 KB per hour). Nothing appears in chat.
+- **Off**: **Options → AddOns → OneKeyFishing → Shared database**, **Use the shared catch database**. Off means
+  nothing is sent and nothing is received; data received earlier is kept but not counted, and counts again as soon
+  as you turn it back on. A popup at the first login says the same once.
+- **State**: the line at the bottom of **What can be caught here**, the settings page and `/okf share` (the bundled
+  data and its version, the contributions you hold, the players seen in the last hour, the last exchange, the
+  traffic). `/okf debug` has the same numbers for bug reports, without your ID or anybody's name.
+- Data that does not add up (more catches than the casting time allows, impossible item counts) is refused, and
+  the player who sent it is ignored until the end of the session. A record with an item your client does not know
+  yet is skipped without blaming the sender. Nothing is ever counted twice, also not after a release bundles data
+  you already got from other players.
+- **Trial and Veteran accounts** cannot send addon data; the state then says the exchange is unavailable.
 
 ## The next Fishing rank
 
@@ -196,6 +226,8 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   **Later**. Korean and Chinese may show as squares on a client in another language; pick **English** to get a
   readable interface back.
 - **Fishing gear**: a page of its own, see [Fishing gear](#fishing-gear).
+- **Shared database**: a page of its own: **Use the shared catch database**, what is shared and the current state;
+  see [Shared catch database](#shared-catch-database).
 
 ## Commands
 
@@ -209,6 +241,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
 | `/okf scan` | scan auction prices (the auction house must be open) |
+| `/okf share` | show the state of the shared catch database |
 | `/okf debug` | show a report to copy into a bug report |
 
 ## Troubleshooting

@@ -19,6 +19,32 @@ function ns.GameObjectID(guid)
     return unitType == "GameObject" and objectID or nil
 end
 
+-- Base32 in lower case without padding: anonymous contribution IDs, node tags, session IDs and hashes of the
+-- catch exchange (CatchDB.lua, Comm.lua, Share.lua).
+ns.BASE32 = "abcdefghijklmnopqrstuvwxyz234567"
+
+-- value (a whole number >= 0) in `width` base32 characters, the most significant first.
+function ns.Base32(value, width)
+    local chars = {}
+    for i = width, 1, -1 do
+        local digit = value % 32
+        chars[i] = ns.BASE32:sub(digit + 1, digit + 1)
+        value = math.floor(value / 32)
+    end
+    return table.concat(chars)
+end
+
+-- `length` random base32 characters; `random` (default math.random) for deterministic tests.
+function ns.RandomBase32(length, random)
+    random = random or math.random
+    local chars = {}
+    for i = 1, length do
+        local index = random(32)
+        chars[i] = ns.BASE32:sub(index, index)
+    end
+    return table.concat(chars)
+end
+
 -- True when the interact key would hit the bobber (not some other object nearby).
 -- The bobber has no nameplate and UnitExists is false for it, but its name and GUID are readable.
 function ns.IsBobberTargeted()

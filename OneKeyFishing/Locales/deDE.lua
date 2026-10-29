@@ -282,4 +282,47 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Shift+Left-click: statistics"] = "Umschalt+Linksklick: Statistik"
     L["Right-click: menu"] = "Rechtsklick: Menü"
     L["Drag: move this button"] = "Ziehen: Knopf verschieben"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
+        "OneKeyFishing teilt deine Fänge jetzt anonym mit Addon-Nutzern in deiner Gilde, Gruppe und Freundesliste."
+    L["No character names are sent."] = "Es werden keine Charakternamen gesendet."
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "Abschalten unter Optionen -> AddOns -> OneKeyFishing -> Gemeinsame Datenbank."
+    L["Got it"] = "Verstanden"
+    L["Shared database"] = "Gemeinsame Datenbank"
+    L["Shared catch database is off"] = "Die gemeinsame Fangdatenbank ist aus"
+    L["Waiting for you to read the notice"] = "Wartet, bis du den Hinweis gelesen hast"
+    L["Exchange unavailable: the game refuses addon messages"] =
+        "Austausch nicht möglich: Das Spiel lehnt Addon-Nachrichten ab"
+    L["Exchange paused: in combat"] = "Austausch pausiert: im Kampf"
+    L["Exchange paused: in an instance"] = "Austausch pausiert: in einer Instanz"
+    L["Exchange paused: loading screen"] = "Austausch pausiert: Ladebildschirm"
+    L["Exchange paused: the game restricts addon messages here"] =
+        "Austausch pausiert: Das Spiel schränkt Addon-Nachrichten hier ein"
+    L["Exchange paused: the game asked to slow down"] = "Austausch pausiert: Das Spiel verlangt eine Pause"
+    L["Nobody to exchange with right now"] = "Gerade niemand zum Austauschen da"
+    L["Exchange: %d players, %s ago"] = "Austausch: %d Spieler, vor %s"
+    L["Exchange: waiting for the first exchange"] = "Austausch: wartet auf den ersten Austausch"
+    L["Bundled data: version %d, %d places"] = "Mitgelieferte Daten: Version %d, %d Orte"
+    L["Records held: %d, %d places"] = "Gespeicherte Beiträge: %d, %d Orte"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "Spieler in der letzten Stunde: Gilde %d, Gruppe %d, Freunde %d, Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "Spieler mit Austausch in der letzten Stunde: %d"
+    L["Last exchange: %s ago"] = "Letzter Austausch: vor %s"
+    L["Last exchange: none yet"] = "Letzter Austausch: noch keiner"
+    L["Traffic in the last hour: %d KB"] = "Datenverkehr in der letzten Stunde: %d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "Gemeinsame Fangdatenbank verwenden"
+    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
+        "Deine Fänge (Gegenstände, Anzahlen, Orte als Kartennummern) werden unter einer zufälligen ID geteilt."
+    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
+        "Sie gehen an Addon-Nutzer in deiner Gilde, Gruppe und Freundesliste. Keine Namen, keine Ausrüstung, keine " ..
+        "genauen Positionen."
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "Aus: Es wird nichts gesendet oder empfangen, und Daten anderer Spieler werden nicht gezählt."
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "%d Fänge von %d Spielern"
 end)

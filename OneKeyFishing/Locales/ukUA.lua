@@ -275,4 +275,47 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Shift+Left-click: statistics"] = "Shift+лівий клік: статистика"
     L["Right-click: menu"] = "Правий клік: меню"
     L["Drag: move this button"] = "Перетягування: перемістити кнопку"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
+        "OneKeyFishing тепер анонімно ділиться вашим уловом із користувачами аддона у вашій гільдії, групі та " ..
+        "списку друзів."
+    L["No character names are sent."] = "Імена персонажів не надсилаються."
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "Вимкнути можна в Options -> AddOns -> OneKeyFishing -> Спільна база даних."
+    L["Got it"] = "Зрозуміло"
+    L["Shared database"] = "Спільна база даних"
+    L["Shared catch database is off"] = "Спільну базу уловів вимкнено"
+    L["Waiting for you to read the notice"] = "Чекаємо, поки ви прочитаєте повідомлення"
+    L["Exchange unavailable: the game refuses addon messages"] = "Обмін недоступний: гра відхиляє повідомлення аддонів"
+    L["Exchange paused: in combat"] = "Обмін призупинено: бій"
+    L["Exchange paused: in an instance"] = "Обмін призупинено: ви в підземеллі"
+    L["Exchange paused: loading screen"] = "Обмін призупинено: екран завантаження"
+    L["Exchange paused: the game restricts addon messages here"] =
+        "Обмін призупинено: гра обмежує тут повідомлення аддонів"
+    L["Exchange paused: the game asked to slow down"] = "Обмін призупинено: гра попросила сповільнитися"
+    L["Nobody to exchange with right now"] = "Зараз немає з ким обмінюватися"
+    L["Exchange: %d players, %s ago"] = "Обмін: гравців %d, %s тому"
+    L["Exchange: waiting for the first exchange"] = "Обмін: чекаємо на перший обмін"
+    L["Bundled data: version %d, %d places"] = "Вбудовані дані: версія %d, місць %d"
+    L["Records held: %d, %d places"] = "Збережені внески: %d, місць %d"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "Гравці за останню годину: гільдія %d, група %d, друзі %d, Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "Гравців, з якими був обмін за останню годину: %d"
+    L["Last exchange: %s ago"] = "Останній обмін: %s тому"
+    L["Last exchange: none yet"] = "Останній обмін: ще не було"
+    L["Traffic in the last hour: %d KB"] = "Трафік за останню годину: %d КБ"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "Використовувати спільну базу уловів"
+    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
+        "Ваш улов (предмети, кількість, місця як номери карт) передається під випадковим ID."
+    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
+        "Його отримують користувачі аддона у вашій гільдії, групі та списку друзів. Без імен, спорядження й точних " ..
+        "позицій."
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "Вимкнено: нічого не надсилається й не приймається, а дані інших гравців не враховуються."
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "улов: %d, гравців: %d"
 end)

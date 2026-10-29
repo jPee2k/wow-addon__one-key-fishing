@@ -85,14 +85,18 @@ function ns.OpenRadioMenu(owner, choices, isSelected, choose)
     end)
 end
 
--- A two-button popup (Yes / No unless other texts are given); onAccept runs on the first button. The default
--- texts are the addon's: the game's YES / NO are in the client's language, which may not be the addon's.
-function ns.ShowPopup(key, text, onAccept, acceptText, cancelText)
+-- A two-button popup (Yes / No unless other texts are given); onAccept runs on the first button, onCancel on
+-- the second, onHide whenever the popup closes (either button or Escape). The default texts are the addon's: the
+-- game's YES / NO are in the client's language, which may not be the addon's.
+function ns.ShowPopup(key, text, onAccept, acceptText, cancelText, onCancel, onHide)
     StaticPopupDialogs[key] = {
         text = text,
         button1 = acceptText or L["Yes"],
         button2 = cancelText or L["No"],
         OnAccept = onAccept,
+        OnCancel = onCancel,
+        OnHide = onHide,
+        noCancelOnEscape = onCancel ~= nil, -- Escape only closes: such a second button does more than "no"
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
@@ -203,7 +207,9 @@ local DB_DEFAULTS = {
         minimapButton = true,
         language = "auto", -- "auto" (the game client's language) or a language code, see Localization.lua
         languageHintShown = false, -- the one-time hint for clients without a translation was shown
+        shareDB = true, -- exchange catch data with guild, group and friends (Share.lua); off: nothing sent or received
     },
+    shareNotice = false, -- true once the one-time popup about the exchange was closed (Share.lua)
     prices = {}, -- itemID -> { price = copper, quantity = pieces, lots = auctions, time = time() } from scans
     minimapAngle = 220,
     indicatorPos = nil, -- { point, relativePoint, x, y }
@@ -211,7 +217,7 @@ local DB_DEFAULTS = {
     statsTab = "stats", -- the last open tab of the statistics window: "stats" | "here"
     shared = { -- the catch database (CatchDB.lua); myID is created there
         mine = {}, -- place key -> cell: this account's catches, never reset
-        records = {}, -- contribution ID -> record; in part 1 only this account's own
+        records = {}, -- contribution ID (own) or "<id>@<epoch>" (others) -> record
     },
 }
 

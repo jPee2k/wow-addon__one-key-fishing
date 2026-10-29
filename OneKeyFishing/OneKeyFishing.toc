@@ -56,6 +56,8 @@ Skill.lua
 Stats.lua
 SeedData.lua
 CatchDB.lua
+Comm.lua
+Share.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua

@@ -274,6 +274,44 @@ export const tests = [
     },
   },
   {
+    name: "other players' records in the author's file go in once each, with the newest seq",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-network-"));
+      const G = "gggggggg";
+      const H = "hhhhhhhh";
+      const J = "jjjjjjjj";
+      const withSeen = (value) => ({ ...value, seen: 1761234567 });
+      const author = path.join(root, "author.lua");
+      fs.writeFileSync(author, savedFile({
+        [A]: oneCell(A, 0, 5, "1415:3:47", cell(10, 0, { 6291: [10, 10] })),
+        [`${G}@1`]: withSeen(oneCell(G, 1, 2, "1415:3:47", cell(4, 0, { 6291: [4, 4] }))),
+        [`${H}@0`]: withSeen(oneCell(H, 0, 7, "1415:3:47", cell(6, 0, { 6291: [6, 6] }))),
+        [`${J}@2`]: withSeen(oneCell(J, 2, 1, "1416:2:x", cell(3, 0, { 6358: [3, 3] }))),
+      }));
+      const other = path.join(root, "other.lua");
+      fs.writeFileSync(other, savedFile({
+        [`${H}@0`]: withSeen(oneCell(H, 0, 3, "1415:3:47", cell(2, 0, { 6291: [2, 2] }))),
+      }));
+      const outDir = path.join(root, "out");
+      const result = harvest({ files: [author, other], outDir, now: NOW });
+      assert.equal(result.ok, true, result.report.join("\n"));
+      assert.match(result.report.join("\n"), /Contributions: 4 \(each <id>@<epoch> once/);
+      const { text, store } = readSeed(outDir);
+      assert.deepEqual(Object.keys(store.contributions).sort(), [`${A}@0`, `${G}@1`, `${H}@0`, `${J}@2`]);
+      assert.equal(store.contributions[`${H}@0`].seq, 7, "the newer seq of the duplicate");
+      assert.equal(store.contributions[`${G}@1`].seen, undefined, "seen is not kept");
+      const cells = seedCells(text);
+      assert.equal(cells["1415:3:47"].c, 10 + 4 + 6, "each contribution once");
+      assert.equal(cells["1415:3:47"].k, 3, "three players there");
+      assert.equal(cells["1416:2:x"].c, 3);
+      for (const [id, epoch] of [[A, 0], [G, 1], [H, 0], [J, 2]]) {
+        assert.match(text, new RegExp(`^ {4}\\["${id}"\\] = ${epoch},$`, "m"), id);
+      }
+      const again = harvest({ files: [author, other], outDir, now: NOW });
+      assert.match(again.report.join("\n"), /Nothing new: OneKeyFishing\/SeedData\.lua stays at epoch 1/);
+    },
+  },
+  {
     name: "a reset with no contributions to reset fails instead of doing nothing",
     fn() {
       const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-empty-"));

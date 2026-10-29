@@ -406,6 +406,7 @@ export function harvest(options = {}) {
   const files = [...accountFiles(options.addonsDir),
     ...(options.files || []).map((file) => ({ file, name: path.basename(file) }))];
   const notes = [];
+  const units = new Set(); // every <id>@<epoch> accepted from the input, however often it came
   let read = 0;
   let rejected = 0;
   for (const { file, name } of files) {
@@ -417,11 +418,14 @@ export function harvest(options = {}) {
       notes.push(`  rejected  ${name}: does not parse (${error.message})`);
       continue;
     }
+    // The own record (keyed by its ID) and other players' records the client received (keyed by <id>@<epoch>,
+    // with a local `seen`): neither the key nor seen matters, checkRecord rebuilds { id, epoch, seq, builds }.
     for (const [key, record] of Object.entries(db?.shared?.records || {})) {
       read += 1;
       try {
         const clean = checkRecord(record, notes);
         const storeKey = `${clean.id}@${clean.epoch}`;
+        units.add(storeKey);
         const stored = store.contributions[storeKey];
         if (!stored || clean.seq > stored.seq) {
           store.contributions[storeKey] = clean;
@@ -476,6 +480,7 @@ export function harvest(options = {}) {
     .filter((id) => !oldItems.has(id))).size;
   report.push(`Harvest: ${files.length} file(s), ${read} record(s) read, ${rejected} rejected`);
   report.push(...notes);
+  report.push(`Contributions: ${units.size} (each <id>@<epoch> once, its newest seq)`);
   report.push(`New places: ${newPlaces}   New items: ${newItems}   Places in total: ${Object.keys(cells).length}`);
   report.push(...resetNotes);
   if (bytes > MAX_SEED_BYTES) {

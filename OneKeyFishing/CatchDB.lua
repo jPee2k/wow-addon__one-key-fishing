@@ -13,8 +13,8 @@ local RANGE_STEP = 75 -- skill points per range
 local MAX_RANGE = 4 -- 300 and above
 local MAX_PIECES = 20 -- pieces counted per catch and item, against bogus quantities
 local SEQ_INTERVAL = 60 -- seconds between bumps of the record's seq
-local ID_CHARS = "abcdefghijklmnopqrstuvwxyz234567"
-local ID_LENGTH = 8
+local ID_LENGTH = 8 -- base32 characters (Data.lua)
+CatchDB.ID_LENGTH = ID_LENGTH
 
 -- The skill ranges, for the UI: range r is RANGE_STEP * r points of base rank and up; MAX_RANGE has no top.
 CatchDB.RANGE_STEP, CatchDB.MAX_RANGE, CatchDB.RANGES = RANGE_STEP, MAX_RANGE, {}
@@ -92,15 +92,6 @@ end
 ---------------------------------------------------------------------------
 -- Records
 ---------------------------------------------------------------------------
-local function NewID()
-    local chars = {}
-    for i = 1, ID_LENGTH do
-        local index = math.random(#ID_CHARS)
-        chars[i] = ID_CHARS:sub(index, index)
-    end
-    return table.concat(chars)
-end
-
 -- The bundled seed (SeedData.lua) as read at runtime; a missing or malformed one counts as empty.
 local EMPTY_SEED = { epoch = 0, absorbed = {}, resets = {}, cells = {} }
 
@@ -120,6 +111,36 @@ end
 local function SeedEpoch()
     local epoch = Seed().epoch
     return type(epoch) == "number" and epoch or 0
+end
+CatchDB.SeedEpoch = SeedEpoch
+
+-- ID -> the newest epoch of that ID the seed holds.
+function CatchDB.SeedAbsorbed()
+    return SeedField("absorbed")
+end
+
+-- True when the seed already holds this epoch of this ID: it would count twice next to the seed. absorbed: the
+-- seed's table (ID -> newest epoch) by default.
+function CatchDB.IsAbsorbed(id, epoch, absorbed)
+    local seedEpoch = (absorbed or SeedField("absorbed"))[id]
+    return type(seedEpoch) == "number" and epoch <= seedEpoch
+end
+
+-- Other players' records are kept under "<id>@<epoch>" (Share.lua), the own one under its ID.
+function CatchDB.UnitKey(id, epoch)
+    return ("%s@%d"):format(id, epoch)
+end
+
+function CatchDB.IsOtherKey(key)
+    return type(key) == "string" and key:find("@", 1, true) ~= nil
+end
+
+local function CountKeys(tbl)
+    local count = 0
+    for _ in pairs(tbl) do
+        count = count + 1
+    end
+    return count
 end
 
 -- True when game version `build` ("1.60.1") is older than `than`; "unknown" (the game gave no version) is older
@@ -150,6 +171,14 @@ end
 local function BumpSeq()
     OwnRecord().seq = OwnRecord().seq + 1
     lastSeqBump, seqWaiting = GetTime(), false
+end
+
+-- Bumps a seq change that waits for its minute (at logout, and before the record goes to a peer, so it has a
+-- seq for all its cells).
+function CatchDB.FlushSeq()
+    if seqWaiting and ns.db and OwnRecord() then
+        BumpSeq()
+    end
 end
 
 local function Changed()
@@ -226,17 +255,158 @@ local function Settle(cast, caught, fromPool)
 end
 
 ---------------------------------------------------------------------------
+-- Checking other players' records
+---------------------------------------------------------------------------
+local MAX_RECORD_PLACES = 1000 -- distinct places of one received record
+local MAX_COUNT = 1e12 -- any count above this is garbage (and keeps math.huge out)
+
+local function IsCount(value)
+    return type(value) == "number" and value >= 0 and value <= MAX_COUNT and value == math.floor(value)
+end
+CatchDB.IsCount = IsCount
+
+-- Distinct places over all builds of a record (a place fished before and after a patch is one), as
+-- CheckRecord and the harvest count them: the unit of the place limits.
+function CatchDB.CountPlaces(record)
+    local seen = {}
+    if type(record) == "table" and type(record.builds) == "table" then
+        for _, cells in pairs(record.builds) do
+            if type(cells) == "table" then
+                for key in pairs(cells) do
+                    seen[key] = true
+                end
+            end
+        end
+    end
+    return CountKeys(seen)
+end
+
+-- known: item IDs already found in the game during this check (the same fish repeat in every cell).
+local function CheckItems(items, catches, known)
+    if items == nil then
+        return true
+    end
+    if type(items) ~= "table" then
+        return false, "items are not a table"
+    end
+    for itemID, entry in pairs(items) do
+        if not (IsCount(itemID) and itemID > 0) then
+            return false, "item ID " .. tostring(itemID) .. " is not a positive number"
+        end
+        local withItem, pieces = type(entry) == "table" and entry[1], type(entry) == "table" and entry[2]
+        if not (IsCount(withItem) and IsCount(pieces)) or withItem > catches or pieces < withItem
+            or pieces > MAX_PIECES * withItem then
+            return false, "item " .. itemID .. " has impossible counts"
+        end
+        if known[itemID] == nil then
+            known[itemID] = C_Item.GetItemInfoInstant(itemID) ~= nil
+        end
+        if not known[itemID] then
+            known.unknownItem = known.unknownItem or itemID -- noted; the rest is still checked
+        end
+    end
+    return true
+end
+
+local function CheckCell(cell, known)
+    if type(cell) ~= "table" or not (IsCount(cell.c) and IsCount(cell.m) and IsCount(cell.t)) then
+        return false, "not a cell"
+    end
+    local casts = cell.c + cell.m
+    if casts > cell.t then
+        return false, "more casts than seconds of casting"
+    end
+    if (cell.px == nil) ~= (cell.py == nil) then
+        return false, "px and py come together"
+    end
+    for _, name in ipairs({ "px", "py" }) do
+        if cell[name] ~= nil and not (IsCount(cell[name]) and cell[name] <= 1000 * casts) then
+            return false, name .. " is out of range"
+        end
+    end
+    local ok, reason = CheckItems(cell.i, cell.c, known)
+    if not ok then
+        return false, reason
+    end
+    if cell.p ~= nil then
+        if type(cell.p) ~= "table" or not IsCount(cell.p.c) or cell.p.c > cell.c then
+            return false, "the pool part does not fit the totals"
+        end
+        return CheckItems(cell.p.i, cell.p.c, known)
+    end
+    return true
+end
+
+-- True, or false and the reason, for a record received from another player (myID: the own ID, default this
+-- account's); a third value true when the only fault is an item this client does not know (it may be new).
+-- Mirrors checkRecord / checkCell in tools/harvest.mjs, so what a client accepts the next seed accepts too, but
+-- rejects the whole record on any bad cell: a peer's data is refused, not cleaned up. No side effects.
+function CatchDB.CheckRecord(record, myID)
+    if type(record) ~= "table" then
+        return false, "not a table"
+    end
+    local id = record.id
+    if type(id) ~= "string" or #id ~= ID_LENGTH or not id:find("^[a-z2-7]+$") then
+        return false, "the ID is not 8 base32 characters"
+    end
+    if id == (myID or (ns.db and ns.db.shared.myID)) then
+        return false, "the own ID"
+    end
+    if not (IsCount(record.epoch) and IsCount(record.seq)) then
+        return false, "epoch or seq is not a count"
+    end
+    if type(record.builds) ~= "table" then
+        return false, "no builds"
+    end
+    -- Places are counted once over all builds, as the harvest does: a place fished before and after a patch is one.
+    local places, seen, known = 0, {}, {}
+    for build, cells in pairs(record.builds) do
+        if type(build) ~= "string" or not build:find("^%d+%.%d+%.%d+$") or type(cells) ~= "table" then
+            return false, "build " .. tostring(build) .. " is not a game version"
+        end
+        for key, cell in pairs(cells) do
+            if not seen[key] then
+                seen[key], places = true, places + 1
+                if places > MAX_RECORD_PLACES then
+                    return false, "more than " .. MAX_RECORD_PLACES .. " places"
+                end
+            end
+            if type(key) ~= "string" or not (key:find("^%d+:[0-4]:%d%d$") or key:find("^%d+:[0-4]:x$")) then
+                return false, "place key " .. tostring(key) .. " is not <mapID>:<range>:<cell>"
+            end
+            local ok, reason = CheckCell(cell, known)
+            if not ok then
+                return false, key .. ": " .. reason
+            end
+        end
+    end
+    if known.unknownItem then
+        return false, "item " .. known.unknownItem .. " is unknown to the game", true
+    end
+    return true
+end
+
+---------------------------------------------------------------------------
 -- Views
 ---------------------------------------------------------------------------
 local LITTLE_DATA = 50 -- catches a scope needs before chances are shown
 
+-- A sum also tallies who it comes from: the IDs of the records with a summed cell and the seed's largest k.
 local function NewSum()
-    return { c = 0, m = 0, i = {} }
+    return { c = 0, m = 0, i = {}, ids = {}, seedK = 0 }
 end
 
-local function AddCell(sum, cell)
+local function AddCell(sum, cell, source)
     if type(cell) ~= "table" then
         return
+    end
+    -- Who caught something here: a cell of misses only adds no player.
+    if (tonumber(cell.c) or 0) > 0 then
+        if source.seed then
+            sum.seedK = math.max(sum.seedK, tonumber(cell.k) or 0)
+        elseif source.id then
+            sum.ids[source.id] = true
+        end
     end
     sum.c = sum.c + (tonumber(cell.c) or 0)
     sum.m = sum.m + (tonumber(cell.m) or 0)
@@ -252,13 +422,13 @@ local function AddCell(sum, cell)
     end
 end
 
--- The seed's keys per "<mapID>:<range>", built once per seed (the seed is large; own data is small).
+-- The seed's keys per "<mapID>:<range>", built once per seed (the seed is large and never changes in place).
 local seedIndex, indexedSeed
 
-local function SeedIndex(seed)
-    if indexedSeed ~= seed then
-        seedIndex, indexedSeed = {}, seed
-        for key in pairs(seed.cells) do
+local function SeedIndex(cells)
+    if indexedSeed ~= cells then
+        seedIndex, indexedSeed = {}, cells
+        for key in pairs(cells) do
             local prefix = KeyMapRange(key)
             if prefix then
                 seedIndex[prefix] = seedIndex[prefix] or {}
@@ -269,22 +439,110 @@ local function SeedIndex(seed)
     return seedIndex
 end
 
--- The cell tables (place key -> cell, plus the seed's index) a source reads for a map: "all" is the seed plus
--- the own record, without the own cells of game versions older than a reset of the map (after a patch that
--- changed its catch); "mine" is the lifetime counts.
+-- Every cell of the other players' records (Share.lua) as an entry { cell, id, build, place, prefix }, in sets by
+-- place key and by "<mapID>:<range>": one index for all of them, so a query does not walk every record. Built on
+-- the first query; SHARED_DATA_CHANGED with the changed keys updates only those records, without the keys it is
+-- built anew; an own catch leaves it alone.
+local others -- { byKey = { place -> { entry -> true } }, byPrefix = { prefix -> { entry -> true } }, byRecord }
+
+local function AddToSet(sets, name, entry)
+    sets[name] = sets[name] or {}
+    sets[name][entry] = true
+end
+
+local function IndexRecord(key)
+    local record = ns.db.shared.records[key]
+    if not (CatchDB.IsOtherKey(key) and type(record) == "table" and type(record.builds) == "table") then
+        return
+    end
+    local entries = {}
+    for build, cells in pairs(record.builds) do
+        for place, cell in pairs(type(cells) == "table" and cells or {}) do
+            local prefix = KeyMapRange(place)
+            if prefix then
+                local entry = { cell = cell, id = record.id, build = build, place = place, prefix = prefix }
+                AddToSet(others.byKey, place, entry)
+                AddToSet(others.byPrefix, prefix, entry)
+                table.insert(entries, entry)
+            end
+        end
+    end
+    others.byRecord[key] = entries
+end
+
+local function UnindexRecord(key)
+    for _, entry in ipairs(others.byRecord[key] or {}) do
+        others.byKey[entry.place][entry] = nil
+        others.byPrefix[entry.prefix][entry] = nil
+    end
+    others.byRecord[key] = nil
+end
+
+local function Others()
+    if not others then
+        others = { byKey = {}, byPrefix = {}, byRecord = {} }
+        for key in pairs(ns.db.shared.records) do
+            IndexRecord(key)
+        end
+    end
+    return others
+end
+
+-- What a source sums for a map. "all": the seed, the own record and, with sharing on, the other players'
+-- records, each without its cells of game versions older than a reset of the map (after a patch that changed its
+-- catch); "mine": the lifetime counts. A record's cells count for its ID in the player count.
 local function Sources(source, mapID)
     if source == "mine" then
-        return { { cells = ns.db.shared.mine } }
+        return { tables = { { cells = ns.db.shared.mine } } }
     end
-    local seed = Seed()
-    local sources = { { cells = seed.cells, index = SeedIndex(seed) } }
     local reset = SeedField("resets")[mapID]
-    for build, cells in pairs(OwnRecord().builds) do
-        if not (reset and OlderBuild(build, reset)) then
-            table.insert(sources, { cells = cells })
+    local own = OwnRecord()
+    local sources = { seed = { cells = Seed().cells, seed = true }, tables = {}, reset = reset,
+        others = ns.Share.IsEnabled() and Others() or nil }
+    for build, cells in pairs(own.builds) do
+        if type(cells) == "table" and not (reset and OlderBuild(build, reset)) then
+            table.insert(sources.tables, { cells = cells, id = own.id })
         end
     end
     return sources
+end
+
+local function AddOthers(sum, entries, reset)
+    for entry in pairs(entries or {}) do
+        if not (reset and OlderBuild(entry.build, reset)) then
+            AddCell(sum, entry.cell, entry)
+        end
+    end
+end
+
+local function SumSpot(sources, keys)
+    local sum = NewSum()
+    for _, key in ipairs(keys) do
+        if sources.seed then
+            AddCell(sum, sources.seed.cells[key], sources.seed)
+        end
+        for _, source in ipairs(sources.tables) do
+            AddCell(sum, source.cells[key], source)
+        end
+        if sources.others then
+            AddOthers(sum, sources.others.byKey[key], sources.reset)
+        end
+    end
+    return sum
+end
+
+-- Contributions behind a sum, each at most once (research R9): records of IDs the seed never absorbed are
+-- other players for sure; those it absorbed may be among the seed's k, so they only count above it.
+local function Players(sum)
+    local absorbed, known, fresh = SeedField("absorbed"), 0, 0
+    for id in pairs(sum.ids) do
+        if absorbed[id] then
+            known = known + 1
+        else
+            fresh = fresh + 1
+        end
+    end
+    return math.max(sum.seedK, known) + fresh
 end
 
 local function SumMap(sources, mapID, ranges)
@@ -292,18 +550,20 @@ local function SumMap(sources, mapID, ranges)
     for _, range in ipairs(ranges) do
         wanted[MapRange(mapID, range)] = true
     end
-    for _, source in ipairs(sources) do
-        if source.index then
-            for prefix in pairs(wanted) do
-                for _, key in ipairs(source.index[prefix] or {}) do
-                    AddCell(sum, source.cells[key])
-                end
+    for prefix in pairs(wanted) do
+        if sources.seed then
+            for _, key in ipairs(SeedIndex(sources.seed.cells)[prefix] or {}) do
+                AddCell(sum, sources.seed.cells[key], sources.seed)
             end
-        else
-            for key, cell in pairs(source.cells) do
-                if wanted[KeyMapRange(key)] then
-                    AddCell(sum, cell)
-                end
+        end
+        if sources.others then
+            AddOthers(sum, sources.others.byPrefix[prefix], sources.reset)
+        end
+    end
+    for _, source in ipairs(sources.tables) do
+        for key, cell in pairs(source.cells) do
+            if wanted[KeyMapRange(key)] then
+                AddCell(sum, cell, source)
             end
         end
     end
@@ -324,13 +584,16 @@ local function BuildView(scope, sum)
         end
         return a.itemID < b.itemID
     end)
-    return { scope = scope, littleData = sum.c < LITTLE_DATA, catches = sum.c, misses = sum.m, items = items }
+    return { scope = scope, littleData = sum.c < LITTLE_DATA, catches = sum.c, misses = sum.m, items = items,
+        players = Players(sum) }
 end
 
 local cache, cacheVersion = {}, nil
 
 -- What a place gives (contracts/catchdb-api.md): the spot, or the whole map when the spot has fewer than
--- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }.
+-- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }. A view is
+-- { scope = "spot" | "map" | "none", littleData, catches, misses, items = { { itemID, catches, chance, pieces } },
+-- players } (players: the contributions behind the numbers, a lower bound where the seed cannot tell; research R9).
 function CatchDB.Query(mapID, cell, filter)
     if cacheVersion ~= version then
         wipe(cache)
@@ -342,13 +605,11 @@ function CatchDB.Query(mapID, cell, filter)
     end
     local ranges = filter.range == "all" and CatchDB.RANGES or { filter.range }
     local sources = Sources(filter.source, mapID)
-    local spot = NewSum()
-    for _, range in ipairs(ranges) do
-        local key = CatchDB.PlaceKey(mapID, range, cell)
-        for _, source in ipairs(sources) do
-            AddCell(spot, source.cells[key])
-        end
+    local keys = {}
+    for i, range in ipairs(ranges) do
+        keys[i] = CatchDB.PlaceKey(mapID, range, cell)
     end
+    local spot = SumSpot(sources, keys)
     local view
     if spot.c >= LITTLE_DATA then
         view = BuildView("spot", spot)
@@ -360,20 +621,17 @@ function CatchDB.Query(mapID, cell, filter)
     return view
 end
 
+-- The bundled seed's epoch and number of places, for /okf share.
+function CatchDB.SeedInfo()
+    return SeedEpoch(), CountKeys(Seed().cells)
+end
+
 -- False when the bundled seed is missing, malformed or has no places.
 function CatchDB.HasSeed()
     return next(Seed().cells) ~= nil
 end
 
 local lastPool -- what IsPoolLoot said about the last catch
-
-local function CountKeys(tbl)
-    local count = 0
-    for _ in pairs(tbl) do
-        count = count + 1
-    end
-    return count
-end
 
 -- Lines for /okf debug; never the anonymous ID (the report goes into public bug reports).
 function CatchDB.Describe()
@@ -396,7 +654,7 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     end
     local shared = ns.db.shared
     if type(shared.myID) ~= "string" or shared.myID == "" then
-        shared.myID = NewID()
+        shared.myID = ns.RandomBase32(ID_LENGTH)
     end
     -- A record the seed already absorbed starts over, so it does not count twice next to the seed.
     -- shared.mine keeps the lifetime counts either way.
@@ -405,15 +663,14 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     if type(record) ~= "table" or type(record.builds) ~= "table" or type(record.seq) ~= "number" then
         record = nil
     end
-    local absorbed = SeedField("absorbed")[shared.myID]
-    if record and type(absorbed) == "number" and absorbed >= (record.epoch or 0)
-        and SeedEpoch() > (record.epoch or 0) then
+    if record and CatchDB.IsAbsorbed(shared.myID, record.epoch or 0) and SeedEpoch() > (record.epoch or 0) then
         record = nil
     end
     if not record then
         shared.records[shared.myID] = { id = shared.myID, epoch = SeedEpoch(), seq = 0, builds = {} }
     end
     version = version + 1 -- the seed or the record may be new
+    others = nil
 end)
 
 -- The place is read at every cast start, also for a cast picked up after a /reload: nothing is counted here,
@@ -459,8 +716,17 @@ ns.On("FISH_MISSED", function(castID)
     end
 end)
 
-ns.RegisterEvent("PLAYER_LOGOUT", function()
-    if seqWaiting and ns.db and OwnRecord() then
-        BumpSeq()
+-- Other players' records came or went, or sharing was switched (Share.lua): the views and their index change.
+ns.On("SHARED_DATA_CHANGED", function(keys)
+    version = version + 1
+    if others and keys then
+        for _, key in ipairs(keys) do
+            UnindexRecord(key)
+            IndexRecord(key)
+        end
+    else
+        others = nil
     end
 end)
+
+ns.RegisterEvent("PLAYER_LOGOUT", CatchDB.FlushSeq)

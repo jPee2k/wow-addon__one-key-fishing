@@ -64,6 +64,7 @@ facts", and the `VERIFY` markers in the code are removed only after that.
 
 1. Record the answers in `CLAUDE.md` "Known API facts"; fix the code where an assumption was wrong (with tests).
 2. Remove the `VERIFY` markers that are closed and tick V1-V9 in `specs/002-local-catch-db/verification.md`.
-3. Remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua` and
+3. Run the spike part of `docs/checklists/catch-exchange.md` (the catch exchange, part 2) in the same session,
+   then remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua` and
    `tests/spike_test.lua`.
 4. Fish, run `npm run harvest` for the first real seed, commit it, and release (`docs/publishing.md`).

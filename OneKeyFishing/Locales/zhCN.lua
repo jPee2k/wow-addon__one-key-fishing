@@ -259,4 +259,44 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Shift+Left-click: statistics"] = "Shift+左键点击：统计"
     L["Right-click: menu"] = "右键点击：菜单"
     L["Drag: move this button"] = "拖动：移动此按钮"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
+        "OneKeyFishing 现在会匿名与你的公会、队伍和好友列表中的插件用户分享你的渔获。"
+    L["No character names are sent."] = "不会发送角色名称。"
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "可在 选项 -> 插件 -> OneKeyFishing -> 共享数据库 中关闭。"
+    L["Got it"] = "知道了"
+    L["Shared database"] = "共享数据库"
+    L["Shared catch database is off"] = "共享渔获数据库已关闭"
+    L["Waiting for you to read the notice"] = "等待你阅读说明"
+    L["Exchange unavailable: the game refuses addon messages"] = "无法交换：游戏拒绝插件消息"
+    L["Exchange paused: in combat"] = "交换已暂停：战斗中"
+    L["Exchange paused: in an instance"] = "交换已暂停：在副本中"
+    L["Exchange paused: loading screen"] = "交换已暂停：载入画面"
+    L["Exchange paused: the game restricts addon messages here"] = "交换已暂停：游戏在此限制插件消息"
+    L["Exchange paused: the game asked to slow down"] = "交换已暂停：游戏要求放慢速度"
+    L["Nobody to exchange with right now"] = "当前没有可交换的对象"
+    L["Exchange: %d players, %s ago"] = "交换：%d名玩家，%s前"
+    L["Exchange: waiting for the first exchange"] = "交换：等待第一次交换"
+    L["Bundled data: version %d, %d places"] = "内置数据：版本%d，%d个地点"
+    L["Records held: %d, %d places"] = "保存的记录：%d条，%d个地点"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "过去一小时听到的玩家：公会%d，队伍%d，好友%d，Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "过去一小时交换过的玩家：%d"
+    L["Last exchange: %s ago"] = "上次交换：%s前"
+    L["Last exchange: none yet"] = "上次交换：暂无"
+    L["Traffic in the last hour: %d KB"] = "过去一小时流量：%d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "使用共享渔获数据库"
+    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
+        "你的渔获（物品、数量、以地图编号表示的地点）会以随机ID分享。"
+    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
+        "数据会发送给你的公会、队伍和好友列表中的插件用户。不含名称、装备或精确位置。"
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "关闭时：不发送也不接收任何数据，其他玩家的数据也不计入。"
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "%d次渔获，来自%d名玩家"
 end)

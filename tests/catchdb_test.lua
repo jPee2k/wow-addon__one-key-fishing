@@ -301,3 +301,164 @@ test("the debug report has a catch database section without the anonymous ID", f
     assert(report:find("last price scan:", 1, true), "price coverage")
     assert(not report:find(shared().myID, 1, true), "no ID")
 end)
+
+---------------------------------------------------------------------------
+-- CheckRecord: other players' records (part 2), rejected whole on any bad part
+---------------------------------------------------------------------------
+local OTHER_ID = "m3p7x2zd"
+
+local function validRecord()
+    return { id = OTHER_ID, epoch = 2, seq = 7, builds = {
+        ["1.60.1"] = {
+            ["1415:3:47"] = { c = 3, m = 1, t = 40, px = 1500, py = 900, i = { [FISH] = { 2, 3 }, [OTHER] = { 1, 1 } },
+                p = { c = 1, i = { [FISH] = { 1, 1 } } } },
+            ["1415:3:x"] = cellOf(5, 0, { [FISH] = { 5, 5 } }),
+        },
+        ["1.60.2"] = { ["1416:0:00"] = cellOf(1, 1, { [OTHER] = { 1, 20 } }) },
+    } }
+end
+
+local function rejects(change, what)
+    local candidate = validRecord()
+    change(candidate)
+    local ok, reason = CatchDB.CheckRecord(candidate)
+    eq(ok, false, what)
+    assert(type(reason) == "string" and reason ~= "", what .. ": a reason")
+end
+
+test("CheckRecord accepts a valid record of two builds and three cells", function()
+    local ok, reason = CatchDB.CheckRecord(validRecord())
+    eq(ok, true, tostring(reason))
+end)
+
+test("CheckRecord rejects a bad or own ID and a non-count epoch or seq", function()
+    rejects(function(r) r.id = "short" end, "short ID")
+    rejects(function(r) r.id = "ABCDEFGH" end, "upper case")
+    rejects(function(r) r.id = "abcdefg1" end, "1 is not base32")
+    rejects(function(r) r.id = shared().myID end, "own ID")
+    rejects(function(r) r.epoch = -1 end, "negative epoch")
+    rejects(function(r) r.seq = 1.5 end, "fractional seq")
+    rejects(function(r) r.seq = "3" end, "seq as text")
+    rejects(function(r) r.builds = "x" end, "builds not a table")
+end)
+
+test("CheckRecord rejects a bad build or place key", function()
+    rejects(function(r) r.builds["1.60"] = {} end, "build")
+    rejects(function(r) r.builds["1.60.1"]["1415:5:47"] = cellOf(1, 0) end, "range 5")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:4"] = cellOf(1, 0) end, "one-digit cell")
+    rejects(function(r) r.builds["1.60.1"]["abc"] = cellOf(1, 0) end, "not a key")
+end)
+
+test("CheckRecord rejects impossible cells", function()
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].t = 4 end, "more casts than seconds")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].i[FISH] = { 6, 6 } end, "item catches above catches")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].i[FISH] = { 5, 4 } end, "pieces below catches")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].i[FISH] = { 5, 101 } end, "pieces above 20 per catch")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].px = 10 end, "px without py")
+    rejects(function(r)
+        local cell = r.builds["1.60.1"]["1415:3:x"]
+        cell.px, cell.py = 5001, 10
+    end, "px above 1000 per cast")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:47"].p.c = 4 end, "pool catches above catches")
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].c = "5" end, "a count as text")
+end)
+
+test("CheckRecord rejects more than 1000 places", function()
+    rejects(function(r)
+        local cells = r.builds["1.60.2"]
+        for i = 1, 1000 do
+            cells[(3000 + i) .. ":0:x"] = cellOf(1, 0)
+        end
+    end, "1003 places")
+end)
+
+test("CheckRecord rejects an item the game does not know", function()
+    known_items = { [FISH] = true }
+    local ok = CatchDB.CheckRecord(validRecord())
+    eq(ok, false, "OTHER is unknown")
+    known_items = { [FISH] = true, [OTHER] = true }
+    eq((CatchDB.CheckRecord(validRecord())), true, "both known")
+    known_items = nil
+end)
+
+---------------------------------------------------------------------------
+-- Other players' records (part 2): "All" with sharing on, players
+---------------------------------------------------------------------------
+test("with sharing on, All sums the own record and every stored other record; off leaves the others out", function()
+    record().builds["1.60.1"]["2100:3:11"] = cellOf(10, 0, { [FISH] = { 10, 10 } })
+    shared().records["qqqqqqqq@0"] = { id = "qqqqqqqq", epoch = 0, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2100:3:11"] = cellOf(30, 1, { [FISH] = { 30, 30 } }) } } }
+    shared().records["rrrrrrrr@1"] = { id = "rrrrrrrr", epoch = 1, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2100:3:11"] = cellOf(25, 0, { [OTHER] = { 25, 25 } }) },
+            ["1.60.2"] = { ["2100:3:44"] = cellOf(5, 0, { [OTHER] = { 5, 5 } }) } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    local view = CatchDB.Query(2100, "11", ALL)
+    eq(view.scope, "spot", "65 catches at the spot")
+    eq(view.catches, 65, "10 + 30 + 25")
+    eq(view.players, 3, "own and two others")
+    eq(CatchDB.Query(2100, "11", { range = 3, source = "mine" }).catches, 0, "Only mine leaves them out")
+    ns.Share.SetEnabled(false)
+    view = CatchDB.Query(2100, "11", ALL)
+    eq(view.catches, 10, "sharing off: own only")
+    eq(view.players, 1, "one player")
+    ns.Share.SetEnabled(true)
+    eq(CatchDB.Query(2100, "11", ALL).catches, 65, "on again")
+end)
+
+test("players on the whole map count each record once", function()
+    local view = CatchDB.Query(2100, "55", ALL)
+    eq(view.scope, "map", "nothing at the spot")
+    eq(view.catches, 70, "every cell of the map")
+    eq(view.players, 3, "three records, each once")
+end)
+
+test("the view changes after SHARED_DATA_CHANGED", function()
+    local first = CatchDB.Query(2100, "11", ALL)
+    shared().records["qqqqqqqq@0"] = nil
+    ns.Fire("SHARED_DATA_CHANGED")
+    local second = CatchDB.Query(2100, "11", ALL)
+    assert(second ~= first, "a new view")
+    eq(second.catches, 40, "35 at the spot is too few: the map, 10 + 25 + 5")
+end)
+
+test("records that come, change and go through the store update the view without a full rebuild", function()
+    local Store = ns.Share.Store
+    eq(Store.Accept(shared(), { id = "uuuuuuuu", epoch = 0, seq = 1,
+        builds = { ["1.60.1"] = { ["2200:3:11"] = cellOf(60, 0, { [FISH] = { 60, 60 } }) } } }), "new", "new")
+    eq(CatchDB.Query(2200, "11", ALL).catches, 60, "counted")
+    eq(Store.Accept(shared(), { id = "uuuuuuuu", epoch = 0, seq = 2,
+        builds = { ["1.60.1"] = { ["2200:3:11"] = cellOf(70, 0, { [FISH] = { 70, 70 } }) } } }), "newer", "newer")
+    eq(CatchDB.Query(2200, "11", ALL).catches, 70, "the new version replaces the old one")
+    eq(CatchDB.Query(2200, "55", ALL).catches, 70, "on the whole map too")
+    shared().records["uuuuuuuu@0"].seq = "broken"
+    eq(Store.CleanUp(shared()), 1, "removed")
+    eq(CatchDB.Query(2200, "11", ALL).scope, "none", "gone")
+end)
+
+test("a record with only misses at a place adds no player", function()
+    shared().records["vvvvvvvv@0"] = { id = "vvvvvvvv", epoch = 0, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2300:3:11"] = cellOf(60, 0, { [FISH] = { 60, 60 } }) } } }
+    shared().records["wwwwwwww@0"] = { id = "wwwwwwww", epoch = 0, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2300:3:11"] = cellOf(0, 5) } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    local view = CatchDB.Query(2300, "11", ALL)
+    eq(view.catches, 60, "catches")
+    eq(view.players, 1, "only the player who caught something")
+end)
+
+test("a place fished before and after a patch counts as one place", function()
+    eq(CatchDB.CountPlaces({ builds = { ["1.60.1"] = { ["1:0:x"] = cellOf(1, 0), ["2:0:x"] = cellOf(1, 0) },
+        ["1.60.2"] = { ["1:0:x"] = cellOf(1, 0) } } }), 2, "two places")
+end)
+
+test("an unknown item does not hide another fault of the record", function()
+    known_items = { [OTHER] = true }
+    local record = validRecord()
+    record.builds["1.60.2"]["1416:0:00"].c = 999 -- impossible, in another cell than the unknown fish
+    local ok, _, unknownItem = CatchDB.CheckRecord(record)
+    eq(ok, false, "refused")
+    eq(unknownItem, nil, "a hard fault: the sender is to blame")
+    ok, _, unknownItem = CatchDB.CheckRecord(validRecord())
+    eq(unknownItem, true, "only the unknown fish: no blame")
+    known_items = nil
+end)

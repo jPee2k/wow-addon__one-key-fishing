@@ -33,7 +33,7 @@ initiator; all session messages carry it.
 A message longer than 255 bytes is sent in parts: `<type><sid>#<msg>.<part>.<total> <chunk>`, where `<msg>` is a
 per-sender counter (base32, 1-2 characters) and parts are numbered from 1. The receiver joins the chunks by part
 number (Battle.net delivery is unordered), keeps at most 64 KB of parts per peer and drops a message whose parts
-did not all arrive within 15 s. `HELLO` and `BYE` always fit one message.
+did not get a new part for 15 s (a 32 KB record takes over a minute at the whisper pace). `HELLO` and `BYE` always fit one message.
 
 ## A session
 
@@ -50,14 +50,15 @@ A -> B  DIFF <differing buckets> <A's entries>   (equal buckets: A refreshes `se
 B -> A  DIFF <same buckets> <B's entries>        (B refreshes `seen` of units equal on both sides)
 B -> A  WANT <units B wants>                     (A holds a newer seq, or B lacks it, and B's seed did not absorb it)
 A -> B  WANT <units A wants>
-A -> B  REC ... REC, then BYE sent               (B's wants, newest first, within 8 KB, at least one)
+A -> B  REC ... REC, then BYE sent               (B's wants, own first, newest first, within 8 KB and 25 records, at least one)
 B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own sends)
 ```
 
 - Each received `REC` is decoded and checked (research R6) one per frame step, then stored per `id@epoch`
   (data-model.md). A `REC` that was not wanted, does not decode or fails the check makes the sender ignored until
   logout; the session ends.
-- No message from the peer for 15 s: the session is dropped without a message and the peer is paused for 30 min.
+- No message from the peer for 15 s: the session is dropped without a message and the peer is paused for 30 min,
+  or until its next `HELLO` (a peer that paused for combat greets again when the pause ends).
   `TargetOffline` on a send has the same effect.
 - A pause (research R8) or turning sharing off drops the running session without a message.
 - Only the hearer of a `HELLO` starts a session, and `A` takes one at a time; another hearer gets `BYE busy` and
@@ -67,6 +68,10 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
   answer; the other drops its own session and answers the `SUM` as the responder. Equal tags: both drop their
   sessions and wait for the next `HELLO`.
 - Units wanted but not sent because of the 8 KB limit come in a later session.
+- A session in which neither side wanted anything (the two hold sets that never agree: another bundled seed, a
+  record evicted for the size limit) is not started again with that peer until one of the two hashes changes.
+- A record refused only because the receiving client does not know one of its items (a new item, a client not
+  yet patched) is dropped without ignoring its sender.
 
 ## Limits on what is received (per sender, per session of play)
 
@@ -74,7 +79,7 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 | --- | --- | --- |
 | `HELLO` | 1 per 60 s | ignored |
 | Messages (parts counted) | 600 per hour | the sender is ignored until logout |
-| Records | 50 per hour | the sender is ignored until logout |
+| Records | more in a session than its `WANT` asked for, or over 150 per hour (25 per session in each of the 6 sessions the group cooldown allows) | the sender is ignored until logout |
 | One record | 32 KB encoded, 1,000 places | rejected, the sender is ignored |
 | Broken, unwanted or invalid data | none allowed | the sender is ignored until logout |
 

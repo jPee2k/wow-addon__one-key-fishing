@@ -9,8 +9,9 @@ bobber by itself.
 What can be caught where, for every zone and fishing spot of the world. Planned in four parts that ship together
 as release 1.2.0, in [shared-db-plan.md](shared-db-plan.md). Part 1 (own data, the "What can be caught here" tab
 and a bundled database refreshed by `npm run harvest`) is built in `specs/002-local-catch-db`; part 2 (exchange
-in the guild, the group and with friends) is planned in `specs/003-guild-group-sync`. Both wait for the in-game
-checks after the game launch. The notes below are the original idea.
+in the guild, the group and with friends) is built in
+[specs/003-guild-group-sync](../specs/003-guild-group-sync/spec.md) (`Comm.lua`, `Share.lua`, `/okf share`). Both
+wait for the in-game checks after the game launch. The notes below are the original idea.
 
 - Built from the catches players record with the addon (the addon already stores caught items per zone and
   subzone in `OneKeyFishingCharDB.stats.zones`).

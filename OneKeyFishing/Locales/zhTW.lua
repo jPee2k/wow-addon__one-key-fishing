@@ -259,4 +259,44 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Shift+Left-click: statistics"] = "Shift+左鍵：統計"
     L["Right-click: menu"] = "右鍵：選單"
     L["Drag: move this button"] = "拖曳：移動此按鈕"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
+        "OneKeyFishing 現在會匿名與你的公會、隊伍和好友名單中的插件使用者分享你的漁獲。"
+    L["No character names are sent."] = "不會傳送角色名稱。"
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "可在 選項 -> 插件 -> OneKeyFishing -> 共享資料庫 中關閉。"
+    L["Got it"] = "知道了"
+    L["Shared database"] = "共享資料庫"
+    L["Shared catch database is off"] = "共享漁獲資料庫已關閉"
+    L["Waiting for you to read the notice"] = "等待你閱讀說明"
+    L["Exchange unavailable: the game refuses addon messages"] = "無法交換：遊戲拒絕插件訊息"
+    L["Exchange paused: in combat"] = "交換已暫停：戰鬥中"
+    L["Exchange paused: in an instance"] = "交換已暫停：在副本中"
+    L["Exchange paused: loading screen"] = "交換已暫停：載入畫面"
+    L["Exchange paused: the game restricts addon messages here"] = "交換已暫停：遊戲在此限制插件訊息"
+    L["Exchange paused: the game asked to slow down"] = "交換已暫停：遊戲要求放慢速度"
+    L["Nobody to exchange with right now"] = "目前沒有可交換的對象"
+    L["Exchange: %d players, %s ago"] = "交換：%d 名玩家，%s前"
+    L["Exchange: waiting for the first exchange"] = "交換：等待第一次交換"
+    L["Bundled data: version %d, %d places"] = "內建資料：版本 %d，%d 個地點"
+    L["Records held: %d, %d places"] = "保存的紀錄：%d 筆，%d 個地點"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "過去一小時聽到的玩家：公會 %d，隊伍 %d，好友 %d，Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "過去一小時交換過的玩家：%d"
+    L["Last exchange: %s ago"] = "上次交換：%s前"
+    L["Last exchange: none yet"] = "上次交換：尚無"
+    L["Traffic in the last hour: %d KB"] = "過去一小時流量：%d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "使用共享漁獲資料庫"
+    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
+        "你的漁獲（物品、數量、以地圖編號表示的地點）會以隨機 ID 分享。"
+    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
+        "資料會傳給你的公會、隊伍和好友名單中的插件使用者。不含名稱、裝備或精確位置。"
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "關閉時：不傳送也不接收任何資料，其他玩家的資料也不計入。"
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "%d 次漁獲，來自 %d 名玩家"
 end)

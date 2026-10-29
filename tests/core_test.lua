@@ -75,3 +75,28 @@ test("ADDON_LOADED of another addon is ignored", function()
     fire("ADDON_LOADED", "SomeOtherAddon")
     eq(OneKeyFishingDB.settings, nil, "settings")
 end)
+
+test("upgrade from 1.1: sharing is on and the notice not yet shown, nothing else changes", function()
+    LoadWith({ schema = 1, settings = { autoLoot = false }, statsTab = "here" }, { schema = 1 })
+    eq(OneKeyFishingDB.settings.shareDB, true, "sharing on by default")
+    eq(OneKeyFishingDB.shareNotice, false, "notice not shown yet")
+    eq(OneKeyFishingDB.settings.autoLoot, false, "user setting")
+    eq(OneKeyFishingDB.statsTab, "here", "last tab")
+    eq(OneKeyFishingDB.schema, 1, "schema stays 1")
+end)
+
+test("a popup runs onCancel on its second button and onHide after either button", function()
+    local log = {}
+    ns.ShowPopup("OKF_TEST", "text", function() table.insert(log, "accept") end, "A", "B",
+        function() table.insert(log, "cancel") end, function() table.insert(log, "hide") end)
+    accept_popup()
+    eq(table.concat(log, " "), "accept hide", "first button")
+    log = {}
+    ns.ShowPopup("OKF_TEST", "text", function() table.insert(log, "accept") end, "A", "B",
+        function() table.insert(log, "cancel") end, function() table.insert(log, "hide") end)
+    cancel_popup()
+    eq(table.concat(log, " "), "cancel hide", "second button")
+    eq(StaticPopupDialogs.OKF_TEST.noCancelOnEscape, true, "Escape does not press a second button that does more")
+    ns.ShowPopup("OKF_TEST2", "text", function() end)
+    eq(StaticPopupDialogs.OKF_TEST2.noCancelOnEscape, false, "a plain No keeps the game's Escape")
+end)

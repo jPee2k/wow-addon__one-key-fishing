@@ -125,3 +125,31 @@ test("a damaged own record starts over instead of breaking every catch", functio
     cast({ { FISH, 1 } })
     eq(shared.records[ID].builds["1.60.1"]["1415:3:47"].c, 1, "catches are recorded again")
 end)
+
+test("other players' records: the reset rule applies to them; players add the seed's k without counting twice",
+    function()
+    ns.SeedData = { epoch = 3, built = "", build = "1.60.1", absorbed = { [ID] = 1, qqqqqqqq = 1 }, resets = {},
+        cells = {
+            ["1600:3:11"] = { c = 60, m = 0, t = 600, k = 3, i = { [FISH] = { 60, 60 } } },
+            ["1600:3:22"] = { c = 10, m = 0, t = 100, k = 5, i = { [FISH] = { 10, 10 } } },
+        } }
+    fire("ADDON_LOADED", "OneKeyFishing")
+    shared.records["rrrrrrrr@0"] = { id = "rrrrrrrr", epoch = 0, seq = 1, seen = 1, builds = {
+        ["1.60.1"] = { ["1600:3:11"] = cellOf(20, 0, { [FISH] = { 20, 20 } }) },
+        ["1.60.2"] = { ["1600:3:11"] = cellOf(5, 0, { [FISH] = { 5, 5 } }) } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    local view = CatchDB.Query(1600, "11", ALL)
+    eq(view.catches, 85, "60 + 20 + 5")
+    eq(view.players, 4, "k 3 of the seed cell + one record the seed never saw")
+    ns.SeedData.resets = { [1600] = "1.60.2" }
+    ns.Fire("SHARED_DATA_CHANGED")
+    eq(CatchDB.Query(1600, "11", ALL).catches, 65, "the record's 1.60.1 cell is left out after the reset")
+    ns.SeedData.resets = {}
+    ns.Fire("SHARED_DATA_CHANGED")
+    eq(CatchDB.Query(1600, "33", ALL).players, 6, "whole map: the largest k (5) + the record")
+    -- A newer epoch of a player the seed already has may be one of its k: it only counts above them.
+    shared.records["qqqqqqqq@2"] = { id = "qqqqqqqq", epoch = 2, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["1600:3:11"] = cellOf(5, 0, { [FISH] = { 5, 5 } }) } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    eq(CatchDB.Query(1600, "11", ALL).players, 4, "still 4: q may be among the seed's 3")
+end)

@@ -264,4 +264,44 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Shift+Left-click: statistics"] = "Shift+왼쪽 클릭: 통계"
     L["Right-click: menu"] = "오른쪽 클릭: 메뉴"
     L["Drag: move this button"] = "끌기: 이 버튼 이동"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
+        "이제 OneKeyFishing이 내 어획을 길드, 파티와 친구 목록의 애드온 사용자와 익명으로 공유합니다."
+    L["No character names are sent."] = "캐릭터 이름은 보내지 않습니다."
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "설정 -> 애드온 -> OneKeyFishing -> 공유 데이터베이스에서 끌 수 있습니다."
+    L["Got it"] = "확인"
+    L["Shared database"] = "공유 데이터베이스"
+    L["Shared catch database is off"] = "공유 어획 데이터베이스가 꺼져 있습니다"
+    L["Waiting for you to read the notice"] = "안내를 읽을 때까지 기다리는 중"
+    L["Exchange unavailable: the game refuses addon messages"] = "교환 불가: 게임이 애드온 메시지를 거부합니다"
+    L["Exchange paused: in combat"] = "교환 일시 중지: 전투 중"
+    L["Exchange paused: in an instance"] = "교환 일시 중지: 인스턴스 안"
+    L["Exchange paused: loading screen"] = "교환 일시 중지: 로딩 화면"
+    L["Exchange paused: the game restricts addon messages here"] = "교환 일시 중지: 이곳에서는 게임이 애드온 메시지를 제한합니다"
+    L["Exchange paused: the game asked to slow down"] = "교환 일시 중지: 게임이 속도를 줄이라고 요청했습니다"
+    L["Nobody to exchange with right now"] = "지금은 교환할 상대가 없습니다"
+    L["Exchange: %d players, %s ago"] = "교환: %d명, %s 전"
+    L["Exchange: waiting for the first exchange"] = "교환: 첫 교환을 기다리는 중"
+    L["Bundled data: version %d, %d places"] = "기본 데이터: 버전 %d, 장소 %d곳"
+    L["Records held: %d, %d places"] = "보유한 기록: %d개, 장소 %d곳"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "지난 1시간 동안 확인된 플레이어: 길드 %d, 파티 %d, 친구 %d, Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "지난 1시간 동안 교환한 플레이어: %d"
+    L["Last exchange: %s ago"] = "마지막 교환: %s 전"
+    L["Last exchange: none yet"] = "마지막 교환: 아직 없음"
+    L["Traffic in the last hour: %d KB"] = "지난 1시간 트래픽: %d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "공유 어획 데이터베이스 사용"
+    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
+        "내 어획(아이템, 수량, 지도 번호로 된 장소)은 무작위 ID로 공유됩니다."
+    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
+        "길드, 파티와 친구 목록의 애드온 사용자에게 전달됩니다. 이름, 장비, 정확한 위치는 보내지 않습니다."
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "끄면: 아무것도 보내거나 받지 않으며, 다른 플레이어의 데이터는 계산하지 않습니다."
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "어획 %d회, 플레이어 %d명"
 end)

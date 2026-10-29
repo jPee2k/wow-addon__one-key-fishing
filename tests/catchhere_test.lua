@@ -146,3 +146,28 @@ test("without a map the page says so", function()
     tick(window)
     eq(here.place.text, "Test Zone", "back on the map")
 end)
+
+test("another player's record arriving shows on the next tick: N catches from 2 players", function()
+    ns.CatchHere.SetRange(3)
+    tick(window)
+    eq(here.counts.text:sub(1, #"60 catches  "), (L["%d catches"]):format(60) .. "  ", "own catches only")
+    local other = { id = "qqqqqqqq", epoch = 0, seq = 1,
+        builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(30, 0, { [FISH] = { 30, 30 } }) } } }
+    eq(ns.Share.Store.Accept(ns.db.shared, other), "new", "stored")
+    tick(window)
+    local expected = (L["%d catches from %d players"]):format(90, 2)
+    eq(here.counts.text:sub(1, #expected), expected, "counts with the other player")
+    ns.CatchHere.SetSource("mine")
+    eq(here.counts.text:sub(1, #"60 catches  "), (L["%d catches"]):format(60) .. "  ", "Only mine")
+    ns.CatchHere.SetSource("all")
+end)
+
+test("the status line of the exchange shows under the counts and follows the state on the tick", function()
+    eq(here.status.text, ns.Share.StatusLine(), "status line")
+    eq(here.status.text, L["Waiting for you to read the notice"], "the notice is still open")
+    local version = ns.CatchDB.GetVersion()
+    ns.db.shareNotice = true
+    tick(window)
+    eq(ns.CatchDB.GetVersion(), version, "the data did not change")
+    eq(here.status.text, L["Nobody to exchange with right now"], "updated without reopening")
+end)
