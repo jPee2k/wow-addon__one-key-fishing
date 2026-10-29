@@ -144,9 +144,9 @@ test("the hash is the polynomial rule modulo 4294967291, computed by hand", func
 end)
 
 test("Base32 pads to the width with the ID alphabet", function()
-    eq(Share.Base32(0, 7), "aaaaaaa", "zero")
-    eq(Share.Base32(33, 2), "bb", "33 = 1 * 32 + 1")
-    eq(#Share.Base32(4294967290, 7), 7, "the largest hash fits 7 characters")
+    eq(ns.Base32(0, 7), "aaaaaaa", "zero")
+    eq(ns.Base32(33, 2), "bb", "33 = 1 * 32 + 1")
+    eq(#ns.Base32(4294967290, 7), 7, "the largest hash fits 7 characters")
 end)
 
 test("a unit goes into the bucket of its ID's first character, lines sorted", function()

@@ -97,7 +97,7 @@ end
 -- loaded). Returns the average unit price of the cheapest CHEAPEST_SHARE of the listed pieces (nil without
 -- listings), the pieces listed and the pieces loaded. The price is stored with the pieces it could see
 -- (listed, but not more than loaded), so a price from a few loaded pieces is marked as few lots.
-function Auction.RobustPrice(listings, total)
+local function RobustPrice(listings, total)
     table.sort(listings, function(a, b) return a[1] < b[1] end)
     local loaded = 0
     for _, listing in ipairs(listings) do
@@ -128,7 +128,7 @@ local timeoutToken -- the newest wait; a timer of an earlier one does nothing
 
 -- lots: the result rows on sale (price points; several sellers at one price share a row).
 local function Settle(itemID, listings, total)
-    Finish(itemID, #listings, Auction.RobustPrice(listings, total))
+    Finish(itemID, #listings, RobustPrice(listings, total))
 end
 
 -- Waits QUERY_TIMEOUT for the query or the next page of results; then the pages that came decide.
@@ -202,7 +202,6 @@ local function EnsureButton()
     -- Wide enough for the longest text it shows, so it keeps its size while the count goes up.
     for _, text in ipairs({ L["Scan fish prices"], (L["Scanning %d/%d"]):format(999, 999) }) do
         button:SetText(text)
-        ns.FitButton(button)
         button.minWidth = button:GetWidth() or button.minWidth
     end
     button:SetPoint("BOTTOMRIGHT", AuctionHouseFrame, "TOPRIGHT", -24, 2)
