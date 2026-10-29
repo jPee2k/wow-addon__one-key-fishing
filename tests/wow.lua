@@ -26,6 +26,28 @@
 --   panel_tabs                          calls of PanelTemplates_SetNumTabs / SetTab / TabResize, as
 --                                       { name, frame or tab, value }; set PanelTemplates_SetTab = nil to test
 --                                       the fallback without the game's tab functions
+--   known_items = { [itemID] = true }   C_Item.GetItemInfoInstant knows only these item IDs (nil: every ID)
+--   settings_pages[name] = frame        the canvas pages registered as settings subcategories (read only)
+-- The catch exchange (Comm.lua, Share.lua):
+--   addon_prefixes[prefix] = true       prefixes registered with C_ChatInfo.RegisterAddonMessagePrefix (read)
+--   addon_sent                          C_ChatInfo.SendAddonMessage calls, { prefix, text, chatType, target, at }
+--   addon_send_result[chatType] = n,    the result SendAddonMessage returns per chat type, else .default, else 0
+--   addon_send_result.default = n
+--   chat_lockdown = true                C_ChatInfo.InChatMessagingLockdown
+--   addon_chat_restricted = true        C_ChatInfo.AreOutgoingAddonChatMessagesRestricted
+--   bn_sent                             C_BattleNet.SendGameData calls, { gameAccountID, prefix, text, at }
+--   bn_send_result = n                  what SendGameData returns (default 0)
+--   bn_friends[i] = { { gameAccountID, clientProgram, wowProjectID, isOnline }, ... }   Battle.net friends and
+--                                       their game accounts
+--   friends[i] = { name, connected }    character friends (C_FriendList)
+--   in_guild = true                     IsInGuild
+--   group_type = "party" | "raid"       IsInGroup / IsInRaid (nil: no group)
+--   group_members = n                   GetNumGroupMembers (default 2 in a group, 0 outside)
+--   in_instance = true                  IsInInstance
+--   restrictions[Enum.AddOnRestrictionType.X] = true   C_RestrictedActions.IsAddOnRestrictionActive
+--   chat_filters[event] = { fn, ... }   filters added with ChatFrameUtil.AddMessageEventFilter (read)
+-- Helpers: receive_addon(prefix, text, channel, sender), receive_bn(prefix, text, gameAccountID),
+-- filter_hides(event, text).
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -375,14 +397,24 @@ DEFAULT_CHAT_FRAME = {
 }
 UISpecialFrames, SlashCmdList, StaticPopupDialogs = {}, {}, {}
 
--- Accepts the popup that was shown last (StaticPopup_Show(key)).
+-- Accepts the popup that was shown last (StaticPopup_Show(key)). As in the game, the popup hides after either
+-- button, so its OnHide runs too.
 function StaticPopup_Show(key)
     last_popup = key
 end
 
+local function HidePopup(key)
+    if StaticPopupDialogs[key].OnHide then
+        StaticPopupDialogs[key].OnHide()
+    end
+end
+
 function accept_popup()
     local key = assert(rawget(_G, "last_popup"), "no popup was shown")
-    StaticPopupDialogs[key].OnAccept()
+    if StaticPopupDialogs[key].OnAccept then
+        StaticPopupDialogs[key].OnAccept()
+    end
+    HidePopup(key)
 end
 
 -- Declines the popup that was shown last (its second button).
@@ -391,11 +423,13 @@ function cancel_popup()
     if StaticPopupDialogs[key].OnCancel then
         StaticPopupDialogs[key].OnCancel()
     end
+    HidePopup(key)
 end
 
 function StaticPopup_Hide(key)
     if rawget(_G, "last_popup") == key then
         last_popup = nil
+        HidePopup(key)
     end
 end
 
@@ -410,12 +444,28 @@ function ReloadUI()
     reload_count = reload_count + 1
 end
 
+settings_pages = {}
+settings_opened = {} -- category IDs passed to Settings.OpenToCategory
+local categoryCount = 0
+local function NewCategory()
+    categoryCount = categoryCount + 1
+    local id = categoryCount
+    return { GetID = function() return id end }
+end
 Settings = {
     RegisterCanvasLayoutCategory = function()
-        return { GetID = function() return 1 end }
+        return NewCategory()
     end,
-    RegisterCanvasLayoutSubcategory = function() end,
+    RegisterCanvasLayoutSubcategory = function(_, frame, name)
+        settings_pages[name] = frame
+        local category = NewCategory()
+        frame.categoryID = category:GetID()
+        return category
+    end,
     RegisterAddOnCategory = function() end,
+    OpenToCategory = function(id)
+        table.insert(settings_opened, id)
+    end,
 }
 
 ---------------------------------------------------------------------------
@@ -486,7 +536,12 @@ C_Item = {
         return 134400
     end,
     GetItemInfoInstant = function(item)
-        return tonumber(item) or tonumber(tostring(item):match("item:(%d+)"))
+        local itemID = tonumber(item) or tonumber(tostring(item):match("item:(%d+)"))
+        local known = rawget(_G, "known_items")
+        if known and not known[itemID] then
+            return nil
+        end
+        return itemID
     end,
 }
 
@@ -544,6 +599,12 @@ Enum = {
     ItemClass = { Weapon = 2 },
     ItemWeaponSubclass = { Fishingpole = 20 },
     TooltipDataType = { Item = 0 },
+    -- These three as in the 1.60.1 export: the values matter for the results the addon reads.
+    AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 },
+    SendAddonMessageResult = { Success = 0, InvalidPrefix = 1, InvalidMessage = 2, AddonMessageThrottle = 3,
+        InvalidChatType = 4, NotInGroup = 5, TargetRequired = 6, InvalidChannel = 7, ChannelThrottle = 8,
+        GeneralError = 9, NotInGuild = 10, AddOnMessageLockdown = 11, TargetOffline = 12 },
+    CompressionMethod = { Deflate = 0, Zlib = 1, Gzip = 2 },
 }
 
 auction_queries = {} -- item keys sent with C_AuctionHouse.SendSearchQuery
@@ -598,6 +659,265 @@ C_AuctionHouse = {
     end,
 }
 
+---------------------------------------------------------------------------
+-- The catch exchange: addon messages, Battle.net, friends, guild and group, restrictions, encoding
+---------------------------------------------------------------------------
+addon_prefixes, addon_sent, addon_send_result = {}, {}, {}
+chat_lockdown, addon_chat_restricted = false, false
+bn_sent, bn_send_result, bn_friends = {}, nil, {}
+friends = {}
+in_guild, group_type, group_members, in_instance = false, nil, nil, false
+restrictions = {}
+chat_filters = {}
+
+BNET_CLIENT_WOW = "WoW"
+ERR_CHAT_PLAYER_NOT_FOUND_S = "No player named '%s' is currently playing."
+LE_PARTY_CATEGORY_HOME = 1
+
+C_ChatInfo = {
+    RegisterAddonMessagePrefix = function(prefix)
+        addon_prefixes[prefix] = true
+        return 0
+    end,
+    SendAddonMessage = function(prefix, text, chatType, target)
+        assert(#text <= 255, "an addon message longer than 255 bytes: " .. #text)
+        assert(not text:find("\0", 1, true), "an addon message with a NUL byte")
+        table.insert(addon_sent, { prefix = prefix, text = text, chatType = chatType, target = target, at = now })
+        return addon_send_result[chatType] or addon_send_result.default or 0
+    end,
+    InChatMessagingLockdown = function()
+        return chat_lockdown
+    end,
+    AreOutgoingAddonChatMessagesRestricted = function()
+        return addon_chat_restricted
+    end,
+}
+
+C_BattleNet = {
+    SendGameData = function(gameAccountID, prefix, text)
+        assert(#text <= 255, "Battle.net game data longer than 255 bytes: " .. #text)
+        table.insert(bn_sent, { gameAccountID = gameAccountID, prefix = prefix, text = text, at = now })
+        return rawget(_G, "bn_send_result") or 0
+    end,
+    GetFriendNumGameAccounts = function(index)
+        return #(bn_friends[index] or {})
+    end,
+    GetFriendGameAccountInfo = function(index, accountIndex)
+        return (bn_friends[index] or {})[accountIndex]
+    end,
+}
+
+function BNGetNumFriends()
+    return #bn_friends
+end
+
+C_FriendList = {
+    GetNumFriends = function()
+        return #friends
+    end,
+    GetFriendInfoByIndex = function(index)
+        return friends[index]
+    end,
+}
+
+function IsInGuild()
+    return in_guild
+end
+
+function IsInGroup()
+    return rawget(_G, "group_type") ~= nil
+end
+
+function IsInRaid()
+    return rawget(_G, "group_type") == "raid"
+end
+
+function GetNumGroupMembers()
+    return rawget(_G, "group_members") or (rawget(_G, "group_type") and 2 or 0)
+end
+
+function IsInInstance()
+    return in_instance, in_instance and "party" or "none"
+end
+
+C_RestrictedActions = {
+    IsAddOnRestrictionActive = function(restriction)
+        return restrictions[restriction] == true
+    end,
+}
+
+ChatFrameUtil = {
+    AddMessageEventFilter = function(event, fn)
+        chat_filters[event] = chat_filters[event] or {}
+        table.insert(chat_filters[event], fn)
+    end,
+}
+
+-- True when a chat filter added for `event` hides a line with `text`.
+function filter_hides(event, text)
+    for _, fn in ipairs(chat_filters[event] or {}) do
+        if fn(DEFAULT_CHAT_FRAME, event, text) then
+            return true
+        end
+    end
+    return false
+end
+
+function receive_addon(prefix, text, channel, sender)
+    fire("CHAT_MSG_ADDON", prefix, text, channel, sender)
+end
+
+function receive_bn(prefix, text, gameAccountID)
+    fire("BN_CHAT_MSG_ADDON", prefix, text, "WHISPER", gameAccountID)
+end
+
+-- The addon messages sent after the first `from`, only those of `chatType` when given.
+function addon_sent_since(from, chatType)
+    local out = {}
+    for i = from + 1, #addon_sent do
+        if not chatType or addon_sent[i].chatType == chatType then
+            table.insert(out, addon_sent[i])
+        end
+    end
+    return out
+end
+
+-- A SUM of session `sid` whose 32 bucket hashes (7 characters each) differ from any real database.
+function sum_text(sid)
+    return "S" .. sid .. " " .. ("a"):rep(7 * 32)
+end
+
+-- C_EncodingUtil: a deterministic serializer (keys sorted) for the CBOR pair, identity for compression and a real
+-- Base64 with the standard alphabet, so a record goes through the addon's whole chain.
+local TYPE_ORDER = { number = 1, string = 2, boolean = 3 }
+
+local function SortedKeys(tbl)
+    local keys = {}
+    for key in pairs(tbl) do
+        table.insert(keys, key)
+    end
+    table.sort(keys, function(a, b)
+        if type(a) ~= type(b) then
+            return TYPE_ORDER[type(a)] < TYPE_ORDER[type(b)]
+        end
+        if type(a) == "boolean" then
+            return not a and b
+        end
+        return a < b
+    end)
+    return keys
+end
+
+local function Serialize(value, out)
+    local kind = type(value)
+    if kind == "string" then
+        table.insert(out, "s" .. #value .. ":" .. value)
+    elseif kind == "number" then
+        table.insert(out, "n" .. tostring(value) .. ";")
+    elseif kind == "boolean" then
+        table.insert(out, value and "T" or "F")
+    elseif kind == "table" then
+        table.insert(out, "{")
+        for _, key in ipairs(SortedKeys(value)) do
+            Serialize(key, out)
+            Serialize(value[key], out)
+        end
+        table.insert(out, "}")
+    else
+        error("cannot serialize a " .. kind)
+    end
+end
+
+local function Deserialize(text, position)
+    local tag = text:sub(position, position)
+    if tag == "s" then
+        local length, start = text:match("^(%d+):()", position + 1)
+        assert(length, "bad string")
+        return text:sub(start, start + length - 1), start + length
+    elseif tag == "n" then
+        local number, after = text:match("^([^;]+);()", position + 1)
+        return assert(tonumber(number), "bad number"), after
+    elseif tag == "T" or tag == "F" then
+        return tag == "T", position + 1
+    elseif tag == "{" then
+        local result = {}
+        position = position + 1
+        while text:sub(position, position) ~= "}" do
+            assert(position <= #text, "unterminated table")
+            local key, value
+            key, position = Deserialize(text, position)
+            value, position = Deserialize(text, position)
+            result[key] = value
+        end
+        return result, position + 1
+    end
+    error("bad serialized data at " .. position)
+end
+
+local B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+local B64_INDEX = {}
+for i = 1, #B64 do
+    B64_INDEX[B64:sub(i, i)] = i - 1
+end
+
+local function B64Char(n)
+    return B64:sub(n + 1, n + 1)
+end
+
+C_EncodingUtil = {
+    SerializeCBOR = function(value)
+        local out = {}
+        Serialize(value, out)
+        return table.concat(out)
+    end,
+    DeserializeCBOR = function(text)
+        local value, after = Deserialize(text, 1)
+        assert(after == #text + 1, "trailing data")
+        return value
+    end,
+    CompressString = function(text)
+        return text
+    end,
+    DecompressString = function(text)
+        return text
+    end,
+    EncodeBase64 = function(text)
+        local out = {}
+        for i = 1, #text, 3 do
+            local a, b, c = text:byte(i, i + 2)
+            local n = a * 65536 + (b or 0) * 256 + (c or 0)
+            table.insert(out, B64Char(math.floor(n / 262144) % 64) .. B64Char(math.floor(n / 4096) % 64)
+                .. (b and B64Char(math.floor(n / 64) % 64) or "=") .. (c and B64Char(n % 64) or "="))
+        end
+        return table.concat(out)
+    end,
+    DecodeBase64 = function(text)
+        if #text % 4 ~= 0 then
+            return nil
+        end
+        local out = {}
+        for i = 1, #text, 4 do
+            local chunk = text:sub(i, i + 3)
+            local pad = #(chunk:match("=*$"))
+            if pad > 2 or chunk:sub(1, 4 - pad):find("=", 1, true) or (pad > 0 and i + 3 < #text) then
+                return nil
+            end
+            local n = 0
+            for j = 1, 4 do
+                local char = chunk:sub(j, j)
+                local value = char == "=" and 0 or B64_INDEX[char]
+                if not value then
+                    return nil
+                end
+                n = n * 64 + value
+            end
+            local bytes = string.char(math.floor(n / 65536) % 256, math.floor(n / 256) % 256, n % 256)
+            table.insert(out, bytes:sub(1, 3 - pad))
+        end
+        return table.concat(out)
+    end,
+}
+
 -- The API tables above answer only what the tests need; any other field is a stub, like an unknown global.
 local function WithStubFallback(name, api)
     return setmetatable(api, {
@@ -609,12 +929,21 @@ local function WithStubFallback(name, api)
     })
 end
 for _, name in ipairs({ "C_AddOns", "C_CVar", "C_Map", "C_Item", "C_Container", "C_AuctionHouse", "C_Timer",
-    "Settings" }) do
+    "Settings", "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_RestrictedActions", "ChatFrameUtil",
+    "C_EncodingUtil" }) do
     WithStubFallback(name, _G[name])
 end
 
 -- Units, casts and loot sources: nothing targeted, nothing being cast
 function UnitGUID() end
+function UnitName(unit)
+    if unit == "player" then
+        return "Me"
+    end
+end
+function GetNormalizedRealmName()
+    return "Realm"
+end
 loot_sources = {}
 function GetLootSourceInfo(slot)
     return loot_sources[slot]
@@ -786,7 +1115,7 @@ stubMeta.__index = function(stub, key)
     rawset(stub, key, child)
     return child
 end
-stubMeta.__call = function() end
+stubMeta.__call = function() return nil end -- one nil, as the game API returns a value
 
 -- Stubs are for the addon's API calls. In a test file an unknown name is a typo (eqq, C_Item.GetItemCont).
 -- `level` is the stack level of the code that did the lookup, as seen from this function.
@@ -803,7 +1132,8 @@ end
 -- path depends on an API's answer needs a real stub above.
 local stubs = {}
 -- Game data the tests set that may be nil on purpose (see the top of this file): nil, not a stub.
-local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true }
+local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
+    group_type = true, group_members = true, bn_send_result = true }
 setmetatable(_G, {
     __index = function(_, key)
         if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then

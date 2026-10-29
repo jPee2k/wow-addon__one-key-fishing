@@ -183,7 +183,9 @@ an API.
   `InCombatLockdown()`; `IsInInstance()`; a loading screen (`LOADING_SCREEN_ENABLED` to `..._DISABLED`);
   `C_RestrictedActions.IsAddOnRestrictionActive(t)` for `Chat`, `Encounter`, `ChallengeMode` or `PvPMatch`
   (`Enum.AddOnRestrictionType`); `C_ChatInfo.InChatMessagingLockdown()`;
-  `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()`; a lockdown back-off (R7). It re-checks on
+  a lockdown back-off (R7). Not `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()`: by its API doc it is about
+  the chat messages addons may send (allowed on tournament realms), so it is true on a normal realm; the spike
+  still reports it. It re-checks on
   `PLAYER_REGEN_ENABLED`, `LOADING_SCREEN_DISABLED`, `ZONE_CHANGED_NEW_AREA` and `ADDON_RESTRICTION_STATE_CHANGED`,
   and every 5 s while paused. A session running when a pause starts is dropped without a message (the peer times
   out); nothing was merged half-way, because a record is merged only whole.

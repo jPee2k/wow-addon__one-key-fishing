@@ -10,13 +10,16 @@ last.
 | --- | --- |
 | `Comm.OnReceive(fn)` | `fn(address, via, text)` for every whole `OKF1` message (parts already joined); `via` is `"guild"`, `"group"`, `"whisper"` or `"bnet"` |
 | `Comm.Broadcast(text)` | queues a `HELLO` to the guild and the home group, each only when the player is in one |
-| `Comm.Send(address, text)` | queues a message (split into parts when needed) to `w:<name>` or `b:<gameAccountID>` |
+| `Comm.Send(address, text, kind)` | queues a message (split into parts when needed) to `w:<name>` or `b:<gameAccountID>`; kind `"bye"` goes out even over the hourly budget, kind `"greeting"` (a `HELLO` to a friend) does not count against its path when refused |
 | `Comm.ForEachFriend(fn)` | calls `fn(address)` for each online character friend and each Battle.net friend playing Forever (research R3) |
 | `Comm.OnOffline(fn)` | `fn(address)` when a send to it returned `TargetOffline` |
+| `Comm.OnActivity(fn)` | `fn(address)` for every message or part that arrives (a long message is still on its way, so the session does not time out) |
+| `Comm.IsSending(address)` | true while messages to the address wait in the queue |
+| `Comm.Split(text)` | the message as it goes out: itself, or its parts (contracts/sync-protocol.md) |
 | `Comm.GetPause()` | the pause reason (`"combat"`, `"instance"`, `"loading"`, `"restricted"`, `"lockdown"`, or `"unavailable"` once the game refused every path, until logout) or nil; a change fires `SHARE_PAUSE` (reason or nil) |
 | `Comm.GetPaths()` | per path (`guild`, `group`, `whisper`, `bnet`): `{ failures, disabled }` (contracts/sync-protocol.md "Paths the game refuses") |
 | `Comm.GetTraffic()` | bytes sent in the last 60 minutes |
-| `Comm.CanSend()` | false while paused or over the hourly budget |
+| `Comm.CanSend(bytes)` | false while paused, or when a message of `bytes` (with its part headers) and one more full message would go over the hourly budget; a record is only sent when it fits whole |
 | `Comm.Describe()` | lines for `/okf debug`: pause, traffic, queue length, result code counts, back-off, left-out paths |
 
 Rules: with `settings.shareDB` off nothing is queued and every received message is dropped; the queue keeps the pace
@@ -28,11 +31,16 @@ queue and the filter's 10 s list.
 
 | Function | Does / returns |
 | --- | --- |
-| `Share.NewNode(store, env)` | a protocol node over `store` (a `shared` table); `env` = `{ now, after, send, broadcast, forEachFriend, canSend, myID, absorbed, check, encode, decode, onChange }`; the game makes one node bound to `Comm`, `CatchDB` and `C_EncodingUtil`, the tests several bound to a fake network |
+| `Share.NewNode(store, env)` | a protocol node over `store` (a `shared` table); `env` = `{ now, time, after, send(address, text, essential), broadcast, forEachFriend, canSend, absorbed, seedEpoch, encode, decode }` plus the optional `busy(address)`, `prepare()` (before the units are read for a peer), `clock()` (ms, for the longest merge step) and `random` (default `math.random`); the own ID is `store.myID`, records are checked by `CatchDB.CheckRecord`, and a store change fires `SHARED_DATA_CHANGED`; the game makes one node bound to `Comm`, `CatchDB` and `C_EncodingUtil`, the tests several bound to a fake network |
 | `node:Receive(address, via, text)` | handles one whole message |
 | `node:Hello()` | sends a `HELLO` round: the broadcast, then up to 20 friends, those already known as peers first, the rest in turn from a cursor (research R3) |
 | `node:Pause(reason)` / `node:Resume()` | drops the running session / allows sessions again |
 | `node:Status()` | the status table below |
+| `Share.Store.Accept(store, record, now, absorbed)` | `"new"`, `"newer"`, `"same"` (only `seen` refreshed), `"older"` or `"refused", reason` (data-model.md rules); keeps a copy with only the part 1 fields |
+| `Share.Store.CleanUp(store, absorbed)` / `Share.Store.Evict(store)` | delete absorbed or damaged other records / the oldest `seen` above 20,000 places; both return how many went (run at `ADDON_LOADED`, `Evict` also after a new record) |
+| `Share.Store.Units(store, absorbed)` / `Share.Store.Get(store, unit)` / `Share.Store.ForSending(record)` | every unit held (`id@epoch` -> seq, the own record when it has data) / a unit's record / the record without `seen` |
+| `Share.Hash(text)`, `Share.Base32(value, width)`, `Share.Buckets(units)`, `Share.BucketHashes(units)`, `Share.WholeHash(hashes)` | the hashes of research R5 |
+| `Share.Encode(record)` / `Share.Decode(text)` | the `C_EncodingUtil` chain of research R4, each step in `pcall`; nil on failure |
 | `Share.IsEnabled()` / `Share.SetEnabled(on)` | the setting (`settings.shareDB`); off drops the session and stops everything at once; both directions change the views (`SHARED_DATA_CHANGED`) |
 | `Share.GetStatus()` | `{ state, reason, records, places, heard = { guild, group, friend, bnet }, exchanged, lastExchange, traffic, rejected, longestStep }`: `state` from data-model.md "State of the exchange" (`off`, `notice`, `unavailable`, `paused`, `alone`, `active`); `heard` = peers heard in the last hour per path; `exchanged` = peers with a finished session in the last hour; `longestStep` = the longest merge step in ms (SC-006) |
 | `Share.StatusLine()` | the short localized line for the tab and the settings page: "Exchange: 3 players, 5 min ago", "Exchange paused: in combat" (one text per reason), "Exchange unavailable: the game refuses addon messages", "Shared catch database is off", "Nobody to exchange with right now", "Waiting for you to read the notice" |
@@ -53,7 +61,10 @@ screen, `ns.ShowPopup` with "Got it" (accept) and "Settings" (cancel: opens the 
 
 | Function | Returns |
 | --- | --- |
-| `CatchDB.CheckRecord(record)` | `true` or `false, reason`: research R6 (the part 1 cell rules, whole record rejected on any bad cell, `id` pattern and not `myID`, at most 1,000 places, items known to `C_Item.GetItemInfoInstant`) |
+| `CatchDB.CheckRecord(record, myID)` | `true` or `false, reason`: research R6 (the part 1 cell rules, whole record rejected on any bad cell, `id` pattern and not `myID`, at most 1,000 places, items known to `C_Item.GetItemInfoInstant`) |
+| `CatchDB.CountPlaces(record)` | cells over all builds of a record (the unit of the place limits) |
+| `CatchDB.FlushSeq()` | bumps the own record's seq when a change waits for its minute |
+| `CatchDB.SeedInfo()` | the bundled seed's epoch and number of places (`/okf share`) |
 | `CatchDB.Query(mapID, cell, filter)` | unchanged arguments; with sharing on, source `"all"` also sums other players' records; the view gains `players` (research R9); the cache key includes whether sharing is on |
 
 ## `/okf share` and `/okf debug`

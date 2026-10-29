@@ -31,13 +31,14 @@ read_globals = {
     "CreateFrame", "UIParent", "DEFAULT_CHAT_FRAME", "ChatFontNormal", "GameTooltip", "Minimap",
     "AddonCompartmentFrame", "AuctionHouseFrame", "RaidWarningFrame", "Settings", "MenuUtil", "Enum",
     "StaticPopupDialogs", "StaticPopup_Show", "StaticPopup_Hide", "ReloadUI", "RaidNotice_AddMessage",
-    "ChatTypeInfo", "YES", "NO",
+    "ChatTypeInfo", "YES", "NO", "ChatFrameUtil",
     "TooltipDataProcessor", "ItemLocation",
     "PanelTemplates_SetTab", "PanelTemplates_SetNumTabs", "PanelTemplates_TabResize",
 
     -- Namespaced APIs
     "C_AddOns", "C_CVar", "C_Spell", "C_SpellBook", "C_Item", "C_Container", "C_AuctionHouse", "C_Map",
     "C_Timer", "C_TooltipInfo", "C_RestrictedActions",
+    "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_EncodingUtil",
 
     -- Global API
     "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",
@@ -48,10 +49,14 @@ read_globals = {
     "GetInventoryItemID", "GetInventoryItemLink", "GetWeaponEnchantInfo", "GetItemCount", "GetItemCooldown",
     "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
     "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink", "GetLootSlotInfo", "GetLootSourceInfo",
-    "UnitChannelInfo", "UnitCastingInfo", "UnitGUID", "UnitIsAFK", "GetZoneText", "GetSubZoneText",
+    "UnitChannelInfo", "UnitCastingInfo", "UnitGUID", "UnitIsAFK", "UnitName",
+    "GetNormalizedRealmName", "GetZoneText", "GetSubZoneText",
     "GetCameraZoom", "CameraZoomIn", "CameraZoomOut",
+    "IsInGuild", "IsInGroup", "IsInRaid", "IsInInstance", "GetNumGroupMembers", "BNGetNumFriends",
+    "issecretvalue", "debugprofilestop",
 
     -- Constants
     "WOW_PROJECT_ID", "INVSLOT_MAINHAND", "INVSLOT_OFFHAND", "INVSLOT_RANGED",
     "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED", "NUM_BAG_SLOTS",
+    "LE_PARTY_CATEGORY_HOME", "BNET_CLIENT_WOW", "ERR_CHAT_PLAYER_NOT_FOUND_S",
 }

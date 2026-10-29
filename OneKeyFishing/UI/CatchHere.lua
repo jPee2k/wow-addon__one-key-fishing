@@ -138,6 +138,10 @@ function CatchHere.Create(parent)
     page.hint = CreateText(page, "GameFontDisableSmall")
     page.hint:SetPoint("TOPLEFT", page.more, "BOTTOMLEFT", 0, -6)
     page.hint:SetWidth(540)
+    -- The quiet state of the exchange with other players (Share.lua): one line of small text.
+    page.status = CreateText(page, "GameFontDisableSmall")
+    page.status:SetPoint("TOPLEFT", page.hint, "BOTTOMLEFT", 0, -6)
+    page.status:SetWidth(540)
     page:Hide()
     return page
 end
@@ -162,6 +166,7 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         mapID, ownRange, cell = ns.CatchDB.GetCurrentPlace()
     end
     dirty = false
+    page.status:SetText(ns.Share.StatusLine())
     local filter = { range = pickedRange or ownRange or "all", source = source }
     shown = { version = ns.CatchDB.GetVersion(), mapID = mapID, ownRange = ownRange, cell = cell,
         range = filter.range }
@@ -192,7 +197,11 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         page.message:SetText(L["Nothing has been caught here yet."])
     else
         local casts = view.catches + view.misses
-        page.counts:SetText((L["%d catches"]):format(view.catches) .. "    " ..
+        -- "from K players" once other players are behind the numbers; one player is just "N catches".
+        local catches = (source == "all" and view.players >= 2)
+            and (L["%d catches from %d players"]):format(view.catches, view.players)
+            or (L["%d catches"]):format(view.catches)
+        page.counts:SetText(catches .. "    " ..
             (L["Nothing caught: %s"]):format(Percent(casts > 0 and view.misses / casts or 0)))
         for i, item in ipairs(view.items) do
             if i > MAX_ROWS then
@@ -226,6 +235,8 @@ function CatchHere.Tick()
     if dirty or not shown or shown.version ~= ns.CatchDB.GetVersion() or shown.mapID ~= mapID
         or shown.cell ~= cell or shown.range ~= (pickedRange or ownRange or "all") then
         CatchHere.Refresh(mapID, ownRange, cell)
+    else
+        page.status:SetText(ns.Share.StatusLine()) -- the state of the exchange changes with time alone
     end
 end
 

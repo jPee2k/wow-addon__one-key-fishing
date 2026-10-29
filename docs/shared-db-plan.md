@@ -117,7 +117,7 @@ The first idea (those four libraries in `OneKeyFishing/Libs/`) would also have n
 | `HELLO` | Once per 10-15 min (random jitter), the first 60-120 s after login; 5-30 s after joining a group (at most once per 2 min); up to 20 friends per round, known peers first |
 | Pace | Broadcasts at most 1 message per 2 s; whispers and Battle.net at most 2 per s |
 | Sync sessions | 1 at a time, no more than 1 per 2 min; with one peer at most once per 10 min in a group, once per 30 min otherwise |
-| Session size | Up to 8 KB of encoded records per direction, but always at least one record |
+| Session size | Up to 8 KB and 25 encoded records per direction, but always at least one record; a record a peer would refuse (over 1,000 places, a build without a game version) is not sent |
 | Total sent | Up to 50 KB per hour per client |
 
 The values for part 2 are in `specs/003-guild-group-sync/research.md` R7.
@@ -125,7 +125,8 @@ The values for part 2 are in `specs/003-guild-group-sync/research.md` R7.
 Syncing pauses on:
 - `InCombatLockdown()`;
 - the add-on restrictions `Chat`, `Encounter`, `ChallengeMode` and `PvPMatch`;
-- `C_ChatInfo.InChatMessagingLockdown()` and `AreOutgoingAddonChatMessagesRestricted()`;
+- `C_ChatInfo.InChatMessagingLockdown()` (not `AreOutgoingAddonChatMessagesRestricted()`: it is about chat
+  messages sent by addons, allowed on tournament realms only, so it is true on a normal realm);
 - an instance (`IsInInstance()`);
 - a loading screen.
 
@@ -256,7 +257,7 @@ wrong percentage), so this is enough.
 
 | Threat | Protection |
 | --- | --- |
-| Flood from one sender | A limit per sender name: `HELLO` no more than 1 per 5 min, up to 50 records per hour. An offender is ignored until the end of the session. |
+| Flood from one sender | A limit per sender name (part 2, `Share.lua`): `HELLO` no more than 1 per 60 s (more are ignored), up to 600 messages (parts counted), no more records in a session than it asked for and 150 records per hour, one record up to 32 KB encoded and 1,000 places. An offender is ignored until the end of the session. |
 | Impossible numbers | Catches in a cell no more than `t × 60 / 5` (a cast takes several seconds). The item sum ≤ catches × the maximum count per cast. An invalid record is rejected entirely. |
 | Made-up items | The item ID must exist (`C_Item.GetItemInfoInstant`). An item that is in neither the seed nor your own catch is shown only when at least 3 different IDs report it in the same zone. |
 | Many fake IDs (Sybil) | One contribution gives no more than 20% of the weight in a cell with 5+ contributions. The tooltip always says "based on N catches from K players". `harvest` looks for outliers and adds blocked IDs to the seed (`banned`). |
@@ -531,7 +532,9 @@ of the brief below and of "UI and settings"):
 | Battle.net | `C_BattleNet.SendGameData` (the global `BNSendGameData` is only a deprecated fallback in Forever) |
 | Protocol | The version lives only in the prefix (`OKF1`), not in `HELLO`; no epoch gate (a unit the seed absorbed is simply not wanted); crossing `SUM`s: the smaller node tag leads; a path the game refuses 5 times in a row is left out until logout, and with every path left out the exchange is "unavailable" |
 | Size limit | 20,000 places of other records; the oldest `seen` goes first, the own record never; the order by new information moves to part 3 ("Size and eviction" above) |
-| Player count | "N catches from K players": each contribution at most once; for bundled whole-map numbers K is a lower bound |
+| Player count | "N catches from K players": each contribution at most once; for bundled whole-map numbers K is a lower bound; a newer epoch of an ID the seed absorbed counts only above the seed's k. Shown from 2 players on; one player is just "N catches" |
+| Storage of others' records | Plain tables in `shared.records` (the part 1 shape plus `seen`), copied field by field from the checked record, not compressed strings: the harvest reads them unchanged, and the view indexes each stored record per map once (built at runtime, never saved) |
+| Own record's seq | Before a `HELLO` or a session the waiting seq bump of the own record is done at once (`CatchDB.FlushSeq`), so a peer never gets cells under an old seq |
 | Release | All four parts ship together as 1.2.0 from `002-shared-db` ("Release 1.2.0" above); 1.1.0 is the interface-language release |
 
 ```

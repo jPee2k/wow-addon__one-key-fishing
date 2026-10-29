@@ -2,6 +2,7 @@
 -- Canvas pages with plain widgets, so they do not depend on the Settings setting-type API.
 --   OneKeyFishing  - keys, feature toggles, actions
 --   Fishing gear   - chosen pole and the list of extra fishing items
+--   Shared database - the exchange of catch data with other players (Share.lua) and its state
 local _, ns = ...
 local L = ns.L
 
@@ -35,7 +36,7 @@ end
 
 local COLUMN_OFFSET = 300
 
-local mainCategory
+local mainCategory, shareCategory
 
 ---------------------------------------------------------------------------
 -- Widgets
@@ -403,17 +404,78 @@ local function CreateGearPage()
 end
 
 ---------------------------------------------------------------------------
+-- Shared database page
+---------------------------------------------------------------------------
+local STATUS_INTERVAL = 1 -- seconds between status updates while the page is shown
+
+-- Top to bottom: the setting, what is shared, the state. Part 3 (the public channel) adds its setting below the
+-- first one and extends the text.
+local function CreateSharePage()
+    local page = CreateFrame("Frame")
+
+    local title = CreateText(page, "GameFontNormalLarge", L["Shared database"])
+    title:SetPoint("TOPLEFT", PADDING, -PADDING)
+
+    local checkbox = CreateCheckbox(page, L["Use the shared catch database"],
+        function() return ns.Share.IsEnabled() end,
+        function(value) ns.Share.SetEnabled(value) end)
+    checkbox:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -2, -14)
+    checkbox.label:SetWidth(520)
+
+    local about = CreateText(page, "GameFontHighlightSmall", table.concat({
+        L["Your catches (items, counts, places as map numbers) are shared under a random ID."],
+        L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."],
+    }, " "))
+    about:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 2, -12)
+    about:SetWidth(560)
+    local offText = CreateText(page, "GameFontHighlightSmall",
+        L["Turned off: nothing is sent or received, and other players' data is not counted."])
+    offText:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -6)
+    offText:SetWidth(560)
+    local hint = CreateText(page, "GameFontDisableSmall", "/okf share")
+    hint:SetPoint("TOPLEFT", offText, "BOTTOMLEFT", 0, -6)
+
+    local status = CreateText(page, "GameFontNormal")
+    status:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -16)
+    status:SetWidth(560)
+    page.status = status
+
+    local elapsed = 0
+    local function Update()
+        elapsed = 0
+        status:SetText(ns.Share.StatusLine())
+    end
+    page:SetScript("OnShow", Update)
+    page:SetScript("OnUpdate", function(_, delta)
+        elapsed = elapsed + delta
+        if elapsed >= STATUS_INTERVAL then
+            Update()
+        end
+    end)
+    return page
+end
+
+---------------------------------------------------------------------------
 -- Registration
 ---------------------------------------------------------------------------
-function SettingsUI.Open()
-    if not mainCategory then
+local function OpenCategory(category)
+    if not category then
         return
     end
     if InCombatLockdown() then
         ns.Print(L["Settings cannot be opened in combat."])
         return
     end
-    Settings.OpenToCategory(mainCategory:GetID())
+    Settings.OpenToCategory(category:GetID())
+end
+
+function SettingsUI.Open()
+    OpenCategory(mainCategory)
+end
+
+-- The "Shared database" page (the "Settings" button of the one-time popup).
+function SettingsUI.OpenShare()
+    OpenCategory(shareCategory)
 end
 
 ns.RegisterEvent("PLAYER_LOGIN", function()
@@ -423,5 +485,6 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     end
     mainCategory = Settings.RegisterCanvasLayoutCategory(CreateMainPage(), "OneKeyFishing")
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateGearPage(), L["Fishing gear"])
+    shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateSharePage(), L["Shared database"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)

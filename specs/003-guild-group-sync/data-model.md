@@ -17,7 +17,7 @@ OneKeyFishingDB.shared = {
   mine = { ... },                         -- unchanged: lifetime counts of this account ("Only mine")
   records = {
     ["k7f2q9xa"] = { id, epoch, seq, builds },             -- the own record, unchanged (part 1), keyed by myID
-    ["m3p8x1zd@3"] = { id, epoch, seq, builds, seen = 1761234567 }, -- NEW: another account's record, keyed by
+    ["m3p7x2zd@3"] = { id, epoch, seq, builds, seen = 1761234567 }, -- NEW: another account's record, keyed by
                                                                     -- "<id>@<epoch>"
   },
 }
@@ -48,7 +48,8 @@ absorbs it.
 - **Size limit**: the other records together hold at most 20,000 places (about 2 MB of saved data). Above that the
   record with the oldest `seen` is deleted first, until the total fits; the own record is never deleted (FR-013).
   Because `seen` is refreshed whenever a peer confirms the same version, records of players still in the network
-  stay, and those of players who stopped playing go first. The info-based eviction order of
+  stay, and those of players who stopped playing go first. A version evicted this session is not wanted back
+  (only a newer one), so eviction and the next session do not trade the same records while the network holds more. The info-based eviction order of
   `docs/shared-db-plan.md` (seed-heavy cells first, rare places last) is left for part 3, when strangers bring far
   more records (research R6).
 
@@ -118,7 +119,8 @@ Transitions:
 
 ```text
 login                -> notice (shareNotice false) | off | paused | alone
-popup closed         -> shareNotice = true -> alone, first HELLO after 60-120 s
+popup closed         -> shareNotice = true -> alone, first HELLO after 60-120 s (the setting changed on the
+                        "Shared database" page first also closes the notice: the page says what is shared)
 setting off          -> off: the running session is dropped without a message, nothing is sent or accepted
 setting on           -> alone -> HELLO after 5-30 s; stored records count again at once
 combat / instance /

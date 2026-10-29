@@ -229,3 +229,37 @@ L["Left-click: toggle fishing mode"] = true
 L["Shift+Left-click: statistics"] = true
 L["Right-click: menu"] = true
 L["Drag: move this button"] = true
+
+-- Share.lua
+L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] = true
+L["No character names are sent."] = true
+L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] = true
+L["Got it"] = true
+L["Shared database"] = true
+L["Shared catch database is off"] = true
+L["Waiting for you to read the notice"] = true
+L["Exchange unavailable: the game refuses addon messages"] = true
+L["Exchange paused: in combat"] = true
+L["Exchange paused: in an instance"] = true
+L["Exchange paused: loading screen"] = true
+L["Exchange paused: the game restricts addon messages here"] = true
+L["Exchange paused: the game asked to slow down"] = true
+L["Nobody to exchange with right now"] = true
+L["Exchange: %d players, %s ago"] = true
+L["Exchange: waiting for the first exchange"] = true
+L["Bundled data: version %d, %d places"] = true
+L["Records held: %d, %d places"] = true
+L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] = true
+L["Players exchanged with in the last hour: %d"] = true
+L["Last exchange: %s ago"] = true
+L["Last exchange: none yet"] = true
+L["Traffic in the last hour: %d KB"] = true
+
+-- UI/Settings.lua: the Shared database page
+L["Use the shared catch database"] = true
+L["Your catches (items, counts, places as map numbers) are shared under a random ID."] = true
+L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] = true
+L["Turned off: nothing is sent or received, and other players' data is not counted."] = true
+
+-- UI/CatchHere.lua: other players' catches
+L["%d catches from %d players"] = true

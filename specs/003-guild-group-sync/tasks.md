@@ -51,7 +51,7 @@ four parts together, once the debt of all of them is closed (`docs/shared-db-pla
 
 **Purpose**: test fakes for every new API and the launch-day spike questions.
 
-- [ ] T001 In `tests/wow.lua`, add the fakes below. Each is driven by globals the tests set; document each global in
+- [X] T001 In `tests/wow.lua`, add the fakes below. Each is driven by globals the tests set; document each global in
   the header comment and reset all of them in the existing per-test reset.
 
   **Addon messages**
@@ -101,7 +101,7 @@ four parts together, once the debt of all of them is closed (`docs/shared-db-pla
   - `receive_addon(prefix, text, channel, sender)` fires `CHAT_MSG_ADDON` with that payload.
   - `receive_bn(prefix, text, gameAccountID)` fires `BN_CHAT_MSG_ADDON` with `prefix, text, "WHISPER",
     gameAccountID`.
-- [ ] T002 [P] In `OneKeyFishing/Spike.lua`, add a "Network (V10-V15)" section to `BuildReport()` (research R12).
+- [X] T002 [P] In `OneKeyFishing/Spike.lua`, add a "Network (V10-V15)" section to `BuildReport()` (research R12).
   Use the test prefix `OKFSPIKE`, registered on the first report. Collect echoes in a `CHAT_MSG_ADDON` /
   `BN_CHAT_MSG_ADDON` handler wrapped in the file's `Safe(...)`. Every call is guarded with `pcall` and a nil check,
   and the section prints no names.
@@ -138,7 +138,7 @@ story builds on.
 
 **CRITICAL**: no user story work can begin until this phase is complete.
 
-- [ ] T003 [P] In `OneKeyFishing/Core.lua`, add `settings.shareDB = true` and the top-level `shareNotice = false` to
+- [X] T003 [P] In `OneKeyFishing/Core.lua`, add `settings.shareDB = true` and the top-level `shareNotice = false` to
   `DB_DEFAULTS`, each with a short comment (data-model.md). `DB_SCHEMA` stays 1. Change the shared records comment
   to "contribution ID (own) or `<id>@<epoch>` (others) -> record".
 
@@ -151,7 +151,7 @@ story builds on.
   - `onHide` runs on both buttons.
 
   If the stub `StaticPopup_Hide` / `accept_popup` does not call `OnHide`, make it do so in `tests/wow.lua`.
-- [ ] T004 [P] Write the failing tests for `CatchDB.CheckRecord` in `tests/catchdb_test.lua` (research R6,
+- [X] T004 [P] Write the failing tests for `CatchDB.CheckRecord` in `tests/catchdb_test.lua` (research R6,
   contracts/share-api.md). `CheckRecord` accepts a valid record of two builds and three cells. It rejects, with a
   reason:
   - an `id` not matching `^[a-z2-7]{8}$`, and `id == myID`;
@@ -166,11 +166,11 @@ story builds on.
   - an item ID for which `C_Item.GetItemInfoInstant` returns nil (set the stub to know only some IDs).
 
   A record with one bad cell is rejected whole; unlike the harvest, cells are not skipped.
-- [ ] T005 Implement `CatchDB.CheckRecord(record)` in `OneKeyFishing/CatchDB.lua`. It returns `true` or
+- [X] T005 Implement `CatchDB.CheckRecord(record)` in `OneKeyFishing/CatchDB.lua`. It returns `true` or
   `false, reason`, with no side effects, and checks exactly the rules of T004. Use the existing `MAX_PIECES` and
   `ID_CHARS` constants and a new `MAX_RECORD_PLACES = 1000`. Comment that it mirrors `checkRecord` / `checkCell` in
   `tools/harvest.mjs`, but rejects the whole record.
-- [ ] T006 [P] Write the failing store tests in a new `tests/share_test.lua`, using `load_addon()` and
+- [X] T006 [P] Write the failing store tests in a new `tests/share_test.lua`, using `load_addon()` and
   `ns.Share.Store` (T007), against `ns.db.shared`:
   - **Accept:** a valid record is stored under `"<id>@<epoch>"` with `seen = time()`.
   - **Replace:** the same unit with a higher `seq` replaces it; an equal `seq` only refreshes `seen`; a lower `seq` is
@@ -182,7 +182,7 @@ story builds on.
   - **Eviction:** with other records holding more than 20,000 places together, `Store.Evict()` deletes the oldest
     `seen` first until they fit, and never the own record.
   - **Change message:** every change fires `SHARED_DATA_CHANGED` once.
-- [ ] T007 Create `OneKeyFishing/Share.lua`, listed in `OneKeyFishing/OneKeyFishing.toc` after `CatchDB.lua`
+- [X] T007 Create `OneKeyFishing/Share.lua`, listed in `OneKeyFishing/OneKeyFishing.toc` after `CatchDB.lua`
   (leave room for `Comm.lua` before it, T013). Start it with a header comment on its job (contracts/share-api.md)
   and add `ns.Share = Share` and `Share.Store`, whose functions take the `shared` table:
   - `Accept(store, record, now)`: returns `"new" | "newer" | "same" | "older" | "refused"` and runs the rules of
@@ -194,14 +194,14 @@ story builds on.
 
   A change fires `ns.Fire("SHARED_DATA_CHANGED")`. On `ADDON_LOADED`, after `CatchDB`'s own handler, run `CleanUp`
   and `Evict`. Strip `seen` from a record before it is handed out for sending.
-- [ ] T008 Write the failing hash tests in `tests/share_test.lua` (after T006, same file):
+- [X] T008 Write the failing hash tests in `tests/share_test.lua` (after T006, same file):
   - `Share.Hash(text)` is a 32-bit value equal to a fixed expected number for a fixed input, computed by hand from
     the rule;
   - `Share.Base32(value, 7)` gives 7 characters;
   - `Share.Buckets(units)` puts each unit in the bucket of the first character of its ID;
   - the bucket hashes and the whole hash do not depend on insertion order;
   - a change of one `seq` changes exactly one bucket hash and the whole hash.
-- [ ] T009 Implement the hashes in `OneKeyFishing/Share.lua` (research R5):
+- [X] T009 Implement the hashes in `OneKeyFishing/Share.lua` (research R5):
   - `Hash(text)`: `h = (h * 31 + byte) % 4294967291`, starting at 5381, plain arithmetic, no `bit`. Comment why: the
     hash must agree between the client and fengari.
   - `Base32(value, width)` with the `ID_CHARS` alphabet.
@@ -225,7 +225,7 @@ or three players see each other's catches, and nothing shows in chat.
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Write the failing transport tests in a new `tests/comm_test.lua`, using the T001 fakes and
+- [X] T010 [P] [US1] Write the failing transport tests in a new `tests/comm_test.lua`, using the T001 fakes and
   `advance` (contracts/sync-protocol.md, research R7, R8, R10, R11):
   - **Framing:** a 600-byte message to `w:Other-Realm` becomes parts `<type><sid>#<msg>.<part>.<total> <chunk>`,
     each at most 255 bytes. Fed back through `receive_addon` in reverse order, they reach `Comm.OnReceive`
@@ -250,7 +250,7 @@ or three players see each other's catches, and nothing shows in chat.
     row on `WHISPER` leave the `whisper` path out (`Comm.GetPaths().whisper.disabled`), and later sends to `w:`
     addresses are dropped. A success in between resets the count. Results 3, 8, 10, 11 and 12 never count. With
     all four paths left out, `GetPause()` is `"unavailable"` and stays so.
-- [ ] T011 [P] [US1] Write the failing protocol tests in `tests/share_test.lua`, with three or more nodes from
+- [X] T011 [P] [US1] Write the failing protocol tests in `tests/share_test.lua`, with three or more nodes from
   `Share.NewNode(store, env)` on separate store tables and a fake network in the test. The network routes `send` /
   `broadcast` between nodes through `C_Timer.After(0.1, ...)` and lets a test cut a path or reorder deliveries
   (contracts/sync-protocol.md "A session").
@@ -289,7 +289,7 @@ or three players see each other's catches, and nothing shows in chat.
     anywhere in `OneKeyFishingDB` or `OneKeyFishingCharDB` (walk the tables, FR-009);
   - a full exchange with the fake peer, from its `HELLO` to its record counted in `CatchDB.Query`, finishes within
     5 simulated minutes of the group join (SC-001).
-- [ ] T012 [P] [US1] Write the failing view tests in `tests/catchdb_test.lua` (research R9, data-model.md "Views"):
+- [X] T012 [P] [US1] Write the failing view tests in `tests/catchdb_test.lua` (research R9, data-model.md "Views"):
   - With `settings.shareDB` true, source "All" sums the seed, the own record and every stored other record. With it
     false, the others are left out.
   - The part 1 reset rule applies to other records' builds too.
@@ -299,7 +299,7 @@ or three players see each other's catches, and nothing shows in chat.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Create `OneKeyFishing/Comm.lua`, listed in `OneKeyFishing/OneKeyFishing.toc` after `CatchDB.lua`
+- [X] T013 [US1] Create `OneKeyFishing/Comm.lua`, listed in `OneKeyFishing/OneKeyFishing.toc` after `CatchDB.lua`
   and before `Share.lua`. Implement contracts/share-api.md "`ns.Comm`", until T010 passes.
   - **Setup:** prefix `"OKF1"`, registered at load. Constants in one block at the top:
     | Constant | Value |
@@ -334,7 +334,7 @@ or three players see each other's catches, and nothing shows in chat.
     an address; `-- VERIFY(V12)` at the filter and the `TargetOffline` handling; `-- VERIFY(V13)` at the Battle.net
     send and the friend test; `-- VERIFY(V14)` at the pause rule.
   - **Bookkeeping:** every new API global goes into `.luacheckrc`.
-- [ ] T014 [US1] Implement `Share.NewNode(store, env)` in `OneKeyFishing/Share.lua`, until T011 passes
+- [X] T014 [US1] Implement `Share.NewNode(store, env)` in `OneKeyFishing/Share.lua`, until T011 passes
   (contracts/sync-protocol.md, contracts/share-api.md).
   - **Peers:** the session memory of data-model.md, keyed by address. A node tag (4 base32 characters) is made per
     node.
@@ -358,7 +358,7 @@ or three players see each other's catches, and nothing shows in chat.
 
   Randomness comes from `math.random`, and `env` supplies the clock and the scheduler, so tests are deterministic
   after `math.randomseed`.
-- [ ] T015 [US1] Bind the game node in `OneKeyFishing/Share.lua` (research R3), until the "Game node" tests of
+- [X] T015 [US1] Bind the game node in `OneKeyFishing/Share.lua` (research R3), until the "Game node" tests of
   T011 pass.
   - **Setup:** on `PLAYER_LOGIN`, create one node over `ns.db.shared` with `env` bound to:
     - `GetTime` and `C_Timer.After`;
@@ -372,7 +372,7 @@ or three players see each other's catches, and nothing shows in chat.
     5-30 s if the last one is older than 10 min. `"unavailable"` never ends before logout.
   - **Gating:** nothing runs while `settings.shareDB` is false (T021 adds the notice gate).
   - **Markers:** `-- VERIFY(V16)` at the merge step.
-- [ ] T016 [US1] In `OneKeyFishing/CatchDB.lua`, make T012 pass:
+- [X] T016 [US1] In `OneKeyFishing/CatchDB.lua`, make T012 pass:
   - `Sources("all", mapID)` adds every `ns.db.shared.records` entry whose key is not `myID` when
     `ns.db.settings.shareDB` is true, with the reset rule per build.
   - Views gain `players` (research R9).
@@ -380,7 +380,7 @@ or three players see each other's catches, and nothing shows in chat.
   - `ns.On("SHARED_DATA_CHANGED", ...)` bumps `version`.
 
   Update the `catchdb-api.md` view shape in a comment above `Query`.
-- [ ] T017 [US1] In `OneKeyFishing/UI/CatchHere.lua`, show `L["%d catches from %d players"]` instead of
+- [X] T017 [US1] In `OneKeyFishing/UI/CatchHere.lua`, show `L["%d catches from %d players"]` instead of
   `L["%d catches"]` when the source is "All" and `view.players` is at least 1; "Only mine" keeps `"%d catches"`.
   Add the text to `Locales/enUS.lua` and all nine translations. Extend `tests/catchhere_test.lua`: with one stored
   other record at the current spot the counts line reads "N catches from 2 players"; under "Only mine" it reads
@@ -403,7 +403,7 @@ turned on. In game: quickstart.md, feature steps 1 and 6.
 
 ### Tests for User Story 2
 
-- [ ] T018 [P] [US2] Write the failing tests in `tests/share_test.lua`:
+- [X] T018 [P] [US2] Write the failing tests in `tests/share_test.lua`:
   - **Popup on first login:** with `shareNotice` false, after `PLAYER_ENTERING_WORLD` and the loading screen, out of
     combat, the popup is shown. Nothing is in `addon_sent` before it closes.
   - **Accept:** `accept_popup()` sets `shareNotice = true`, and a `HELLO` follows within 120 s.
@@ -414,7 +414,7 @@ turned on. In game: quickstart.md, feature steps 1 and 6.
     `addon_sent` / `bn_sent` afterwards, and incoming `HELLO` and `REC` are ignored.
   - **Data while off:** `CatchDB.Query` leaves out stored others; the records stay in `ns.db.shared.records`.
   - **On again:** `SetEnabled(true)` counts them again at once and sends a `HELLO` within 30 s.
-- [ ] T019 [P] [US2] Write the failing settings test in a new `tests/settings_test.lua`, using `load_addon()` and
+- [X] T019 [P] [US2] Write the failing settings test in a new `tests/settings_test.lua`, using `load_addon()` and
   `find_frame` / `click`:
   - a subcategory page "Shared database" is registered with a checkbox "Use the shared catch database" reflecting
     `settings.shareDB`;
@@ -425,14 +425,14 @@ turned on. In game: quickstart.md, feature steps 1 and 6.
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement `Share.IsEnabled()` / `Share.SetEnabled(on)` in `OneKeyFishing/Share.lua`. Setting the
+- [X] T020 [US2] Implement `Share.IsEnabled()` / `Share.SetEnabled(on)` in `OneKeyFishing/Share.lua`. Setting the
   value means:
   - write `settings.shareDB`;
   - when off, `node:Pause("off")` drops the session, and `Comm` ignores incoming messages and refuses sends while
     the setting is off (check it at the top of the queue and of the receive handler);
   - fire `SHARED_DATA_CHANGED` and `SETTINGS_CHANGED`;
   - when on, `node:Resume()` and a `HELLO` after 5-30 s.
-- [ ] T021 [US2] Implement the one-time popup in `OneKeyFishing/Share.lua` (contracts/share-api.md).
+- [X] T021 [US2] Implement the one-time popup in `OneKeyFishing/Share.lua` (contracts/share-api.md).
   - **When:** on `PLAYER_ENTERING_WORLD` with `shareNotice` false, wait for `LOADING_SCREEN_DISABLED` and for out of
     combat (`PLAYER_REGEN_ENABLED` if needed).
   - **Popup:** `ns.ShowPopup("ONEKEYFISHING_SHARE_NOTICE", text, nil, L["Got it"], L["Settings"], onCancel =
@@ -445,7 +445,7 @@ turned on. In game: quickstart.md, feature steps 1 and 6.
     `L` key so that change touches one key and its nine translations.
 
   Add the texts to `Locales/enUS.lua` and all nine translations.
-- [ ] T022 [US2] In `OneKeyFishing/UI/Settings.lua`, add `CreateSharePage()`, registered with
+- [X] T022 [US2] In `OneKeyFishing/UI/Settings.lua`, add `CreateSharePage()`, registered with
   `Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateSharePage(), L["Shared database"])`. It holds:
   - the checkbox `L["Use the shared catch database"]`, through the file's `CreateCheckbox`, calling
     `ns.Share.SetEnabled`;
@@ -473,7 +473,7 @@ steps 4, 5 and 8.
 
 ### Tests for User Story 3
 
-- [ ] T023 [P] [US3] Write the failing tests in `tests/share_test.lua` for `Share.GetStatus()` and
+- [X] T023 [P] [US3] Write the failing tests in `tests/share_test.lua` for `Share.GetStatus()` and
   `Share.StatusLine()` (contracts/share-api.md, data-model.md "State of the exchange"):
   - **States:** `off`, `notice`, `unavailable`, `paused` with each reason, `alone`, `active`, in that order of
     precedence.
@@ -485,18 +485,18 @@ steps 4, 5 and 8.
     - "Exchange unavailable: the game refuses addon messages";
     - "Shared catch database is off";
     - "Nobody to exchange with right now".
-- [ ] T024 [P] [US3] Extend `tests/commands_test.lua`:
+- [X] T024 [P] [US3] Extend `tests/commands_test.lua`:
   - `/okf share` prints the localized lines of FR-022 into chat (`chat_contains`) on an English and on a German
     client;
   - `/okf` help lists `share` with the English description "show the state of the shared catch database";
   - `/okf debug` contains a "Shared database" section with the state, the counts and the traffic, and contains
     neither `myID` nor any peer name used in the test.
-- [ ] T025 [P] [US3] Extend `tests/catchhere_test.lua`: the tab shows `Share.StatusLine()` under the counts, and the
+- [X] T025 [P] [US3] Extend `tests/catchhere_test.lua`: the tab shows `Share.StatusLine()` under the counts, and the
   line changes on the 1 s tick when the state changes, without reopening the window.
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Implement `Share.GetStatus()`, `Share.StatusLine()` and `Share.PrintStatus()` in
+- [X] T026 [US3] Implement `Share.GetStatus()`, `Share.StatusLine()` and `Share.PrintStatus()` in
   `OneKeyFishing/Share.lua`.
   - **Status lines:** `L["Exchange: %d players, %s ago"]` (the time through the same short duration format Stats
     uses), `L["Exchange paused: in combat"]`, `L["Exchange paused: in an instance"]`,
@@ -509,15 +509,15 @@ steps 4, 5 and 8.
     `ns.Print` with `L` texts.
 
   Add every text to `Locales/enUS.lua` and all nine translations.
-- [ ] T027 [US3] In `OneKeyFishing/Commands.lua`, add `{ name = "share", description = "show the state of the shared
+- [X] T027 [US3] In `OneKeyFishing/Commands.lua`, add `{ name = "share", description = "show the state of the shared
   catch database", run = function() ns.Share.PrintStatus() end }` in name order.
-- [ ] T028 [US3] Add `Share.Describe()` in `OneKeyFishing/Share.lua` and `Comm.Describe()` in
+- [X] T028 [US3] Add `Share.Describe()` in `OneKeyFishing/Share.lua` and `Comm.Describe()` in
   `OneKeyFishing/Comm.lua`. They return English lines with no names and no IDs: state and reason, records and
   places, peers heard per path and exchanged, last exchange age, traffic, queue length, result code counts, rejected
   senders count, back-off, the paths left out, and the longest merge step in ms (`debugprofilestop`, SC-006: under
   5 ms). In `OneKeyFishing/Debug.lua`, add
   a "Shared database" section from both.
-- [ ] T029 [US3] In `OneKeyFishing/UI/CatchHere.lua`, add a status text below the hint showing
+- [X] T029 [US3] In `OneKeyFishing/UI/CatchHere.lua`, add a status text below the hint showing
   `ns.Share.StatusLine()`, refreshed on the existing 1 s tick when the line changed.
 
 **Checkpoint**: the state of the exchange is visible in the tab, on the page, in `/okf share` and in bug reports.
@@ -535,7 +535,7 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
 
 ### Tests for User Story 4
 
-- [ ] T030 [P] [US4] Extend `tests/harvest_test.mjs`.
+- [X] T030 [P] [US4] Extend `tests/harvest_test.mjs`.
   - **Setup:** a fake author file holds the own record under `myID` and three other records under `"<id>@<epoch>"`,
     each with `seen`. A second file holds one of the same units with a lower `seq`.
   - **Expect:**
@@ -544,7 +544,7 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
     - `seen` and the table keys do not matter;
     - the report counts the contributions;
     - a second run with the same files changes nothing.
-- [ ] T031 [P] [US4] Extend `tests/share_test.lua`: a node holding three other units has its counts noted. Then
+- [X] T031 [P] [US4] Extend `tests/share_test.lua`: a node holding three other units has its counts noted. Then
   `ns.SeedData` is replaced with a seed containing the same sums and `absorbed` for those IDs, and the addon is
   reloaded. Expect:
   - the stored units are deleted;
@@ -553,7 +553,7 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
 
 ### Implementation for User Story 4
 
-- [ ] T032 [US4] Make T030 pass in `tools/harvest.mjs` if it does not already. The keys of `shared.records` and the
+- [X] T032 [US4] Make T030 pass in `tools/harvest.mjs` if it does not already. The keys of `shared.records` and the
   field `seen` must not matter (`checkRecord` already rebuilds `{ id, epoch, seq, builds }`). The report line counts
   contributions by `id@epoch`. Make T031 pass in `OneKeyFishing/Share.lua` (`Store.CleanUp` at login, the absorbed
   check in `WANT`) if the Phase 2 code does not already.
@@ -564,7 +564,7 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
 
 ## Phase 7: Polish & Cross-Cutting Concerns (before launch)
 
-- [ ] T033 [P] Add a load test to `tests/share_test.lua`.
+- [X] T033 [P] Add a load test to `tests/share_test.lua`.
   - **Setup:** fill the store with synthetic other records totalling 20,000 places over 200 records.
   - **Expect:**
     - `ADDON_LOADED` cleanup and eviction finish;
@@ -572,14 +572,14 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
     - a full session's merge runs one record per frame step.
 
   Print the times (`os.clock`) for information without failing on them (V16 is checked in game).
-- [ ] T034 [P] Update `README.md` with a "Shared catch database" section: what is shared, with whom (guild, group,
+- [X] T034 [P] Update `README.md` with a "Shared catch database" section: what is shared, with whom (guild, group,
   friends; part 3 adds the public channel), that no names are sent, where to turn it off, `/okf share`, and that
   Trial and Veteran accounts cannot send addon data. Add an `## [Unreleased]` entry to `CHANGELOG.md`.
-- [ ] T035 [P] Re-check `docs/shared-db-plan.md` against the code. Its sections and the "part 2" decisions table
+- [X] T035 [P] Re-check `docs/shared-db-plan.md` against the code. Its sections and the "part 2" decisions table
   were already brought in line with this design on 2026-10-29: "Transport", "Libraries", "Traffic budget", "Size
   and eviction" and "Sync protocol". Fix any value the implementation changed: the constants in `Comm.lua` and
   `Share.lua`, the message forms, and the limits. Update `docs/ROADMAP.md` item 1 so it links to this spec.
-- [ ] T036 [P] Update `CLAUDE.md`:
+- [X] T036 [P] Update `CLAUDE.md`:
   - **Architecture:** new **Comm.lua** and **Share.lua** entries (job, node design, pause rule, budget); the CatchDB
     entry gains "All" with others' records and `players`; UI/Settings gains the "Shared database" page; UI/CatchHere
     gains the player count and the status line.
@@ -587,10 +587,10 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
   - **`/okf share`:** mention it with `/okf debug`.
   - **Known API facts:** the dump facts and the deprecated-globals rule are already there (2026-10-29); re-check
     them against a fresh `exportInterfaceFiles code` if the client was patched since.
-- [ ] T037 [P] Create `docs/checklists/catch-exchange.md` from quickstart.md "In game: spike" (N1-N7) and "In game:
+- [X] T037 [P] Create `docs/checklists/catch-exchange.md` from quickstart.md "In game: spike" (N1-N7) and "In game:
   the feature" (1-10). Give each step a checkbox and the V-IDs it closes, and say that a second player is needed.
   Link it from `docs/checklists/catch-database.md` "After the checklist".
-- [ ] T038 Run `npm run check`, `npm test` and `npm run dev`. Confirm that the only open markers are V1-V7, `spike`
+- [X] T038 Run `npm run check`, `npm test` and `npm run dev`. Confirm that the only open markers are V1-V7, `spike`
   (part 1) and V10-V16, each listed in a verification.md. Set the "Status" column of
   `specs/003-guild-group-sync/verification.md` to "Built, waiting for launch".
 

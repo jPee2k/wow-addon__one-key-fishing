@@ -8,6 +8,8 @@ ns.COMMANDS = {
     { name = "debug", description = "show a report to copy into a bug report", run = function() ns.ShowReport() end },
     { name = "scan", description = "scan auction prices of caught items (auction house must be open)",
         run = function() ns.Auction.Scan() end },
+    { name = "share", description = "show the state of the shared catch database",
+        run = function() ns.Share.PrintStatus() end },
     -- VERIFY(spike): temporary, with Spike.lua
     { name = "spike", description = "print API facts for the verification checklist",
         run = function() ns.ShowSpikeReport() end },

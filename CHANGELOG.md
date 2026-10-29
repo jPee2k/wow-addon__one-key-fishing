@@ -19,6 +19,16 @@ All notable changes to OneKeyFishing are listed here. The format follows
   and for the source (all, or only your own catches).
 - A catch database bundled with every release, so the tab has numbers from the first login. Your own catches
   are recorded for it per map, grid cell and skill range, anonymously (no names, no exact positions).
+- Shared catch database: catch counts travel anonymously and in the background between addon users in your
+  guild, group and friends list (Battle.net friends playing WoW Forever included), and what they got from others
+  reaches you too. No character names are sent or saved; it pauses in combat, in instances and on loading
+  screens, stays within 50 KB per hour and never shows anything in chat. "What can be caught here" counts it
+  under "All" and says how many players the numbers come from ("60 catches from 3 players"), with a quiet status
+  line at the bottom.
+- "Shared database" settings page: one setting turns the exchange off (nothing sent or received; data received
+  earlier is kept but not counted), with a short text on what is shared and the state. A popup at the first
+  login says what is shared and where to turn it off.
+- `/okf share` shows the state of the shared catch database; `/okf debug` has a section for it.
 
 ### Changed
 

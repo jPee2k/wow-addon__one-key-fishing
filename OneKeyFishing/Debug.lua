@@ -101,6 +101,16 @@ local function BuildReport()
             tostring(coverage and coverage.total))
     end)
 
+    -- No anonymous ID and no names: the exchange state in numbers only.
+    Section(lines, "Shared database", function()
+        for _, line in ipairs(ns.Share.Describe()) do
+            add("%s", line)
+        end
+        for _, line in ipairs(ns.Comm.Describe()) do
+            add("%s", line)
+        end
+    end)
+
     Section(lines, "Game settings", function()
         for _, name in ipairs(REPORT_CVARS) do
             add("%s = %s", name, tostring(C_CVar.GetCVar(name)))
