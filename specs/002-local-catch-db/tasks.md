@@ -357,21 +357,26 @@ prices and values (quickstart.md "In game: the feature" step 8).
 
 ## Phase 8: After launch (2026-11-04): close the verification debt
 
-**Blocked until the game opens.** Each task is the author's in-game step plus the follow-up in code.
+**Blocked until the game opens.** Each task is the author's in-game step plus the follow-up in code, on
+`002-shared-db`. Part 1 is not released on its own: release 1.2.0 ships all four parts of the shared catch database
+together (`docs/shared-db-plan.md` "Release 1.2.0"). T040 runs in the same game session as the spike steps of the
+later parts.
 
 - [ ] T040 Author: run `docs/checklists/catch-database.md` "Spike" steps and paste the `/okf spike` reports.
 - [ ] T041 Record the answers in `CLAUDE.md` "Known API facts"; for each of V1-V7 either remove its markers (the
   assumption held) or change the code to the real behaviour (with tests) and then remove the markers; tick the items
   in `specs/002-local-catch-db/verification.md`.
-- [ ] T042 Remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua`, and
-  `tests/spike_test.lua`.
+- [ ] T042 Only when the spike steps of every part have run (the later parts add their own sections to
+  `/okf spike`): remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua`,
+  and `tests/spike_test.lua` (`docs/shared-db-plan.md` "Release 1.2.0", step 3).
 - [ ] T043 Author: run the "Feature" steps of `docs/checklists/catch-database.md` (closes V6, V8, V9; for V8 first
   `npm run harvest -- --synthetic 3000` and `npm run install-addon`, then `git checkout OneKeyFishing/SeedData.lua`);
   fix what fails and repeat.
 - [ ] T044 Author: fish, then run `npm run harvest` (plus friends' files) for the first real seed; commit
   `OneKeyFishing/SeedData.lua` and `seed/contributions.json`.
-- [ ] T045 Release 1.1.0 per `docs/publishing.md`: version in `package.json` and `CHANGELOG.md`, `npm run build`
-  (must pass with no VERIFY markers), merge `develop` into `main`, tag.
+- [ ] T045 Release 1.2.0 with the other parts (the one release task for all four parts; the last task of each
+  later part points here), per `docs/shared-db-plan.md` "Release 1.2.0" and
+  `docs/publishing.md` (`npm run build` must pass with no VERIFY markers).
 
 ---
 
@@ -384,7 +389,8 @@ prices and values (quickstart.md "In game: the feature" step 8).
 - **US2** (T022-T025): after T018 (Query). Independent of the panel except T023 (needs T021).
 - **US3** (T026-T029): after T013 (seed format); independent of US1/US2 code; T029 after T027.
 - **US4** (T030-T034): after Phase 1 only (T030 extends T005); T034 needs T020/T021 for the panel mark.
-- **Phase 7**: after the stories it documents. **Phase 8**: after 2026-11-04 and Phase 7.
+- **Phase 7**: after the stories it documents. **Phase 8**: after 2026-11-04 and Phase 7; T042 and T045 after
+  the other parts (`docs/shared-db-plan.md` "Release 1.2.0").
 
 ## Parallel Example: User Story 1
 
@@ -406,7 +412,7 @@ files (`tools/harvest.mjs`, `Auction.lua`, `Prices.lua`) until T034.
 2. **Add US2** (seed merge) and **US3** (harvest) together: the first seed proves both.
 3. **Add US4** (prices).
 4. **Phase 7** before launch, so launch day is only verification.
-5. **Phase 8** after 2026-11-04, then the 1.1.0 release.
+5. **Phase 8** after 2026-11-04, then release 1.2.0 together with the other parts.
 
 ## Notes
 

@@ -41,7 +41,7 @@ Derived values (not stored):
 - chance of an item = `i[id][1] / c` (misses not included, FR-011)
 - average pieces = `i[id][2] / i[id][1]`
 - miss rate = `m / (c + m)`
-- average point = `px / (c + m) / 1000`, `py / (c + m) / 1000` (for 1.4.0)
+- average point = `px / (c + m) / 1000`, `py / (c + m) / 1000` (for part 4)
 
 Validation (addon on write, `harvest` on read): all counts are non-negative integers; `i[id][1] <= c`;
 `i[id][1] <= i[id][2] <= 20 * i[id][1]`; `c + m <= t` (a cast lasts at least a second); `px`, `py` within
@@ -57,7 +57,7 @@ OneKeyFishingDB.shared = {
   mine = {                            -- lifetime counts of this account, never reset ("Only mine")
     ["1415:3:47"] = cell,
   },
-  records = {                         -- contributions; in 1.1.0 only this account's own
+  records = {                         -- contributions; in part 1 only this account's own
     ["k7f2q9xa"] = {
       id = "k7f2q9xa",
       epoch = 3,                      -- seed epoch the record started against

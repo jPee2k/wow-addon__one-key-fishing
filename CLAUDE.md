@@ -48,7 +48,24 @@ All files share the addon namespace (`local _, ns = ...`). Load order is the TOC
 
 ## Known API facts for Forever (verified in game)
 
-Signatures (not behaviour) can be checked without the game in the API dump of the Forever client: the `forever` branch of [Gethe/wow-ui-source](https://github.com/Gethe/wow-ui-source/tree/forever) (`Blizzard_APIDocumentationGenerated`), the global list in [Ketho/BlizzardInterfaceResources](https://github.com/Ketho/BlizzardInterfaceResources/blob/forever/Resources/GlobalAPI.lua), and the [1.60.1 API notes](https://warcraft.wiki.gg/wiki/Patch_1.60.1/API_changes/notes).
+Signatures (not behaviour) can be checked without the game, in this order:
+
+1. **The live client's own export.** Start the client with `-console` (Battle.net: game settings, additional command line arguments). On the login or character screen, open the console (`` ` ``) and run `exportInterfaceFiles code`. The code lands in `<WoW folder>/_forever_/BlizzardInterfaceCode/Interface/AddOns/`:
+   - `Blizzard_APIDocumentationGenerated/*.lua` holds signatures, enums and events;
+   - FrameXML shows how Blizzard itself uses an API (`Blizzard_FriendsFrame/Camelot/` is the Forever version of a frame);
+   - the client build is in `<WoW folder>/.build.info` (product `wowf`).
+
+   This works without entering the world, so it is available before launch. Re-export after every client patch.
+2. **Public dumps** (slightly older builds):
+   - the `forever` branch of [Gethe/wow-ui-source](https://github.com/Gethe/wow-ui-source/tree/forever) (`Blizzard_APIDocumentationGenerated`);
+   - the global list in [Ketho/BlizzardInterfaceResources](https://github.com/Ketho/BlizzardInterfaceResources/blob/forever/Resources/GlobalAPI.lua);
+   - the [1.60.1 API notes](https://warcraft.wiki.gg/wiki/Patch_1.60.1/API_changes/notes).
+
+Rules for reading the dumps:
+
+- **Undocumented globals.** Old globals such as `GetLootSourceInfo` and `BNGetNumFriends` are not in the generated docs. For those, check Ketho's GlobalAPI list or a use in FrameXML.
+- **Deprecated globals.** Files in `Blizzard_Deprecated*` (`BNSendGameData`, `ChatFrame_AddMessageEventFilter`, ...) load only with the `loadDeprecationFallbacks` CVar. Use the namespaced functions instead (`C_BattleNet.SendGameData`, `ChatFrameUtil.AddMessageEventFilter`).
+- **Checked against build 1.60.1.70685 (2026-10-29).** The live export has every API the catch database relies on (`specs/002-local-catch-db/research.md` R11, `specs/003-guild-group-sync/research.md`), including `C_EncodingUtil`, `Enum.SendAddonMessageResult`, `Enum.AddOnRestrictionType` and `PanelTabButtonTemplate`.
 
 
 - `INTERACTTARGET` exists. The bobber is readable as unit `softinteract` (name and GUID), but it has **no nameplate** and `UnitExists` is false, so nothing can be anchored to it.

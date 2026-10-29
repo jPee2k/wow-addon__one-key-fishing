@@ -1,9 +1,9 @@
 # Verification debt: Local Catch Database
 
-The game cannot be played before its launch on 2026-11-04, so 1.1.0 is built on the assumptions below and verified
+The game cannot be played before its launch on 2026-11-04, so part 1 of the shared catch database is built on the assumptions below and verified
 afterwards. Each item has an ID; the code that depends on it carries a `-- VERIFY(Vn): ...` comment.
 `npm run check` lists the open markers, and `npm run build` (release) refuses to package while any marker is left,
-so 1.1.0 cannot be released with open debt.
+so release 1.2.0 (all four parts) cannot ship with open debt.
 
 Closing an item: run the step in game (`/okf spike` prints the facts), record the answer in CLAUDE.md "Known API
 facts", adjust the code if the answer differs from the assumption, remove its markers, and tick it here.

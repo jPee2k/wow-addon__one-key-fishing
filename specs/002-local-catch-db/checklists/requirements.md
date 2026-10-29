@@ -32,7 +32,7 @@
 ## Notes
 
 - All decisions were settled before the spec in a design interview; they are recorded in
-  `docs/shared-db-plan.md` ("Releases and specs" -> "1.1.0", decisions table). No clarification markers.
+  `docs/shared-db-plan.md` ("Releases and specs" -> "Part 1 (spec 002)", decisions table). No clarification markers.
 - Game API names, data formats and file names are kept out of the spec on purpose; they belong in the plan.
 - FR-028 (the in-game check before building) is a process requirement; it is in the spec because several
   requirements (FR-002, FR-007, FR-025) depend on its answers.

@@ -1,0 +1,92 @@
+# Contract: the exchange protocol (`OKF1`)
+
+What two clients send each other. The prefix `OKF1` carries the protocol version: a client ignores every other
+`OKF` prefix (FR-007), and a change that breaks this contract needs a new digit. Values are starting values; they
+live as constants in `Comm.lua` and `Share.lua` (research R7).
+
+## Transport
+
+| Path | Send | Receive | Used for |
+| --- | --- | --- | --- |
+| Guild | `C_ChatInfo.SendAddonMessage("OKF1", text, "GUILD")` | `CHAT_MSG_ADDON`, channel `GUILD` | `HELLO` |
+| Group | `... "RAID"` when `IsInRaid()`, else `"PARTY"` (home group only) | channel `RAID` / `PARTY` | `HELLO` |
+| Whisper | `... "WHISPER", name` | channel `WHISPER`, sender `Name-Realm` | `HELLO` to friends, every session message |
+| Battle.net | `C_BattleNet.SendGameData(gameAccountID, "OKF1", text)` | `BN_CHAT_MSG_ADDON` (prefix, text, channel, senderID) | `HELLO` to Battle.net friends, sessions with them |
+
+A peer's address is `w:<sender>` or `b:<gameAccountID>`; a session always goes back over the path its `HELLO`
+came by (a guild or group `HELLO` -> whisper to the sender).
+
+## Messages
+
+Every message is at most 255 bytes, ASCII only. `<sid>` is a 2-character session ID (base32) chosen by the
+initiator; all session messages carry it.
+
+| Message | Form | Sent by | Meaning |
+| --- | --- | --- | --- |
+| `HELLO` | `H <node> <epoch> <count> <hash>` | everyone | "I am here": node tag of this login (4 base32), seed epoch, records held, whole-database hash (7 base32) |
+| `SUM` | `S<sid> <h1><h2>...<h32>` | initiator | the 32 bucket hashes, 7 base32 characters each, buckets in base32 order |
+| `DIFF` | `D<sid> <buckets> <entry> <entry> ...` | both | the buckets that differ (their base32 characters) and every `id.epoch.seq` the sender holds in them |
+| `WANT` | `W<sid> <id@epoch> ...` | both | the units the sender wants from the other side (may be empty) |
+| `REC` | `R<sid> <data>` | both | one record, `EncodeBase64(CompressString(SerializeCBOR(record)))` |
+| `BYE` | `B<sid> <reason>` | both | `sent` (I sent all you wanted, or all the limit allowed), `done` (the session is over), `busy`, `paused`, `off`, `limit` |
+
+A message longer than 255 bytes is sent in parts: `<type><sid>#<msg>.<part>.<total> <chunk>`, where `<msg>` is a
+per-sender counter (base32, 1-2 characters) and parts are numbered from 1. The receiver joins the chunks by part
+number (Battle.net delivery is unordered), keeps at most 64 KB of parts per peer and drops a message whose parts
+did not all arrive within 15 s. `HELLO` and `BYE` always fit one message.
+
+## A session
+
+`A` broadcasts `HELLO`; `B` hears it.
+
+```text
+B: the hash differs, B is not paused, not in a session, within budget, and the cooldowns allow it
+   (a new session at least 2 min after the last one started; with A at most once per 10 min in a group,
+   30 min otherwise) -> waits a random 2-20 s, re-checks
+B -> A  SUM
+A -> B  BYE busy | paused | off | limit          (A in another session, paused, sharing off, over budget)
+A -> B  BYE done                                 (all bucket hashes equal: both refresh `seen` of every unit)
+A -> B  DIFF <differing buckets> <A's entries>   (equal buckets: A refreshes `seen` of their units)
+B -> A  DIFF <same buckets> <B's entries>        (B refreshes `seen` of units equal on both sides)
+B -> A  WANT <units B wants>                     (A holds a newer seq, or B lacks it, and B's seed did not absorb it)
+A -> B  WANT <units A wants>
+A -> B  REC ... REC, then BYE sent               (B's wants, newest first, within 8 KB, at least one)
+B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own sends)
+```
+
+- Each received `REC` is decoded and checked (research R6) one per frame step, then stored per `id@epoch`
+  (data-model.md). A `REC` that was not wanted, does not decode or fails the check makes the sender ignored until
+  logout; the session ends.
+- No message from the peer for 15 s: the session is dropped without a message and the peer is paused for 30 min.
+  `TargetOffline` on a send has the same effect.
+- A pause (research R8) or turning sharing off drops the running session without a message.
+- Only the hearer of a `HELLO` starts a session, and `A` takes one at a time; another hearer gets `BYE busy` and
+  tries again after `A`'s next `HELLO`.
+- Crossing `SUM`s: when `A` and `B` heard each other and each sent `SUM` to the other, the one with the smaller node
+  tag (from the other's `HELLO`, compared as strings) stays the initiator and drops the other's `SUM` without an
+  answer; the other drops its own session and answers the `SUM` as the responder. Equal tags: both drop their
+  sessions and wait for the next `HELLO`.
+- Units wanted but not sent because of the 8 KB limit come in a later session.
+
+## Limits on what is received (per sender, per session of play)
+
+| What | Limit | Above it |
+| --- | --- | --- |
+| `HELLO` | 1 per 60 s | ignored |
+| Messages (parts counted) | 600 per hour | the sender is ignored until logout |
+| Records | 50 per hour | the sender is ignored until logout |
+| One record | 32 KB encoded, 1,000 places | rejected, the sender is ignored |
+| Broken, unwanted or invalid data | none allowed | the sender is ignored until logout |
+
+## Paths the game refuses
+
+A path (`guild`, `group`, `whisper`, `bnet`) that the game refuses 5 times in a row (any result but `Success`, the
+throttle codes, `AddOnMessageLockdown`, `TargetOffline`, `NotInGuild` and `NotInGroup`) is left out until logout; a
+success resets the count. Peers reached only by a left-out path are not contacted. With every path left out the
+exchange is unavailable until logout.
+
+## What is never sent
+
+Character names (the game itself shows the sender to the receiver), guild names, the anonymous ID together with a
+`HELLO`, exact positions, session times, gear (FR-008). A record carries only its part 1 fields: `id`, `epoch`,
+`seq`, `builds`; `seen` is local and stripped before encoding.

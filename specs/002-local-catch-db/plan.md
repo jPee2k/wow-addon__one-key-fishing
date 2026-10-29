@@ -1,6 +1,6 @@
 # Implementation Plan: Local Catch Database
 
-**Branch**: `002-local-catch-db` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md)
+**Branch**: `002-shared-db` (renamed from `002-local-catch-db`) | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/002-local-catch-db/spec.md`
 
