@@ -116,6 +116,13 @@ export function seedProblems(ast) {
       problems.push(`cell key "${key}" is not "<mapID>:<range>:<cell>"`);
     }
   }
+  for (const [id, epochs] of Object.entries(seed.absorbed || {})) {
+    const units = typeof epochs === "object" && epochs !== null ? Object.entries(epochs) : [];
+    if (!ID.test(id) || units.length === 0
+      || units.some(([epoch, seq]) => !/^\d+$/.test(epoch) || !Number.isInteger(seq) || seq < 0)) {
+      problems.push(`absorbed["${id}"] is not { [epoch] = seq, ... }`);
+    }
+  }
   return problems;
 }
 
@@ -175,6 +182,19 @@ function checkCell(cell, key) {
   }
 }
 
+// The casts (catches and misses) of every cell of every build whose counts are counts, valid or not otherwise.
+function rawCasts(record) {
+  let casts = 0;
+  for (const cells of Object.values(record.builds || {})) {
+    for (const value of Object.values(cells || {})) {
+      if (value && isCount(value.c) && isCount(value.m)) {
+        casts += value.c + value.m;
+      }
+    }
+  }
+  return casts;
+}
+
 // Returns the record cleaned to { id, epoch, seq, builds }; throws with the reason when it must be rejected.
 function checkRecord(record, notes) {
   if (typeof record !== "object" || record === null) {
@@ -185,6 +205,13 @@ function checkRecord(record, notes) {
   }
   if (!isCount(record.epoch) || !isCount(record.seq)) {
     throw new Error("epoch or seq is not a count");
+  }
+  // The seq grows only after a settled cast (as CatchDB.CheckRecord checks): a higher one is made up, and as the
+  // newest seq it would replace the owner's real record here. Counted before odd cells are skipped, so a skipped
+  // cell does not reject an honest record.
+  const casts = rawCasts(record);
+  if (record.seq > casts) {
+    throw new Error(`seq ${record.seq} is above the record's ${casts} casts`);
   }
   const builds = {};
   const places = new Set();
@@ -338,7 +365,9 @@ function seedText(seed) {
     `  epoch = ${seed.epoch},`,
     `  built = "${seed.built}",`,
     `  build = "${seed.build}",`,
-    ...block("absorbed", Object.keys(seed.absorbed).sort().map((id) => `    ["${id}"] = ${seed.absorbed[id]},`)),
+    ...block("absorbed", Object.keys(seed.absorbed).sort().flatMap((id) => wrap(`    ["${id}"] = {`,
+      Object.keys(seed.absorbed[id]).sort(byNumber).map((epoch) => `[${epoch}] = ${seed.absorbed[id][epoch]}`),
+      "      ", " },"))),
     ...block("resets", Object.keys(seed.resets).sort(byNumber)
       .map((mapID) => `    [${mapID}] = "${seed.resets[mapID]}",`)),
     "  cells = {",
@@ -458,9 +487,11 @@ export function harvest(options = {}) {
   }
 
   const cells = sumContributions(store);
+  // Every unit summed, with the seq summed: a client keeps a newer seq of it (the rest goes to the next harvest),
+  // and deletes the versions up to it.
   const absorbed = {};
   for (const record of Object.values(store.contributions)) {
-    absorbed[record.id] = Math.max(absorbed[record.id] ?? 0, record.epoch);
+    absorbed[record.id] = { ...absorbed[record.id], [record.epoch]: record.seq };
   }
   // The epoch only grows, also when the contributions file was lost while the shipped seed is newer: an epoch that
   // repeated or went back would let clients count their own record next to a seed that already holds it.

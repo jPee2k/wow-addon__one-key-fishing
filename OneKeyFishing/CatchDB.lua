@@ -13,6 +13,11 @@ local RANGE_STEP = 75 -- skill points per range
 local MAX_RANGE = 4 -- 300 and above
 local MAX_PIECES = 20 -- pieces counted per catch and item, against bogus quantities
 local SEQ_INTERVAL = 60 -- seconds between bumps of the record's seq
+-- Places of the own record before a new one rolls it (Roll below): a peer takes a record of up to 1,000 places and
+-- 32 KB encoded. Measured with CBOR + Deflate + Base64 in Node: 34-47 bytes per place, so 500 places stay under
+-- 24 KB even with hundreds of catches per cell.
+-- VERIFY(V18): C_EncodingUtil encodes an own record of ROLL_PLACES busy places in at most 24 KB
+local ROLL_PLACES = 500
 local ID_LENGTH = 8 -- base32 characters (Data.lua)
 CatchDB.ID_LENGTH = ID_LENGTH
 
@@ -114,16 +119,25 @@ local function SeedEpoch()
 end
 CatchDB.SeedEpoch = SeedEpoch
 
--- ID -> the newest epoch of that ID the seed holds.
+-- ID -> { [epoch] = seq }: every unit "<id>@<epoch>" the seed holds, and up to which seq.
 function CatchDB.SeedAbsorbed()
     return SeedField("absorbed")
 end
 
--- True when the seed already holds this epoch of this ID: it would count twice next to the seed. absorbed: the
--- seed's table (ID -> newest epoch) by default.
-function CatchDB.IsAbsorbed(id, epoch, absorbed)
-    local seedEpoch = (absorbed or SeedField("absorbed"))[id]
-    return type(seedEpoch) == "number" and epoch <= seedEpoch
+-- The seq up to which the seed holds unit <id>@<epoch>, or nil when it holds none of it. absorbed: the seed's
+-- table by default.
+function CatchDB.AbsorbedSeq(id, epoch, absorbed)
+    local epochs = (absorbed or SeedField("absorbed"))[id]
+    local seq = type(epochs) == "table" and epochs[epoch]
+    return type(seq) == "number" and seq or nil
+end
+
+-- True when the seed holds this version of the unit whole: next to the seed it would count twice. A newer seq of
+-- a unit the seed holds is held only in part: it is kept and passed on, so the next harvest gets the rest, but not
+-- counted, since the seed already has its first part.
+function CatchDB.IsAbsorbed(id, epoch, seq, absorbed)
+    local held = CatchDB.AbsorbedSeq(id, epoch, absorbed)
+    return held ~= nil and seq <= held
 end
 
 -- Other players' records are kept under "<id>@<epoch>" (Share.lua), the own one under its ID.
@@ -173,6 +187,46 @@ local function BumpSeq()
     lastSeqBump, seqWaiting = GetTime(), false
 end
 
+local function HasCells(record)
+    for _, cells in pairs(record.builds) do
+        if type(cells) == "table" and next(cells) ~= nil then
+            return true
+        end
+    end
+    return false
+end
+
+-- The epoch of a new own record: the seed's, and above every epoch of the own ID held, so each unit of the own ID
+-- is new (a record may roll more than once between two seeds).
+local function NextEpoch(shared)
+    local epoch = SeedEpoch()
+    for _, record in pairs(shared.records) do
+        if type(record) == "table" and record.id == shared.myID and type(record.epoch) == "number" then
+            epoch = math.max(epoch, record.epoch + 1)
+        end
+    end
+    return epoch
+end
+
+-- Starts a new own record (contracts: data-model.md "Rolling the own record"). The old one, with a seq for all its
+-- cells, stays under "<myID>@<epoch>": it never changes again, goes to peers like other players' records and
+-- reaches the seed through the author's harvest. Not kept when it is empty or the seed holds it whole. Returns the
+-- key it is kept under, or nil.
+local function Roll()
+    local shared = ns.db.shared
+    local old, key = OwnRecord(), nil
+    if old and seqWaiting then
+        BumpSeq()
+    end
+    if old and HasCells(old) and not CatchDB.IsAbsorbed(shared.myID, old.epoch, old.seq) then
+        key = CatchDB.UnitKey(shared.myID, old.epoch)
+        old.seen = time()
+        shared.records[key] = old
+    end
+    shared.records[shared.myID] = { id = shared.myID, epoch = NextEpoch(shared), seq = 0, builds = {} }
+    return key
+end
+
 -- Bumps a seq change that waits for its minute (at logout, and before the record goes to a peer, so it has a
 -- seq for all its cells).
 function CatchDB.FlushSeq()
@@ -198,8 +252,25 @@ local function Cell(cells, key)
     return cell
 end
 
--- The cells a change goes into: mine and the own record under the current game version.
+local function HasPlace(record, key)
+    for _, cells in pairs(record.builds) do
+        if type(cells) == "table" and cells[key] then
+            return true
+        end
+    end
+    return false
+end
+
+-- The cells a change goes into: mine and the own record under the current game version. A place new to an own
+-- record of ROLL_PLACES places rolls the record first.
 local function TargetCells(key)
+    local own = OwnRecord()
+    if not HasPlace(own, key) and CatchDB.CountPlaces(own, ROLL_PLACES) >= ROLL_PLACES then
+        local kept = Roll()
+        if kept then
+            ns.Fire("SHARED_DATA_CHANGED", { kept })
+        end
+    end
     local builds = OwnRecord().builds
     local build = BuildKey()
     builds[build] = builds[build] or {}
@@ -266,19 +337,25 @@ end
 CatchDB.IsCount = IsCount
 
 -- Distinct places over all builds of a record (a place fished before and after a patch is one), as
--- CheckRecord and the harvest count them: the unit of the place limits.
-function CatchDB.CountPlaces(record)
-    local seen = {}
+-- CheckRecord and the harvest count them: the unit of the place limits. limit (optional): counting stops above
+-- it, so a huge record costs no more than limit + 1 places.
+function CatchDB.CountPlaces(record, limit)
+    local seen, count = {}, 0
     if type(record) == "table" and type(record.builds) == "table" then
         for _, cells in pairs(record.builds) do
             if type(cells) == "table" then
                 for key in pairs(cells) do
-                    seen[key] = true
+                    if not seen[key] then
+                        seen[key], count = true, count + 1
+                        if limit and count > limit then
+                            return count
+                        end
+                    end
                 end
             end
         end
     end
-    return CountKeys(seen)
+    return count
 end
 
 -- known: item IDs already found in the game during this check (the same fish repeat in every cell).
@@ -358,19 +435,15 @@ function CatchDB.CheckRecord(record, myID)
     if type(record.builds) ~= "table" then
         return false, "no builds"
     end
-    -- Places are counted once over all builds, as the harvest does: a place fished before and after a patch is one.
-    local places, seen, known = 0, {}, {}
+    if CatchDB.CountPlaces(record, MAX_RECORD_PLACES) > MAX_RECORD_PLACES then
+        return false, "more than " .. MAX_RECORD_PLACES .. " places"
+    end
+    local known, casts = {}, 0
     for build, cells in pairs(record.builds) do
         if type(build) ~= "string" or not build:find("^%d+%.%d+%.%d+$") or type(cells) ~= "table" then
             return false, "build " .. tostring(build) .. " is not a game version"
         end
         for key, cell in pairs(cells) do
-            if not seen[key] then
-                seen[key], places = true, places + 1
-                if places > MAX_RECORD_PLACES then
-                    return false, "more than " .. MAX_RECORD_PLACES .. " places"
-                end
-            end
             if type(key) ~= "string" or not (key:find("^%d+:[0-4]:%d%d$") or key:find("^%d+:[0-4]:x$")) then
                 return false, "place key " .. tostring(key) .. " is not <mapID>:<range>:<cell>"
             end
@@ -378,7 +451,13 @@ function CatchDB.CheckRecord(record, myID)
             if not ok then
                 return false, key .. ": " .. reason
             end
+            casts = casts + cell.c + cell.m
         end
+    end
+    -- The seq grows only after a settled cast, so it is never above the casts; a higher one is made up (it would
+    -- make the owner's real updates look older everywhere).
+    if record.seq > casts then
+        return false, "seq " .. record.seq .. " is above the record's " .. casts .. " casts"
     end
     if known.unknownItem then
         return false, "item " .. known.unknownItem .. " is unknown to the game", true
@@ -450,9 +529,13 @@ local function AddToSet(sets, name, entry)
     sets[name][entry] = true
 end
 
+-- Not indexed: the own ID (Sources counts its frozen records with sharing off too) and units the seed holds in
+-- part (their first part is in the seed; the store deletes those it holds whole).
 local function IndexRecord(key)
-    local record = ns.db.shared.records[key]
-    if not (CatchDB.IsOtherKey(key) and type(record) == "table" and type(record.builds) == "table") then
+    local shared = ns.db.shared
+    local record = shared.records[key]
+    if not (CatchDB.IsOtherKey(key) and type(record) == "table" and type(record.builds) == "table")
+        or record.id == shared.myID or CatchDB.AbsorbedSeq(record.id, record.epoch) then
         return
     end
     local entries = {}
@@ -478,6 +561,23 @@ local function UnindexRecord(key)
     others.byRecord[key] = nil
 end
 
+-- The own records frozen by a roll that the seed does not hold yet: they count like the live one.
+local frozen
+
+local function Frozen()
+    if not frozen then
+        frozen = {}
+        local shared = ns.db.shared
+        for key, record in pairs(shared.records) do
+            if CatchDB.IsOtherKey(key) and type(record) == "table" and record.id == shared.myID
+                and type(record.builds) == "table" and not CatchDB.AbsorbedSeq(record.id, record.epoch) then
+                table.insert(frozen, record)
+            end
+        end
+    end
+    return frozen
+end
+
 local function Others()
     if not others then
         others = { byKey = {}, byPrefix = {}, byRecord = {} }
@@ -499,9 +599,15 @@ local function Sources(source, mapID)
     local own = OwnRecord()
     local sources = { seed = { cells = Seed().cells, seed = true }, tables = {}, reset = reset,
         others = ns.Share.IsEnabled() and Others() or nil }
-    for build, cells in pairs(own.builds) do
-        if type(cells) == "table" and not (reset and OlderBuild(build, reset)) then
-            table.insert(sources.tables, { cells = cells, id = own.id })
+    local records = { own }
+    for _, record in ipairs(Frozen()) do
+        table.insert(records, record)
+    end
+    for _, record in ipairs(records) do
+        for build, cells in pairs(record.builds) do
+            if type(cells) == "table" and not (reset and OlderBuild(build, reset)) then
+                table.insert(sources.tables, { cells = cells, id = own.id })
+            end
         end
     end
     return sources
@@ -656,21 +762,19 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     if type(shared.myID) ~= "string" or shared.myID == "" then
         shared.myID = ns.RandomBase32(ID_LENGTH)
     end
-    -- A record the seed already absorbed starts over, so it does not count twice next to the seed.
-    -- shared.mine keeps the lifetime counts either way.
     local record = shared.records[shared.myID]
     -- A damaged record (edited by hand, an interrupted write) would break every catch: it starts over.
-    if type(record) ~= "table" or type(record.builds) ~= "table" or type(record.seq) ~= "number" then
-        record = nil
-    end
-    if record and CatchDB.IsAbsorbed(shared.myID, record.epoch or 0) and SeedEpoch() > (record.epoch or 0) then
-        record = nil
-    end
-    if not record then
-        shared.records[shared.myID] = { id = shared.myID, epoch = SeedEpoch(), seq = 0, builds = {} }
+    if type(record) ~= "table" or type(record.builds) ~= "table" or type(record.seq) ~= "number"
+        or type(record.epoch) ~= "number" then
+        shared.records[shared.myID] = nil
+        Roll()
+    -- A record the seed holds (in part or whole) rolls, so it does not count twice next to the seed; what the seed
+    -- lacks goes on to the next harvest. shared.mine keeps the lifetime counts either way.
+    elseif CatchDB.AbsorbedSeq(shared.myID, record.epoch) then
+        Roll()
     end
     version = version + 1 -- the seed or the record may be new
-    others = nil
+    others, frozen = nil, nil
 end)
 
 -- The place is read at every cast start, also for a cast picked up after a /reload: nothing is counted here,
@@ -716,9 +820,11 @@ ns.On("FISH_MISSED", function(castID)
     end
 end)
 
--- Other players' records came or went, or sharing was switched (Share.lua): the views and their index change.
+-- Records under "<id>@<epoch>" came or went (other players', Share.lua, or the own one a roll kept), or sharing
+-- was switched: the views and their index change.
 ns.On("SHARED_DATA_CHANGED", function(keys)
     version = version + 1
+    frozen = nil
     if others and keys then
         for _, key in ipairs(keys) do
             UnindexRecord(key)

@@ -117,7 +117,7 @@ The first idea (those four libraries in `OneKeyFishing/Libs/`) would also have n
 | `HELLO` | Once per 10-15 min (random jitter), the first 60-120 s after login; 5-30 s after joining a group (at most once per 2 min); up to 20 friends per round, known peers first |
 | Pace | Broadcasts at most 1 message per 2 s; whispers and Battle.net at most 2 per s |
 | Sync sessions | 1 at a time, no more than 1 per 2 min; with one peer at most once per 10 min in a group, once per 30 min otherwise |
-| Session size | Up to 8 KB and 25 encoded records per direction, but always at least one record; a record a peer would refuse (over 1,000 places, a build without a game version) is not sent |
+| Session size | Up to 8 KB and 25 encoded records per direction, but always at least one record; a record a peer would refuse (over 1,000 places or 32 KB, no cells of a game version, a seq above its casts) is not sent; the own record rolls to a new epoch at 500 places, so it always fits |
 | Total sent | Up to 50 KB per hour per client |
 
 The values for part 2 are in `specs/003-guild-group-sync/research.md` R7.
@@ -145,10 +145,10 @@ paths inflates the numbers. A record with an owner and a version number (a simpl
 ```lua
 -- OneKeyFishingDB.shared (account-wide)
 shared = {
-  myID = "k7f2q9xa",    -- random, created once per account; never a character name
+  myID = "k7f2q6xa",    -- random, created once per account; never a character name
   seedEpoch = 3,         -- epoch of the bundled SeedData.lua
   records = {
-    ["k7f2q9xa"] = {    -- contributor ID
+    ["k7f2q6xa"] = {    -- contributor ID
       epoch = 3,         -- seed epoch the owner counted against
       seq = 41,          -- grows on every change of the owner's data
       seen = 1761234567, -- local: when we last received it (for eviction)
@@ -175,19 +175,24 @@ Merge rules:
 
 ### Epochs: how the seed and the records are not counted twice
 
-A release with a seed of epoch E carries the sums and the list of absorbed IDs (`absorbed`).
+A release with a seed of epoch E carries the sums and `absorbed`: every unit `<id>@<epoch>` the sums hold, with the
+seq they hold it up to.
 
-- An owner who updated the addon to epoch E freezes the old record and starts a new one with `epoch = E` from zero.
-- A client with seed E counts: records of epoch E, always; records of epoch E-1, only those whose IDs are not in
-  `absorbed`; anything older, it deletes.
-- The price: data gathered after the author's harvest and before the release is lost. The author harvests right
-  before the release, so this is hours, not weeks.
+- A client deletes a stored version the seed holds whole (its seq up to the named one), keeps and passes on a newer
+  one without counting it (the seed has its first part), and counts every unit the seed does not name.
+- An owner whose record the seed names rolls it: a new record starts at the next epoch from zero, and the old one,
+  when it is newer than what the seed holds, is kept and offered until a seed holds it whole
+  (`specs/002-local-catch-db/data-model.md`, "Rolling the own record").
+- Nothing is lost: the catches gathered after the author's harvest, or after the version of a record the author's
+  client happened to hold (it may be weeks old for a record that came over the network), reach the next seed
+  through the network. Until then they are not counted, so nothing counts twice.
 
 ### Size and eviction
 
-- A record: up to 1,000 places and 32 KB encoded; anything larger is not accepted (part 2).
+- A record: up to 1,000 places and 32 KB encoded; anything larger is not accepted (part 2). The own record rolls to a
+  new epoch at 500 places, so it always fits and keeps reaching the network.
 - Part 2, among guild, group and friends: other records hold at most 20,000 places (~2 MB). Above the limit, the
-  record with the oldest `seen` is evicted first, and your own record never is.
+  record with the oldest `seen` is evicted first, and no record of your own ID ever is.
 - Part 3, with strangers: the order below replaces it. Above the limit, the records that add the least new information
   are evicted: first those whose cells already have thousands of catches in the seed, then those not seen for over
   60 days. Contributions for rare places (low-level zones, little data) are evicted last. `seen` is updated not
@@ -257,13 +262,14 @@ wrong percentage), so this is enough.
 
 | Threat | Protection |
 | --- | --- |
-| Flood from one sender | A limit per sender name (part 2, `Share.lua`): `HELLO` no more than 1 per 60 s (more are ignored), up to 600 messages (parts counted), no more records in a session than it asked for and 150 records per hour, one record up to 32 KB encoded and 1,000 places. An offender is ignored until the end of the session. |
+| Flood from one sender | A limit per sender name (part 2, `Share.lua`): `HELLO` no more than 1 per 60 s (more are ignored), up to 1,160 units per hour (one per 240 bytes of a message, at least one per message: twice what an honest client can send to one peer in an hour), no more records in a session than it asked for and 175 records per hour, one record up to 32 KB encoded and 1,000 places. An offender is ignored until the end of the session. A peer answered with a `DIFF` gets `BYE busy` to another `SUM` within 8 minutes. |
 | Impossible numbers | Catches in a cell no more than `t × 60 / 5` (a cast takes several seconds). The item sum ≤ catches × the maximum count per cast. An invalid record is rejected entirely. |
 | Made-up items | The item ID must exist (`C_Item.GetItemInfoInstant`). An item that is in neither the seed nor your own catch is shown only when at least 3 different IDs report it in the same zone. |
 | Many fake IDs (Sybil) | One contribution gives no more than 20% of the weight in a cell with 5+ contributions. The tooltip always says "based on N catches from K players". `harvest` looks for outliers and adds blocked IDs to the seed (`banned`). |
 | Broken or old data | Version in the prefix, decoding in `pcall`, schema check (types, cell and size limits). |
 | Frame rate drops | Decoding and recomputing sums take no more than 2 ms per frame, the rest in the next frame (`C_Timer.After(0, ...)`). |
-| Privacy | Records have no names and no exact coordinates. The ID is random and tied to no name. The whisper sender's name is kept only in session memory, not in SavedVariables. |
+| Forged versions of a record | Records are anonymous and unsigned, and a higher `seq` replaces a lower one. A record whose `seq` is above its casts is refused by the client and the harvest (the owner bumps it only after a settled cast), so a made-up `seq` needs as many made-up casts. Not covered yet: a forger who sends another player's ID and epoch with a higher `seq` and enough made-up casts makes the owner's real updates look older everywhere until a release names the unit, and the harvest keeps the forged version. Part 3 brings strangers in and has to close it before it ships: for example, limit how far a version may grow over the one held (casts and seq against the time since it was seen), or tie versions to the owner. |
+| Privacy | Records have no names. The ID is random, but a peer that gets a record from its owner sees the sender's name next to the ID; a cell carries the sums of its cast positions, the average spot fished from. The notice and the settings page say so. The whisper sender's name is kept only in session memory, not in SavedVariables. |
 
 ## Seeding the database from releases
 
@@ -306,7 +312,7 @@ local _, ns = ...
 ns.SeedData = {
   epoch = 4, built = "2026-12-01",
   cells = { ["1415:3:47"] = { c = 1840, m = 122, t = 610, k = 14, i = { [6291] = 912, [6303] = 655 } } },
-  absorbed = "k7f2q9xa,m3p8x1zd,...", -- comma list, parsed on demand
+  absorbed = "k7f2q6xa,m3p7x2zd,...", -- comma list, parsed on demand
   banned = "",
 }
 ```
@@ -530,11 +536,12 @@ of the brief below and of "UI and settings"):
 | `/okf share` | Translated, as other addon output; the `/okf debug` section stays English |
 | Libraries | None: the game's own `C_EncodingUtil` (CBOR, Deflate, Base64; in the Forever client) replaces LibSerialize and LibDeflate, an own small queue and framing replace ChatThrottleLib and AceComm (`specs/003-guild-group-sync/research.md` R4; the "Libraries" section above is updated) |
 | Battle.net | `C_BattleNet.SendGameData` (the global `BNSendGameData` is only a deprecated fallback in Forever) |
-| Protocol | The version lives only in the prefix (`OKF1`), not in `HELLO`; no epoch gate (a unit the seed absorbed is simply not wanted); crossing `SUM`s: the smaller node tag leads; a path the game refuses 5 times in a row is left out until logout, and with every path left out the exchange is "unavailable" |
-| Size limit | 20,000 places of other records; the oldest `seen` goes first, the own record never; the order by new information moves to part 3 ("Size and eviction" above) |
+| Protocol | The version lives only in the prefix (`OKF1`), not in `HELLO`; no epoch gate (a unit the seed absorbed is simply not wanted); crossing `SUM`s: the smaller node tag leads; a path the game refuses 5 times in a row is left out until logout, and with every path left out the exchange is "unavailable"; the state also says "unavailable" while nothing went out since the login and every path tried is left out |
+| Size limit | 20,000 places of other records; the oldest `seen` goes first, no record of the own ID; the order by new information moves to part 3 ("Size and eviction" above) |
 | Player count | "N catches from K players": each contribution at most once; for bundled whole-map numbers K is a lower bound; a newer epoch of an ID the seed absorbed counts only above the seed's k. Shown from 2 players on; one player is just "N catches" |
 | Storage of others' records | Plain tables in `shared.records` (the part 1 shape plus `seen`), copied field by field from the checked record, not compressed strings: the harvest reads them unchanged, and the view indexes each stored record per map once (built at runtime, never saved) |
 | Own record's seq | Before a `HELLO` or a session the waiting seq bump of the own record is done at once (`CatchDB.FlushSeq`), so a peer never gets cells under an old seq |
+| Absorbed | `absorbed` names every unit with the seq the seed holds, not only an ID's newest epoch: a newer version of a unit (an older copy reached the author's harvest) is kept and passed on instead of being deleted; the own record rolls when the seed names it or at 500 places (`docs/tech-debt.md`, the review of 2026-10-29) |
 | Release | All four parts ship together as 1.2.0 from `002-shared-db` ("Release 1.2.0" above); 1.1.0 is the interface-language release |
 
 ```

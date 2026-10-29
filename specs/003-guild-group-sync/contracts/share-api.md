@@ -18,9 +18,11 @@ last.
 | `Comm.Split(text)` | the message as it goes out: itself, or its parts (contracts/sync-protocol.md) |
 | `Comm.GetPause()` | the pause reason (`"combat"`, `"instance"`, `"loading"`, `"restricted"`, `"lockdown"`, or `"unavailable"` once the game refused every path, until logout) or nil; a change fires `SHARE_PAUSE` (reason or nil) |
 | `Comm.GetPaths()` | per path (`guild`, `group`, `whisper`, `bnet`): `{ failures, disabled }` (contracts/sync-protocol.md "Paths the game refuses") |
+| `Comm.Refused()` | true while nothing went out since the login and every path tried with more than a greeting is left out: the state says unavailable (no pause; a later success clears it) |
 | `Comm.GetTraffic()` | bytes sent in the last 60 minutes |
-| `Comm.CanSend(bytes)` | false while paused, or when a message of `bytes` (with its part headers) and one more full message would go over the hourly budget; a record is only sent when it fits whole |
-| `Comm.Describe()` | lines for `/okf debug`: pause, traffic, queue length, result code counts, back-off, left-out paths |
+| `Comm.CanSend(bytes)` | false while paused, or when the messages still queued, a message of `bytes` (with its part headers) and one more full message would go over the hourly budget; a record is only sent when it fits whole |
+| `Comm.BUDGET` | the hourly budget in bytes (Share derives its per-sender limits from it) |
+| `Comm.Describe()` | lines for `/okf debug`: pause, traffic, queue length and bytes, result code counts, back-off, left-out paths |
 
 Rules: with `settings.shareDB` off nothing is queued and every received message is dropped; the queue keeps the pace
 and the budget of research R7 and reads every send result; the `CHAT_MSG_SYSTEM`
@@ -37,8 +39,9 @@ queue and the filter's 10 s list.
 | `node:Pause(reason)` / `node:Resume()` | drops the running session / allows sessions again |
 | `node:Status()` | the status table below |
 | `Share.Store.Accept(store, record, now, absorbed)` | `"new"`, `"newer"`, `"same"` (only `seen` refreshed), `"older"` or `"refused", reason` (data-model.md rules); keeps a copy with only the part 1 fields |
-| `Share.Store.CleanUp(store, absorbed)` / `Share.Store.Evict(store)` | delete absorbed or damaged other records / the oldest `seen` above 20,000 places; both return how many went (run at `ADDON_LOADED`, `Evict` also after a new record) |
-| `Share.Store.Units(store, absorbed)` / `Share.Store.Get(store, unit)` / `Share.Store.ForSending(record)` | every unit held (`id@epoch` -> seq, the own record when it has data) / a unit's record / the record without `seen` |
+| `Share.Store.CleanUp(store, absorbed)` / `Share.Store.Evict(store)` | delete the records under `id@epoch` the seed holds whole (`absorbed[id][epoch] >= seq`) or damaged ones / the oldest `seen` above 20,000 places, never one of the own ID; both return how many went (run at `ADDON_LOADED`, `Evict` also after a new record) |
+| `Share.Store.Units(store, absorbed)` / `Share.Store.Get(store, unit)` / `Share.Store.ForSending(record)` | every unit held (`id@epoch` -> seq: the own record when it has cells of a game version, and the others, own rolled ones included, the seed does not hold whole) / a unit's record / the record without `seen` and builds without a game version |
+| `node:OwnData(record)` | a record of the own ID as encoded for a peer, or `false` and why (no cells to send, a peer's check would refuse it, over 32 KB); encoded once per seq of each unit; a unit it refuses is left out of the summary, so hashes can still match |
 | `Share.Hash(text)`, `Share.Base32(value, width)`, `Share.Buckets(units)`, `Share.BucketHashes(units)`, `Share.WholeHash(hashes)` | the hashes of research R5 |
 | `Share.Encode(record)` / `Share.Decode(text)` | the `C_EncodingUtil` chain of research R4, each step in `pcall`; nil on failure |
 | `Share.IsEnabled()` / `Share.SetEnabled(on)` | the setting (`settings.shareDB`); off drops the session and stops everything at once; both directions change the views (`SHARED_DATA_CHANGED`) |
@@ -49,8 +52,8 @@ queue and the filter's 10 s list.
 
 Messages (both listed in `CLAUDE.md` "Messages"):
 
-- `SHARED_DATA_CHANGED` (no arguments): other players' records were added, replaced or removed, or sharing was
-  switched; `CatchDB` bumps its version on it.
+- `SHARED_DATA_CHANGED` (the changed keys, or none): records under `id@epoch` were added, replaced or removed
+  (other players', or the own one a roll kept), or sharing was switched; `CatchDB` bumps its version on it.
 - `SHARE_PAUSE` (reason or nil): `Comm`'s pause reason changed; the game node pauses or resumes on it.
 
 The one-time popup: on `PLAYER_ENTERING_WORLD` while `shareNotice` is false, out of combat and after the loading
@@ -61,8 +64,9 @@ screen, `ns.ShowPopup` with "Got it" (accept) and "Settings" (cancel: opens the 
 
 | Function | Returns |
 | --- | --- |
-| `CatchDB.CheckRecord(record, myID)` | `true` or `false, reason`: research R6 (the part 1 cell rules, whole record rejected on any bad cell, `id` pattern and not `myID`, at most 1,000 places, items known to `C_Item.GetItemInfoInstant`) |
-| `CatchDB.CountPlaces(record)` | cells over all builds of a record (the unit of the place limits) |
+| `CatchDB.CheckRecord(record, myID)` | `true` or `false, reason`: research R6 (the part 1 cell rules, whole record rejected on any bad cell, `id` pattern and not `myID`, at most 1,000 places, `seq` not above the casts, items known to `C_Item.GetItemInfoInstant`) |
+| `CatchDB.CountPlaces(record, limit)` | distinct places over all builds of a record (the unit of the place limits); with `limit`, counting stops one above it |
+| `CatchDB.AbsorbedSeq(id, epoch, absorbed)` / `CatchDB.IsAbsorbed(id, epoch, seq, absorbed)` | the seq up to which the seed holds unit `id@epoch` (nil: none of it) / whether it holds this version whole |
 | `CatchDB.FlushSeq()` | bumps the own record's seq when a change waits for its minute |
 | `CatchDB.SeedInfo()` | the bundled seed's epoch and number of places (`/okf share`) |
 | `CatchDB.Query(mapID, cell, filter)` | unchanged arguments; with sharing on, source `"all"` also sums other players' records; the view gains `players` (research R9); the cache key includes whether sharing is on |

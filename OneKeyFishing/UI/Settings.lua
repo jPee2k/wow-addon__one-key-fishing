@@ -423,8 +423,9 @@ local function CreateSharePage()
     checkbox.label:SetWidth(520)
 
     local about = CreateText(page, "GameFontHighlightSmall", table.concat({
-        L["Your catches (items, counts, places as map numbers) are shared under a random ID."],
-        L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."],
+        L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."],
+        L["They go to addon users in your guild, group and friends list. No names or gear."],
+        L["The players you exchange with can tell which ID is yours."],
     }, " "))
     about:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 2, -12)
     about:SetWidth(560)

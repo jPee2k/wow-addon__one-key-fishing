@@ -173,12 +173,45 @@ end)
 ---------------------------------------------------------------------------
 test("SHARE_PAUSE stops the sends, and its end greets again soon", function()
     ns.Fire("SHARE_PAUSE", "combat")
+    -- Only the node is paused here (Comm drops its queue on a real pause): what Comm queued before still goes.
+    advance(60)
     local before = #addon_sent
-    advance(1800)
+    advance(1740)
     eq(#sentSince(before), 0, "nothing sent while paused")
     ns.Fire("SHARE_PAUSE", nil)
     advance(30)
     assert(#sentSince(before, "GUILD") >= 1, "a HELLO after the pause")
+end)
+
+test("short pauses in a row after a long one greet once, not once per pause", function()
+    local random = math.random
+    math.random = function(low, high) -- the longest waits: rounds 15 minutes apart, extra HELLOs after 30 s
+        if high then
+            return high
+        end
+        return random(low)
+    end
+    local before = #addon_sent
+    for _ = 1, 1000 do -- until a round greets: the next one is 15 minutes away
+        advance(1)
+        if #sentSince(before, "GUILD") > 0 then
+            break
+        end
+    end
+    assert(#sentSince(before, "GUILD") > 0, "a round greeted")
+    ns.Fire("SHARE_PAUSE", "combat")
+    advance(610) -- the last HELLO is older than 10 minutes
+    before = #addon_sent
+    for _ = 1, 5 do
+        ns.Fire("SHARE_PAUSE", nil)
+        advance(1)
+        ns.Fire("SHARE_PAUSE", "combat")
+        advance(1)
+    end
+    ns.Fire("SHARE_PAUSE", nil)
+    advance(60)
+    math.random = random
+    eq(#sentSince(before, "GUILD"), 1, "one HELLO")
 end)
 
 test("each pause reason has its status line", function()
@@ -271,12 +304,13 @@ test("/okf debug has a Shared database section without the ID or a name", functi
     assert(report:find("state alone", 1, true), "state")
     assert(report:find("transport: pause", 1, true), "transport")
     assert(report:find("longest merge step", 1, true), "merge step")
+    assert(report:find("own record offered: yes, %d+ bytes encoded for 1 places"), "the own record's size per place")
     assert(not report:find(ns.db.shared.myID, 1, true), "no own ID")
     assert(not report:find("Peer", 1, true), "no name")
 end)
 
 test("a peer heard again after an hour without an exchange: the line names the last one, not 0 players", function()
-    peerStore.records[PEER_ID].seq = 99 -- the peer's hash differs, so a session is due but has not run yet
+    peerStore.records[PEER_ID].seq = 30 -- the peer's hash differs, so a session is due but has not run yet
     peerHello = -math.huge
     run(1)
     local status = Share.GetStatus()

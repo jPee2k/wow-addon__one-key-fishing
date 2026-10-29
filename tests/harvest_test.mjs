@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { harvest, parseSeed } from "../tools/harvest.mjs";
+import luaparse from "luaparse";
+import { harvest, parseSeed, seedProblems } from "../tools/harvest.mjs";
 
 // A JS value as Lua source, the way the game writes saved variables (string and number keys in brackets).
 function toLua(value) {
@@ -116,7 +117,7 @@ export const tests = [
     },
   },
   {
-    name: "the epoch grows by one and absorbed names every contribution with its newest epoch",
+    name: "the epoch grows by one and absorbed names every contribution unit with the seq summed",
     fn() {
       const env = setup();
       run(env);
@@ -124,9 +125,10 @@ export const tests = [
       assert.match(text, /^ {2}epoch = 1,$/m);
       assert.match(text, /^ {2}built = "2026-12-01",$/m);
       assert.match(text, /^ {2}build = "1\.60\.1",$/m);
-      for (const id of [A, B, F]) {
-        assert.match(text, new RegExp(`^ {4}\\["${id}"\\] = 0,$`, "m"), id);
+      for (const [id, seq] of [[A, 3], [B, 1], [F, 2]]) {
+        assert.match(text, new RegExp(`^ {4}\\["${id}"\\] = \\{ \\[0\\] = ${seq} \\},$`, "m"), id);
       }
+      assert.deepEqual(parseSeed(text).absorbed[A], { 0: 3 }, "read back as epoch -> seq");
       assert.equal(store.epoch, 1);
     },
   },
@@ -148,7 +150,7 @@ export const tests = [
     fn() {
       const env = setup();
       run(env);
-      fs.writeFileSync(env.friend, savedFile({ [F]: oneCell(F, 0, 9, "1415:3:47", cell(6, 0, { 6291: [6, 6] })) }));
+      fs.writeFileSync(env.friend, savedFile({ [F]: oneCell(F, 0, 6, "1415:3:47", cell(6, 0, { 6291: [6, 6] })) }));
       run(env);
       assert.equal(seedCells(readSeed(env.outDir).text)["1415:3:47"].c, 10 + 5 + 6);
       fs.writeFileSync(env.friend, savedFile({ [F]: oneCell(F, 0, 4, "1415:3:47", cell(50, 0, { 6291: [50, 50] })) }));
@@ -285,12 +287,12 @@ export const tests = [
       fs.writeFileSync(author, savedFile({
         [A]: oneCell(A, 0, 5, "1415:3:47", cell(10, 0, { 6291: [10, 10] })),
         [`${G}@1`]: withSeen(oneCell(G, 1, 2, "1415:3:47", cell(4, 0, { 6291: [4, 4] }))),
-        [`${H}@0`]: withSeen(oneCell(H, 0, 7, "1415:3:47", cell(6, 0, { 6291: [6, 6] }))),
+        [`${H}@0`]: withSeen(oneCell(H, 0, 6, "1415:3:47", cell(6, 0, { 6291: [6, 6] }))),
         [`${J}@2`]: withSeen(oneCell(J, 2, 1, "1416:2:x", cell(3, 0, { 6358: [3, 3] }))),
       }));
       const other = path.join(root, "other.lua");
       fs.writeFileSync(other, savedFile({
-        [`${H}@0`]: withSeen(oneCell(H, 0, 3, "1415:3:47", cell(2, 0, { 6291: [2, 2] }))),
+        [`${H}@0`]: withSeen(oneCell(H, 0, 2, "1415:3:47", cell(2, 0, { 6291: [2, 2] }))),
       }));
       const outDir = path.join(root, "out");
       const result = harvest({ files: [author, other], outDir, now: NOW });
@@ -298,17 +300,76 @@ export const tests = [
       assert.match(result.report.join("\n"), /Contributions: 4 \(each <id>@<epoch> once/);
       const { text, store } = readSeed(outDir);
       assert.deepEqual(Object.keys(store.contributions).sort(), [`${A}@0`, `${G}@1`, `${H}@0`, `${J}@2`]);
-      assert.equal(store.contributions[`${H}@0`].seq, 7, "the newer seq of the duplicate");
+      assert.equal(store.contributions[`${H}@0`].seq, 6, "the newer seq of the duplicate");
       assert.equal(store.contributions[`${G}@1`].seen, undefined, "seen is not kept");
       const cells = seedCells(text);
       assert.equal(cells["1415:3:47"].c, 10 + 4 + 6, "each contribution once");
       assert.equal(cells["1415:3:47"].k, 3, "three players there");
       assert.equal(cells["1416:2:x"].c, 3);
-      for (const [id, epoch] of [[A, 0], [G, 1], [H, 0], [J, 2]]) {
-        assert.match(text, new RegExp(`^ {4}\\["${id}"\\] = ${epoch},$`, "m"), id);
+      for (const [id, epoch, seq] of [[A, 0, 5], [G, 1, 2], [H, 0, 6], [J, 2, 1]]) {
+        assert.match(text, new RegExp(`^ {4}\\["${id}"\\] = \\{ \\[${epoch}\\] = ${seq} \\},$`, "m"), id);
       }
       const again = harvest({ files: [author, other], outDir, now: NOW });
       assert.match(again.report.join("\n"), /Nothing new: OneKeyFishing\/SeedData\.lua stays at epoch 1/);
+    },
+  },
+  {
+    name: "a received copy older than its owner's record: the seed names its seq, a newer seq goes in next time",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-partial-"));
+      const X = "xxxxxxxx";
+      const author = path.join(root, "author.lua");
+      const outDir = path.join(root, "out");
+      // The author's client got X's record at seq 25 (25 catches); X is already further.
+      fs.writeFileSync(author, savedFile({
+        [A]: oneCell(A, 0, 1, "1415:3:47", cell(1, 0, { 6291: [1, 1] })),
+        [`${X}@0`]: oneCell(X, 0, 25, "1415:3:47", cell(25, 0, { 6291: [25, 25] })),
+      }));
+      harvest({ files: [author], outDir, now: NOW });
+      assert.deepEqual(parseSeed(readSeed(outDir).text).absorbed[X], { 0: 25 }, "held up to seq 25");
+      // After the release X's own client keeps its seq 40 version (frozen) and peers pass it on: it comes back.
+      fs.writeFileSync(author, savedFile({
+        [A]: oneCell(A, 0, 1, "1415:3:47", cell(1, 0, { 6291: [1, 1] })),
+        [`${X}@0`]: oneCell(X, 0, 40, "1415:3:47", cell(40, 0, { 6291: [40, 40] })),
+        [`${X}@1`]: oneCell(X, 1, 3, "1415:3:47", cell(3, 0, { 6291: [3, 3] })),
+      }));
+      harvest({ files: [author], outDir, now: NOW });
+      const { text } = readSeed(outDir);
+      assert.deepEqual(parseSeed(text).absorbed[X], { 0: 40, 1: 3 }, "both units, each with its seq");
+      assert.equal(seedCells(text)["1415:3:47"].c, 1 + 40 + 3, "the newer seq replaced the older, no catch twice");
+    },
+  },
+  {
+    name: "a record whose seq is above its casts is rejected: a made-up seq never replaces the real one",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-seq-"));
+      const X = "xxxxxxxx";
+      const author = path.join(root, "author.lua");
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(author, savedFile({
+        [A]: oneCell(A, 0, 1, "1415:3:47", cell(1, 0, { 6291: [1, 1] })),
+        [`${X}@0`]: oneCell(X, 0, 4, "1415:3:47", cell(4, 0, { 6291: [4, 4] })),
+      }));
+      harvest({ files: [author], outDir, now: NOW });
+      fs.writeFileSync(author, savedFile({
+        [A]: oneCell(A, 0, 1, "1415:3:47", cell(1, 0, { 6291: [1, 1] })),
+        [`${X}@0`]: oneCell(X, 0, 1000000, "1415:3:47", cell(5, 0, { 6291: [5, 5] })),
+      }));
+      const report = harvest({ files: [author], outDir, now: NOW }).report.join("\n");
+      assert.match(report, /rejected {2}author\.lua xxxx\.\.\.: seq 1000000 is above the record's 5 casts/);
+      assert.equal(readSeed(outDir).store.contributions[`${X}@0`].seq, 4, "the real version stays");
+    },
+  },
+  {
+    name: "npm run check finds a malformed absorbed entry",
+    fn() {
+      const text = (absorbed) => "local _, ns = ...\nns.SeedData = { epoch = 1, built = \"\", build = \"\", "
+        + `absorbed = ${absorbed}, resets = {}, cells = {} }\n`;
+      const problems = (absorbed) => seedProblems(luaparse.parse(text(absorbed), { luaVersion: "5.1" }));
+      assert.deepEqual(problems(`{ ["${A}"] = { [0] = 3, [2] = 7 } }`), []);
+      assert.equal(problems(`{ ["${A}"] = 0 }`).length, 1, "the old form, an epoch only");
+      assert.equal(problems(`{ ["${A}"] = { [0] = -1 } }`).length, 1, "a negative seq");
+      assert.equal(problems(`{ ["${A}"] = {} }`).length, 1, "no unit");
     },
   },
   {

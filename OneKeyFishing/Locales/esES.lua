@@ -262,10 +262,11 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Drag: move this button"] = "Arrastrar: mover este botón"
 
     -- Share.lua
-    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
-        "OneKeyFishing ahora comparte tus capturas de forma anónima con quienes usan el addon en tu hermandad, " ..
-        "grupo y lista de amigos."
-    L["No character names are sent."] = "No se envían nombres de personajes."
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "OneKeyFishing ahora comparte tus capturas bajo un ID aleatorio con tu hermandad, tu grupo y tus amigos que " ..
+        "lo usan."
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "No se envían nombres de personajes, pero quienes intercambian datos contigo pueden saber qué ID es el tuyo."
     L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
         "Desactívalo en Opciones -> Accesorios -> OneKeyFishing -> Base de datos compartida."
     L["Got it"] = "Entendido"
@@ -294,11 +295,13 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
 
     -- UI/Settings.lua: the Shared database page
     L["Use the shared catch database"] = "Usar la base de datos de capturas compartida"
-    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
-        "Tus capturas (objetos, cantidades, lugares como números de mapa) se comparten bajo un ID aleatorio."
-    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
-        "Llegan a quienes usan el addon en tu hermandad, grupo y lista de amigos. Sin nombres, equipo ni posiciones " ..
-        "exactas."
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "Tus capturas (objetos, cantidades, casillas del mapa, el punto medio desde el que pescas) se comparten " ..
+        "bajo un ID aleatorio."
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "Llegan a quienes usan el addon en tu hermandad, grupo y lista de amigos. Sin nombres ni equipo."
+    L["The players you exchange with can tell which ID is yours."] =
+        "Quienes intercambian datos contigo pueden saber qué ID es el tuyo."
     L["Turned off: nothing is sent or received, and other players' data is not counted."] =
         "Desactivada: no se envía ni se recibe nada, y los datos de otros jugadores no se cuentan."
 

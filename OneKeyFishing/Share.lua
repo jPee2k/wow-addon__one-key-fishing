@@ -20,13 +20,14 @@ local SESSION_TIMEOUT = 15 -- seconds without a message from the peer
 local PEER_PAUSE = 30 * 60 -- no session with a peer that timed out or went offline
 local SESSION_GAP = 120 -- seconds between session starts
 local GROUP_COOLDOWN, OTHER_COOLDOWN = 10 * 60, 30 * 60 -- between sessions with the same peer
+-- The responder's side of the cooldown: a SUM this soon after the last one answered with a DIFF gets BYE busy, so a
+-- peer that ignores the cooldowns cannot spend the hourly budget on DIFFs. Shorter than GROUP_COOLDOWN by
+-- SESSION_GAP, since the initiator's SUM may wait longer in its queue (pace, throttle) one time than the next.
+local RESPONDER_GAP = GROUP_COOLDOWN - SESSION_GAP
 local START_DELAY_MIN, START_DELAY_MAX = 2, 20 -- seconds a hearer waits before it starts a session
 local FRIENDS_PER_ROUND = 20 -- HELLOs by whisper and Battle.net per round
 local HELLO_LIMIT = 60 -- seconds between HELLOs taken from one sender
 local SESSION_RECORDS = 25 -- records per direction and session, within SESSION_BYTES
--- Per sender and hour; above them the sender is ignored. Records: SESSION_RECORDS in each of the sessions the
--- group cooldown allows in an hour, so an honest peer never reaches it.
-local MESSAGE_LIMIT, RECORD_LIMIT = 600, 150
 local HOUR = 3600
 local ALONE_AFTER = 30 * 60 -- nobody heard for this long: "Nobody to exchange with right now"
 local FIRST_HELLO_MIN, FIRST_HELLO_MAX = 60, 120 -- seconds after the login (or the closed popup)
@@ -34,6 +35,22 @@ local ROUND_MIN, ROUND_MAX = 10 * 60, 15 * 60 -- between HELLO rounds
 local EXTRA_HELLO_MIN, EXTRA_HELLO_MAX = 5, 30 -- after a group change, a resumed pause or turning sharing on
 local EXTRA_HELLO_GAP = 120 -- at most one extra HELLO per this many seconds for group changes
 local HELLO_STALE = 10 * 60 -- after a pause, a HELLO only when the last one is older
+-- Limits per sender and hour; above one the sender is ignored until logout. Derived from what one honest client can
+-- send to one peer in an hour, so an honest peer never reaches them:
+-- - sessions: one per GROUP_COOLDOWN (both sides keep it), one more at the edges of the hour;
+-- - records: SESSION_RECORDS in each session;
+-- - messages, in units of MESSAGE_UNIT bytes (a message counts at least one): the sender's whole hourly budget
+--   (Comm.lua), plus one unit for each message it can send: HELLOs (rounds, after a pause, after a group change;
+--   up to 3 copies by guild, group and whisper), SESSION_MESSAGES per session, a BYE busy to each session start
+--   of ours, and the records; then twice that. A flood of one message per second is still ignored within 20 min.
+local SESSIONS_PER_HOUR = HOUR / GROUP_COOLDOWN + 1
+local RECORD_LIMIT = SESSION_RECORDS * SESSIONS_PER_HOUR
+local MESSAGE_UNIT = 240
+local SESSION_MESSAGES = 5 -- SUM or DIFF, DIFF, WANT, BYE and a BYE limit
+local HELLOS_PER_HOUR = HOUR / ROUND_MIN + HOUR / HELLO_STALE + HOUR / EXTRA_HELLO_GAP
+local MESSAGE_LIMIT = 2 * (math.ceil(ns.Comm.BUDGET / MESSAGE_UNIT) + 3 * HELLOS_PER_HOUR
+    + SESSION_MESSAGES * SESSIONS_PER_HOUR + HOUR / SESSION_GAP + RECORD_LIMIT)
+Share.MESSAGE_LIMIT, Share.RECORD_LIMIT = MESSAGE_LIMIT, RECORD_LIMIT
 
 ---------------------------------------------------------------------------
 -- Helpers
@@ -47,10 +64,11 @@ local function UnitOf(record)
     end
 end
 
--- True when the unit is in `absorbed` (ID -> newest epoch a seed holds; the game's seed, or a test's own).
-local function Absorbed(absorbed, unit)
+-- True when `absorbed` (ID -> { [epoch] = seq }: the game's seed, or a test's own) holds this version of the unit
+-- whole. A newer seq is held only in part: it is kept and passed on, so the rest reaches the next harvest.
+local function Absorbed(absorbed, unit, seq)
     local id, epoch = unit:match("^(%w+)@(%d+)$")
-    return id ~= nil and ns.CatchDB.IsAbsorbed(id, tonumber(epoch), absorbed)
+    return id ~= nil and ns.CatchDB.IsAbsorbed(id, tonumber(epoch), seq, absorbed)
 end
 
 -- Places of other players' records, counted once per stored table (a stored record is never changed).
@@ -130,7 +148,7 @@ function Store.Accept(store, record, now, absorbed)
         return "refused", reason, unknownItem
     end
     local unit = UnitOf(record)
-    if Absorbed(absorbed, unit) then
+    if Absorbed(absorbed, unit, record.seq) then
         return "refused", "already in the bundled data"
     end
     local stored = store.records[unit]
@@ -148,13 +166,13 @@ function Store.Accept(store, record, now, absorbed)
     return stored and "newer" or "new"
 end
 
--- Deletes the other records the seed absorbed, and damaged ones; returns how many went.
+-- Deletes the records under "<id>@<epoch>" the seed holds whole, and damaged ones; returns how many went.
 function Store.CleanUp(store, absorbed)
     absorbed = absorbed or SeedAbsorbed()
     local removed = {}
     for key, record in pairs(store.records) do
         if IsOther(key) and (type(record) ~= "table" or type(record.builds) ~= "table"
-            or not IsWhole(record.seq) or UnitOf(record) ~= key or Absorbed(absorbed, key)) then
+            or not IsWhole(record.seq) or UnitOf(record) ~= key or Absorbed(absorbed, key, record.seq)) then
             store.records[key] = nil
             table.insert(removed, key)
         end
@@ -165,7 +183,8 @@ function Store.CleanUp(store, absorbed)
     return #removed
 end
 
--- Above MAX_OTHER_PLACES, deletes the other records seen longest ago until they fit; never the own record.
+-- Above MAX_OTHER_PLACES, deletes the other records seen longest ago until they fit; never one of the own ID (the
+-- live record, or one frozen by a roll: maybe the only copy left).
 function Store.Evict(store)
     local total = 0
     for key, record in pairs(store.records) do
@@ -178,7 +197,7 @@ function Store.Evict(store)
     end
     local others = {}
     for key, record in pairs(store.records) do
-        if IsOther(key) then
+        if IsOther(key) and record.id ~= store.myID then
             table.insert(others, { key = key, seen = tonumber(record.seen) or 0, places = OtherPlaces(record) })
         end
     end
@@ -222,17 +241,19 @@ local function OwnRecord(store)
     end
 end
 
--- Every unit held ("<id>@<epoch>" -> seq): the own record (when it has data) and the others not absorbed.
+-- Every unit held ("<id>@<epoch>" -> seq): the own record (when it has data) and those under "<id>@<epoch>" (other
+-- players' and the own frozen ones) the seed does not hold whole.
 function Store.Units(store, absorbed)
     absorbed = absorbed or SeedAbsorbed()
     local units = {}
     for key, record in pairs(store.records) do
-        if IsOther(key) and type(record) == "table" and IsWhole(record.seq) and not Absorbed(absorbed, key) then
+        if IsOther(key) and type(record) == "table" and IsWhole(record.seq)
+            and not Absorbed(absorbed, key, record.seq) then
             units[key] = record.seq
         end
     end
     local own = OwnRecord(store)
-    if own and HasCells(own) then
+    if own and HasCells(Store.ForSending(own)) then -- the record as it is sent
         units[UnitOf(own)] = own.seq
     end
     return units
@@ -344,7 +365,7 @@ Node.__index = Node
 function Share.NewNode(store, env)
     env.random = env.random or math.random
     local node = setmetatable({ store = store, env = env, tag = ns.RandomBase32(4, env.random), peers = {},
-        byTag = {}, cursor = 1, merges = {}, rejected = 0, longestStep = 0, cache = {},
+        byTag = {}, cursor = 1, merges = {}, rejected = 0, longestStep = 0, cache = {}, ownData = {},
         unknownItems = {} }, Node) -- unknownItems: unit -> seq refused for an item this client does not know
     return node
 end
@@ -374,8 +395,11 @@ function Node:Summary(cached)
     local cache = self.cache
     if cache.dataVersion ~= dataVersion or cache.ownUnit ~= ownUnit then
         local units = Store.Units(self.store, self.env.absorbed())
-        if own and units[UnitOf(own)] and not self:OwnData(own) then
-            units[UnitOf(own)] = nil -- an offer that is never sent would keep every hash different
+        for unit in pairs(units) do
+            local record = Store.Get(self.store, unit)
+            if record.id == self.store.myID and not self:OwnData(record) then
+                units[unit] = nil -- an offer that is never sent would keep every hash different
+            end
         end
         local buckets = Share.Buckets(units)
         local hashes, hashTexts = Share.BucketHashes(buckets), {}
@@ -420,18 +444,9 @@ function Node:RefreshSeen(buckets)
     self:Touch(units)
 end
 
--- Adds `weight` to a per-minute counter and returns the total of the last hour (at most 60 entries).
+-- Adds `weight` to a per-minute counter and returns the total of the last hour (Data.lua).
 local function Recent(counts, now, weight)
-    local minute, total = math.floor(now / 60), 0
-    counts[minute] = (counts[minute] or 0) + weight
-    for at, count in pairs(counts) do
-        if at > minute - HOUR / 60 then
-            total = total + count
-        else
-            counts[at] = nil
-        end
-    end
-    return total
+    return ns.CountRecent(counts, now, weight, HOUR / 60)
 end
 
 function Node:Peer(address, via)
@@ -493,17 +508,29 @@ function Node:Confirmed(peer)
     self.lastExchange = now
 end
 
--- The own record as sent, or false when a peer would not take it (a build without a game version is left out;
--- over the place limit or MAX_RECORD_BYTES it is refused). Encoded once per version of the record.
-function Node:OwnData(own)
-    local version = UnitOf(own) .. "." .. own.seq
-    if self.ownVersion ~= version then
-        local outgoing = Store.ForSending(own)
+-- A record of the own ID as sent, or false and why when a peer would not take it: without cells of a game version
+-- (a build the game gave no version for is left out), refused by the check (over the place limit) or over
+-- MAX_RECORD_BYTES encoded. Encoded once per version of each unit.
+function Node:OwnData(record)
+    local unit = UnitOf(record)
+    local cached = self.ownData[unit]
+    if not cached or cached.seq ~= record.seq then
+        local outgoing, data, problem = Store.ForSending(record), false, nil
+        if not HasCells(outgoing) then
+            problem = "no cells to send"
         -- "" as the peer's own ID: any ID but the record's passes that rule.
-        local data = ns.CatchDB.CheckRecord(outgoing, "") and self.env.encode(outgoing)
-        self.ownVersion, self.ownData = version, data and #data <= MAX_RECORD_BYTES and data or false
+        elseif not ns.CatchDB.CheckRecord(outgoing, "") then
+            problem = "a peer's check would refuse it"
+        else
+            data = self.env.encode(outgoing) or false
+            if not data or #data > MAX_RECORD_BYTES then
+                data, problem = false, "too large for a peer"
+            end
+        end
+        cached = { seq = record.seq, data = data, problem = problem }
+        self.ownData[unit] = cached
     end
-    return self.ownData
+    return cached.data, cached.problem
 end
 
 function Node:Finish(session)
@@ -646,6 +673,10 @@ function Handlers.S(self, address, peer, _, text)
             return
         end
     end
+    if peer.answered and self.env.now() - peer.answered < RESPONDER_GAP then
+        self:Bye(address, sid, "busy")
+        return
+    end
     if not self.env.canSend() then
         self:Bye(address, sid, "limit")
         return
@@ -668,6 +699,7 @@ function Handlers.S(self, address, peer, _, text)
         return
     end
     session.buckets = differing
+    peer.answered = self.env.now()
     self:SendDiff(session)
     self:ArmTimeout(session)
 end
@@ -688,7 +720,7 @@ end
 -- evicted for the size limit.
 function Node:Wanted(unit, seq)
     local id = unit:match("^(%w+)@")
-    return id ~= self.store.myID and not Absorbed(self.env.absorbed(), unit)
+    return id ~= self.store.myID and not Absorbed(self.env.absorbed(), unit, seq)
         and not Store.WasEvicted(self.store, unit, seq)
         and not (self.unknownItems[unit] and seq <= self.unknownItems[unit])
 end
@@ -790,10 +822,13 @@ function Node:SendRecords(session)
         if count >= SESSION_RECORDS then
             break -- the rest comes in a later session
         end
-        -- Others' records passed the check when they were stored; the own one only goes when a peer takes it.
-        local record = Store.Get(self.store, unit)
-        local data = record == own and self:OwnData(own) or (record and record ~= own
-            and self.env.encode(Store.ForSending(record)))
+        -- Others' records passed the check when they were stored; those of the own ID only go when a peer takes them.
+        local record, data = Store.Get(self.store, unit), nil
+        if record and record.id == self.store.myID then
+            data = self:OwnData(record)
+        elseif record then
+            data = self.env.encode(Store.ForSending(record))
+        end
         if data and #data <= MAX_RECORD_BYTES then
             -- Within the session size, and only what the budget still lets go out whole.
             if (sent > 0 and sent + #data > SESSION_BYTES) or not self.env.canSend(#data) then
@@ -927,7 +962,7 @@ function Node:Receive(address, via, text)
     if peer.ignored then
         return
     end
-    if Recent(peer.messages, self.env.now(), math.max(1, math.ceil(#text / 240))) > MESSAGE_LIMIT then
+    if Recent(peer.messages, self.env.now(), math.max(1, math.ceil(#text / MESSAGE_UNIT))) > MESSAGE_LIMIT then
         self:Ignore(address, peer)
         return
     end
@@ -1051,8 +1086,18 @@ local function Hello()
     end
 end
 
+-- One extra HELLO at a time: pauses or group changes in a row do not stack their timers.
+local helloPending = false
+
 local function HelloSoon()
-    C_Timer.After(math.random(EXTRA_HELLO_MIN, EXTRA_HELLO_MAX), Hello)
+    if helloPending then
+        return
+    end
+    helloPending = true
+    C_Timer.After(math.random(EXTRA_HELLO_MIN, EXTRA_HELLO_MAX), function()
+        helloPending = false
+        Hello()
+    end)
 end
 
 local function Round()
@@ -1173,8 +1218,8 @@ local function ShowNotice()
     noticeShown = true
     -- Three sentences, so each key fits a line; part 3 (the public channel) changes only the first.
     local text = table.concat({
-        L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."],
-        L["No character names are sent."],
+        L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."],
+        L["No character names are sent, but the players you exchange with can tell which ID is yours."],
         L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."],
     }, " ")
     ns.ShowPopup(NOTICE_POPUP, text, nil, L["Got it"], L["Settings"],
@@ -1216,13 +1261,14 @@ local function IdleStatus()
 end
 
 -- data-model.md "State of the exchange": off, notice, unavailable, paused (with the reason), alone or active.
+-- Unavailable: every path left out, or nothing ever went out and every path tried was refused (Comm.Refused).
 local function State(activity)
     local reason = ns.Comm.GetPause() or commPause
     if not Share.IsEnabled() then
         return "off"
     elseif not ns.db.shareNotice then
         return "notice"
-    elseif reason == "unavailable" then
+    elseif reason == "unavailable" or ns.Comm.Refused() then
         return "unavailable"
     elseif reason then
         return "paused", reason
@@ -1293,6 +1339,20 @@ function Share.PrintStatus()
     end
 end
 
+-- Whether the own record goes to peers, and why not (no cells of a game version, over 1,000 places or 32 KB
+-- encoded); its size per place is what ROLL_PLACES (CatchDB.lua) was measured on.
+local function OwnOffered()
+    local own = node and OwnRecord(ns.db.shared)
+    if not own then
+        return "not yet"
+    end
+    local data, problem = node:OwnData(own)
+    if not data then
+        return "no, " .. problem
+    end
+    return ("yes, %d bytes encoded for %d places"):format(#data, ns.CatchDB.CountPlaces(own))
+end
+
 -- English lines for /okf debug (FR-023): no anonymous ID, no names.
 function Share.Describe()
     local status = Share.GetStatus()
@@ -1307,7 +1367,6 @@ function Share.Describe()
         "last exchange: " .. (status.lastExchange and (math.floor(status.lastExchange) .. " s ago") or "none"),
         ("rejected senders %d, session running %s, merges queued %d, longest merge step %.2f ms"):format(
             status.rejected, tostring(status.session), status.merges, status.longestStep),
-        -- The own record is not offered when a peer would refuse it (over 1,000 places or 32 KB encoded).
-        "own record offered: " .. (node and node.ownData == false and "no, too large for a peer" or "yes"),
+        "own record offered: " .. OwnOffered(),
     }
 end

@@ -293,7 +293,7 @@ test("a REC that was not wanted, or that fails the check, makes the sender ignor
     eq(a.store.records["mmmmmmmm@0"], nil, "not stored")
 end)
 
-test("flood limits: 1 HELLO per 60 s, 600 messages and 150 records per hour, no more records than wanted",
+test("flood limits: 1 HELLO per 60 s, the hourly messages and records, no more records than wanted",
     function()
     NewNet()
     local a = NewNode("A", A_ID)
@@ -303,10 +303,12 @@ test("flood limits: 1 HELLO per 60 s, 600 messages and 150 records per hour, no 
     a.node:Receive("w:P", "guild", "H pppp 0 2 aaaaaab")
     eq(a.node.peers["w:P"].heard, heard, "a second HELLO within 60 s is ignored")
     eq(a.node.peers["w:P"].ignored, nil, "but the sender is not ignored for it")
-    for _ = 1, 601 do
+    for _ = 1, Share.MESSAGE_LIMIT do
         a.node:Receive("w:Q", "guild", "Bzz done")
     end
-    eq(a.node.peers["w:Q"].ignored, true, "601 messages in an hour")
+    eq(a.node.peers["w:Q"].ignored, nil, "up to the limit")
+    a.node:Receive("w:Q", "guild", "Bzz done")
+    eq(a.node.peers["w:Q"].ignored, true, "one message over the limit in an hour")
     for i = 1, 51 do
         a.node:Receive("w:R", "guild", "Rzz " .. ("A"):rep(4) .. i)
     end
@@ -323,10 +325,52 @@ test("flood limits: 1 HELLO per 60 s, 600 messages and 150 records per hour, no 
     a = NewNode("A3", C_ID)
     SessionWith(a, "w:T")
     a.node.session.wantCount = 1000
-    for _ = 1, 151 do
+    for _ = 1, Share.RECORD_LIMIT + 1 do
         a.node:Receive("w:T", "group", "Rxx AAAA")
     end
-    eq(a.node.peers["w:T"].ignored, true, "151 records in an hour")
+    eq(a.node.peers["w:T"].ignored, true, "one record over the limit in an hour")
+end)
+
+test("the hourly limits are above what one honest client can send to one peer", function()
+    eq(Share.RECORD_LIMIT, 175, "25 records in each of 7 sessions (one per 10 minutes, plus the edges of the hour)")
+    eq(Share.MESSAGE_LIMIT, 1160, "twice the budget's 214 units plus 366 messages")
+    assert(Share.MESSAGE_LIMIT < 20 * 60, "one message per second is still caught within 20 minutes")
+    NewNet()
+    local a = NewNode("A", A_ID)
+    -- The worst honest hour: the whole 50 KB budget in records of about 2 KB (9 units each) and every other
+    -- message at its most: 126 HELLOs, 35 session messages, 30 BYE busy and the rest of the 175 records.
+    for _ = 1, 25 do
+        a.node:Receive("w:P", "group", "Rzz " .. ("A"):rep(2000))
+    end
+    for _ = 1, 126 + 35 + 30 + 150 do
+        a.node:Receive("w:P", "group", "Bzz done")
+    end
+    eq(a.node.peers["w:P"].ignored, nil, "not ignored")
+end)
+
+test("a peer that sends SUMs faster than the cooldowns gets one DIFF, then BYE busy", function()
+    NewNet()
+    local a = NewNode("A", A_ID)
+    NewNode("X", "xxxxxxxx")
+    local function Sent(prefix)
+        local count = 0
+        for _, entry in ipairs(net.log) do
+            if entry.from == "A" and entry.to == "X" and entry.text:sub(1, #prefix) == prefix then
+                count = count + 1
+            end
+        end
+        return count
+    end
+    for i = 1, 12 do
+        a.node:Receive("w:X", "group", sum_text(ns.Base32(i, 2)))
+        advance(5)
+        a.node:DropSession() -- whatever the last one left, the next SUM is a new session
+    end
+    eq(Sent("D"), 1, "one DIFF")
+    eq(Sent("B"), 11, "the rest BYE busy")
+    advance(8 * 60)
+    a.node:Receive("w:X", "group", sum_text("zz"))
+    eq(Sent("D"), 2, "answered again 8 minutes after the last DIFF")
 end)
 
 test("a sender sends at most 25 records per session, so an honest peer stays within the receiver's limits",
@@ -543,6 +587,21 @@ test("records evicted for the size limit are not wanted back, unless a newer ver
     eq(a.node:Wanted("kkkkkkkk@0", 2), true, "a newer one is")
 end)
 
+test("an own record with cells only under a build without a game version is not offered", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p" })
+    local b = NewNode("B", B_ID, { group = "p" })
+    local own = a.store.records[A_ID]
+    own.builds = { unknown = own.builds["1.60.1"] }
+    eq(Store.Units(a.store, {})[A_ID .. "@0"], nil, "not among the units")
+    eq(a.node:Summary().units[A_ID .. "@0"], nil, "not in the summary")
+    local data, problem = a.node:OwnData(own)
+    eq(data, false, "nothing to send")
+    eq(problem, "no cells to send", "the reason")
+    Rounds(2)
+    eq(b.store.records[A_ID .. "@0"], nil, "B got no empty record")
+end)
+
 test("an own record a peer would refuse is not offered, so the hashes can still match", function()
     NewNet()
     local a = NewNode("A", A_ID)
@@ -601,8 +660,8 @@ end)
 test("a session that moved nothing is not repeated while both hashes stay the same", function()
     NewNet()
     local a = NewNode("A", A_ID, { group = "p" })
-    local b = NewNode("B", B_ID, { group = "p", absorbed = { [A_ID] = 0 } })
-    b.absorbed = { [A_ID] = 0 } -- B's seed already holds A's record: A offers it, B never wants it
+    local b = NewNode("B", B_ID, { group = "p" })
+    b.absorbed = { [A_ID] = { [0] = 1 } } -- B's seed already holds A's record: A offers it, B never wants it
     Rounds(3)
     local sums = Count("S")
     Rounds(6)
@@ -646,4 +705,36 @@ test("a DIFF that would not fit the budget whole ends the session with BYE limit
     eq(a.node.session, nil, "ended")
     advance(1)
     eq(net.log[#net.log].text, "Bxx limit", "told the peer")
+end)
+
+test("a record of the own ID frozen by a roll goes to peers like the live one, and not when they would refuse it",
+    function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p" })
+    local b = NewNode("B", B_ID, { group = "p" })
+    local live = a.store.records[A_ID]
+    a.store.records[A_ID .. "@0"] = live -- what CatchDB's roll leaves: the old record under <id>@<epoch>
+    live.seen = 1
+    a.store.records[A_ID] = OwnRecord(A_ID, "1416:3:x", 4)
+    a.store.records[A_ID].epoch = 1
+    Rounds(3)
+    eq(b.store.records[A_ID .. "@0"].seq, 1, "the frozen record reached B")
+    eq(b.store.records[A_ID .. "@1"].seq, 1, "the live one too")
+    eq(b.node.peers["w:A"].ignored, nil, "A is not ignored")
+    eq(UnitsText(a), UnitsText(b), "converged")
+
+    NewNet()
+    local c = NewNode("C", C_ID, { group = "q" })
+    local d = NewNode("D", "dddddddd", { group = "q" })
+    local big = OwnRecord(C_ID, "1415:3:47", 2)
+    for i = 1, 1001 do
+        big.builds["1.60.1"][(8000 + i) .. ":0:x"] = catch_cell(1, 0)
+    end
+    big.epoch, big.seen = 5, 1
+    c.store.records[C_ID .. "@5"] = big
+    eq(c.node:Summary().units[C_ID .. "@5"], nil, "over 1000 places: not offered")
+    Rounds(3)
+    eq(d.store.records[C_ID .. "@5"], nil, "not sent")
+    eq(d.node.peers["w:C"].ignored, nil, "C is not ignored")
+    eq(c.node:HashText(), d.node:HashText(), "the hashes still match")
 end)

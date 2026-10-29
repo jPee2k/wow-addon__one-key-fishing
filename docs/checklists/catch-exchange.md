@@ -67,17 +67,23 @@ report.
   B sees C's catches.
 - [ ] **8. Offline peer** (V12): B logs out in the middle of an exchange (right after a group join): no line about
   it appears in A's chat.
-- [ ] **9. Debug** (V17): `/okf debug` has the "Shared database" section, with no names and no anonymous ID.
+- [ ] **9. Debug** (V17, V18): `/okf debug` has the "Shared database" section, with no names and no anonymous ID.
+  Note the line "own record offered: yes, N bytes encoded for P places" after fishing at several places: N / P
+  times 500 stays under 24 KB (otherwise lower `ROLL_PLACES` in `CatchDB.lua`).
 - [ ] **10. Performance** (V16): watch the frame rate while a session runs and while the tab is open. For a load
   test, copy many records into the saved data (or use `tests/share_load_test.lua` as a model); login takes no
   noticeable extra time, and the longest merge step in `/okf debug` stays under 5 ms.
 - [ ] **11. Harvest** (US4): before the release, `npm run harvest` on the author's PC lists other players'
   contributions ("Contributions: N"), and a client that updates to that release shows the same counts as before.
+  B, who fished on after A's client last got B's record, keeps those catches: after the update B's `/okf debug`
+  still offers its record, and B's newer catches reach the next harvest.
+- [ ] **12. Refused account** (V10): with a Trial or Veteran account in a guild, after an hour of HELLO rounds the
+  status line says "Exchange unavailable: the game refuses addon messages" (not "Nobody to exchange with").
 
 ## After the checklist
 
 1. Record the answers in `CLAUDE.md` "Known API facts"; fix the code where an assumption was wrong (with tests).
-2. Remove the `VERIFY(V10)` to `VERIFY(V16)` markers that are closed and tick V10-V17 in
+2. Remove the `VERIFY(V10)` to `VERIFY(V16)` and `VERIFY(V18)` markers that are closed and tick V10-V18 in
    `specs/003-guild-group-sync/verification.md`.
 3. The spike removal and the release are the steps of `docs/checklists/catch-database.md` "After the checklist";
    all four parts of the shared catch database ship together as 1.2.0.

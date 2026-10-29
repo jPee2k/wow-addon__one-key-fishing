@@ -243,9 +243,10 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Drag: move this button"] = "拖动：移动此按钮"
 
     -- Share.lua
-    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
-        "OneKeyFishing 现在会匿名与你的公会、队伍和好友列表中的插件用户分享你的渔获。"
-    L["No character names are sent."] = "不会发送角色名称。"
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "OneKeyFishing 现在会以随机ID与使用本插件的公会成员、队友和好友分享你的渔获。"
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "不会发送角色名称，但与你交换数据的玩家可以知道哪个ID是你的。"
     L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
         "可在 选项 -> 插件 -> OneKeyFishing -> 共享数据库 中关闭。"
     L["Got it"] = "知道了"
@@ -272,10 +273,11 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
 
     -- UI/Settings.lua: the Shared database page
     L["Use the shared catch database"] = "使用共享渔获数据库"
-    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
-        "你的渔获（物品、数量、以地图编号表示的地点）会以随机ID分享。"
-    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
-        "数据会发送给你的公会、队伍和好友列表中的插件用户。不含名称、装备或精确位置。"
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "你的渔获（物品、数量、地图格子、你钓鱼的平均位置）会以随机ID分享。"
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "数据会发送给你的公会、队伍和好友列表中的插件用户。不含名称或装备。"
+    L["The players you exchange with can tell which ID is yours."] = "与你交换数据的玩家可以知道哪个ID是你的。"
     L["Turned off: nothing is sent or received, and other players' data is not counted."] =
         "关闭时：不发送也不接收任何数据，其他玩家的数据也不计入。"
 

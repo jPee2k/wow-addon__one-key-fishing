@@ -45,6 +45,24 @@ function ns.RandomBase32(length, random)
     return table.concat(chars)
 end
 
+-- A rolling sum over the last `minutes` minutes, kept per minute in `counts` (minute -> sum): adds `weight` at
+-- `now` (seconds; a weight of 0 only reads), drops the minutes outside the window and returns the sum. The traffic
+-- budget (Comm.lua) and the per-sender limits (Share.lua) count with it, so their window ends at the same edge.
+function ns.CountRecent(counts, now, weight, minutes)
+    local minute, total = math.floor(now / 60), 0
+    if weight ~= 0 then
+        counts[minute] = (counts[minute] or 0) + weight
+    end
+    for at, count in pairs(counts) do
+        if at > minute - minutes then
+            total = total + count
+        else
+            counts[at] = nil
+        end
+    end
+    return total
+end
+
 -- True when the interact key would hit the bobber (not some other object nearby).
 -- The bobber has no nameplate and UnitExists is false for it, but its name and GUID are readable.
 function ns.IsBobberTargeted()

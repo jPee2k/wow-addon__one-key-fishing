@@ -44,11 +44,13 @@ B: the hash differs, B is not paused, not in a session, within budget, and the c
    (a new session at least 2 min after the last one started; with A at most once per 10 min in a group,
    30 min otherwise) -> waits a random 2-20 s, re-checks
 B -> A  SUM
-A -> B  BYE busy | paused | off | limit          (A in another session, paused, sharing off, over budget)
+A -> B  BYE busy | paused | off | limit          (A in another session or answered B's last SUM with a DIFF
+                                                  less than 8 min ago, paused, sharing off, over budget)
 A -> B  BYE done                                 (all bucket hashes equal: both refresh `seen` of every unit)
 A -> B  DIFF <differing buckets> <A's entries>   (equal buckets: A refreshes `seen` of their units)
 B -> A  DIFF <same buckets> <B's entries>        (B refreshes `seen` of units equal on both sides)
-B -> A  WANT <units B wants>                     (A holds a newer seq, or B lacks it, and B's seed did not absorb it)
+B -> A  WANT <units B wants>                     (A holds a newer seq, or B lacks it, and B's seed does not hold
+                                                  that version whole)
 A -> B  WANT <units A wants>
 A -> B  REC ... REC, then BYE sent               (B's wants, own first, newest first, within 8 KB and 25 records, at least one)
 B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own sends)
@@ -63,6 +65,9 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 - A pause (research R8) or turning sharing off drops the running session without a message.
 - Only the hearer of a `HELLO` starts a session, and `A` takes one at a time; another hearer gets `BYE busy` and
   tries again after `A`'s next `HELLO`.
+- The cooldowns are kept by the initiator; the responder keeps its side too: a `SUM` from a peer it answered with
+  a `DIFF` less than 8 min ago (the 10 min group cooldown less 2 min for the initiator's queue) gets `BYE busy`, so a
+  peer that ignores the cooldowns cannot spend the hourly budget on `DIFF`s.
 - Crossing `SUM`s: when `A` and `B` heard each other and each sent `SUM` to the other, the one with the smaller node
   tag (from the other's `HELLO`, compared as strings) stays the initiator and drops the other's `SUM` without an
   answer; the other drops its own session and answers the `SUM` as the responder. Equal tags: both drop their
@@ -78,9 +83,9 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 | What | Limit | Above it |
 | --- | --- | --- |
 | `HELLO` | 1 per 60 s | ignored |
-| Messages (parts counted) | 600 per hour | the sender is ignored until logout |
-| Records | more in a session than its `WANT` asked for, or over 150 per hour (25 per session in each of the 6 sessions the group cooldown allows) | the sender is ignored until logout |
-| One record | 32 KB encoded, 1,000 places | rejected, the sender is ignored |
+| Messages | 1,160 units per hour (a whole message counts one unit per 240 bytes, at least one): twice what one honest client can send to one peer in an hour, its whole 50 KB budget plus one unit for each message it can send (HELLOs up to 3 copies, session messages, `BYE busy`, records); a flood of one message per second is still caught within 20 min | the sender is ignored until logout |
+| Records | more in a session than its `WANT` asked for, or over 175 per hour (25 per session in each of the 7 sessions the group cooldown allows within an hour, its edges included) | the sender is ignored until logout |
+| One record | 32 KB encoded, 1,000 places, `seq` not above its casts | rejected, the sender is ignored |
 | Broken, unwanted or invalid data | none allowed | the sender is ignored until logout |
 
 ## Paths the game refuses
@@ -88,10 +93,14 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 A path (`guild`, `group`, `whisper`, `bnet`) that the game refuses 5 times in a row (any result but `Success`, the
 throttle codes, `AddOnMessageLockdown`, `TargetOffline`, `NotInGuild` and `NotInGroup`) is left out until logout; a
 success resets the count. Peers reached only by a left-out path are not contacted. With every path left out the
-exchange is unavailable until logout.
+exchange is unavailable until logout. The state also says unavailable while nothing went out since the login and
+every path tried with more than a greeting is left out (a Trial account in a guild never tries the other paths);
+this is a state only, so a later success on a path not tried yet clears it.
 
 ## What is never sent
 
 Character names (the game itself shows the sender to the receiver), guild names, the anonymous ID together with a
-`HELLO`, exact positions, session times, gear (FR-008). A record carries only its part 1 fields: `id`, `epoch`,
+`HELLO`, session times, gear (FR-008). A peer that gets a record from its owner sees the sender's name next to the
+record's ID, and a cell's `px`/`py` are the sums of the cast positions (the average spot fished from in that cell):
+the texts of the notice and the "Shared database" page say so. A record carries only its part 1 fields: `id`, `epoch`,
 `seq`, `builds`; `seen` is local and stripped before encoding.

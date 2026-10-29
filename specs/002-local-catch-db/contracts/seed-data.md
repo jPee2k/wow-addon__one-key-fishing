@@ -9,8 +9,8 @@ ns.SeedData = {
   epoch = 4,                 -- grows by 1 with every harvest
   built = "2026-12-01",      -- date of the harvest
   build = "1.60.1",          -- newest game version in the data
-  absorbed = {               -- contribution ID -> newest epoch of it summed into this seed
-    ["k7f2q9xa"] = 3,
+  absorbed = {               -- contribution ID -> { [epoch] = seq }: every unit summed, up to which seq
+    ["k7f2q6xa"] = { [2] = 140, [3] = 41 },
   },
   resets = {                 -- mapID -> first game version whose data counts for that map
     [1415] = "1.60.2",
@@ -30,3 +30,7 @@ Rules:
 - The addon reads it at runtime only (no work at file load besides the table constructor); a missing or malformed
   `ns.SeedData` is treated as an empty seed with epoch 0.
 - An empty seed (`cells = {}`) is valid; the first seed may be small.
+- `absorbed` names every unit `<id>@<epoch>` the sums hold, with the seq they hold it up to (not only the newest
+  epoch of an ID): a client deletes or refuses a version up to that seq, keeps and passes on a newer one without
+  counting it (the seed has its first part; the next harvest gets the rest), and rolls its own record when the seed
+  names it (data-model.md, "Rolling the own record"). `npm run check` fails on an entry of another shape.
