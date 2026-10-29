@@ -806,3 +806,61 @@ test("a relayed record damaged in the saved file is dropped, not sent: the peer 
     eq(b.node.peers["w:A"].ignored, nil, "A is not ignored")
     eq(UnitsText(a), UnitsText(b), "the rest converged")
 end)
+
+-- A node's math.random that starts every session 2 s after the HELLO (the 2-20 s wait), random otherwise.
+local function StartAt2(...)
+    local low, high = ...
+    if low == 2 and high == 20 then
+        return 2
+    end
+    return math.random(...)
+end
+
+test("crossing SUMs between one client reached by two paths: the tag tells, one session, no busy", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { guild = "g", bnet = 1, random = StartAt2 })
+    local b = NewNode("B", B_ID, { guild = "g", bnet = 2, random = StartAt2 })
+    a.node.tag, b.node.tag = "aaaa", "bbbb"
+    net.delay = 6 -- both start 2 s after the HELLOs, before the other's SUM arrives
+    local function hello(info)
+        return ("H %s 0 1 %s"):format(info.node.tag, info.node:HashText())
+    end
+    -- A hears B by the guild first, B hears A by Battle.net first; the second path is the same client again.
+    a.node:Receive("w:B", "guild", hello(b))
+    a.node:Receive("b:2", "bnet", hello(b))
+    b.node:Receive("b:1", "bnet", hello(a))
+    b.node:Receive("w:A", "guild", hello(a))
+    advance(5)
+    eq(a.node.session and a.node.session.peer, "w:B", "A leads towards B's guild address")
+    eq(b.node.session and b.node.session.peer, "b:1", "B leads towards A's Battle.net address")
+    advance(5)
+    eq(a.node.session and a.node.session.role, "initiator", "A (smaller tag) still leads")
+    eq(b.node.session and b.node.session.role, "responder", "B answers, though it knows A by another address")
+    advance(600)
+    eq(UnitsText(a), UnitsText(b), "converged")
+    local busy = 0
+    for _, entry in ipairs(net.log) do
+        if entry.text:find("^B%w%w busy$") then
+            busy = busy + 1
+        end
+    end
+    eq(busy, 0, "no BYE busy")
+end)
+
+test("a session kept alive by parts alone is dropped after 5 min, and the peer is paused", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p", random = StartAt2 })
+    a.node:Receive("w:Ghost", "group", "H gggg 0 1 zzzzzzz") -- nobody answers, but parts keep coming
+    advance(10) -- the SUM went out at 2 s
+    assert(a.node.session, "a session with the ghost")
+    a.node:Heard("w:Ghost")
+    for i = 1, 36 do
+        advance(10)
+        a.node:Heard("w:Ghost") -- every 10 s a part: never 15 s of quiet
+        if i == 24 then
+            assert(a.node.session, "still running after 4 min of parts")
+        end
+    end
+    eq(a.node.session, nil, "dropped after 5 min, however busy the peer keeps it")
+    assert(a.node.peers["w:Ghost"].pausedUntil, "the ghost is paused")
+end)

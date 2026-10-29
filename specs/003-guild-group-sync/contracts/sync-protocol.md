@@ -61,9 +61,10 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
   logout; the session ends.
 - A relayed record is checked again before it is sent (it passed the check when it was stored, but the saved file
   may have been damaged since): a damaged one is dropped, not sent, so an honest client is never ignored for it.
-- No message from the peer for 15 s: the session is dropped without a message and the peer is paused for 30 min,
-  or until its next `HELLO` (a peer that paused for combat greets again when the pause ends).
-  `TargetOffline` on a send has the same effect.
+- No message from the peer for 15 s, or 5 min since the session started however busy it is (parts alone must not
+  hold the one session slot): the session is dropped without a message and the peer is paused for 30 min, or until
+  its next `HELLO` (a peer that paused for combat greets again when the pause ends). `TargetOffline` on a send has
+  the same effect.
 - A pause (research R8) or turning sharing off drops the running session without a message.
 - Only the hearer of a `HELLO` starts a session, and `A` takes one at a time; another hearer gets `BYE busy` and
   tries again after `A`'s next `HELLO`.
@@ -74,7 +75,9 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 - Crossing `SUM`s: when `A` and `B` heard each other and each sent `SUM` to the other, the one with the smaller node
   tag (from the other's `HELLO`, compared as strings) stays the initiator and drops the other's `SUM` without an
   answer; the other drops its own session and answers the `SUM` as the responder. Equal tags: both drop their
-  sessions and wait for the next `HELLO`.
+  sessions and wait for the next `HELLO`. The rule also holds when the two know each other by different addresses
+  (one heard the other's guild `HELLO` first, the other its Battle.net one): a `HELLO` by a second path notes the
+  tag on that address too, and a `SUM` is matched to the session by the tag, not the address.
 - Units wanted but not sent because of the 8 KB limit, or because the hourly budget would not let the next record
   out whole, come in a later session: the records just end, with `BYE sent` / `BYE done` as usual (`BYE limit` is
   for a `SUM`, `DIFF` or `WANT` the budget cannot carry).

@@ -17,6 +17,7 @@ local MAX_OTHER_PLACES = 20000 -- other players' records together (about 2 MB of
 local MAX_RECORD_BYTES = 32 * 1024 -- one encoded record
 local SESSION_BYTES = 8 * 1024 -- encoded records per direction and session (but always one record)
 local SESSION_TIMEOUT = 15 -- seconds without a message from the peer
+local SESSION_MAX_LIFE = 5 * 60 -- seconds a session may run in all: a peer that only keeps sending parts holds no slot
 local PEER_PAUSE = 30 * 60 -- no session with a peer that timed out or went offline
 local SESSION_GAP = 120 -- seconds between session starts
 local GROUP_COOLDOWN, OTHER_COOLDOWN = 10 * 60, 30 * 60 -- between sessions with the same peer
@@ -462,8 +463,8 @@ function Node:Bye(address, sid, reason)
 end
 
 function Node:NewSession(sid, address, role)
-    local session = { sid = sid, peer = address, role = role, lastHeard = self.env.now(), ourWants = {},
-        received = {} }
+    local session = { sid = sid, peer = address, role = role, started = self.env.now(), lastHeard = self.env.now(),
+        ourWants = {}, received = {} }
     self.session = session
     return session
 end
@@ -555,15 +556,15 @@ function Node:ArmTimeout(session, delay)
         if self.env.busy and self.env.busy(session.peer) then
             session.lastHeard = now -- our own messages are still going out
         end
-        local quiet = now - session.lastHeard
-        if quiet >= SESSION_TIMEOUT then
+        local quiet, age = now - session.lastHeard, now - session.started
+        if quiet >= SESSION_TIMEOUT or age >= SESSION_MAX_LIFE then
             self:DropSession()
             local peer = self.peers[session.peer]
             if peer then
                 peer.pausedUntil = now + PEER_PAUSE
             end
         else
-            self:ArmTimeout(session, SESSION_TIMEOUT - quiet)
+            self:ArmTimeout(session, math.min(SESSION_TIMEOUT - quiet, SESSION_MAX_LIFE - age))
         end
     end)
 end
@@ -619,7 +620,8 @@ function Handlers.H(self, address, peer, via, text)
     local first = self.byTag[tag]
     local other = first and first ~= address and self.peers[first]
     if other and other.heard and now - other.heard < ALONE_AFTER then
-        return -- the same client by another path is one peer
+        peer.node = tag -- the same client by another path is one peer; the tag tells its SUM from a stranger's
+        return
     end
     if peer.heard and now - peer.heard < HELLO_LIMIT then
         if via == "group" then
@@ -645,7 +647,11 @@ function Handlers.S(self, address, peer, _, text)
     end
     local session = self.session
     if session then
-        if session.peer ~= address or session.role ~= "initiator" or session.gotReply then
+        -- The session's peer, also when its SUM came by the client's other address (guild and Battle.net).
+        local sessionPeer = self.peers[session.peer]
+        local same = session.peer == address
+            or (peer.node ~= nil and sessionPeer ~= nil and sessionPeer.node == peer.node)
+        if not same or session.role ~= "initiator" or session.gotReply then
             self:Bye(address, sid, "busy")
             return
         end
@@ -654,7 +660,9 @@ function Handlers.S(self, address, peer, _, text)
             return
         end
         self:DropSession()
-        peer.lastSession = peer.previousSession
+        if sessionPeer then
+            sessionPeer.lastSession = sessionPeer.previousSession
+        end
         if peer.node == self.tag then
             return
         end
