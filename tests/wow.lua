@@ -425,12 +425,16 @@ DEFAULT_CHAT_FRAME = {
 }
 UISpecialFrames, SlashCmdList, StaticPopupDialogs = {}, {}, {}
 
--- Shows a popup: records it as the last one and returns a dialog, as the game does; nil and nothing shown while
--- popup_frames_busy is true (in the game: every dialog frame is taken). As in the game, the popup hides after either
--- button, so its OnHide runs too.
+-- Shows a popup: records it as the last one and returns a dialog, as the game does; while popup_frames_busy is true
+-- (in the game: every dialog frame is taken) nothing is shown, the dialog's OnCancel runs without a dialog and nil
+-- comes back, as Blizzard_StaticPopup/StaticPopup.lua does. As in the game, the popup hides after either button, so
+-- its OnHide runs too.
 popup_frames_busy = false
 function StaticPopup_Show(key)
     if popup_frames_busy == true then
+        if StaticPopupDialogs[key].OnCancel then
+            StaticPopupDialogs[key].OnCancel(nil)
+        end
         return nil
     end
     last_popup = key
@@ -446,7 +450,7 @@ end
 function accept_popup()
     local key = assert(rawget(_G, "last_popup"), "no popup was shown")
     if StaticPopupDialogs[key].OnAccept then
-        StaticPopupDialogs[key].OnAccept()
+        StaticPopupDialogs[key].OnAccept({ which = key }) -- the game passes the dialog, then its data
     end
     HidePopup(key)
 end
@@ -455,7 +459,7 @@ end
 function cancel_popup()
     local key = assert(rawget(_G, "last_popup"), "no popup was shown")
     if StaticPopupDialogs[key].OnCancel then
-        StaticPopupDialogs[key].OnCancel()
+        StaticPopupDialogs[key].OnCancel({ which = key }, nil, "clicked") -- as the game: dialog, data, reason
     end
     HidePopup(key)
 end

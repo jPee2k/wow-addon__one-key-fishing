@@ -71,13 +71,15 @@ B -> A  REC ... REC, then BYE done               (after A's BYE sent and B's own
 - The cooldowns are kept by the initiator; the responder keeps its side too: a `SUM` from a peer it answered with
   a `DIFF` less than 8 min ago (the 10 min group cooldown less 2 min for the initiator's queue) gets `BYE busy`, so a
   peer that ignores the cooldowns cannot spend the hourly budget on `DIFF`s. A `SUM` that could not be sent (the
-  budget, a path left out) starts no session and spends no cooldown.
+  budget, a path left out) starts no session, sends no `BYE` and spends no cooldown.
 - Crossing `SUM`s: when `A` and `B` heard each other and each sent `SUM` to the other, the one with the smaller node
   tag (from the other's `HELLO`, compared as strings) stays the initiator and drops the other's `SUM` without an
   answer; the other drops its own session and answers the `SUM` as the responder. Equal tags: both drop their
   sessions and wait for the next `HELLO`. The rule also holds when the two know each other by different addresses
   (one heard the other's guild `HELLO` first, the other its Battle.net one): a `HELLO` by a second path notes the
-  tag on that address too, and a `SUM` is matched to the session by the tag, not the address.
+  tag on that address too, and a `SUM` is matched to the session by the tag, not the address. The tag is noted only
+  on an address of the other kind (a client has one whisper and at most one Battle.net address), so a tag heard in
+  the guild cannot be used from another name to take over a session; both addresses then carry the cooldown.
 - Units wanted but not sent because of the 8 KB limit, or because the hourly budget would not let the next record
   out whole, come in a later session: the records just end, with `BYE sent` / `BYE done` as usual (`BYE limit` is
   for a `SUM`, `DIFF` or `WANT` the budget cannot carry).

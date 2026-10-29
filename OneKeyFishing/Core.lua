@@ -100,7 +100,13 @@ function ns.ShowPopup(key, text, onAccept, acceptText, cancelText, onCancel, onH
         button1 = acceptText or L["Yes"],
         button2 = cancelText or L["No"],
         OnAccept = onAccept,
-        OnCancel = onCancel,
+        -- The game also runs OnCancel, without a dialog, when it could not show the popup (no free dialog frame):
+        -- that is not the second button, so the caller does not hear of it.
+        OnCancel = onCancel and function(dialog, ...)
+            if dialog then
+                return onCancel(dialog, ...)
+            end
+        end,
         OnHide = onHide,
         noCancelOnEscape = onCancel ~= nil, -- Escape only closes: such a second button does more than "no"
         timeout = 0,

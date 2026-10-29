@@ -12,6 +12,7 @@ test("while every dialog frame is busy the notice is tried again, and nothing is
     fire("LOADING_SCREEN_DISABLED")
     advance(5)
     eq(rawget(_G, "last_popup"), nil, "no frame was free")
+    eq(#settings_opened, 0, "the Settings page did not open by itself (the game runs OnCancel for a failed show)")
     eq(ns.db.shareNotice, false, "not closed")
     eq(ns.Share.GetStatus().state, "notice", "still waiting for the notice")
     popup_frames_busy = false
