@@ -85,6 +85,11 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   lazily and cached per key, and a per-map index (for the whole-map fallback) is built once on first use.
 - **Alternatives rejected**: subtracting an absorbed snapshot on the client (the client cannot know the counts at
   harvest time without shipping them); storing compressed strings (needs a library this release does not need).
+- **Amended 2026-10-29** (code review, `docs/tech-debt.md` items 1 and 13): `absorbed` names every unit with the
+  seq the seed holds (`absorbed[id][epoch] = seq`), since the harvest also reads copies of other players' records
+  that may be older than their owners'. A record the seed names rolls instead of starting over: kept under
+  `"<myID>@<epoch>"` when it is newer than what the seed holds, so its later catches reach the next harvest instead
+  of being lost; it also rolls at 500 places, so a peer always takes it (data-model.md, "Rolling the own record").
 
 ## R5. The harvest command
 

@@ -363,6 +363,14 @@ test("CheckRecord rejects impossible cells", function()
     rejects(function(r) r.builds["1.60.1"]["1415:3:x"].c = "5" end, "a count as text")
 end)
 
+test("CheckRecord rejects a seq above the record's casts: the seq grows only after a settled cast", function()
+    local record = validRecord()
+    record.seq = 11
+    eq((CatchDB.CheckRecord(record)), true, "seq 11 with 11 casts")
+    rejects(function(r) r.seq = 12 end, "seq 12 with 11 casts")
+    rejects(function(r) r.seq = 1e12 end, "a made-up seq")
+end)
+
 test("CheckRecord rejects more than 1000 places", function()
     rejects(function(r)
         local cells = r.builds["1.60.2"]
@@ -370,6 +378,15 @@ test("CheckRecord rejects more than 1000 places", function()
             cells[(3000 + i) .. ":0:x"] = cellOf(1, 0)
         end
     end, "1003 places")
+end)
+
+test("CountPlaces with a limit stops one place above it", function()
+    local record = validRecord()
+    for i = 1, 5000 do
+        record.builds["1.60.2"][(3000 + i) .. ":0:x"] = cellOf(1, 0)
+    end
+    eq(CatchDB.CountPlaces(record), 5003, "all of them without a limit")
+    eq(CatchDB.CountPlaces(record, 1000), 1001, "stops above the limit")
 end)
 
 test("CheckRecord rejects an item the game does not know", function()

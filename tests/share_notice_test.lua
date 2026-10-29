@@ -21,7 +21,8 @@ test("after combat the popup is shown with Got it and Settings", function()
     fire("PLAYER_REGEN_ENABLED")
     eq(rawget(_G, "last_popup"), POPUP, "shown")
     local dialog = StaticPopupDialogs[POPUP]
-    assert(dialog.text:find(L["No character names are sent."], 1, true), dialog.text)
+    local seen = L["No character names are sent, but the players you exchange with can tell which ID is yours."]
+    assert(dialog.text:find(seen, 1, true), "says what the players exchanged with can see: " .. dialog.text)
     assert(dialog.text:find(L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."], 1, true),
         "where to turn it off")
     eq(dialog.button1, L["Got it"], "first button")

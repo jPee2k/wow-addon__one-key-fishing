@@ -20,7 +20,9 @@ Files are parsed, never executed; only `OneKeyFishingDB.shared.records` is read.
 ## Validation (per record)
 
 Rejected, with the reason in the report, when: the file does not parse; the ID is not 8 base32 characters; `epoch`
-or `seq` is not a non-negative integer; a record has more than 20,000 distinct places (far above the world's
+or `seq` is not a non-negative integer; `seq` is above the record's casts (`c + m` over every cell whose counts are
+counts, before any cell is skipped: the addon bumps `seq` only after a settled cast, so a higher one is made up and,
+as the newest seq, would replace the owner's real record); a record has more than 20,000 distinct places (far above the world's
 size; a real account only grows, so a reachable cap would keep it out for good). A rejected record is left out
 whole; the other records of the file are still used. A cell whose place key does not match
 `^%d+:[0-4]:(%d%d|x)$` or that breaks a rule from data-model.md ("Validation") is skipped with a note: cells only
@@ -34,7 +36,9 @@ the report; the record's other builds are used.
 - `--reset <mapID>` stores `resets[mapID] = newest build`; from then on cells of that map from older builds are left
   out of the sums.
 - Sums: every stored contribution, every build except reset ones, cell by cell; `k` counts the contributor IDs in
-  a cell (records of several epochs of one ID count once). `absorbed[id]` = the highest stored epoch of that ID.
+  a cell (records of several epochs of one ID count once). `absorbed[id][epoch]` = the stored seq of every unit
+  `id@epoch`: a client keeps a newer seq of a unit (a copy the author's client got before the owner's newest one)
+  and passes it on, so the rest reaches the next harvest instead of being deleted.
 
 ## Output
 

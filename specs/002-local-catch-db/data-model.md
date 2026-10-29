@@ -53,13 +53,13 @@ Validation (addon on write, `harvest` on read): all counts are non-negative inte
 OneKeyFishingDB.schema = 1            -- unchanged: only new fields, filled by ApplyDefaults
 OneKeyFishingDB.statsTab = "stats"    -- "stats" | "here": the last open tab of the statistics window
 OneKeyFishingDB.shared = {
-  myID = "k7f2q9xa",                  -- 8 random base32 characters, created once per account
+  myID = "k7f2q6xa",                  -- 8 random base32 characters, created once per account
   mine = {                            -- lifetime counts of this account, never reset ("Only mine")
     ["1415:3:47"] = cell,
   },
   records = {                         -- contributions; in part 1 only this account's own
-    ["k7f2q9xa"] = {
-      id = "k7f2q9xa",
+    ["k7f2q6xa"] = {
+      id = "k7f2q6xa",
       epoch = 3,                      -- seed epoch the record started against
       seq = 41,                       -- grows at most once a minute and on logout
       builds = {                      -- game version -> place key -> cell
@@ -89,7 +89,7 @@ See [contracts/seed-data.md](contracts/seed-data.md). Absent or invalid seed = e
   "epoch": 3,
   "resets": { "1415": "1.60.2" },
   "contributions": {
-    "k7f2q9xa@2": { "id": "k7f2q9xa", "epoch": 2, "seq": 41, "builds": { "1.60.1": { "1415:3:47": {} } } }
+    "k7f2q6xa@2": { "id": "k7f2q6xa", "epoch": 2, "seq": 41, "builds": { "1.60.1": { "1415:3:47": {} } } }
   }
 }
 ```
@@ -102,10 +102,26 @@ counts for it.
 Own contribution record, checked once in `ADDON_LOADED` after the seed is known:
 
 ```text
-no record                         -> new record { epoch = seed.epoch, seq = 0, builds = {} }
-seed.absorbed[myID] >= rec.epoch  -> absorbed: replaced by a new empty record with epoch = seed.epoch
-otherwise                         -> kept, counts in "All" next to the seed
+no record or a damaged one         -> new record { epoch = next epoch, seq = 0, builds = {} }
+seed.absorbed[myID][rec.epoch] = S -> the record rolls (below): kept when rec.seq > S, dropped otherwise
+otherwise                          -> kept, counts in "All" next to the seed
 ```
+
+### Rolling the own record
+
+A roll starts a new own record `{ epoch = next epoch, seq = 0, builds = {} }`; the next epoch is the seed's epoch,
+or one above the highest epoch of the own ID still held when that is higher, so every unit of the own ID is new. The
+old record, its waiting seq bump done first, stays in `shared.records` under `"<myID>@<epoch>"` unless it is empty
+or the seed holds it whole (`seq <= S`): it never changes again, goes to peers like another player's record (only
+when a peer would take it), is never evicted, and reaches the seed through the author's harvest, which then names it
+with its seq and every client deletes it. A kept record counts in "All" like the live one (also with sharing off),
+unless the seed holds it in part: then only the seed counts (no catch twice; the part after S counts after the next
+release). A roll happens:
+
+- at login, when the seed names the own unit (the author's harvest read it, maybe at an older seq than the owner's:
+  the catches after that seq are not lost, they go to the next harvest);
+- before a catch at a place new to an own record that already has 500 places (`ROLL_PLACES`): a peer takes a
+  record of up to 1,000 places and 32 KB encoded, and a record nobody takes would never reach the seed.
 
 A cast:
 

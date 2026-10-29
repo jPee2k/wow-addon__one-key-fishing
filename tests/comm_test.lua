@@ -242,6 +242,14 @@ test("the budget: after 50 KB in an hour only BYE goes out, and it frees up as t
     eq(Comm.CanSend(), true, "an hour later")
 end)
 
+test("the rolling hour drops a minute after 60 minutes, for the budget and the per-sender limits alike", function()
+    local counts = {}
+    eq(ns.CountRecent(counts, 120, 5, 60), 5, "added")
+    eq(ns.CountRecent(counts, 120 + 59 * 60, 0, 60), 5, "59 minutes later")
+    eq(ns.CountRecent(counts, 120 + 60 * 60, 0, 60), 0, "60 minutes later")
+    eq(next(counts), nil, "the old minute is gone, and a read adds none")
+end)
+
 test("friends: connected character friends and Battle.net friends playing Forever", function()
     friends = { { name = "Alice", connected = true }, { name = "Bob", connected = false },
         { name = "Carol-Elsewhere", connected = true } }
@@ -293,6 +301,22 @@ test("CanSend with a size says whether that message still fits the budget whole"
     advance(3600)
     eq(Comm.CanSend(40 * 1024), true, "40 KB fits an empty hour")
     eq(Comm.CanSend(50 * 1024), false, "50 KB plus its part headers does not")
+end)
+
+test("queued messages count against the budget, so messages checked one after another stay within it", function()
+    advance(3600)
+    local text = "Rab " .. ("q"):rep(8 * 1024)
+    local queued = 0
+    while Comm.CanSend(#text) and queued < 20 do -- what a session does: check, queue, check the next one
+        Comm.Send("w:Big", text)
+        queued = queued + 1
+    end
+    assert(queued < 20, "CanSend saw the queue")
+    eq(queued, 5, "five 8 KB messages fit the hour")
+    drain(600)
+    assert(Comm.GetTraffic() <= 50 * 1024, "within the budget: " .. Comm.GetTraffic())
+    eq(Comm.CanSend(), true, "the queue is empty, the rest of the hour is free")
+    assert(table.concat(Comm.Describe(), "\n"):find("queue 0 (0 bytes)", 1, true), "Describe: nothing queued")
 end)
 
 test("refused greetings to friends do not count against the path", function()

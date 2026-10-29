@@ -13,9 +13,9 @@ local shared = ns.db.shared
 local changes = 0
 ns.On("SHARED_DATA_CHANGED", function() changes = changes + 1 end)
 
--- A record with one cell (`places` cells on map 3000 + i when given).
+-- A record with one cell (`places` cells on map 3000 + i when given), with at least as many casts as its seq.
 local function rec(id, epoch, seq, places)
-    local cells = { ["1415:3:47"] = catch_cell(2, 1, { [FISH] = { 2, 2 } }) }
+    local cells = { ["1415:3:47"] = catch_cell(math.max(2, seq), 1, { [FISH] = { 2, 2 } }) }
     for i = 2, places or 1 do
         cells[(3000 + i) .. ":0:x"] = catch_cell(1, 0)
     end
@@ -72,14 +72,23 @@ test("only part 1 fields are kept: nothing a peer adds reaches the saved data", 
     eq(Store.ForSending(stored).seen, nil, "seen is not sent")
 end)
 
-test("a unit the seed absorbed is refused and deleted at cleanup", function()
-    local absorbed = { [A] = 1 }
-    eq(Store.Accept(shared, rec(A, 1, 9), 5700, absorbed), "refused", "absorbed epoch")
+test("a unit the seed holds whole is refused and deleted at cleanup", function()
+    local absorbed = { [A] = { [1] = 9 } }
+    eq(Store.Accept(shared, rec(A, 1, 9), 5700, absorbed), "refused", "seq 9 is in the seed")
     changes = 0
     eq(Store.CleanUp(shared, absorbed), 1, "one unit removed")
-    eq(shared.records[A .. "@1"], nil, "A@1 gone")
-    assert(shared.records[A .. "@2"], "A@2 is newer than the seed: kept")
+    eq(shared.records[A .. "@1"], nil, "A@1 (seq 5) gone")
+    assert(shared.records[A .. "@2"], "A@2 is not in the seed: kept")
     eq(changes, 1, "one change message")
+end)
+
+test("a newer seq of a unit the seed holds in part is kept, offered and kept at cleanup", function()
+    local absorbed = { [A] = { [1] = 9 } }
+    eq(Store.Accept(shared, rec(A, 1, 12), 5750, absorbed), "new", "seq 12: the seed has only up to 9")
+    eq(Store.CleanUp(shared, absorbed), 0, "kept: the rest goes to the next harvest")
+    eq(Store.Units(shared, absorbed)[A .. "@1"], 12, "offered")
+    shared.records[A .. "@1"] = nil
+    ns.Fire("SHARED_DATA_CHANGED", { A .. "@1" })
 end)
 
 test("Units lists every held unit with its seq, the own one included when it has data", function()
@@ -93,11 +102,14 @@ test("Units lists every held unit with its seq, the own one included when it has
     eq(units[shared.myID .. "@" .. own.epoch], own.seq, "own record")
     eq(Store.Get(shared, shared.myID .. "@" .. own.epoch), own, "Get finds the own record")
     eq(Store.Get(shared, C .. "@1"), shared.records[C .. "@1"], "Get finds another record")
-    eq(Store.Units(shared, { [C] = 1 })[C .. "@1"], nil, "absorbed units are left out")
+    eq(Store.Units(shared, { [C] = { [1] = 1 } })[C .. "@1"], nil, "units the seed holds whole are left out")
 end)
 
-test("eviction deletes the oldest seen first until 20000 places fit, never the own record", function()
+test("eviction deletes the oldest seen first until 20000 places fit, never a record of the own ID", function()
     local own = shared.records[shared.myID]
+    local kept = { id = shared.myID, epoch = 7, seq = 1, seen = 1, -- frozen by a roll, seen longest ago
+        builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(1, 0) } } }
+    shared.records[shared.myID .. "@7"] = kept
     for i = 1, 30 do
         own.builds["1.60.1"][(5000 + i) .. ":0:x"] = catch_cell(1, 0)
     end
@@ -115,6 +127,7 @@ test("eviction deletes the oldest seen first until 20000 places fit, never the o
     eq(shared.records["daaaaaaa@1"], nil, "the oldest seen went")
     assert(shared.records["eaaaaaaa@1"] and shared.records["faaaaaaa@1"], "the others stay")
     assert(shared.records[shared.myID], "own record stays")
+    eq(shared.records[shared.myID .. "@7"], kept, "the own frozen record stays though it was seen first")
     eq(changes, 1, "one change message")
 end)
 

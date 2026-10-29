@@ -13,7 +13,8 @@ Expected: both pass. The tests cover:
 - **Convergence**: three or more nodes over guild, group, whisper and Battle.net paths in different orders end
   with the same records and the same counts, and nothing is counted twice (SC-003, FR-003, FR-010). This includes
   a record that reaches a node twice by different paths.
-- **Absorbed units**: a unit absorbed by a newer seed is not wanted and is deleted at login (FR-014, SC-008).
+- **Absorbed units**: a version a newer seed holds whole is not wanted and is deleted at login; a newer version of
+  a unit the seed holds in part is kept and passed on but not counted (FR-014, SC-008).
 - **Own record**: a copy of the own record coming back from the network is refused (FR-012).
 - **Rejects**: broken, invalid, unwanted and flooding data is refused (FR-011).
 - **Crossing sessions**: two clients that start an exchange with each other at once end with one session.

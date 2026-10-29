@@ -56,8 +56,8 @@ One fishing round:
 - **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price,
   from your own catches, the catch database that comes with the addon and the catches of the addon users you play
   with.
-- **Shared catch database**: catch counts travel anonymously between addon users in your guild, group and friends
-  list, in the background. One setting turns it off.
+- **Shared catch database**: catch counts travel under a random ID between addon users in your guild, group and
+  friends list, in the background. One setting turns it off.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
@@ -120,10 +120,10 @@ The second tab of the statistics window lists what the spot you stand at gives:
 The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far,
 so the tab has numbers from your first login; your own catches are added to them, nothing is counted twice.
 
-What is stored: per place only counts (catches, misses, casting time, items) and an average position inside the
-grid cell, under a random ID of your account. No character names, guild, exact positions, times or gear. With the
-[shared catch database](#shared-catch-database) on, the same counts go to the addon users you play with; they also
-reach the bundled database through the author's own client.
+What is stored: per place only counts (catches, misses, casting time, items) and the average spot you fished from
+inside the grid cell, under a random ID of your account. No character names, guild, times or gear. With the [shared
+catch database](#shared-catch-database) on, the same counts go to the addon users you play with; they also reach the
+bundled database through the author's own client.
 
 ## Shared catch database
 
@@ -132,8 +132,10 @@ Players who fish together see each other's catches right away, without waiting f
 - **With whom**: addon users in your guild, your party or raid, and your online friends (character friends and
   Battle.net friends playing WoW Forever). Data also travels further: what a guild mate got from their friends
   reaches you too.
-- **What**: the catch counts described above, under the random ID of your account. **No character names** are
-  sent with them, and the names of the players you exchange with are never saved.
+- **What**: the catch counts described above, with the average spot you fished from in each grid cell, under the
+  random ID of your account. **No character names** are sent with them, and the names of the players you exchange
+  with are never saved. The players you exchange with directly can still tell which ID is yours, since your client
+  sends your own data itself; players who get it through others see only who passed it on.
 - **When**: in the background whenever you are online, also outside fishing mode. It pauses in combat, in
   instances, on loading screens and where the game restricts addon messages, and stays within a small traffic
   budget (at most 50 KB per hour). Nothing appears in chat.

@@ -266,9 +266,10 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Drag: move this button"] = "끌기: 이 버튼 이동"
 
     -- Share.lua
-    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
-        "이제 OneKeyFishing이 내 어획을 길드, 파티와 친구 목록의 애드온 사용자와 익명으로 공유합니다."
-    L["No character names are sent."] = "캐릭터 이름은 보내지 않습니다."
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "이제 OneKeyFishing이 내 어획을 무작위 ID로 이 애드온을 쓰는 길드원, 파티원과 친구에게 공유합니다."
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "캐릭터 이름은 보내지 않지만, 데이터를 교환하는 플레이어는 어떤 ID가 내 것인지 알 수 있습니다."
     L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
         "설정 -> 애드온 -> OneKeyFishing -> 공유 데이터베이스에서 끌 수 있습니다."
     L["Got it"] = "확인"
@@ -295,10 +296,11 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- UI/Settings.lua: the Shared database page
     L["Use the shared catch database"] = "공유 어획 데이터베이스 사용"
-    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
-        "내 어획(아이템, 수량, 지도 번호로 된 장소)은 무작위 ID로 공유됩니다."
-    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
-        "길드, 파티와 친구 목록의 애드온 사용자에게 전달됩니다. 이름, 장비, 정확한 위치는 보내지 않습니다."
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "내 어획(아이템, 수량, 지도 칸, 낚시한 평균 위치)은 무작위 ID로 공유됩니다."
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "길드, 파티와 친구 목록의 애드온 사용자에게 전달됩니다. 이름과 장비는 보내지 않습니다."
+    L["The players you exchange with can tell which ID is yours."] = "데이터를 교환하는 플레이어는 어떤 ID가 내 것인지 알 수 있습니다."
     L["Turned off: nothing is sent or received, and other players' data is not counted."] =
         "끄면: 아무것도 보내거나 받지 않으며, 다른 플레이어의 데이터는 계산하지 않습니다."
 

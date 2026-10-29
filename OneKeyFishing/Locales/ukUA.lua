@@ -277,10 +277,11 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Drag: move this button"] = "Перетягування: перемістити кнопку"
 
     -- Share.lua
-    L["OneKeyFishing now shares your catches anonymously with addon users in your guild, group and friends list."] =
-        "OneKeyFishing тепер анонімно ділиться вашим уловом із користувачами аддона у вашій гільдії, групі та " ..
-        "списку друзів."
-    L["No character names are sent."] = "Імена персонажів не надсилаються."
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "OneKeyFishing тепер ділиться вашим уловом під випадковим ID з вашою гільдією, групою та друзями, які ним " ..
+        "користуються."
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "Імена персонажів не надсилаються, але гравці, з якими ви обмінюєтеся, можуть знати, який ID ваш."
     L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
         "Вимкнути можна в Options -> AddOns -> OneKeyFishing -> Спільна база даних."
     L["Got it"] = "Зрозуміло"
@@ -308,11 +309,12 @@ ns.AddTranslation("ukUA", "Українська", function(L)
 
     -- UI/Settings.lua: the Shared database page
     L["Use the shared catch database"] = "Використовувати спільну базу уловів"
-    L["Your catches (items, counts, places as map numbers) are shared under a random ID."] =
-        "Ваш улов (предмети, кількість, місця як номери карт) передається під випадковим ID."
-    L["They go to addon users in your guild, group and friends list. No names, gear or exact positions."] =
-        "Його отримують користувачі аддона у вашій гільдії, групі та списку друзів. Без імен, спорядження й точних " ..
-        "позицій."
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "Ваш улов (предмети, кількість, клітинки карт, середня точка, з якої ви ловите) передається під випадковим ID."
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "Його отримують користувачі аддона у вашій гільдії, групі та списку друзів. Без імен і спорядження."
+    L["The players you exchange with can tell which ID is yours."] =
+        "Гравці, з якими ви обмінюєтеся, можуть знати, який ID ваш."
     L["Turned off: nothing is sent or received, and other players' data is not counted."] =
         "Вимкнено: нічого не надсилається й не приймається, а дані інших гравців не враховуються."
 

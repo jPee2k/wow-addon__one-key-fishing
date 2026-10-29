@@ -13,10 +13,10 @@ OneKeyFishingDB.settings.shareDB = true   -- "Use the shared catch database" (FR
                                           -- received, received records kept but not counted (FR-020)
 OneKeyFishingDB.shareNotice = false       -- true once the one-time popup was closed (FR-021), any button or Escape
 OneKeyFishingDB.shared = {
-  myID = "k7f2q9xa",                      -- unchanged; never sent with a name, never in /okf debug or /okf share
+  myID = "k7f2q6xa",                      -- unchanged; never sent with a name, never in /okf debug or /okf share
   mine = { ... },                         -- unchanged: lifetime counts of this account ("Only mine")
   records = {
-    ["k7f2q9xa"] = { id, epoch, seq, builds },             -- the own record, unchanged (part 1), keyed by myID
+    ["k7f2q6xa"] = { id, epoch, seq, builds },             -- the own record, unchanged (part 1), keyed by myID
     ["m3p7x2zd@3"] = { id, epoch, seq, builds, seen = 1761234567 }, -- NEW: another account's record, keyed by
                                                                     -- "<id>@<epoch>"
   },
@@ -26,9 +26,9 @@ OneKeyFishingDB.shared = {
 A received record has the same `{ id, epoch, seq, builds }` shape as the own one (part 1 data model, "Cell"), so
 `npm run harvest` reads it unchanged (it already walks every entry of `shared.records`, checks it and keeps the
 newest `seq` per `id@epoch`) and ignores the key and `seen`. Other records are keyed by `<id>@<epoch>`, the same
-unit the harvest keeps: when an owner starts over after a release absorbed their record, a client with an older seed
-still holds the old epoch (its seed does not contain it yet) next to the new one, and drops it once its own seed
-absorbs it.
+unit the harvest keeps: when an owner's record rolls (part 1 data model, "Rolling the own record"), a client holds
+the old epoch next to the new one and drops it once its own seed holds it whole. The owner keeps its own rolled
+records under the same keys (`"<myID>@<epoch>"`) and offers them like other players' records.
 
 | Field | Meaning |
 | --- | --- |
@@ -37,16 +37,21 @@ absorbs it.
 ### Rules for other players' records
 
 - **Accept** (research R6): the record passes `CatchDB.CheckRecord` (the part 1 cell validation, the same as the
-  harvest's, plus: `id` is 8 base32 characters and not `myID`; at most 1,000 places; every item ID known to
+  harvest's, plus: `id` is 8 base32 characters and not `myID`; at most 1,000 places; `seq` not above the record's
+  casts, `c + m` over all cells, since the owner bumps it only after a settled cast; every item ID known to
   `C_Item.GetItemInfoInstant`). A failing record is rejected whole.
 - **Replace**: a received record replaces the stored one with the same `id@epoch` only when its `seq` is higher.
   Otherwise it is a duplicate or older and is ignored (only `seen` is refreshed when it is the same version).
-- **Absorbed**: a record whose `epoch` is not newer than `ns.SeedData.absorbed[id]` is already counted in the seed:
-  it is not accepted, and a stored one is deleted at login (as the own record starts over in part 1). This is what
-  keeps network data from counting twice after a release (FR-014, SC-008).
+- **Absorbed**: `ns.SeedData.absorbed[id][epoch] = S` says the seed holds unit `id@epoch` up to seq `S`. A version
+  with `seq <= S` is already counted in the seed: it is not accepted, and a stored one is deleted at login. A newer
+  version is held by the seed only in part: it is accepted, kept and passed on (so the catches after `S` reach the
+  next harvest instead of being lost), but not counted in the views, since the seed has its first part. This is
+  what keeps network data from counting twice after a release (FR-014, SC-008) without losing it when the author's
+  client had an older copy.
 - **Own ID**: a record with `id == myID` is never accepted (FR-012).
 - **Size limit**: the other records together hold at most 20,000 places (about 2 MB of saved data). Above that the
-  record with the oldest `seen` is deleted first, until the total fits; the own record is never deleted (FR-013).
+  record with the oldest `seen` is deleted first, until the total fits; no record of the own ID is deleted, neither
+  the live one nor one kept by a roll (maybe the only copy left) (FR-013).
   Because `seen` is refreshed whenever a peer confirms the same version, records of players still in the network
   stay, and those of players who stopped playing go first. A version evicted this session is not wanted back
   (only a newer one), so eviction and the next session do not trade the same records while the network holds more. The info-based eviction order of
@@ -108,7 +113,9 @@ a client never sees messages of another version (FR-007).
 ```text
 off       settings.shareDB is false
 notice    the one-time popup has not been closed yet (no exchange before it, FR-021)
-unavailable  the game refused every path 5 times in a row (for example a Trial or Veteran account): until logout
+unavailable  the game refused every path 5 times in a row (for example a Trial or Veteran account): until logout;
+          or, as a state only, nothing went out since the login and every path tried with more than a greeting
+          was left out (a path never tried does not hide it; a later success clears it)
 paused    InCombatLockdown(), IsInInstance(), a loading screen, an active add-on restriction, or a back-off after
           the game reported a limit or a lockdown; with the reason
 alone     nobody to exchange with: no guild, group or online friend with the addon heard in the last 30 minutes
@@ -132,7 +139,7 @@ game limit / lockdown-> paused for 60 s, doubling up to 15 min while it repeats
 
 ## Bucket hashes
 
-The records held (own plus others, without absorbed ones) are grouped into 32 buckets by the first character of the
+The records held (own plus others, without those the seed holds whole) are grouped into 32 buckets by the first character of the
 ID (one bucket may hold several epochs of one ID). A bucket's hash is computed over its sorted `id.epoch.seq` lines
 (research R5); the whole-database hash, sent in `HELLO`, is computed over the 32 bucket hashes. Hashes are cached per bucket and recomputed only for a bucket that
 changed.

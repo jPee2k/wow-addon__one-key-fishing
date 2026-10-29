@@ -16,6 +16,7 @@ local BROADCAST_PACE = 2 -- seconds between guild and group messages
 local WHISPER_PACE = 0.5 -- seconds between whispers and Battle.net messages
 local BUDGET = 50 * 1024 -- bytes sent per BUDGET_MINUTES, counted per minute; above it only BYE goes out
 local BUDGET_MINUTES = 60
+Comm.BUDGET = BUDGET -- Share.lua derives its per-sender limits from it
 local THROTTLE_BACKOFF, MAX_THROTTLE_BACKOFF = 2, 60 -- seconds, doubling while the game reports a throttle
 local LOCKDOWN_BACKOFF, MAX_LOCKDOWN_BACKOFF = 60, 15 * 60 -- seconds of pause after AddOnMessageLockdown
 local PART_TIMEOUT = 15 -- seconds without a new part before an unfinished message is dropped
@@ -25,15 +26,20 @@ local PAUSE_RECHECK = 5 -- seconds between checks while paused
 local MAX_REFUSALS = 5 -- refusals in a row before a path is left out until logout
 local MAX_PARTS = 999
 
--- Enum.SendAddonMessageResult of the 1.60.1 export; C_BattleNet.SendGameData returns the same values.
-local SUCCESS, NOT_IN_GROUP, ADDON_THROTTLE, CHANNEL_THROTTLE = 0, 5, 3, 8
-local GENERAL_ERROR, NOT_IN_GUILD, LOCKDOWN, TARGET_OFFLINE = 9, 10, 11, 12
+-- Send results, read from Enum.SendAddonMessageResult (C_BattleNet.SendGameData returns the same values), so a
+-- patch that renumbers them changes nothing here; the numbers of the 1.60.1 export are only the fallback.
+local RESULT = Enum and Enum.SendAddonMessageResult or {}
+local SUCCESS, NOT_IN_GROUP = RESULT.Success or 0, RESULT.NotInGroup or 5
+local ADDON_THROTTLE, CHANNEL_THROTTLE = RESULT.AddonMessageThrottle or 3, RESULT.ChannelThrottle or 8
+local GENERAL_ERROR, NOT_IN_GUILD = RESULT.GeneralError or 9, RESULT.NotInGuild or 10
+local LOCKDOWN, TARGET_OFFLINE = RESULT.AddOnMessageLockdown or 11, RESULT.TargetOffline or 12
 
 local VIA = { GUILD = "guild", PARTY = "group", RAID = "group", WHISPER = "whisper" }
 -- The restrictions of Enum.AddOnRestrictionType that block addon messages.
 local RESTRICTIONS = { "Chat", "Encounter", "ChallengeMode", "PvPMatch", "Map" }
 
 local queue = {} -- { text, address, path, broadcast, chatType, target, essential }
+local queuedBytes = 0 -- bytes of the queued messages: CanSend counts them before they go out
 local nextBroadcast, nextWhisper = 0, 0 -- GetTime() when the next message of each kind may go
 local holdUntil, throttleBackoff = 0, nil
 local lockdownUntil, lockdownBackoff = 0, nil
@@ -42,6 +48,7 @@ local lastPause, recheckPending = nil, false
 local pumpAt -- GetTime() of the scheduled queue run
 local traffic = {} -- minute -> bytes sent
 local results = {} -- send result -> count, for /okf debug
+local anySuccess = false -- a message went out since the login: the game takes this account's addon messages
 local receivers, offlineHandlers, activityHandlers = {}, {}, {}
 local paths = {
     guild = { failures = 0, disabled = false },
@@ -55,6 +62,23 @@ local counter = 0 -- the part counter of this client's long messages
 
 local function Enabled()
     return ns.db ~= nil and ns.Share.IsEnabled()
+end
+
+-- The queue changes only here, so queuedBytes stays right. first: at the front (a throttled message again).
+local function Enqueue(message, first)
+    table.insert(queue, first and 1 or #queue + 1, message)
+    queuedBytes = queuedBytes + #message.text
+end
+
+local function Dequeue(index)
+    local message = table.remove(queue, index)
+    queuedBytes = queuedBytes - #message.text
+    return message
+end
+
+local function ClearQueue()
+    wipe(queue)
+    queuedBytes = 0
 end
 
 ---------------------------------------------------------------------------
@@ -103,7 +127,7 @@ end
 local function UpdatePause()
     local reason = Comm.GetPause()
     if reason then
-        wipe(queue)
+        ClearQueue()
         wipe(buffers)
     end
     if reason ~= lastPause then
@@ -122,32 +146,20 @@ end
 ---------------------------------------------------------------------------
 -- Budget
 ---------------------------------------------------------------------------
-local function Minute()
-    return math.floor(GetTime() / 60)
-end
-
 function Comm.GetTraffic()
-    local minute, total = Minute(), 0
-    for at, bytes in pairs(traffic) do
-        if at > minute - BUDGET_MINUTES then
-            total = total + bytes
-        else
-            traffic[at] = nil
-        end
-    end
-    return total
+    return ns.CountRecent(traffic, GetTime(), 0, BUDGET_MINUTES)
 end
 
 local function AddTraffic(bytes)
-    local minute = Minute()
-    traffic[minute] = (traffic[minute] or 0) + bytes
+    ns.CountRecent(traffic, GetTime(), bytes, BUDGET_MINUTES)
 end
 
--- False while paused, or when one more full message would go over the budget.
+-- False while paused, or when one more full message would go over the budget, the messages still queued included
+-- (a session queues DIFF, WANT and records one after another, each checked before the earlier ones went out).
 -- bytes: a message about to be sent (its part headers come on top), so it goes out whole.
 function Comm.CanSend(bytes)
     return Enabled() and not Comm.GetPause()
-        and Comm.GetTraffic() + math.ceil((bytes or 0) * 1.1) + MAX_MESSAGE <= BUDGET
+        and Comm.GetTraffic() + queuedBytes + math.ceil((bytes or 0) * 1.1) + MAX_MESSAGE <= BUDGET
 end
 
 ---------------------------------------------------------------------------
@@ -170,7 +182,7 @@ end
 local function DropWhere(matches)
     for i = #queue, 1, -1 do
         if matches(queue[i]) then
-            table.remove(queue, i)
+            Dequeue(i)
         end
     end
 end
@@ -239,10 +251,11 @@ local function Deliver(message)
     end
     if result == SUCCESS then
         AddTraffic(#message.text)
+        anySuccess = true
         throttleBackoff, lockdownBackoff = nil, nil
         paths[message.path].failures = 0
     elseif result == ADDON_THROTTLE or result == CHANNEL_THROTTLE then
-        table.insert(queue, 1, message)
+        Enqueue(message, true)
         throttleBackoff = throttleBackoff and math.min(throttleBackoff * 2, MAX_THROTTLE_BACKOFF) or THROTTLE_BACKOFF
         holdUntil = GetTime() + throttleBackoff
     elseif result == LOCKDOWN then
@@ -271,7 +284,7 @@ end
 Pump = function()
     pumpAt = nil
     if not Enabled() or Comm.GetPause() then
-        wipe(queue)
+        ClearQueue()
         return
     end
     local now = GetTime()
@@ -281,7 +294,7 @@ Pump = function()
     end
     for i, message in ipairs(queue) do
         if now >= NextSlot(message) then
-            Deliver(table.remove(queue, i))
+            Deliver(Dequeue(i))
             break
         end
     end
@@ -319,7 +332,7 @@ function Comm.Split(text)
 end
 
 local function Queue(message)
-    table.insert(queue, message)
+    Enqueue(message)
     Schedule(GetTime())
 end
 
@@ -537,6 +550,24 @@ function Comm.GetPaths()
     return paths
 end
 
+-- True while the game seems to refuse this account's addon messages (a Trial or Veteran account): nothing went out
+-- since the login, and every path a message other than a greeting was tried on is left out. Only for the state:
+-- unlike the "unavailable" pause (every path left out), a later success on a path not tried yet clears it.
+function Comm.Refused()
+    if anySuccess then
+        return false
+    end
+    local leftOut = false
+    for _, path in pairs(paths) do
+        if path.disabled then
+            leftOut = true
+        elseif path.failures > 0 then
+            return false -- still being tried
+        end
+    end
+    return leftOut
+end
+
 -- Lines for /okf debug: no names, no addresses.
 function Comm.Describe()
     local codes = {}
@@ -552,8 +583,8 @@ function Comm.Describe()
     end
     table.sort(out)
     return {
-        ("transport: pause %s, traffic %d of %d bytes in the last hour, queue %d"):format(
-            tostring(Comm.GetPause() or "none"), Comm.GetTraffic(), BUDGET, #queue),
+        ("transport: pause %s, traffic %d of %d bytes in the last hour, queue %d (%d bytes)"):format(
+            tostring(Comm.GetPause() or "none"), Comm.GetTraffic(), BUDGET, #queue, queuedBytes),
         "send results: " .. (#codes > 0 and table.concat(codes, " ") or "none"),
         ("back-off: throttle %s s, lockdown %s s"):format(tostring(throttleBackoff or 0),
             tostring(lockdownBackoff or 0)),
