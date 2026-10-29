@@ -787,8 +787,11 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
         shared.myID = ns.RandomBase32(ID_LENGTH)
     end
     local record = shared.records[shared.myID]
+    if type(record) == "table" and record.id == nil then
+        record.id = shared.myID -- the one field that can be put back: the catches under this key are the account's
+    end
     -- A damaged record (edited by hand, an interrupted write) would break every catch, or every HELLO when its ID
-    -- is not the account's: it starts over.
+    -- is another account's: it starts over.
     if type(record) ~= "table" or type(record.builds) ~= "table" or type(record.seq) ~= "number"
         or type(record.epoch) ~= "number" or record.id ~= shared.myID then
         shared.records[shared.myID] = nil

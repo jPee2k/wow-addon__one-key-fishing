@@ -788,6 +788,7 @@ test("a SUM the budget cannot send starts no session and burns no cooldown", fun
     eq(a.node.session, nil, "no session")
     eq(a.node.lastStart, nil, "no session start counted")
     eq(a.node.peers["w:B"].lastSession, nil, "no cooldown with B")
+    assert(not SentByA():find("limit"), "no BYE limit for a session B never heard of: " .. SentByA())
     a.room = nil
     advance(600)
     eq(UnitsText(a), UnitsText(b), "converged once the budget is back")
@@ -845,6 +846,22 @@ test("crossing SUMs between one client reached by two paths: the tag tells, one 
         end
     end
     eq(busy, 0, "no BYE busy")
+    assert(b.node.peers["b:1"].lastSession, "B keeps the cooldown on A's first address too")
+    assert(b.node.peers["w:A"].lastSession, "and on the address the session ran on")
+end)
+
+test("a stranger who claims a known tag from the same kind of address cannot take over the session", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p", random = StartAt2 })
+    a.node.tag = "zzzz" -- larger than X's: A would give way to X's own crossing SUM
+    a.node:Receive("w:X", "group", "H xxxx 0 1 aaaaaaa")
+    advance(10) -- A's SUM to X went out at 2 s
+    eq(a.node.session and a.node.session.peer, "w:X", "a session with X")
+    a.node:Receive("w:Z", "group", "H xxxx 0 1 aaaaaaa") -- Z claims X's tag from another whisper address
+    a.node:Receive("w:Z", "whisper", "Szz " .. ("a"):rep(7 * #ns.BASE32))
+    eq(a.node.session and a.node.session.peer, "w:X", "the session with X stays")
+    eq(a.node.session and a.node.session.role, "initiator", "A still leads")
+    eq(a.node.peers["w:Z"].node, nil, "one client has one whisper address: Z is not X")
 end)
 
 test("a session kept alive by parts alone is dropped after 5 min, and the peer is paused", function()

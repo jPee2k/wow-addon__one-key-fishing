@@ -36,6 +36,12 @@ stays for part 3 with strangers). The low ones come when the code around them is
    Direction: an explicit argument when a second caller appears.
 4. **The `greeting` message kind** (`Comm.lua`; flagged by 1). Since a refusal counts once per player (fixed high
    item), it only still saves a path from five odd friend names in one HELLO round; decide whether it stays.
+5. **An empty session near the hourly budget** (`Share.lua`, `SendRecords` and `Advance`; the review of the fixes
+   on 2026-10-30, behaviour older than the fixes). When the budget does not let even the first wanted record out,
+   no record goes, yet the session ends with `BYE sent` / `done`, counts as moved and takes the cooldown; near the
+   budget the same empty session (about 1 KB of `SUM`, `DIFF`, `WANT` and `BYE`) repeats every HELLO round until
+   the budget frees. Direction: end with `BYE limit` when the first record did not fit, or let `CanStart` require
+   room for one record.
 
 ### Checked, not a bug
 

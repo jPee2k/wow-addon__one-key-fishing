@@ -599,9 +599,14 @@ function Node:ConsiderSession(address, peer)
         if self.peers[address] ~= peer or not self:CanStart(peer, now) or peer.hash == self:HashText() then
             return
         end
-        local session = self:NewSession(ns.RandomBase32(2, self.env.random), address, "initiator")
-        if not self:Send(address, "S" .. session.sid .. " " .. table.concat(self:Summary().hashTexts)) then
-            return -- no session ran (the budget, a path left out): the cooldowns stay free for the next HELLO
+        local sid = ns.RandomBase32(2, self.env.random)
+        local text = "S" .. sid .. " " .. table.concat(self:Summary().hashTexts)
+        if not self.env.canSend(#text) then
+            return -- the budget: no session, no BYE to a peer that heard of none, the cooldowns stay free
+        end
+        local session = self:NewSession(sid, address, "initiator")
+        if not self:Send(address, text) then
+            return -- a path left out: no session ran, the cooldowns stay free for the next HELLO
         end
         self.lastStart = now
         peer.previousSession, peer.lastSession = peer.lastSession, now
@@ -620,7 +625,12 @@ function Handlers.H(self, address, peer, via, text)
     local first = self.byTag[tag]
     local other = first and first ~= address and self.peers[first]
     if other and other.heard and now - other.heard < ALONE_AFTER then
-        peer.node = tag -- the same client by another path is one peer; the tag tells its SUM from a stranger's
+        -- The same client by another path is one peer. Its tag is noted on this address too, so a SUM from here is
+        -- told from a stranger's; only for the other kind of address (a client has one whisper and at most one
+        -- Battle.net address), so a tag heard in the guild cannot be used from another name to take over a session.
+        if address:sub(1, 1) ~= first:sub(1, 1) then
+            peer.node = tag
+        end
         return
     end
     if peer.heard and now - peer.heard < HELLO_LIMIT then
@@ -660,12 +670,14 @@ function Handlers.S(self, address, peer, _, text)
             return
         end
         self:DropSession()
-        if sessionPeer then
-            sessionPeer.lastSession = sessionPeer.previousSession
-        end
         if peer.node == self.tag then
+            if sessionPeer then
+                sessionPeer.lastSession = sessionPeer.previousSession -- no session follows
+            end
             return
         end
+        -- A session follows as the responder: the cooldown stays on the address the dropped one was for, and the
+        -- responder's goes on this one, so the client gets no second session by its other address.
     end
     if peer.answered and self.env.now() - peer.answered < RESPONDER_GAP then
         self:Bye(address, sid, "busy")
