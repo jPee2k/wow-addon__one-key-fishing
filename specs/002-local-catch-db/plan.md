@@ -12,9 +12,9 @@ lifetime counts ("Only mine") and as a contribution record that the author's `np
 `SeedData.lua`. The statistics window gets tabs; the new "What can be caught here" tab shows chances, average
 pieces and prices for the current spot, falling back to the whole map, with skill and source filters. Epochs and an
 `absorbed` list keep data from being counted twice. Auction prices become the average of the cheapest 20% of listed
-pieces, with a "few lots" mark under 5 pieces. The game opens on 2026-11-04, so the feature is built now on the
-assumptions in [verification.md](verification.md) (V1-V9), each marked `-- VERIFY(Vn)` in the code; a `/okf spike`
-command is built now and run after launch, and a release build refuses to package while a marker is left. Details
+pieces, with a "few lots" mark under 5 pieces or 3 auctions. The game opens on 2026-11-04, so the feature is built
+now on the assumptions in [verification.md](verification.md) (V1-V9), each marked `-- VERIFY(Vn)` in the code; a
+`/okf spike` command is built now and run after launch, and a release build refuses to package while a marker is left. Details
 and rejected alternatives: [research.md](research.md).
 
 ## Technical Context
@@ -57,7 +57,7 @@ literal `L` keys with nine translations each; ASCII Lua, lines up to 120 charact
 | --- | --- | --- |
 | I. Blizzard Policy | No game action added; recording reacts to loot the player already took; auction searches stay one at a time with the existing throttle and timeout; no traffic outside the game (the author's harvest reads local files after playing); no personal data: random ID, counts, averaged positions | Pass |
 | II. Language-Independent Game Data | Place keys from map IDs, grid numbers and ranks; items by ID; display names from client data; every new text through `ns.L` with nine translations | Pass |
-| III. Safe, Restorable State | Only new saved fields, filled by `ApplyDefaults`; `DB_SCHEMA` 1 -> 2 (no reshape, no migration function); existing statistics untouched; 1.0.0 price entries stay valid | Pass |
+| III. Safe, Restorable State | Only new saved fields, filled by `ApplyDefaults`; `DB_SCHEMA` stays 1 (nothing renamed or reshaped); existing statistics untouched; 1.0.0 price entries stay valid | Pass |
 | IV. Verified Forever API | Unverified calls (V1-V7) guarded with a fallback and marked `VERIFY(Vn)`; nothing is called verified before the author checks it in game after launch; the release build refuses open markers; facts into CLAUDE.md; new globals into `.luacheckrc` | Pass |
 | V. Checked and Tested | Lua tests for CatchDB, Prices and the panel; a Node test for the harvest; `npm run check` validates the seed | Pass |
 | VI. Simple Module Boundaries | All slash commands, the new `spike` included, declared in `Commands.lua` (constitution 1.3.0); one module per job: `CatchDB` (record, merge, query), `UI/CatchHere` (panel), `tools/harvest.mjs` (seed); no new message (the panel polls `CatchDB.GetVersion()` in the existing tick) | Pass |
@@ -95,10 +95,10 @@ OneKeyFishing/
 ├── Spike.lua                  # TEMPORARY: /okf spike report, run after launch; removed before the release
 ├── SeedData.lua               # NEW, generated: ns.SeedData
 ├── CatchDB.lua                # NEW: place key, recording (mine + own record), epoch check, Query, Describe
-├── Core.lua                   # DB_SCHEMA 2; DB_DEFAULTS shared, statsTab
+├── Core.lua                   # DB_DEFAULTS shared, statsTab (DB_SCHEMA stays 1)
 ├── Catch.lua                  # loot source kept for ns.IsPoolLoot (per spike)
 ├── Auction.lua                # robust price from the loaded results, quantity stored
-├── Prices.lua                 # Get uses vendor under 5 pieces; GetAuction
+├── Prices.lua                 # Get uses vendor on few lots; GetAuction
 ├── Debug.lua                  # "Catch database" section, price coverage
 ├── Locales/*.lua              # new texts in all ten languages
 └── UI/

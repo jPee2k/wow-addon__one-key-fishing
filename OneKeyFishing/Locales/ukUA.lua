@@ -8,7 +8,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Toggle fishing mode"] = "Увімкнути / вимкнути режим риболовлі"
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "Збережені дані з новішої версії OneKeyFishing. Оновіть аддон, щоб уникнути проблем."
-    L["v%s commands:"] = "v%s, команди:"
 
     -- Gear.lua
     L["Fishing pole set."] = "Вудку вибрано."
@@ -46,7 +45,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
         "Режим риболовлі вимкнено. Спершу натисніть клавішу «Увімкнути / вимкнути режим риболовлі»."
     L["The fishing key is paused in combat."] = "У бою клавіша риболовлі не працює."
     L["Leaving fishing mode after combat."] = "Режим риболовлі вимкнеться після бою."
-    L["enter or leave fishing mode"] = "увімкнути або вимкнути режим риболовлі"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "Сканування %d/%d"
@@ -56,8 +54,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Nothing to scan yet: catch some fish first."] = "Поки нічого сканувати: спершу щось упіймайте."
     L["Scanning auction prices of %d item(s)..."] = "Сканую ціни на аукціоні, предметів: %d..."
     L["Auction scan stopped: %d of %d price(s) found."] = "Сканування аукціону зупинено: знайдено цін %d із %d."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "сканувати ціни на впіймане на аукціоні (аукціон має бути відкритий)"
 
     -- Skill.lua
     L["Apprentice"] = "Учень"
@@ -118,7 +114,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
         "Вартість: ціна торговця (проскануйте аукціон, щоб отримати ринкові ціни)"
     L["%d catches, %s"] = "улов: %d, %s"
     L["No catches yet."] = "Поки нічого не впіймано."
-    L["show the fishing statistics"] = "показати статистику риболовлі"
     L["Time"] = "Час"
     L["Results"] = "Результати"
     L["Money"] = "Гроші"
@@ -131,14 +126,42 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Casts that ended without loot."] = "Закидання, що закінчилися без здобичі."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "Улов за годину риболовлі. Оновлюється з кожним закиданням і кнопкою «Оновити»."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "Упіймані предмети за більшою з ціни торговця та останньої сканованої ціни аукціону."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "Улов за більшою з ціни торговця та ціни аукціону; якщо лотів мало — за ціною торговця."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "Вартість за годину риболовлі. Оновлюється з кожним закиданням і кнопкою «Оновити»."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "Статистика"
+    L["What can be caught here"] = "Що тут ловиться"
+    L["Skill: %s"] = "Навичка: %s"
+    L["All skill levels"] = "Будь-яка навичка"
+    L["Source: %s"] = "Джерело: %s"
+    L["All"] = "Усе"
+    L["Only mine"] = "Лише моє"
+    L["%d catches"] = "улов: %d"
+    L["Nothing caught: %s"] = "Нічого не впіймано: %s"
+    L["Numbers for the whole map: few catches at this spot."] = "Дані по всій карті: на цьому місці замало уловів."
+    L["Little data"] = "Мало даних"
+    L["Nothing has been caught here yet."] = "Тут ще нічого не ловили."
+    L["Try \"All skill levels\": little data for your skill."] =
+        "Оберіть «Будь-яка навичка»: для вашої навички мало даних."
+    L["and %d more"] = "і ще %d"
+    L["No bundled data in this version: only your own catches are shown."] =
+        "У цій версії немає вбудованих даних: показано лише ваш улов."
+    L["The game does not show this place on the map."] = "Гра не показує це місце на карті."
+    L["Item"] = "Предмет"
+    L["Chance"] = "Шанс"
+    L["Per catch"] = "За улов"
+    L["Price"] = "Ціна"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "мало лотів"
+    L["Auction price: %s (few lots)"] = "Ціна аукціону: %s (мало лотів)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - звіт для налагодження"
-    L["show a report to copy into a bug report"] = "показати звіт, який можна скопіювати в повідомлення про помилку"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "Автозбір здобичі під час риболовлі"
@@ -197,7 +220,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Automatic: no fishing pole in your bags."] = "Автоматично: у сумках немає вудки."
     L["Settings cannot be opened in combat."] = "Налаштування не можна відкрити в бою."
     L["Settings panel is not available in this client."] = "Панель налаштувань недоступна в цьому клієнті."
-    L["open the settings"] = "відкрити налаштування"
     L["Language:"] = "Мова:"
     L["Interface language"] = "Мова інтерфейсу"
     L["Game client language"] = "Мова клієнта гри"

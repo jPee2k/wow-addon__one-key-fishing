@@ -69,16 +69,12 @@ local function KeyText(binding)
     return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
 end
 
-local function ItemDisplay(itemID)
-    local name, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
-    return link or name or ("item:" .. itemID), icon or C_Item.GetItemIconByID(itemID)
-end
+local ItemDisplay = ns.ItemDisplay -- Core.lua
 
 ---------------------------------------------------------------------------
 -- Language
 ---------------------------------------------------------------------------
 local RELOAD_POPUP = "ONEKEYFISHING_RELOAD_LANGUAGE"
-local CHECK_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t "
 
 -- The stored preference as the menu sees it: a code that is not shipped (any more) counts as "auto".
 local function SelectedLanguage()
@@ -95,12 +91,13 @@ end
 -- Saves the preference ("auto" or a language code). The new language shows after a reload, which only the
 -- player's click on "Reload now" starts.
 function SettingsUI.ChooseLanguage(value)
-    if value == ns.db.settings.language or (value ~= "auto" and not ns.translations[value]) then
+    if value ~= "auto" and not ns.translations[value] then
         return
     end
     ns.db.settings.language = value
     -- No reload when the interface would come back in the language it already has (e.g. "Deutsch" picked on
     -- a German client that follows the client language); a reload offered for an earlier choice is withdrawn.
+    -- Picking a language that still waits for its reload ("Later") offers the reload again.
     if ns.ResolveLanguage(value, GetLocale()) == ns.language then
         StaticPopup_Hide(RELOAD_POPUP)
         return
@@ -119,25 +116,11 @@ local function LanguageChoices()
 end
 
 local function OpenLanguageMenu(owner, onChosen)
-    local function Choose(value)
-        SettingsUI.ChooseLanguage(value)
-        onChosen()
-    end
-    local choices = LanguageChoices()
-    if not (MenuUtil and MenuUtil.CreateContextMenu) then
-        return
-    end
-    MenuUtil.CreateContextMenu(owner, function(_, root)
-        for _, choice in ipairs(choices) do
-            local function IsSelected() return SelectedLanguage() == choice.value end
-            local function Select() Choose(choice.value) end
-            if root.CreateRadio then
-                root:CreateRadio(choice.text, IsSelected, Select)
-            else
-                root:CreateButton((IsSelected() and CHECK_MARK or "") .. choice.text, Select)
-            end
-        end
-    end)
+    ns.OpenRadioMenu(owner, LanguageChoices(), function(value) return SelectedLanguage() == value end,
+        function(value)
+            SettingsUI.ChooseLanguage(value)
+            onChosen()
+        end)
 end
 
 local function ShowLanguageTooltip(owner)
@@ -278,12 +261,6 @@ end
 ---------------------------------------------------------------------------
 -- Fishing gear page
 ---------------------------------------------------------------------------
-local function ShowItemTooltip(owner, itemID)
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    GameTooltip:SetItemByID(itemID)
-    GameTooltip:Show()
-end
-
 local function CreateGearRow(parent)
     local row = CreateFrame("Frame", nil, parent)
     row:SetSize(520, ROW_HEIGHT)
@@ -302,7 +279,7 @@ local function CreateGearRow(parent)
     row.remove = CreateButton(row, L["Remove"], 80, function() ns.Gear.RemoveItem(row.itemID) end)
     row.remove:SetPoint("RIGHT")
 
-    row:SetScript("OnEnter", function(self) ShowItemTooltip(self, self.itemID) end)
+    row:SetScript("OnEnter", function(self) ns.ShowItemTooltip(self, self.itemID) end)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     return row
 end
@@ -448,5 +425,3 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateGearPage(), L["Fishing gear"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)
-
-ns.RegisterCommand("config", function() return L["open the settings"] end, SettingsUI.Open)

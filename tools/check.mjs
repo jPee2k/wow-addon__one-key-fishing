@@ -6,9 +6,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
-import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, parseToc } from "./addon.mjs";
+import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, MAX_LINE_LENGTH, findMarkers, parseToc }
+  from "./addon.mjs";
+import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
-const MAX_LINE_LENGTH = 120;
+// --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
+const release = process.argv.includes("--release");
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
@@ -112,8 +115,13 @@ function parseLua(file) {
   }
 }
 
+const SEED_FILE = path.join(ADDON_DIR, "SeedData.lua");
+let seedAst = null;
 for (const file of luaFiles) {
   const ast = parseLua(file);
+  if (file === SEED_FILE) {
+    seedAst = ast;
+  }
   for (const name of new Set(ast ? ast.globals.map((g) => g.name) : [])) {
     used.add(name);
     if (!declared.has(name) && !LUA_BUILTINS.has(name)) {
@@ -241,6 +249,17 @@ if (!fs.existsSync(baseLocale)) {
   }
 }
 
+// The bundled seed (written by npm run harvest; the format is defined in tools/harvest.mjs).
+if (fs.existsSync(SEED_FILE)) {
+  const bytes = fs.statSync(SEED_FILE).size;
+  if (bytes > MAX_SEED_BYTES) {
+    problem(rel(SEED_FILE), `${bytes} bytes, more than the 1 MB limit`);
+  }
+  for (const message of seedAst ? seedProblems(seedAst) : []) { // no AST: the syntax error is reported above
+    problem(rel(SEED_FILE), message);
+  }
+}
+
 // The newest CHANGELOG entry matches package.json.
 const version = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
 const changelogPath = path.join(ROOT, "CHANGELOG.md");
@@ -249,6 +268,17 @@ if (fs.existsSync(changelogPath)) {
   if (!top || top[1] !== version) {
     problem("CHANGELOG.md", `newest entry is ${top ? top[1] : "missing"}, package.json says ${version}`);
   }
+}
+
+// Verification debt (findMarkers in addon.mjs): listed; with --release they are problems.
+const markers = luaFiles.flatMap((file) => findMarkers(fs.readFileSync(file, "utf8"))
+  .map((m) => `  ${rel(file)}:${m.line} ${m.id} ${m.what}`.trimEnd()));
+if (release) {
+  for (const marker of markers) {
+    problem(marker.trim(), "open VERIFY marker: close the verification debt before a release");
+  }
+} else if (markers.length > 0) {
+  console.log(`open verification markers (${markers.length}):\n${markers.join("\n")}`);
 }
 
 if (problems.length > 0) {

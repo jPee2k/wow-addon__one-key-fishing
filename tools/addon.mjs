@@ -16,6 +16,25 @@ export const TOC = `${ADDON}.toc`;
 export const ADDON_EXTRAS = ["Bindings.xml"];
 export const ROOT_EXTRAS = ["LICENSE", "README.md", "CHANGELOG.md"];
 
+export const MAX_LINE_LENGTH = 120;
+
+// Verification debt: `-- VERIFY(<id>): <what>` marks addon code built on an assumption not yet checked in game
+// (the feature's verification.md lists them). `npm run check` lists them; `npm run check -- --release` (run by
+// `npm run build` and the release workflow) fails on them.
+const VERIFY_MARKER = /VERIFY\(([^)]+)\):?\s*(.*)$/;
+
+// The markers of one file's text: { line, id, what }.
+export function findMarkers(text) {
+  const markers = [];
+  text.split(/\r?\n/).forEach((line, index) => {
+    const match = line.match(VERIFY_MARKER);
+    if (match) {
+      markers.push({ line: index + 1, id: match[1], what: match[2] });
+    }
+  });
+  return markers;
+}
+
 // Parses a TOC: `## Key: Value` metadata and the list of files (as forward-slash paths).
 export function parseToc(text) {
   const fields = {};
@@ -50,8 +69,8 @@ export function fail(message) {
 }
 
 // The game's Interface/AddOns folder: the WOW_ADDONS_DIR environment variable, or the same line in a
-// git-ignored `.env` file in the repository root (see `.env.example`).
-export function addonsDir() {
+// git-ignored `.env` file in the repository root (see `.env.example`). With `optional`, null when it is not set.
+export function addonsDir({ optional = false } = {}) {
   let dir = process.env.WOW_ADDONS_DIR;
   const envFile = path.join(ROOT, ".env");
   if (!dir && fs.existsSync(envFile)) {
@@ -63,6 +82,9 @@ export function addonsDir() {
     }
   }
   if (!dir) {
+    if (optional) {
+      return null;
+    }
     fail("set WOW_ADDONS_DIR in a .env file (copy .env.example) or in the environment");
   }
   dir = path.resolve(dir);

@@ -14,6 +14,7 @@ local function Section(lines, title, fn)
         table.insert(lines, ("  !! failed: %s"):format(tostring(err)))
     end
 end
+ns.ReportSection = Section -- also for the temporary spike report (Spike.lua)
 
 local function Keys(binding)
     local keys = { GetBindingKey(binding) }
@@ -90,6 +91,16 @@ local function BuildReport()
         end
     end)
 
+    -- No anonymous contribution ID here: this report goes into public bug reports.
+    Section(lines, "Catch database", function()
+        for _, line in ipairs(ns.CatchDB.Describe()) do
+            add("%s", line)
+        end
+        local coverage = ns.Auction.GetCoverage()
+        add("last price scan: %s of %s listed pieces loaded", tostring(coverage and coverage.loaded),
+            tostring(coverage and coverage.total))
+    end)
+
     Section(lines, "Game settings", function()
         for _, name in ipairs(REPORT_CVARS) do
             add("%s = %s", name, tostring(C_CVar.GetCVar(name)))
@@ -117,5 +128,3 @@ end
 function ns.ShowReport()
     ns.ShowCopyWindow(L["OneKeyFishing - debug report"], BuildReport())
 end
-
-ns.RegisterCommand("debug", function() return L["show a report to copy into a bug report"] end, ns.ShowReport)

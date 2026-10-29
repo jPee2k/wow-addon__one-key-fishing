@@ -21,6 +21,7 @@ ignore:
   - tests
   - docs
   - specs
+  - seed
   - dist
   - .claude
   - .specify

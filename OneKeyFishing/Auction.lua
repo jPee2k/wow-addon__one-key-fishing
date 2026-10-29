@@ -1,4 +1,5 @@
--- Auction: looks up the lowest auction price of every item ever caught while fishing.
+-- Auction: looks up the auction price of every item ever caught while fishing: the average unit price of the
+-- cheapest 20% of all listed pieces, so one lot far below or far above the market does not decide it.
 -- One search query at a time (the auction house throttles queries); each waits for its result
 -- event or times out. Prices are stored account-wide in OneKeyFishingDB.prices.
 local _, ns = ...
@@ -9,6 +10,8 @@ ns.Auction = Auction
 
 local QUERY_TIMEOUT = 4
 local RETRY_DELAY = 0.5
+local CHEAPEST_SHARE = 0.2 -- of all listed pieces
+local MAX_MORE_REQUESTS = 5 -- pages of commodity results asked for per item, before the price uses what came
 
 local isOpen = false
 local queue = {}
@@ -67,19 +70,82 @@ end
 
 local Next
 
-local function Finish(itemID, price)
+-- Pieces loaded / pieces listed of the last result, for /okf debug.
+local coverage
+
+function Auction.GetCoverage()
+    return coverage
+end
+
+-- lots: the auctions the price was taken from; then the results of RobustPrice.
+local function Finish(itemID, lots, price, total, loaded)
     if itemID ~= current then
         return
     end
+    if loaded then
+        coverage = { loaded = loaded, total = total }
+    end
     if price and price > 0 then
-        ns.db.prices[itemID] = { price = price, time = time() }
+        -- quantity: the pieces the price could see (listed, but not more than were loaded)
+        ns.db.prices[itemID] = { price = price, quantity = loaded, lots = lots, time = time() }
         scanned = scanned + 1
     end
     Next()
 end
 
+-- listings: { { unitPrice, quantity }, ... } in any order; total: the pieces listed (more may be listed than
+-- loaded). Returns the average unit price of the cheapest CHEAPEST_SHARE of the listed pieces (nil without
+-- listings), the pieces listed and the pieces loaded. The price is stored with the pieces it could see
+-- (listed, but not more than loaded), so a price from a few loaded pieces is marked as few lots.
+function Auction.RobustPrice(listings, total)
+    table.sort(listings, function(a, b) return a[1] < b[1] end)
+    local loaded = 0
+    for _, listing in ipairs(listings) do
+        loaded = loaded + listing[2]
+    end
+    total = math.max(total or 0, loaded)
+    local wanted = math.max(1, math.ceil(total * CHEAPEST_SHARE))
+    local taken, sum = 0, 0
+    for _, listing in ipairs(listings) do
+        local take = math.min(listing[2], wanted - taken)
+        if take <= 0 then
+            break
+        end
+        sum = sum + take * listing[1]
+        taken = taken + take
+    end
+    if taken == 0 then
+        return nil, total, loaded
+    end
+    return math.floor(sum / taken + 0.5), total, loaded
+end
+
 -- Bumped for every queued item, so a timer left from an earlier query (or scan) cannot finish a later one.
 local querySerial = 0
+local partial -- { listings, total } of the current item while more commodity results are on their way
+local moreRequests = 0
+local timeoutToken -- the newest wait; a timer of an earlier one does nothing
+
+-- lots: the result rows on sale (price points; several sellers at one price share a row).
+local function Settle(itemID, listings, total)
+    Finish(itemID, #listings, Auction.RobustPrice(listings, total))
+end
+
+-- Waits QUERY_TIMEOUT for the query or the next page of results; then the pages that came decide.
+local function StartTimeout(itemID)
+    local token = {}
+    timeoutToken = token
+    C_Timer.After(QUERY_TIMEOUT, function()
+        if timeoutToken ~= token or itemID ~= current then
+            return
+        end
+        if partial then
+            Settle(itemID, partial.listings, partial.total)
+        else
+            Finish(itemID, 0, nil)
+        end
+    end)
+end
 
 local function Send(itemID, serial)
     if not isOpen or serial ~= querySerial then
@@ -90,15 +156,12 @@ local function Send(itemID, serial)
         return
     end
     C_AuctionHouse.SendSearchQuery(C_AuctionHouse.MakeItemKey(itemID), Sorts(), false)
-    C_Timer.After(QUERY_TIMEOUT, function()
-        if serial == querySerial then
-            Finish(itemID, nil)
-        end
-    end)
+    StartTimeout(itemID)
 end
 
 function Next()
     querySerial = querySerial + 1
+    partial, moreRequests, timeoutToken = nil, 0, nil
     current = table.remove(queue, 1)
     NotifyState()
     if current then
@@ -167,22 +230,49 @@ ns.RegisterEvent("AUCTION_HOUSE_CLOSED", function()
     end
 end)
 
-ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED", function(_, itemID)
+-- The results are sorted here: their order is not documented. While the game says more results exist, the next
+-- page is asked for (up to MAX_MORE_REQUESTS, each with its own wait, only when the server takes requests); the
+-- price uses all pages, or what came when a wait times out. The first results come as UPDATED, later pages as ADDED.
+-- VERIFY(V4): each result has unitPrice and quantity; GetCommoditySearchResultsQuantity is the total listed;
+-- HasFullCommoditySearchResults / RequestMoreCommoditySearchResults page the results
+local function OnCommodityResults(_, itemID)
     if itemID ~= current then
         return
     end
-    local info = C_AuctionHouse.GetCommoditySearchResultInfo(itemID, 1)
-    Finish(itemID, info and info.unitPrice)
-end)
+    local listings = {}
+    for index = 1, C_AuctionHouse.GetNumCommoditySearchResults(itemID) or 0 do
+        local info = C_AuctionHouse.GetCommoditySearchResultInfo(itemID, index)
+        if info and info.unitPrice and info.quantity and info.quantity > 0 then
+            table.insert(listings, { info.unitPrice, info.quantity })
+        end
+    end
+    local total = C_AuctionHouse.GetCommoditySearchResultsQuantity(itemID)
+    local ready = not C_AuctionHouse.IsThrottledMessageSystemReady or C_AuctionHouse.IsThrottledMessageSystemReady()
+    if C_AuctionHouse.HasFullCommoditySearchResults and not C_AuctionHouse.HasFullCommoditySearchResults(itemID)
+        and C_AuctionHouse.RequestMoreCommoditySearchResults and moreRequests < MAX_MORE_REQUESTS and ready then
+        partial = { listings = listings, total = total }
+        moreRequests = moreRequests + 1
+        C_AuctionHouse.RequestMoreCommoditySearchResults(itemID)
+        StartTimeout(itemID)
+        return
+    end
+    Settle(itemID, listings, total)
+end
+ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED", OnCommodityResults)
+ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_ADDED", OnCommodityResults)
 
+-- VERIFY(V5): buyoutAmount is the price of the whole auction (all its pieces); bid-only auctions have none
 ns.RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED", function(_, itemKey)
     if not itemKey or itemKey.itemID ~= current then
         return
     end
-    local info = C_AuctionHouse.GetItemSearchResultInfo(itemKey, 1)
-    Finish(itemKey.itemID, info and info.buyoutAmount)
+    local listings = {}
+    for index = 1, C_AuctionHouse.GetNumItemSearchResults(itemKey) or 0 do
+        local info = C_AuctionHouse.GetItemSearchResultInfo(itemKey, index)
+        local quantity = info and info.quantity or 0
+        if info and info.buyoutAmount and info.buyoutAmount > 0 and quantity > 0 then
+            table.insert(listings, { info.buyoutAmount / quantity, quantity })
+        end
+    end
+    Settle(itemKey.itemID, listings)
 end)
-
-ns.RegisterCommand("scan", function()
-    return L["scan auction prices of caught items (auction house must be open)"]
-end, Auction.Scan)

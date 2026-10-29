@@ -6,18 +6,23 @@ ns.FISHING_SPELL_IDS = { 7620, 7731, 7732, 18248 }
 
 ns.FISHING_SKILL_LINE = 356
 
--- Game object entry of the fishing bobber, as seen in the "softinteract" unit's GUID.
-local BOBBER_OBJECT_ID = "35591"
+-- Game object entry of the fishing bobber, as seen in its GUID (the "softinteract" unit, fishing loot sources).
+ns.BOBBER_OBJECT_ID = "35591"
+
+-- The object ID (entry) of a game object GUID, or nil for any other GUID. Forever scrambles the spawn part of
+-- GUIDs, so the object ID is the part to compare.
+function ns.GameObjectID(guid)
+    if not guid then
+        return nil
+    end
+    local unitType, _, _, _, _, objectID = strsplit("-", guid)
+    return unitType == "GameObject" and objectID or nil
+end
 
 -- True when the interact key would hit the bobber (not some other object nearby).
 -- The bobber has no nameplate and UnitExists is false for it, but its name and GUID are readable.
 function ns.IsBobberTargeted()
-    local guid = UnitGUID("softinteract")
-    if not guid then
-        return false
-    end
-    local unitType, _, _, _, _, objectID = strsplit("-", guid)
-    return unitType == "GameObject" and objectID == BOBBER_OBJECT_ID
+    return ns.GameObjectID(UnitGUID("softinteract")) == ns.BOBBER_OBJECT_ID
 end
 
 local fishingSpellLookup = {}

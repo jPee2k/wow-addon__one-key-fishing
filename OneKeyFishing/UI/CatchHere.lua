@@ -1,0 +1,256 @@
+-- CatchHere: the "What can be caught here" page of the statistics window. It lists the items of the player's
+-- current spot from CatchDB.Query (or of the whole map when the spot has few catches), with a skill filter and
+-- a source filter. The filters live in memory only, so every login starts at the defaults: the player's own
+-- skill range (followed while the rank grows, until a range is picked by hand) and all sources.
+local _, ns = ...
+local L = ns.L
+
+local CatchHere = {}
+ns.CatchHere = CatchHere
+
+local LABEL_X = 20
+local LINE_HEIGHT = 18
+local MAX_ROWS = 16
+local TOP = -32 -- below the window title
+-- The item table: x and width inside a row (a row starts at LABEL_X), and the text alignment.
+local COLUMNS = {
+    { key = "name", x = 26, width = 220, justify = "LEFT" },
+    { key = "chance", x = 250, width = 90, justify = "RIGHT" },
+    { key = "pieces", x = 350, width = 70, justify = "RIGHT" },
+    { key = "price", x = 430, width = 110, justify = "RIGHT" },
+}
+local ROWS_TOP = TOP - 116 -- the column headers; the rows follow
+
+local CreateText = ns.CreateText -- Core.lua
+
+local page
+local pickedRange -- a range (0..4 or "all") picked by hand since login; nil follows the own range
+local source = "all"
+local shown -- what the page shows now: { version, mapID, ownRange, cell, range }
+local dirty = false
+-- The map and the skill range change only with these events (zone changes, loading screens, skill-ups); between
+-- them the page follows the player's cell with one position lookup per second.
+local placeChanged = true
+
+local function Percent(value)
+    return ("%d%%"):format(math.floor(value * 100 + 0.5))
+end
+
+-- "0-74", ..., "300+" from CatchDB's ranges; "All skill levels" for "all".
+local function RangeLabel(range)
+    if range == "all" then
+        return L["All skill levels"]
+    end
+    local from = range * ns.CatchDB.RANGE_STEP
+    return range == ns.CatchDB.MAX_RANGE and (from .. "+") or (from .. "-" .. (from + ns.CatchDB.RANGE_STEP - 1))
+end
+
+local function SourceLabel(value)
+    return value == "mine" and L["Only mine"] or L["All"]
+end
+
+function CatchHere.SetRange(range)
+    pickedRange = range
+    dirty = true
+    CatchHere.Refresh()
+end
+
+function CatchHere.SetSource(value)
+    source = value
+    dirty = true
+    CatchHere.Refresh()
+end
+
+local function OpenSkillMenu(owner)
+    local choices = {}
+    for _, range in ipairs(ns.CatchDB.RANGES) do
+        table.insert(choices, { value = range, text = RangeLabel(range) })
+    end
+    table.insert(choices, { value = "all", text = L["All skill levels"] })
+    ns.OpenRadioMenu(owner, choices, function(value) return shown and shown.range == value end, CatchHere.SetRange)
+end
+
+local function OpenSourceMenu(owner)
+    ns.OpenRadioMenu(owner, { { value = "all", text = L["All"] }, { value = "mine", text = L["Only mine"] } },
+        function(value) return source == value end, CatchHere.SetSource)
+end
+
+local function CreateRow(parent, index)
+    local row = CreateFrame("Frame", nil, parent)
+    row:SetSize(540, LINE_HEIGHT)
+    row:SetPoint("TOPLEFT", LABEL_X, ROWS_TOP - index * LINE_HEIGHT)
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetSize(16, 16)
+    row.icon:SetPoint("LEFT")
+    for _, column in ipairs(COLUMNS) do
+        local text = CreateText(row, "GameFontHighlight", column.justify)
+        text:SetPoint("LEFT", column.x, 0)
+        text:SetWidth(column.width)
+        text:SetWordWrap(false)
+        row[column.key] = text
+    end
+    row:EnableMouse(true)
+    row:SetScript("OnEnter", function(self)
+        if self.itemID then
+            ns.ShowItemTooltip(self, self.itemID, true)
+        end
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return row
+end
+
+-- The page, a child of the statistics window covering the same area (hidden until its tab is chosen).
+function CatchHere.Create(parent)
+    page = CreateFrame("Frame", nil, parent)
+    page:SetAllPoints()
+    page.place = CreateText(page, "GameFontNormal")
+    page.place:SetPoint("TOPLEFT", LABEL_X, TOP)
+    page.place:SetWidth(540)
+    page.scope = CreateText(page, "GameFontDisableSmall")
+    page.scope:SetPoint("TOPLEFT", page.place, "BOTTOMLEFT", 0, -4)
+    page.scope:SetWidth(540)
+    page.counts = CreateText(page, "GameFontHighlight")
+    page.counts:SetPoint("TOPLEFT", LABEL_X, TOP - 40)
+    page.counts:SetWidth(540)
+
+    page.skillButton = ns.CreateButton(page, "", 150, function(self) OpenSkillMenu(self) end)
+    page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, TOP - 62)
+    page.sourceButton = ns.CreateButton(page, "", 150, function(self) OpenSourceMenu(self) end)
+    page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
+
+    local headers = { name = L["Item"], chance = L["Chance"], pieces = L["Per catch"], price = L["Price"] }
+    for _, column in ipairs(COLUMNS) do
+        local header = CreateText(page, "GameFontNormalSmall", column.justify)
+        header:SetPoint("TOPLEFT", LABEL_X + column.x, ROWS_TOP)
+        header:SetWidth(column.width)
+        header:SetText(headers[column.key])
+    end
+
+    page.rows = {}
+    for i = 1, MAX_ROWS do
+        page.rows[i] = CreateRow(page, i)
+    end
+    page.more = CreateText(page, "GameFontDisableSmall")
+    page.more:SetPoint("TOPLEFT", LABEL_X, ROWS_TOP - (MAX_ROWS + 1) * LINE_HEIGHT - 4)
+    page.message = CreateText(page, "GameFontDisable")
+    page.message:SetPoint("TOPLEFT", LABEL_X, ROWS_TOP - LINE_HEIGHT - 4)
+    page.message:SetWidth(540)
+    page.hint = CreateText(page, "GameFontDisableSmall")
+    page.hint:SetPoint("TOPLEFT", page.more, "BOTTOMLEFT", 0, -6)
+    page.hint:SetWidth(540)
+    page:Hide()
+    return page
+end
+
+local function FillRow(row, item, littleData)
+    row.itemID = item.itemID
+    local text, icon = ns.ItemDisplay(item.itemID)
+    row.icon:SetTexture(icon)
+    row.name:SetText(text)
+    row.chance:SetText(littleData and L["Little data"] or Percent(item.chance))
+    row.pieces:SetText(("%.1f"):format(item.pieces))
+    row.price:SetText(ns.Prices.FormatValue(item.itemID))
+    row:Show()
+end
+
+-- Redraws the page for a place (CatchDB.GetCurrentPlace; read here when not given).
+function CatchHere.Refresh(mapID, ownRange, cell)
+    if not (page and page:IsShown()) then
+        return
+    end
+    if mapID == nil then
+        mapID, ownRange, cell = ns.CatchDB.GetCurrentPlace()
+    end
+    dirty = false
+    local filter = { range = pickedRange or ownRange or "all", source = source }
+    shown = { version = ns.CatchDB.GetVersion(), mapID = mapID, ownRange = ownRange, cell = cell,
+        range = filter.range }
+    page.skillButton:SetText((L["Skill: %s"]):format(RangeLabel(filter.range)))
+    ns.FitButton(page.skillButton)
+    page.sourceButton:SetText((L["Source: %s"]):format(SourceLabel(source)))
+    ns.FitButton(page.sourceButton)
+    page.more:SetText("")
+    page.message:SetText("")
+    for _, row in ipairs(page.rows) do
+        row.itemID = nil
+        row:Hide()
+    end
+    local hints = {}
+    if not mapID then
+        page.place:SetText(ns.Skill.Get() and L["The game does not show this place on the map."]
+            or L["Fishing is not learned."])
+        page.scope:SetText("")
+        page.counts:SetText("")
+        page.hint:SetText("")
+        return
+    end
+    page.place:SetText(ns.Stats.PlaceName(mapID))
+    local view = ns.CatchDB.Query(mapID, cell, filter)
+    page.scope:SetText(view.scope == "map" and L["Numbers for the whole map: few catches at this spot."] or "")
+    if view.scope == "none" then
+        page.counts:SetText("")
+        page.message:SetText(L["Nothing has been caught here yet."])
+    else
+        local casts = view.catches + view.misses
+        page.counts:SetText((L["%d catches"]):format(view.catches) .. "    " ..
+            (L["Nothing caught: %s"]):format(Percent(casts > 0 and view.misses / casts or 0)))
+        for i, item in ipairs(view.items) do
+            if i > MAX_ROWS then
+                page.more:SetText((L["and %d more"]):format(#view.items - MAX_ROWS))
+                break
+            end
+            FillRow(page.rows[i], item, view.littleData)
+        end
+        if view.littleData and filter.range ~= "all" then
+            table.insert(hints, L["Try \"All skill levels\": little data for your skill."])
+        end
+    end
+    if source == "all" and not ns.CatchDB.HasSeed() then
+        table.insert(hints, L["No bundled data in this version: only your own catches are shown."])
+    end
+    page.hint:SetText(table.concat(hints, "\n"))
+end
+
+-- Every second while the page is shown: a refresh when the data, the place or a filter changed.
+function CatchHere.Tick()
+    if not (page and page:IsShown()) then
+        return
+    end
+    local mapID, ownRange, cell
+    if placeChanged or not shown or not shown.mapID then
+        placeChanged = false
+        mapID, ownRange, cell = ns.CatchDB.GetCurrentPlace()
+    else
+        mapID, ownRange, cell = shown.mapID, shown.ownRange, ns.CatchDB.GetCell(shown.mapID)
+    end
+    if dirty or not shown or shown.version ~= ns.CatchDB.GetVersion() or shown.mapID ~= mapID
+        or shown.cell ~= cell or shown.range ~= (pickedRange or ownRange or "all") then
+        CatchHere.Refresh(mapID, ownRange, cell)
+    end
+end
+
+local function PlaceChanged()
+    placeChanged = true
+end
+for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "PLAYER_ENTERING_WORLD",
+    "SKILL_LINES_CHANGED", "CHAT_MSG_SKILL" }) do
+    ns.RegisterEvent(event, PlaceChanged)
+end
+
+-- Prices, the auction price setting and item names change what the rows show; the tick redraws once for a
+-- burst of them.
+local function MarkDirty()
+    dirty = true
+end
+ns.On("PRICES_CHANGED", MarkDirty)
+ns.On("SETTINGS_CHANGED", MarkDirty)
+
+ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
+    if success and page and page:IsShown() then
+        for _, row in ipairs(page.rows) do
+            if row.itemID == itemID then
+                dirty = true
+            end
+        end
+    end
+end)

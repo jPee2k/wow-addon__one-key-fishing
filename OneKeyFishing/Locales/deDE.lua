@@ -8,7 +8,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "Deine gespeicherten Daten stammen aus einer neueren Version von OneKeyFishing. " ..
         "Aktualisiere das Addon, um Probleme zu vermeiden."
-    L["v%s commands:"] = "v%s Befehle:"
 
     -- Gear.lua
     L["Fishing pole set."] = "Angelrute festgelegt."
@@ -48,7 +47,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "Der Angelmodus ist aus. Drücke zuerst deine Taste für 'Angelmodus umschalten'."
     L["The fishing key is paused in combat."] = "Die Angeltaste ist im Kampf pausiert."
     L["Leaving fishing mode after combat."] = "Der Angelmodus wird nach dem Kampf verlassen."
-    L["enter or leave fishing mode"] = "Angelmodus aktivieren oder verlassen"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "Scanne %d/%d"
@@ -58,8 +56,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Nothing to scan yet: catch some fish first."] = "Noch nichts zu scannen: Fang zuerst ein paar Fische."
     L["Scanning auction prices of %d item(s)..."] = "Scanne Auktionspreise von %d Gegenstand/Gegenständen..."
     L["Auction scan stopped: %d of %d price(s) found."] = "Auktionsscan abgebrochen: %d von %d Preis(en) gefunden."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "Auktionspreise gefangener Gegenstände scannen (Auktionshaus muss geöffnet sein)"
 
     -- Skill.lua
     L["Apprentice"] = "Lehrling"
@@ -120,7 +116,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "Werte: Händlerpreis (scanne das Auktionshaus für Marktpreise)"
     L["%d catches, %s"] = "%d Fänge, %s"
     L["No catches yet."] = "Noch keine Fänge."
-    L["show the fishing statistics"] = "Angelstatistik anzeigen"
     L["Time"] = "Zeit"
     L["Results"] = "Ergebnisse"
     L["Money"] = "Geld"
@@ -133,14 +128,44 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Casts that ended without loot."] = "Würfe, die ohne Beute endeten."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "Fänge pro Stunde Angelzeit. Wird bei jedem Wurf und mit Aktualisieren erneuert."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "Gefangene Gegenstände, bewertet mit dem höheren aus Händlerpreis und zuletzt gescanntem Auktionspreis."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "Gefangene Gegenstände, bewertet mit dem höheren aus Händler- und Auktionspreis; bei wenigen Angeboten der " ..
+        "Händlerpreis."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "Wert pro Stunde Angelzeit. Wird bei jedem Wurf und mit Aktualisieren erneuert."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "Statistik"
+    L["What can be caught here"] = "Was man hier fangen kann"
+    L["Skill: %s"] = "Fertigkeit: %s"
+    L["All skill levels"] = "Alle Fertigkeitsstufen"
+    L["Source: %s"] = "Quelle: %s"
+    L["All"] = "Alle"
+    L["Only mine"] = "Nur meine"
+    L["%d catches"] = "%d Fänge"
+    L["Nothing caught: %s"] = "Nichts gefangen: %s"
+    L["Numbers for the whole map: few catches at this spot."] =
+        "Zahlen für die ganze Karte: zu wenige Fänge an dieser Stelle."
+    L["Little data"] = "Wenige Daten"
+    L["Nothing has been caught here yet."] = "Hier wurde noch nichts gefangen."
+    L["Try \"All skill levels\": little data for your skill."] =
+        "Wähle „Alle Fertigkeitsstufen“: wenige Daten für deine Fertigkeit."
+    L["and %d more"] = "und %d weitere"
+    L["No bundled data in this version: only your own catches are shown."] =
+        "Keine mitgelieferten Daten in dieser Version: Nur deine eigenen Fänge werden gezeigt."
+    L["The game does not show this place on the map."] = "Das Spiel zeigt diesen Ort nicht auf der Karte."
+    L["Item"] = "Gegenstand"
+    L["Chance"] = "Chance"
+    L["Per catch"] = "Pro Fang"
+    L["Price"] = "Preis"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "wenige Angebote"
+    L["Auction price: %s (few lots)"] = "Auktionspreis: %s (wenige Angebote)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - Debug-Bericht"
-    L["show a report to copy into a bug report"] = "einen Bericht zum Kopieren in eine Fehlermeldung anzeigen"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "Automatisch plündern beim Angeln"
@@ -201,7 +226,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Settings cannot be opened in combat."] = "Die Einstellungen können im Kampf nicht geöffnet werden."
     L["Settings panel is not available in this client."] =
         "Das Einstellungsfenster ist in diesem Client nicht verfügbar."
-    L["open the settings"] = "Einstellungen öffnen"
     L["Language:"] = "Sprache:"
     L["Interface language"] = "Oberflächensprache"
     L["Game client language"] = "Sprache des Spielclients"

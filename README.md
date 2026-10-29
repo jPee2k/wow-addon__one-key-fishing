@@ -15,6 +15,7 @@ It works with a game client in any language. The addon speaks English, Deutsch, 
 - **Indicator**: shows what the key will do next (`Cast`, `Hook!`, `Apply lure`, `Open`), a cast bar and a warning when the bobber is in the water but not targeted.
 - **Catch notifications** for every catch and every miss.
 - **Statistics**: casts, catches, misses, fishing time and value of the catch. Kept per session, per zone and in total.
+- **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price, from your own catches and from the catch database that comes with the addon.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Rank cap warning**: tells you when your Fishing rank is full and where to learn the next one.
 - **Camera** zooms in while fishing and back afterwards.
@@ -77,7 +78,7 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 
 ## Statistics
 
-Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
+Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has two tabs at the bottom, **Statistics** and **What can be caught here**; it opens on the one you used last.
 
 - **Session**, **This zone** and **All time** columns, in three sections: **Time** (time fishing, time casting), **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row name to see how it is counted.
 - **Top catches** and **zones** of all time.
@@ -87,11 +88,26 @@ Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 
 The timer runs only while fishing mode is on. It pauses while you are AFK (you can turn that off).
 
+## What can be caught here
+
+The second tab of the statistics window lists what the spot you stand at gives:
+
+- every item caught there, with its **chance** (how many catches contained it), the **pieces per catch** and its **price**, plus how many catches the numbers are based on and how often a cast there catches nothing;
+- a spot is a part of the map (the map is split into a 10 by 10 grid). When a spot has fewer than 50 catches, the tab shows the whole map and says so; with fewer than 50 there too, it shows **Little data** instead of percentages;
+- **Skill**: your own skill range by default (0-74, 75-149, 150-224, 225-299, 300+), or any other range, or all of them;
+- **Source**: **All** (your catches plus the catch database bundled with the addon) or **Only mine**.
+
+The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far, so the tab has numbers from your first login; your own catches are added to them, nothing is counted twice.
+
+What is stored: per place only counts (catches, misses, casting time, items) and an average position inside the grid cell, under a random ID of your account. No character names, guild, exact positions, times or gear. The data stays in your saved variables; it reaches the bundled database only if you send your saved file to the author yourself.
+
 ## Auction prices
 
 1. Open the auction house.
 2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
 3. The addon looks up every item you have ever caught, one at a time.
+
+The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 auctions are on sale (one seller's stack is not a market), the price is shown with **(few lots)** and the catch value uses the vendor price instead.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use scanned auction prices for catch value**.
 
@@ -174,8 +190,10 @@ Typing commands is optional: everything is also available from the menus. `/onek
 OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
   OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/
 tools/                  check, build, install and link scripts (Node.js)
-tests/                  Lua tests of the addon code, run in fengari with WoW API stubs
-docs/                   roadmap, publishing guide, finished plans in docs/history/
+tests/                  Lua tests of the addon code, run in fengari with WoW API stubs, and Node tests
+seed/                   the contributions behind the bundled catch database (written by npm run harvest)
+docs/                   roadmap, plans, publishing guide, in-game checklists, finished plans in docs/history/
+specs/                  feature specifications and plans
 ```
 
 The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, macOS and Linux:
@@ -183,15 +201,16 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 | Command | What it does |
 |---|---|
 | `npm install` | install the development tools (once) |
-| `npm run check` | Lua syntax, globals, line length, locale keys, TOC and version checks |
-| `npm test` | run the Lua tests in `tests/` (`npm test -- lures` runs only the matching files) |
+| `npm run check` | Lua syntax, globals, line length, locale keys, TOC, seed and version checks; lists open `VERIFY` markers |
+| `npm test` | run the tests in `tests/` (`npm test -- lures` runs only the matching files) |
+| `npm run harvest` | before a release: build the bundled catch database `OneKeyFishing/SeedData.lua` from the saved catch data of your accounts (and saved files given as arguments) |
 | `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: changes show up after a `/reload` |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
-| `npm run build` | refuse uncommitted changes, run the checks and tests, then package the last commit |
+| `npm run build` | refuse uncommitted changes and open `VERIFY` markers, run the checks and tests, then package the last commit |
 | `npm run install-addon` | `npm run dev`, then copy the package into the game |
 
-`link`, `unlink` and `install-addon` need the path of the game's `Interface/AddOns` folder. Copy `.env.example`
+`link`, `unlink`, `install-addon` and `harvest` need the path of the game's `Interface/AddOns` folder. Copy `.env.example`
 to `.env` (it is not committed) and fill in `WOW_ADDONS_DIR`, or set the same environment variable.
 
 Releases are built from version tags by GitHub Actions; see [docs/publishing.md](docs/publishing.md).

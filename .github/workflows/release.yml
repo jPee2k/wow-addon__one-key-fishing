@@ -21,6 +21,10 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
+      # A release must not ship code built on an assumption that waits for an in-game check (`-- VERIFY(<id>)`).
+      - name: No open VERIFY markers
+        if: startsWith(github.ref, 'refs/tags/')
+        run: node tools/check.mjs --release
 
   release:
     needs: check

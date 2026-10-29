@@ -20,22 +20,30 @@ Files are parsed, never executed; only `OneKeyFishingDB.shared.records` is read.
 ## Validation (per record)
 
 Rejected, with the reason in the report, when: the file does not parse; the ID is not 8 base32 characters; `epoch`
-or `seq` is not a non-negative integer; a build is not `digits.digits.digits`; a place key does not match
-`^%d+:[0-4]:(%d%d|x)$`; a cell breaks a rule from data-model.md ("Validation"); a record has more than 2,000 cells.
-A rejected record is left out whole; the other records of the file are still used.
+or `seq` is not a non-negative integer; a record has more than 20,000 distinct places (far above the world's
+size; a real account only grows, so a reachable cap would keep it out for good). A rejected record is left out
+whole; the other records of the file are still used. A cell whose place key does not match
+`^%d+:[0-4]:(%d%d|x)$` or that breaks a rule from data-model.md ("Validation") is skipped with a note: cells only
+grow, so rejecting the record would keep the whole account out of every later seed. A build that is not
+`digits.digits.digits` (the addon records `"unknown"` when the game gives no version) is skipped with a note in
+the report; the record's other builds are used.
 
 ## Merge
 
 - Key `id@epoch`; an incoming record replaces the stored one only when its `seq` is higher.
 - `--reset <mapID>` stores `resets[mapID] = newest build`; from then on cells of that map from older builds are left
   out of the sums.
-- Sums: every stored contribution, every build except reset ones, cell by cell; `k` counts the contributions in a
-  cell. `absorbed[id]` = the highest stored epoch of that ID.
+- Sums: every stored contribution, every build except reset ones, cell by cell; `k` counts the contributor IDs in
+  a cell (records of several epochs of one ID count once). `absorbed[id]` = the highest stored epoch of that ID.
 
 ## Output
 
-- `OneKeyFishing/SeedData.lua` (contracts/seed-data.md) with `epoch + 1`, and the updated
-  `seed/contributions.json`. Nothing is written when the seed would exceed 1 MB (exit code 1).
+- `OneKeyFishing/SeedData.lua` (contracts/seed-data.md) with the epoch one above the higher of the store's and
+  the current seed's (it never repeats or goes back), and the updated
+  `seed/contributions.json`. Nothing is written when the seed would exceed 1 MB (exit code 1). When the sums,
+  `absorbed` and `resets` come out as in the current seed, `SeedData.lua` and its epoch stay as they are ("Nothing
+  new"); only the contributions file is updated.
+- `--reset <mapID>` with no contribution that has a game version yet is an error (exit code 1).
 - Report on stdout:
 
 ```text

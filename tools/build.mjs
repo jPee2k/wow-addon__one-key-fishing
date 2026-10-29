@@ -1,7 +1,7 @@
 // Packages the addon into dist/OneKeyFishing/ and dist/OneKeyFishing-<version>.zip.
 //   --dev      files from the working folder, version "<package version>-dev+<commit>"
 //   --release  files from the last commit, version from package.json; refuses uncommitted changes, then
-//              runs tools/check.mjs and the tests before packaging
+//              runs tools/check.mjs --release (which also refuses open VERIFY markers) and the tests
 // Only the TOC, the files it lists, Bindings.xml and LICENSE / README.md / CHANGELOG.md are packaged
 // (tools/addon.mjs), so nothing else can slip in.
 import fs from "node:fs";
@@ -25,9 +25,9 @@ function gitText(...args) {
 }
 
 // Runs another script of the project; its output goes straight to the terminal, a failure stops the build.
-function runScript(script) {
+function runScript(script, ...args) {
   try {
-    execFileSync(process.execPath, [path.join(ROOT, script)], { cwd: ROOT, stdio: "inherit" });
+    execFileSync(process.execPath, [path.join(ROOT, script), ...args], { cwd: ROOT, stdio: "inherit" });
   } catch {
     fail(`${script} failed`);
   }
@@ -39,7 +39,7 @@ if (release) {
   if (gitText("status", "--porcelain") !== "") {
     fail("there are uncommitted changes; commit them first (or use `npm run dev`)");
   }
-  runScript("tools/check.mjs");
+  runScript("tools/check.mjs", "--release"); // also refuses open VERIFY markers
   runScript("tests/run.mjs");
   readFile = (file) => git("show", `HEAD:${file}`);
   version = JSON.parse(readFile("package.json").toString("utf8")).version;

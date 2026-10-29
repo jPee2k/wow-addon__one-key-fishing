@@ -8,6 +8,8 @@ Module functions used by the UI, the debug report and the tests. Nothing here is
 | --- | --- |
 | `CatchDB.GetVersion()` | number, bumped on every change of the data or the seed state |
 | `CatchDB.HasSeed()` | false when the bundled seed is missing, malformed or has no cells |
+| `CatchDB.RANGES`, `RANGE_STEP`, `MAX_RANGE` | the skill ranges `{ 0, ..., 4 }`, 75 points each, the last without a top |
+| `CatchDB.GetCell(mapID)` | `cell, x, y` of the player on that map (`"x"` without a position) |
 | `CatchDB.GetCurrentPlace()` | `mapID, range, cell` of the player now (cell `"x"` without a position), or nil without Fishing |
 | `CatchDB.PlaceKey(mapID, range, cell)` | the key string |
 | `CatchDB.Query(mapID, cell, filter)` | a view (below); `filter = { range = 0..4 or "all", source = "all" or "mine" }` |
@@ -33,8 +35,8 @@ Rules: `Query` sums the cells of the filter (data-model.md "Views"), caches the 
 
 | Function | Returns |
 | --- | --- |
-| `Prices.Get(itemID)` | copper for value sums: the higher of vendor and auction, vendor when the auction price has fewer than 5 pieces |
-| `Prices.GetAuction(itemID)` | `price, fewLots` or nil; `fewLots` when `quantity < 5` |
+| `Prices.Get(itemID)` | copper for value sums: the higher of vendor and auction, vendor on few lots (fewer than 5 pieces or 3 auctions) |
+| `Prices.GetAuction(itemID)` | `price, fewLots` or nil; `fewLots` when `quantity < 5` or `lots < 3` |
 | `Prices.GetLastScanTime()` | unchanged |
 
 ## `ns.IsPoolLoot()`

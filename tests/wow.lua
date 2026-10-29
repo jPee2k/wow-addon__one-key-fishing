@@ -15,6 +15,17 @@
 --   loot = { fishing = true, items = { { itemID, quantity } } }   the open loot window (fire LOOT_READY)
 --   addon_version = "@project-version@"   the TOC's Version field (C_AddOns.GetAddOnMetadata)
 --   CLIENT_LOCALE = "deDE"              GetLocale (the game client's language), set before load_addon()
+--   player_map_id = 1415                C_Map.GetBestMapForUnit("player") (default 1)
+--   map_names[mapID] = "Elwynn Forest"  the name in C_Map.GetMapInfo (default "Test Zone")
+--   player_map_position = { x, y }      C_Map.GetPlayerMapPosition (nil: no position, as in an instance)
+--   fishing_rank = 150                  the Fishing rank from GetProfessions / GetProfessionInfo (nil: not learned)
+--   loot_sources[slot] = guid           GetLootSourceInfo of the open loot window
+--   build_version = "1.60.2"            the version string of GetBuildInfo (default "1.60.1")
+--   commodity_results[itemID] = { { unitPrice, quantity } }, commodity_total[itemID] = n,
+--   item_results[itemID] = { { buyoutAmount, quantity } }   auction search results (fire the result event)
+--   panel_tabs                          calls of PanelTemplates_SetNumTabs / SetTab / TabResize, as
+--                                       { name, frame or tab, value }; set PanelTemplates_SetTab = nil to test
+--                                       the fallback without the game's tab functions
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -439,12 +450,23 @@ C_CVar = {
     end,
 }
 
+player_map_id = 1
+map_names = {}
+player_map_position = nil
 C_Map = {
-    GetBestMapForUnit = function()
-        return 1
+    GetBestMapForUnit = function(unit)
+        if unit == "player" then
+            return player_map_id
+        end
     end,
-    GetMapInfo = function()
-        return { name = "Test Zone" }
+    GetMapInfo = function(mapID)
+        return { mapID = mapID, name = map_names[mapID] or "Test Zone", mapType = 3, parentMapID = 0 }
+    end,
+    GetPlayerMapPosition = function(_, unit)
+        local position = player_map_position
+        if unit == "player" and position then
+            return { GetXY = function() return position[1], position[2] end }
+        end
     end,
 }
 
@@ -525,6 +547,11 @@ Enum = {
 }
 
 auction_queries = {} -- item keys sent with C_AuctionHouse.SendSearchQuery
+commodity_results = {} -- itemID -> { { unitPrice, quantity }, ... } in the order the game returns them
+commodity_total = {} -- itemID -> the total listed (GetCommoditySearchResultsQuantity); default: the sum
+item_results = {} -- itemID -> { { buyoutAmount, quantity }, ... } for items that are not commodities
+commodity_full = {} -- itemID -> false while more commodity results are on their way (HasFullCommoditySearchResults)
+commodity_more_requests = {} -- item IDs asked for with RequestMoreCommoditySearchResults
 C_AuctionHouse = {
     IsThrottledMessageSystemReady = function()
         return true
@@ -535,8 +562,40 @@ C_AuctionHouse = {
     SendSearchQuery = function(itemKey)
         table.insert(auction_queries, itemKey)
     end,
-    GetCommoditySearchResultInfo = function() end,
-    GetItemSearchResultInfo = function() end,
+    GetNumCommoditySearchResults = function(itemID)
+        return #(commodity_results[itemID] or {})
+    end,
+    GetCommoditySearchResultInfo = function(itemID, index)
+        local result = (commodity_results[itemID] or {})[index]
+        if result then
+            return { itemID = itemID, unitPrice = result[1], quantity = result[2] }
+        end
+    end,
+    GetCommoditySearchResultsQuantity = function(itemID)
+        if commodity_total[itemID] then
+            return commodity_total[itemID]
+        end
+        local total = 0
+        for _, result in ipairs(commodity_results[itemID] or {}) do
+            total = total + result[2]
+        end
+        return total
+    end,
+    HasFullCommoditySearchResults = function(itemID)
+        return commodity_full[itemID] ~= false
+    end,
+    RequestMoreCommoditySearchResults = function(itemID)
+        table.insert(commodity_more_requests, itemID)
+    end,
+    GetNumItemSearchResults = function(itemKey)
+        return #(item_results[itemKey.itemID] or {})
+    end,
+    GetItemSearchResultInfo = function(itemKey, index)
+        local result = (item_results[itemKey.itemID] or {})[index]
+        if result then
+            return { itemKey = itemKey, buyoutAmount = result[1], quantity = result[2] }
+        end
+    end,
 }
 
 -- The API tables above answer only what the tests need; any other field is a stub, like an unknown global.
@@ -556,7 +615,10 @@ end
 
 -- Units, casts and loot sources: nothing targeted, nothing being cast
 function UnitGUID() end
-function GetLootSourceInfo() end
+loot_sources = {}
+function GetLootSourceInfo(slot)
+    return loot_sources[slot]
+end
 function UnitChannelInfo() end
 function UnitCastingInfo() end
 
@@ -585,16 +647,40 @@ function GetLocale()
     return CLIENT_LOCALE
 end
 
+build_version = "1.60.1"
 function GetBuildInfo()
-    return "1.60.1", "70450", "Oct 15 2026", 16001
+    return build_version, "70450", "Oct 15 2026", 16001
 end
 
 function UnitIsAFK()
     return false
 end
 
+fishing_rank = nil
 function GetProfessions()
-    return nil
+    if fishing_rank then
+        return nil, nil, nil, 1 -- prof1, prof2, archaeology, fishing
+    end
+end
+
+-- name, icon, rank, maxRank, numSpells, spellOffset, skillLine
+function GetProfessionInfo(index)
+    local rank = fishing_rank
+    if index == 1 and rank then
+        return "Fishing", 136245, rank, 300, 0, 0, 356
+    end
+end
+
+-- The game's tab helpers (SharedUIPanelTemplates): only recorded.
+panel_tabs = {}
+function PanelTemplates_SetNumTabs(frame, count)
+    table.insert(panel_tabs, { "SetNumTabs", frame, count })
+end
+function PanelTemplates_SetTab(frame, index)
+    table.insert(panel_tabs, { "SetTab", frame, index })
+end
+function PanelTemplates_TabResize(tab, padding)
+    table.insert(panel_tabs, { "TabResize", tab, padding })
 end
 
 -- Lua extensions of the game client
@@ -628,6 +714,29 @@ function strtrim(text)
 end
 
 ---------------------------------------------------------------------------
+-- Fishing
+---------------------------------------------------------------------------
+-- One cast in fishing mode: start, `seconds` (default 10), the loot `items` ({ { itemID, quantity } }) or none
+-- (a miss), stop, and the second Catch.lua waits before it counts a miss. `sources`: loot_sources of that loot.
+function fish_cast(items, seconds, sources)
+    ns.Fire("FISHING_CAST_START", 7620)
+    advance(seconds or 10)
+    if items then
+        loot = { fishing = true, items = items }
+        loot_sources = sources or {}
+        fire("LOOT_READY")
+        loot, loot_sources = nil, {}
+    end
+    ns.Fire("FISHING_CAST_STOP", 7620)
+    advance(2)
+end
+
+-- A catch database cell (CatchDB.lua) with c catches, m misses, 10 s of casting per cast and the items.
+function catch_cell(c, m, items)
+    return { c = c, m = m, t = (c + m) * 10, i = items or {} }
+end
+
+---------------------------------------------------------------------------
 -- Loading the addon
 ---------------------------------------------------------------------------
 ns = {} -- the addon namespace, shared by every file as in the game
@@ -654,8 +763,12 @@ function load_translation(code)
 end
 
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.
-function load_addon()
+-- beforeLogin runs between the two, e.g. to replace the bundled seed (ns.SeedData) the files just set.
+function load_addon(beforeLogin)
     load_files(TOC_FILES)
+    if beforeLogin then
+        beforeLogin()
+    end
     fire("ADDON_LOADED", "OneKeyFishing")
     fire("PLAYER_LOGIN")
     fire("PLAYER_ENTERING_WORLD", true, false)
@@ -689,9 +802,11 @@ end
 -- Other unknown names get one stub each, so `Foo == Foo` holds. A stub's calls return nil, so code whose
 -- path depends on an API's answer needs a real stub above.
 local stubs = {}
+-- Game data the tests set that may be nil on purpose (see the top of this file): nil, not a stub.
+local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true }
 setmetatable(_G, {
     __index = function(_, key)
-        if key == "utf8" or (type(key) == "string" and key:find("^OneKeyFishing")) then
+        if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then
             return nil -- utf8: Lua 5.3 only, see the top of this file
         end
         if MISSING_51[key] then

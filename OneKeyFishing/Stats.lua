@@ -27,13 +27,17 @@ end
 ---------------------------------------------------------------------------
 -- Zones
 ---------------------------------------------------------------------------
-local function ReadZone()
-    local mapID = C_Map.GetBestMapForUnit("player")
+-- "Zone - Subzone" (or just the zone) in the client's language, for the player on map mapID.
+function Stats.PlaceName(mapID)
     local info = mapID and C_Map.GetMapInfo(mapID)
     local zone = info and info.name or GetZoneText() or "?"
     local subZone = GetSubZoneText() or ""
-    local name = (subZone ~= "" and subZone ~= zone) and (zone .. " - " .. subZone) or zone
-    return tostring(mapID or 0) .. ":" .. subZone, name
+    return (subZone ~= "" and subZone ~= zone) and (zone .. " - " .. subZone) or zone
+end
+
+local function ReadZone()
+    local mapID = C_Map.GetBestMapForUnit("player")
+    return tostring(mapID or 0) .. ":" .. (GetSubZoneText() or ""), Stats.PlaceName(mapID)
 end
 
 local function CurrentZoneBucket()

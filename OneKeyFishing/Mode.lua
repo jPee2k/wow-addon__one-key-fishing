@@ -196,5 +196,3 @@ function OneKeyFishing_ActionKeyIdle()
         ns.Print(message)
     end
 end
-
-ns.RegisterCommand("toggle", function() return L["enter or leave fishing mode"] end, Mode.Toggle)

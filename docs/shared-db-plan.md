@@ -421,7 +421,7 @@ Decisions (agreed on 2026-10-29, before the spec):
 | Skill filter | Own range by default; each range and "All" in a dropdown; no automatic switch, only a hint |
 | Source filter | "All / Only mine", "All" by default (in 1.2.0 "All" also takes in the network) |
 | Remembered | Only the last open tab; the filters reset to their defaults |
-| Auction price | Average unit price of the cheapest 20% of all listed pieces (instead of the lowest lot); under 5 pieces listed: shown with a "few lots" mark and left out of catch value sums (vendor price there); the higher of vendor and auction as now; this also changes the value in the "Statistics" tab |
+| Auction price | Average unit price of the cheapest 20% of all listed pieces (instead of the lowest lot); under 5 pieces or 3 auctions listed: shown with a "few lots" mark and left out of catch value sums (vendor price there); the higher of vendor and auction as now; this also changes the value in the "Statistics" tab |
 | Harvest input | Every `WTF/Account/*/SavedVariables/OneKeyFishing.lua` under `WOW_ADDONS_DIR`, plus friends' files as arguments |
 | Release | Ships with whatever seed there is, no coverage threshold |
 | Spike | Built now, run after the game launch on 2026-11-04 (the work goes ahead on assumptions marked `VERIFY(Vn)`, listed in `specs/002-local-catch-db/verification.md`; a release build refuses open markers): a temporary `/okf spike` and a checklist: `C_Map.GetPlayerMapPosition` while fishing, `GetLootSourceInfo` in a pool, what mapID caves and cities return, whether the auction house returns enough results for the cheapest 20%; the answers go into CLAUDE.md "Known API facts", the command is removed before the release |
