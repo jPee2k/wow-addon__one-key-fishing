@@ -198,7 +198,7 @@ test("a catch at a new place past 500 places rolls the own record; both count, w
     ns.Share.SetEnabled(false)
     eq(CatchDB.Query(8001, "x", ALL).catches, 2, "with sharing off too")
     ns.Share.SetEnabled(true)
-    local ok, reason = CatchDB.CheckRecord(ns.Share.Store.ForSending(kept), "")
+    local ok, reason = CatchDB.CheckRecord(ns.Share.Store.ForSending(kept))
     eq(ok, true, "a peer would take it: " .. tostring(reason))
 end)
 

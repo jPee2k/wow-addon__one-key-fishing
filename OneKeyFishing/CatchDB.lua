@@ -145,8 +145,19 @@ function CatchDB.UnitKey(id, epoch)
     return ("%s@%d"):format(id, epoch)
 end
 
+-- The ID and the epoch of a "<id>@<epoch>" key (nil for anything else).
+function CatchDB.ParseUnit(unit)
+    local id, epoch = unit:match("^(%w+)@(%d+)$")
+    return id, tonumber(epoch)
+end
+
 function CatchDB.IsOtherKey(key)
     return type(key) == "string" and key:find("@", 1, true) ~= nil
+end
+
+-- A game version key as records store it ("1.60.1"); the own record's "unknown" is not one.
+function CatchDB.IsBuild(build)
+    return type(build) == "string" and build:find("^%d+%.%d+%.%d+$") ~= nil
 end
 
 local function CountKeys(tbl)
@@ -187,7 +198,11 @@ local function BumpSeq()
     lastSeqBump, seqWaiting = GetTime(), false
 end
 
-local function HasCells(record)
+-- True when a record has at least one cell (an empty one is neither kept on a roll nor offered to peers).
+function CatchDB.HasCells(record)
+    if type(record.builds) ~= "table" then
+        return false
+    end
     for _, cells in pairs(record.builds) do
         if type(cells) == "table" and next(cells) ~= nil then
             return true
@@ -218,7 +233,7 @@ local function Roll()
     if old and seqWaiting then
         BumpSeq()
     end
-    if old and HasCells(old) and not CatchDB.IsAbsorbed(shared.myID, old.epoch, old.seq) then
+    if old and CatchDB.HasCells(old) and not CatchDB.IsAbsorbed(shared.myID, old.epoch, old.seq) then
         key = CatchDB.UnitKey(shared.myID, old.epoch)
         old.seen = time()
         shared.records[key] = old
@@ -342,11 +357,13 @@ CatchDB.IsCount = IsCount
 function CatchDB.CountPlaces(record, limit)
     local seen, count = {}, 0
     if type(record) == "table" and type(record.builds) == "table" then
+        -- One game version (almost every record): no place can repeat, so no set is needed.
+        local multi = next(record.builds, (next(record.builds))) ~= nil
         for _, cells in pairs(record.builds) do
             if type(cells) == "table" then
                 for key in pairs(cells) do
-                    if not seen[key] then
-                        seen[key], count = true, count + 1
+                    if not (multi and seen[key]) then
+                        seen[key], count = multi or nil, count + 1
                         if limit and count > limit then
                             return count
                         end
@@ -414,20 +431,17 @@ local function CheckCell(cell, known)
     return true
 end
 
--- True, or false and the reason, for a record received from another player (myID: the own ID, default this
--- account's); a third value true when the only fault is an item this client does not know (it may be new).
+-- True, or false and the reason, for a record received from another player (the store refuses the own ID); a
+-- third value true when the only fault is an item this client does not know (it may be new).
 -- Mirrors checkRecord / checkCell in tools/harvest.mjs, so what a client accepts the next seed accepts too, but
 -- rejects the whole record on any bad cell: a peer's data is refused, not cleaned up. No side effects.
-function CatchDB.CheckRecord(record, myID)
+function CatchDB.CheckRecord(record)
     if type(record) ~= "table" then
         return false, "not a table"
     end
     local id = record.id
     if type(id) ~= "string" or #id ~= ID_LENGTH or not id:find("^[a-z2-7]+$") then
         return false, "the ID is not 8 base32 characters"
-    end
-    if id == (myID or (ns.db and ns.db.shared.myID)) then
-        return false, "the own ID"
     end
     if not (IsCount(record.epoch) and IsCount(record.seq)) then
         return false, "epoch or seq is not a count"
@@ -440,7 +454,7 @@ function CatchDB.CheckRecord(record, myID)
     end
     local known, casts = {}, 0
     for build, cells in pairs(record.builds) do
-        if type(build) ~= "string" or not build:find("^%d+%.%d+%.%d+$") or type(cells) ~= "table" then
+        if not CatchDB.IsBuild(build) or type(cells) ~= "table" then
             return false, "build " .. tostring(build) .. " is not a game version"
         end
         for key, cell in pairs(cells) do
@@ -529,13 +543,19 @@ local function AddToSet(sets, name, entry)
     sets[name][entry] = true
 end
 
--- Not indexed: the own ID (Sources counts its frozen records with sharing off too) and units the seed holds in
--- part (their first part is in the seed; the store deletes those it holds whole).
+-- Which records under "<id>@<epoch>" count: "own" for one the own record left on a roll (Sources counts those
+-- with sharing off too), "other" for another player's, nil for a unit the seed holds in part (its first part is in
+-- the seed; the store deletes those it holds whole) or anything malformed.
+local function CountedUnit(key, record)
+    if CatchDB.IsOtherKey(key) and type(record) == "table" and type(record.builds) == "table"
+        and not CatchDB.AbsorbedSeq(record.id, record.epoch) then
+        return record.id == ns.db.shared.myID and "own" or "other"
+    end
+end
+
 local function IndexRecord(key)
-    local shared = ns.db.shared
-    local record = shared.records[key]
-    if not (CatchDB.IsOtherKey(key) and type(record) == "table" and type(record.builds) == "table")
-        or record.id == shared.myID or CatchDB.AbsorbedSeq(record.id, record.epoch) then
+    local record = ns.db.shared.records[key]
+    if CountedUnit(key, record) ~= "other" then
         return
     end
     local entries = {}
@@ -567,10 +587,8 @@ local frozen
 local function Frozen()
     if not frozen then
         frozen = {}
-        local shared = ns.db.shared
-        for key, record in pairs(shared.records) do
-            if CatchDB.IsOtherKey(key) and type(record) == "table" and record.id == shared.myID
-                and type(record.builds) == "table" and not CatchDB.AbsorbedSeq(record.id, record.epoch) then
+        for key, record in pairs(ns.db.shared.records) do
+            if CountedUnit(key, record) == "own" then
                 table.insert(frozen, record)
             end
         end
@@ -742,7 +760,7 @@ local lastPool -- what IsPoolLoot said about the last catch
 -- Lines for /okf debug; never the anonymous ID (the report goes into public bug reports).
 function CatchDB.Describe()
     local lines = {}
-    table.insert(lines, ("seed epoch %d, %d places"):format(SeedEpoch(), CountKeys(Seed().cells)))
+    table.insert(lines, ("seed epoch %d, %d places"):format(CatchDB.SeedInfo()))
     table.insert(lines, ("own places %d"):format(CountKeys(ns.db.shared.mine)))
     local mapID, range, cell = CatchDB.GetCurrentPlace()
     table.insert(lines, "current place " .. (mapID and CatchDB.PlaceKey(mapID, range, cell) or "none"))

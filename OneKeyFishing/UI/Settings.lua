@@ -109,7 +109,7 @@ end
 
 -- "Game client language" first, then every shipped language by its own name.
 local function LanguageChoices()
-    local choices = { { value = "auto", text = L["Game client language"] } }
+    local choices = { { value = "auto", text = SettingsUI.LanguageLabel("auto") } }
     for _, language in ipairs(ns.GetLanguages()) do
         table.insert(choices, { value = language.code, text = language.name })
     end
@@ -138,7 +138,6 @@ local function CreateLanguageControl(page)
     local button
     local function Update()
         button:SetText(SettingsUI.LanguageLabel(SelectedLanguage()))
-        ns.FitButton(button)
     end
     button = CreateButton(page, "", 160, function(self) OpenLanguageMenu(self, Update) end)
     button:SetPoint("TOPRIGHT", -PADDING, -PADDING + 4)

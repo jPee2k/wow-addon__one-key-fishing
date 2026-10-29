@@ -56,10 +56,10 @@ Share.MESSAGE_LIMIT, Share.RECORD_LIMIT = MESSAGE_LIMIT, RECORD_LIMIT
 -- Helpers
 ---------------------------------------------------------------------------
 -- CatchDB owns the record format: the "<id>@<epoch>" keys, counts, the seed (it loads earlier in the TOC).
-local IsOther, IsWhole, SeedAbsorbed = ns.CatchDB.IsOtherKey, ns.CatchDB.IsCount, ns.CatchDB.SeedAbsorbed
+local IsOther, IsCount, SeedAbsorbed = ns.CatchDB.IsOtherKey, ns.CatchDB.IsCount, ns.CatchDB.SeedAbsorbed
 
 local function UnitOf(record)
-    if type(record) == "table" and type(record.id) == "string" and IsWhole(record.epoch) then
+    if type(record) == "table" and type(record.id) == "string" and IsCount(record.epoch) then
         return ns.CatchDB.UnitKey(record.id, record.epoch)
     end
 end
@@ -67,8 +67,8 @@ end
 -- True when `absorbed` (ID -> { [epoch] = seq }: the game's seed, or a test's own) holds this version of the unit
 -- whole. A newer seq is held only in part: it is kept and passed on, so the rest reaches the next harvest.
 local function Absorbed(absorbed, unit, seq)
-    local id, epoch = unit:match("^(%w+)@(%d+)$")
-    return id ~= nil and ns.CatchDB.IsAbsorbed(id, tonumber(epoch), seq, absorbed)
+    local id, epoch = ns.CatchDB.ParseUnit(unit)
+    return id ~= nil and ns.CatchDB.IsAbsorbed(id, epoch, seq, absorbed)
 end
 
 -- Places of other players' records, counted once per stored table (a stored record is never changed).
@@ -105,7 +105,7 @@ end)
 -- the next session would trade the same records forever while the network holds more than the limit.
 local evicted = setmetatable({}, { __mode = "k" })
 
-function Store.WasEvicted(store, unit, seq)
+local function WasEvicted(store, unit, seq)
     local units = evicted[store]
     return units ~= nil and units[unit] ~= nil and seq <= units[unit]
 end
@@ -143,7 +143,10 @@ end
 -- the reason). now: time() it was received; absorbed: the seed's table.
 function Store.Accept(store, record, now, absorbed)
     absorbed = absorbed or SeedAbsorbed()
-    local ok, reason, unknownItem = ns.CatchDB.CheckRecord(record, store.myID)
+    if type(record) == "table" and record.id == store.myID then
+        return "refused", "the own ID"
+    end
+    local ok, reason, unknownItem = ns.CatchDB.CheckRecord(record)
     if not ok then
         return "refused", reason, unknownItem
     end
@@ -172,7 +175,7 @@ function Store.CleanUp(store, absorbed)
     local removed = {}
     for key, record in pairs(store.records) do
         if IsOther(key) and (type(record) ~= "table" or type(record.builds) ~= "table"
-            or not IsWhole(record.seq) or UnitOf(record) ~= key or Absorbed(absorbed, key, record.seq)) then
+            or not IsCount(record.seq) or UnitOf(record) ~= key or Absorbed(absorbed, key, record.seq)) then
             store.records[key] = nil
             table.insert(removed, key)
         end
@@ -222,21 +225,9 @@ function Store.Evict(store)
     return #removed
 end
 
-local function HasCells(record)
-    if type(record.builds) ~= "table" then
-        return false
-    end
-    for _, cells in pairs(record.builds) do
-        if type(cells) == "table" and next(cells) ~= nil then
-            return true
-        end
-    end
-    return false
-end
-
 local function OwnRecord(store)
     local own = store.records[store.myID]
-    if type(own) == "table" and IsWhole(own.seq) and IsWhole(own.epoch) then
+    if type(own) == "table" and IsCount(own.seq) and IsCount(own.epoch) then
         return own
     end
 end
@@ -247,13 +238,13 @@ function Store.Units(store, absorbed)
     absorbed = absorbed or SeedAbsorbed()
     local units = {}
     for key, record in pairs(store.records) do
-        if IsOther(key) and type(record) == "table" and IsWhole(record.seq)
+        if IsOther(key) and type(record) == "table" and IsCount(record.seq)
             and not Absorbed(absorbed, key, record.seq) then
             units[key] = record.seq
         end
     end
     local own = OwnRecord(store)
-    if own and HasCells(Store.ForSending(own)) then -- the record as it is sent
+    if own and ns.CatchDB.HasCells(Store.ForSending(own)) then -- the record as it is sent
         units[UnitOf(own)] = own.seq
     end
     return units
@@ -274,7 +265,7 @@ end
 function Store.ForSending(record)
     local builds = {}
     for build, cells in pairs(record.builds) do
-        if type(build) == "string" and build:find("^%d+%.%d+%.%d+$") then
+        if ns.CatchDB.IsBuild(build) then
             builds[build] = cells
         end
     end
@@ -293,7 +284,9 @@ function Share.Hash(text)
     return hash
 end
 
-Share.Base32 = ns.Base32 -- Data.lua
+local function BucketIndex(id)
+    return ns.BASE32:find(id:sub(1, 1), 1, true)
+end
 
 -- The 32 buckets (by the first character of the ID) of sorted "id.epoch.seq" lines.
 function Share.Buckets(units)
@@ -302,10 +295,10 @@ function Share.Buckets(units)
         buckets[i] = {}
     end
     for unit, seq in pairs(units) do
-        local id, epoch = unit:match("^(%w+)@(%d+)$")
-        local index = id and ns.BASE32:find(id:sub(1, 1), 1, true)
+        local id, epoch = ns.CatchDB.ParseUnit(unit)
+        local index = id and BucketIndex(id)
         if index then
-            table.insert(buckets[index], ("%s.%s.%d"):format(id, epoch, seq))
+            table.insert(buckets[index], ("%s.%d.%d"):format(id, epoch, seq))
         end
     end
     for _, lines in ipairs(buckets) do
@@ -314,21 +307,18 @@ function Share.Buckets(units)
     return buckets
 end
 
--- The hash of each bucket of Share.Buckets.
+-- The hash of each bucket of Share.Buckets, as SUM sends it (7 base32 characters).
 function Share.BucketHashes(buckets)
-    local hashes = {}
+    local texts = {}
     for i, lines in ipairs(buckets) do
-        hashes[i] = Share.Hash(table.concat(lines, " "))
+        texts[i] = ns.Base32(Share.Hash(table.concat(lines, " ")), 7)
     end
-    return hashes
+    return texts
 end
 
-function Share.WholeHash(hashes)
-    local texts = {}
-    for i, hash in ipairs(hashes) do
-        texts[i] = Share.Base32(hash, 7)
-    end
-    return Share.Hash(table.concat(texts))
+-- The whole hash over the bucket hash texts, as HELLO sends it.
+function Share.WholeHash(hashTexts)
+    return ns.Base32(Share.Hash(table.concat(hashTexts)), 7)
 end
 
 ---------------------------------------------------------------------------
@@ -402,20 +392,13 @@ function Node:Summary(cached)
             end
         end
         local buckets = Share.Buckets(units)
-        local hashes, hashTexts = Share.BucketHashes(buckets), {}
-        for i, hash in ipairs(hashes) do
-            hashTexts[i] = Share.Base32(hash, 7)
-        end
+        local hashTexts = Share.BucketHashes(buckets)
         local count, places = CountUnits(self.store, units)
         cache = { dataVersion = dataVersion, ownUnit = ownUnit, units = units, buckets = buckets, hashTexts = hashTexts,
-            wholeText = Share.Base32(Share.WholeHash(hashes), 7), count = count, places = places }
+            wholeText = Share.WholeHash(hashTexts), count = count, places = places }
         self.cache = cache
     end
     return cache
-end
-
-local function BucketIndex(id)
-    return ns.BASE32:find(id:sub(1, 1), 1, true)
 end
 
 -- Refreshes `seen` of the other records among `units` (unit -> anything): a peer confirmed them.
@@ -467,9 +450,7 @@ function Node:Send(address, text)
         return false
     end
     if self.env.send(address, text) == false then
-        if self.session and self.session.peer == address then
-            self:DropSession()
-        end
+        self:DropSessionWith(address)
         return false
     end
     return true
@@ -491,15 +472,19 @@ function Node:DropSession()
     self.session = nil
 end
 
+function Node:DropSessionWith(address)
+    if self.session and self.session.peer == address then
+        self:DropSession()
+    end
+end
+
 -- The sender flooded or sent bad data: ignored until logout.
 function Node:Ignore(address, peer)
     if not peer.ignored then
         peer.ignored = true
         self.rejected = self.rejected + 1
     end
-    if self.session and self.session.peer == address then
-        self:DropSession()
-    end
+    self:DropSessionWith(address)
 end
 
 function Node:Confirmed(peer)
@@ -516,10 +501,9 @@ function Node:OwnData(record)
     local cached = self.ownData[unit]
     if not cached or cached.seq ~= record.seq then
         local outgoing, data, problem = Store.ForSending(record), false, nil
-        if not HasCells(outgoing) then
+        if not ns.CatchDB.HasCells(outgoing) then
             problem = "no cells to send"
-        -- "" as the peer's own ID: any ID but the record's passes that rule.
-        elseif not ns.CatchDB.CheckRecord(outgoing, "") then
+        elseif not ns.CatchDB.CheckRecord(outgoing) then
             problem = "a peer's check would refuse it"
         else
             data = self.env.encode(outgoing) or false
@@ -719,9 +703,8 @@ end
 -- Not wanted: the own ID (the own record changes only by fishing), units the seed already holds and versions
 -- evicted for the size limit.
 function Node:Wanted(unit, seq)
-    local id = unit:match("^(%w+)@")
-    return id ~= self.store.myID and not Absorbed(self.env.absorbed(), unit, seq)
-        and not Store.WasEvicted(self.store, unit, seq)
+    return ns.CatchDB.ParseUnit(unit) ~= self.store.myID and not Absorbed(self.env.absorbed(), unit, seq)
+        and not WasEvicted(self.store, unit, seq)
         and not (self.unknownItems[unit] and seq <= self.unknownItems[unit])
 end
 
@@ -981,9 +964,7 @@ end
 
 -- A send to `address` reported the player offline.
 function Node:Offline(address)
-    if self.session and self.session.peer == address then
-        self:DropSession()
-    end
+    self:DropSessionWith(address)
     local peer = self.peers[address]
     if peer then
         peer.pausedUntil = self.env.now() + PEER_PAUSE
@@ -1076,6 +1057,10 @@ local commPause -- the last SHARE_PAUSE reason
 local lastExtraHello
 local groupSize = 0
 
+local function HomeGroupSize()
+    return IsInGroup(LE_PARTY_CATEGORY_HOME) and GetNumGroupMembers(LE_PARTY_CATEGORY_HOME) or 0
+end
+
 function Share.IsEnabled()
     return ns.db.settings.shareDB == true
 end
@@ -1135,24 +1120,24 @@ local function Start()
     node = Share.NewNode(ns.db.shared, {
         now = GetTime,
         time = time,
-        after = function(delay, fn) C_Timer.After(delay, fn) end,
-        send = function(address, text, kind) return ns.Comm.Send(address, text, kind) end,
-        broadcast = function(text) ns.Comm.Broadcast(text) end,
-        forEachFriend = function(fn) ns.Comm.ForEachFriend(fn) end,
-        canSend = function(bytes) return ns.Comm.CanSend(bytes) end,
-        busy = function(address) return ns.Comm.IsSending(address) end,
+        after = C_Timer.After,
+        send = ns.Comm.Send,
+        broadcast = ns.Comm.Broadcast,
+        forEachFriend = ns.Comm.ForEachFriend,
+        canSend = ns.Comm.CanSend,
+        busy = ns.Comm.IsSending,
         absorbed = SeedAbsorbed,
         seedEpoch = ns.CatchDB.SeedEpoch,
         encode = Share.Encode,
         decode = Share.Decode,
-        prepare = function() ns.CatchDB.FlushSeq() end,
+        prepare = ns.CatchDB.FlushSeq,
         clock = DebugClock,
     })
     ns.Comm.OnReceive(function(address, via, text) node:Receive(address, via, text) end)
     ns.Comm.OnActivity(function(address) node:Heard(address) end)
     ns.Comm.OnOffline(function(address) node:Offline(address) end)
     commPause = ns.Comm.GetPause()
-    groupSize = IsInGroup(LE_PARTY_CATEGORY_HOME) and GetNumGroupMembers(LE_PARTY_CATEGORY_HOME) or 0
+    groupSize = HomeGroupSize()
     SyncPause()
     C_Timer.After(math.random(FIRST_HELLO_MIN, FIRST_HELLO_MAX), Round)
 end
@@ -1181,7 +1166,7 @@ ns.On("SHARE_PAUSE", function(reason)
 end)
 
 ns.RegisterEvent("GROUP_ROSTER_UPDATE", function()
-    local size = IsInGroup(LE_PARTY_CATEGORY_HOME) and GetNumGroupMembers(LE_PARTY_CATEGORY_HOME) or 0
+    local size = HomeGroupSize()
     local grew = size > groupSize
     groupSize = size
     if not node or not grew or (lastExtraHello and GetTime() - lastExtraHello < EXTRA_HELLO_GAP) then

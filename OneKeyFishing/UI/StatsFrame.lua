@@ -233,7 +233,7 @@ local function Create()
     f.herePage = ns.CatchHere.Create(f)
     pages = {
         { key = "stats", label = L["Statistics"], frame = page,
-            refresh = function() StatsFrame.Refresh() end, tick = function() StatsFrame.TickStatistics() end },
+            refresh = StatsFrame.Refresh, tick = StatsFrame.TickStatistics },
         { key = "here", label = L["What can be caught here"], frame = f.herePage,
             refresh = ns.CatchHere.Refresh, tick = ns.CatchHere.Tick },
     }
@@ -487,7 +487,10 @@ end
 
 -- Every second: the open page's tick.
 function StatsFrame.Tick()
-    for _, page in ipairs(IsShown() and pages or {}) do
+    if not IsShown() then
+        return
+    end
+    for _, page in ipairs(pages) do
         if page.frame:IsShown() then
             page.tick()
         end

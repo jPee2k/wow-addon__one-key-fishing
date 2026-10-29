@@ -20,7 +20,7 @@ const MAX_PLACES_PER_RECORD = 20000;
 const MAX_PIECES = 20;
 const ID = /^[a-z2-7]{8}$/;
 const BUILD = /^\d+\.\d+\.\d+$/;
-export const PLACE_KEY = /^(\d+):([0-4]):(\d\d|x)$/;
+const PLACE_KEY = /^(\d+):([0-4]):(\d\d|x)$/;
 
 // --- Reading Lua tables (luaparse AST -> plain JS values) ------------------------------------------------------
 
@@ -91,10 +91,6 @@ const seedTable = (ast) => assignedTable(ast, (v) => v.type === "MemberExpressio
 // The seed in the text of a SeedData.lua file as plain values, or null.
 export function parseSeed(text) {
   return seedTable(parseLua(text));
-}
-
-function readSeed(file) {
-  return fs.existsSync(file) ? parseSeed(fs.readFileSync(file, "utf8")) : null;
 }
 
 // What is wrong with a parsed SeedData.lua (contracts/seed-data.md), for npm run check.
@@ -431,7 +427,8 @@ export function harvest(options = {}) {
 
   const { seedFile, storeFile } = outputFiles(outDir);
   const store = loadStore(storeFile);
-  const previous = readSeed(seedFile);
+  const previousText = fs.existsSync(seedFile) ? fs.readFileSync(seedFile, "utf8") : null;
+  const previous = previousText && parseSeed(previousText);
   const files = [...accountFiles(options.addonsDir),
     ...(options.files || []).map((file) => ({ file, name: path.basename(file) }))];
   const notes = [];
@@ -501,8 +498,7 @@ export function harvest(options = {}) {
   const text = seedText(seed);
   const bytes = Buffer.byteLength(text);
   // The same seed as the current file (apart from its epoch and date): nothing to release.
-  const unchanged = previous && fs.existsSync(seedFile)
-    && seedText({ ...seed, epoch: previous.epoch, built: previous.built }) === fs.readFileSync(seedFile, "utf8");
+  const unchanged = previous && seedText({ ...seed, epoch: previous.epoch, built: previous.built }) === previousText;
 
   const oldCells = previous?.cells || {};
   const oldItems = new Set(Object.values(oldCells).flatMap((cell) => Object.keys(cell.i || {})));

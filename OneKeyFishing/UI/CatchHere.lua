@@ -49,6 +49,11 @@ local function SourceLabel(value)
     return value == "mine" and L["Only mine"] or L["All"]
 end
 
+-- The skill filter: the one picked by hand, else the own range.
+local function EffectiveRange(ownRange)
+    return pickedRange or ownRange or "all"
+end
+
 function CatchHere.SetRange(range)
     pickedRange = range
     dirty = true
@@ -66,13 +71,13 @@ local function OpenSkillMenu(owner)
     for _, range in ipairs(ns.CatchDB.RANGES) do
         table.insert(choices, { value = range, text = RangeLabel(range) })
     end
-    table.insert(choices, { value = "all", text = L["All skill levels"] })
+    table.insert(choices, { value = "all", text = RangeLabel("all") })
     ns.OpenRadioMenu(owner, choices, function(value) return shown and shown.range == value end, CatchHere.SetRange)
 end
 
 local function OpenSourceMenu(owner)
-    ns.OpenRadioMenu(owner, { { value = "all", text = L["All"] }, { value = "mine", text = L["Only mine"] } },
-        function(value) return source == value end, CatchHere.SetSource)
+    local choices = { { value = "all", text = SourceLabel("all") }, { value = "mine", text = SourceLabel("mine") } }
+    ns.OpenRadioMenu(owner, choices, function(value) return source == value end, CatchHere.SetSource)
 end
 
 local function CreateRow(parent, index)
@@ -167,13 +172,11 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     end
     dirty = false
     page.status:SetText(ns.Share.StatusLine())
-    local filter = { range = pickedRange or ownRange or "all", source = source }
+    local filter = { range = EffectiveRange(ownRange), source = source }
     shown = { version = ns.CatchDB.GetVersion(), mapID = mapID, ownRange = ownRange, cell = cell,
         range = filter.range }
     page.skillButton:SetText((L["Skill: %s"]):format(RangeLabel(filter.range)))
-    ns.FitButton(page.skillButton)
     page.sourceButton:SetText((L["Source: %s"]):format(SourceLabel(source)))
-    ns.FitButton(page.sourceButton)
     page.more:SetText("")
     page.message:SetText("")
     for _, row in ipairs(page.rows) do
@@ -233,7 +236,7 @@ function CatchHere.Tick()
         mapID, ownRange, cell = shown.mapID, shown.ownRange, ns.CatchDB.GetCell(shown.mapID)
     end
     if dirty or not shown or shown.version ~= ns.CatchDB.GetVersion() or shown.mapID ~= mapID
-        or shown.cell ~= cell or shown.range ~= (pickedRange or ownRange or "all") then
+        or shown.cell ~= cell or shown.range ~= EffectiveRange(ownRange) then
         CatchHere.Refresh(mapID, ownRange, cell)
     else
         page.status:SetText(ns.Share.StatusLine()) -- the state of the exchange changes with time alone

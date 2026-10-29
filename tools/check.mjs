@@ -272,13 +272,13 @@ if (fs.existsSync(changelogPath)) {
 
 // Verification debt (findMarkers in addon.mjs): listed; with --release they are problems.
 const markers = luaFiles.flatMap((file) => findMarkers(fs.readFileSync(file, "utf8"))
-  .map((m) => `  ${rel(file)}:${m.line} ${m.id} ${m.what}`.trimEnd()));
+  .map((m) => `${rel(file)}:${m.line} ${m.id} ${m.what}`.trimEnd()));
 if (release) {
   for (const marker of markers) {
-    problem(marker.trim(), "open VERIFY marker: close the verification debt before a release");
+    problem(marker, "open VERIFY marker: close the verification debt before a release");
   }
 } else if (markers.length > 0) {
-  console.log(`open verification markers (${markers.length}):\n${markers.join("\n")}`);
+  console.log(`open verification markers (${markers.length}):\n${markers.map((m) => `  ${m}`).join("\n")}`);
 }
 
 if (problems.length > 0) {

@@ -15,8 +15,8 @@ end
 local CHAT_PREFIX = "|cff33ccffOneKeyFishing|r: "
 
 -- Widens a button to its text when the text is wider than the button's own width (translations are often
--- longer than English). Call it again after changing the text.
-function ns.FitButton(button)
+-- longer than English). Buttons of ns.CreateButton do it on every SetText.
+local function FitButton(button)
     local fontString = button:GetFontString()
     -- GetStringWidth can stop at the width the button already has; the unbounded width is the full text.
     local textWidth = fontString and (fontString.GetUnboundedStringWidth and fontString:GetUnboundedStringWidth()
@@ -28,13 +28,18 @@ function ns.FitButton(button)
     end
 end
 
--- A standard UI panel button; shared by the settings and statistics windows. `width` is the minimum width.
+-- A standard UI panel button; shared by the settings and statistics windows. `width` is the minimum width; the
+-- button grows to its text whenever the text changes.
 function ns.CreateButton(parent, text, width, onClick)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetHeight(22)
     button.minWidth = width
+    local setText = button.SetText
+    function button:SetText(newText)
+        setText(self, newText)
+        FitButton(self)
+    end
     button:SetText(text)
-    ns.FitButton(button)
     button:SetScript("OnClick", onClick)
     return button
 end

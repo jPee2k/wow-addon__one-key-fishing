@@ -331,11 +331,10 @@ test("CheckRecord accepts a valid record of two builds and three cells", functio
     eq(ok, true, tostring(reason))
 end)
 
-test("CheckRecord rejects a bad or own ID and a non-count epoch or seq", function()
+test("CheckRecord rejects a bad ID and a non-count epoch or seq", function()
     rejects(function(r) r.id = "short" end, "short ID")
     rejects(function(r) r.id = "ABCDEFGH" end, "upper case")
     rejects(function(r) r.id = "abcdefg1" end, "1 is not base32")
-    rejects(function(r) r.id = shared().myID end, "own ID")
     rejects(function(r) r.epoch = -1 end, "negative epoch")
     rejects(function(r) r.seq = 1.5 end, "fractional seq")
     rejects(function(r) r.seq = "3" end, "seq as text")
