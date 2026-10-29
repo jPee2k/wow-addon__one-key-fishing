@@ -211,7 +211,7 @@ local DB_DEFAULTS = {
     statsTab = "stats", -- the last open tab of the statistics window: "stats" | "here"
     shared = { -- the catch database (CatchDB.lua); myID is created there
         mine = {}, -- place key -> cell: this account's catches, never reset
-        records = {}, -- contribution ID -> record; in 1.1.0 only this account's own
+        records = {}, -- contribution ID -> record; in part 1 only this account's own
     },
 }
 

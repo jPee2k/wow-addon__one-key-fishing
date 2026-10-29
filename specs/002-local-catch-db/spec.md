@@ -1,16 +1,20 @@
 # Feature Specification: Local Catch Database
 
-**Feature Branch**: `002-local-catch-db`
+**Feature Branch**: `002-shared-db` (renamed from `002-local-catch-db`; all four parts are built on it)
 
 **Created**: 2026-10-29
 
 **Status**: Draft
 
+**Release**: 1.2.0, together with parts 2 to 4 of the shared catch database (decided on
+2026-10-29; 1.1.0 is the interface-language release). The release numbers in the input below are from the
+earlier plan of one release per part.
+
 **Input**: User description: "Catch database, part 1 of 4 (release 1.1.0): local catch data and bundled data, no
 network. Players want to know what a fishing spot gives, and in what proportions, before spending time there. A
 'What can be caught here' tab in the statistics window; data from the first login through a catch database bundled
 with every release; places identified by numbers only; robust auction prices; one command for the author before a
-release. Design and agreed decisions: docs/shared-db-plan.md (section 'Releases and specs' -> '1.1.0: local
+release. Design and agreed decisions: docs/shared-db-plan.md (section 'Releases and specs' -> 'Part 1 (spec 002): local
 catch data and bundled data')."
 
 ## User Scenarios & Testing *(mandatory)*
@@ -270,12 +274,13 @@ a few pieces on sale; compare the shown prices and catch values with the expecte
 ## Assumptions
 
 - Only fishing in fishing mode is counted, because misses are only known there.
-- The 1.1.0 bundled data may be small (the author's and friends' catches); the release ships with whatever there is.
+- The first bundled data may be small (the author's and friends' catches, plus what the exchange of part 2
+  collected); release 1.2.0 ships with whatever there is.
 - Players who send their saved files to the author do so voluntarily, outside the game.
 - The game cannot be played before 2026-11-04; game behaviour is assumed from public API dumps and checked in game
   before the release (FR-028).
-- No new settings are added in this release; sharing settings come with the in-game exchange (release 1.2.0).
+- No new settings are added in part 1; sharing settings come with the in-game exchange (part 2).
 - The skill range may turn out not to affect the catch; the data is recorded with it so this can be checked later.
 - Item names come from the game client, so items unknown to the client show once the game provides their data.
-- Network exchange, the catch catalog, map pins and tooltips are out of scope (releases 1.2.0 to 1.4.0 in
+- Network exchange, the catch catalog, map pins and tooltips are out of scope (parts 2 to 4 in
   `docs/shared-db-plan.md`).

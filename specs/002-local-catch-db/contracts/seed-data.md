@@ -29,4 +29,4 @@ Rules:
 - File size at most 1 MB; `npm run check` fails above it and checks that the file parses and has the fields above.
 - The addon reads it at runtime only (no work at file load besides the table constructor); a missing or malformed
   `ns.SeedData` is treated as an empty seed with epoch 0.
-- An empty seed (`cells = {}`) is valid; the first 1.1.0 seed may be small.
+- An empty seed (`cells = {}`) is valid; the first seed may be small.

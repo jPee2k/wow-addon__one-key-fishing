@@ -52,7 +52,7 @@ enUS player get different keys for the same lake. The shared database needs a ke
 - The cell comes from `C_Map.GetPlayerMapPosition(mapID, "player")`, rounded to a 10x10 grid (a square of 10% of
   the map). This also protects privacy: the exact position is not stored.
 - The skill range is `floor(base rank / 75)`: 0, 1, 2, 3, 4+. Pole and lure bonuses are left out, so a cell does
-  not split in two whenever a lure runs out (decided for 1.1.0).
+  not split in two whenever a lure runs out (decided for part 1).
 - The display name is built on the client: `C_Map.GetMapInfo(mapID).name` plus the cell coordinates. The local
   subzone name is remembered only for cells the player has been to.
 - If the position is not available (dungeons, the Map state of `AddOnRestrictionType`), the cell is `x` (the
@@ -69,9 +69,10 @@ is not flooded.
 | Type | Who hears it | Limits | Role |
 | --- | --- | --- | --- |
 | `CHANNEL` (a hidden channel, for example `OKFishData`) | Every player with the addon in the mode (to check: all layers or only your own, both factions or one) | 10 messages of headroom, +1 per second; allowed on Retail, disabled on Classic | Only `HELLO`: who is online and with what data |
-| `WHISPER` | One player | No per-prefix limit outside instances (the server may change this) | Main data transfer |
-| `GUILD` | The guild | Per-prefix limit | `HELLO` and syncing; the fallback path if `CHANNEL` does not work |
+| `WHISPER` | One player | No per-prefix limit outside instances (the server may change this) | Main data transfer; `HELLO` to character friends |
+| `GUILD` | The guild | Per-prefix limit | `HELLO`; the fallback path if `CHANNEL` does not work |
 | `PARTY` / `RAID` | The group | Per-prefix limit | The same, for friends who fish together |
+| Battle.net game data (`C_BattleNet.SendGameData`) | One Battle.net friend playing Forever | To check in the spike | `HELLO` and sessions with Battle.net friends (part 2) |
 
 API limits: a prefix up to 16 characters, a message up to 255 characters. The `Enum.SendAddonMessageResult` result
 is always read: `AddonMessageThrottle`, `ChannelThrottle`, `AddOnMessageLockdown` mean back off and pause.
@@ -99,23 +100,37 @@ the last `HELLO`, database hash. A peer with no `HELLO` for 30 min is removed.
 
 ### Libraries
 
-- ChatThrottleLib: a queue with a traffic budget, shared by every addon on the client.
-- AceComm-3.0: splits messages over 255 characters into parts and puts them back together.
-- LibSerialize + LibDeflate (`EncodeForWoWAddonChannel`): a compact format and compression.
-- Inclusion: `OneKeyFishing/Libs/` through `externals` in `.pkgmeta`, the files in the TOC. `npm run check` must
-  learn to skip `Libs/` in luacheck and in the line length check.
+None (decided for part 2, `specs/003-guild-group-sync/research.md` R4):
+
+- **Encoding.** The game's own `C_EncodingUtil` (CBOR, Deflate, Base64, all in the Forever client) replaces
+  LibSerialize and LibDeflate.
+- **Sending.** A small queue with pace, budget and result handling (`Comm.lua`) replaces ChatThrottleLib.
+- **Splitting.** An own part format replaces AceComm-3.0, which has no Battle.net path.
+
+The first idea (those four libraries in `OneKeyFishing/Libs/`) would also have needed exceptions in
+`npm run check`.
 
 ### Traffic budget (starting values, to refine after the spike)
 
 | What | Limit |
 | --- | --- |
-| `HELLO` to the channel | Once per 10-15 min (random jitter), the first 60-120 s after login |
-| Sync sessions | 1 at a time, no more than 1 per 2 min, with one peer no more than 1 per 30 min |
-| Session size | Up to 8 KB of compressed data |
+| `HELLO` | Once per 10-15 min (random jitter), the first 60-120 s after login; 5-30 s after joining a group (at most once per 2 min); up to 20 friends per round, known peers first |
+| Pace | Broadcasts at most 1 message per 2 s; whispers and Battle.net at most 2 per s |
+| Sync sessions | 1 at a time, no more than 1 per 2 min; with one peer at most once per 10 min in a group, once per 30 min otherwise |
+| Session size | Up to 8 KB of encoded records per direction, but always at least one record |
 | Total sent | Up to 50 KB per hour per client |
 
-Syncing pauses on: `InCombatLockdown()`, any active state of `C_RestrictedActions.IsAddOnRestrictionActive`, an
-instance (`IsInInstance()`), a loading screen. The `ADDON_RESTRICTION_STATE_CHANGED` event lifts the pause.
+The values for part 2 are in `specs/003-guild-group-sync/research.md` R7.
+
+Syncing pauses on:
+- `InCombatLockdown()`;
+- the add-on restrictions `Chat`, `Encounter`, `ChallengeMode` and `PvPMatch`;
+- `C_ChatInfo.InChatMessagingLockdown()` and `AreOutgoingAddonChatMessagesRestricted()`;
+- an instance (`IsInInstance()`);
+- a loading screen.
+
+It is re-checked on the matching events (`ADDON_RESTRICTION_STATE_CHANGED` among them) and every 5 s while paused.
+A path the game keeps refusing is left out until logout.
 
 ## Data model and merging
 
@@ -169,14 +184,17 @@ A release with a seed of epoch E carries the sums and the list of absorbed IDs (
 
 ### Size and eviction
 
-- A record: up to 300 cells and 8 KB compressed; anything larger is not accepted.
-- All of `shared`: up to ~2 MB in SavedVariables. Above the limit, the records that add the least new information
+- A record: up to 1,000 places and 32 KB encoded; anything larger is not accepted (part 2).
+- Part 2, among guild, group and friends: other records hold at most 20,000 places (~2 MB). Above the limit, the
+  record with the oldest `seen` is evicted first, and your own record never is.
+- Part 3, with strangers: the order below replaces it. Above the limit, the records that add the least new information
   are evicted: first those whose cells already have thousands of catches in the seed, then those not seen for over
   60 days. Contributions for rare places (low-level zones, little data) are evicted last. `seen` is updated not
   only when a new version arrives, but also when a peer in a session confirms the same version (the bucket matched
   in `SUM` or `DIFF`). This way the records of players who stopped playing live on as long as they are in the
   network. Your own record is never evicted.
-- A new field in the database = `DB_SCHEMA` +1 and a migration in `Core.lua`, as CLAUDE.md requires.
+- A renamed, moved or reshaped field = `DB_SCHEMA` +1 and a migration in `Core.lua`, as CLAUDE.md requires; a new
+  field is filled by `ApplyDefaults` without a bump.
 
 ### Performance
 
@@ -200,31 +218,35 @@ missing. If the databases are the same, the session ends after two messages. Thi
 distributed databases: every session brings two copies closer, and a record spreads to everyone within a few
 "handshakes".
 
-Prefix `OKF1` (the digit is the protocol version; unknown versions are ignored).
+Prefix `OKF1`: the digit is the protocol version. A client registers only its own prefix, so other versions never
+reach it. The exact message forms, the part format and the limits on what is received are in
+`specs/003-guild-group-sync/contracts/sync-protocol.md`.
 
 | Message | Where | Content | Size |
 | --- | --- | --- | --- |
-| `HELLO` | CHANNEL / GUILD / PARTY | addon version, `seedEpoch`, number of records, hash of the whole database | 1 message |
-| `SUM` | WHISPER | 32 bucket hashes (bucket = the first character of the ID in base32) | 1-2 |
-| `DIFF` | WHISPER | `id:seq` for the buckets that differ | 1-10 |
-| `WANT` | WHISPER | list of the IDs needed | 1-3 |
-| `REC` | WHISPER | a record, LibSerialize + LibDeflate, in parts through AceComm | up to 8 KB per session |
-| `BYE` | WHISPER | end of session or refusal (busy, combat, limit) | 1 |
+| `HELLO` | CHANNEL / GUILD / PARTY / RAID, whisper or Battle.net to friends | node tag of this login, `seedEpoch`, number of records, hash of the whole database (never the anonymous ID) | 1 message |
+| `SUM` | WHISPER | 32 bucket hashes (bucket = the first character of the ID in base32) | 1 |
+| `DIFF` | WHISPER | `id.epoch.seq` for the buckets that differ | 1-10 |
+| `WANT` | WHISPER | the `id@epoch` units needed | 1-3 |
+| `REC` | WHISPER | a record, `C_EncodingUtil` CBOR + Deflate + Base64, in parts | up to 8 KB per session |
+| `BYE` | WHISPER | end of session or refusal (sent, done, busy, paused, off, limit) | 1 |
 
 Session flow:
 
-1. Client B hears a `HELLO` from A with a different hash and the same or a compatible epoch (E or E±1).
-2. B waits a random 2-20 s. If another client has synced with A in that time (visible from the next `HELLO`), the
-   session does not start. This way a hundred clients do not rush at one.
+1. Client B hears a `HELLO` from A with a different hash. There is no epoch gate: a unit B's seed already absorbed
+   is simply not wanted.
+2. B waits a random 2-20 s. A takes one session at a time and answers others `BYE busy`. This way a hundred
+   clients do not rush at one. If A and B send each other `SUM` at the same moment, the smaller node tag leads.
 3. B → A: `SUM`. A → B: `DIFF` for the buckets with different hashes.
 4. Each side sees whose versions it is missing and sends `WANT`; `REC` comes in reply. The exchange goes both ways.
-5. At the 8 KB limit the session ends with `BYE`; the rest goes in the next session. The newest records and those
-   for the receiver's current zone go first.
+5. At the 8 KB limit the sender ends with `BYE`; the rest goes in the next session. The own record goes first, then
+   the most recently seen.
 6. No reply for 15 s or `TargetOffline`: the session is cancelled and the peer is paused for 30 min.
 
-Hash: 32-bit FNV-1a through `bit.bxor` over the sorted `id:epoch:seq` strings of a bucket. Bucket hashes are cached
-and recomputed only on change. Every mode is easy to test in `tests/` without the game: two addon states in one
-fengari with a `SendAddonMessage` stub that passes messages between them.
+Hash: a 32-bit polynomial hash in plain arithmetic (no `bit`, so it is the same in the client and in fengari) over
+the sorted `id.epoch.seq` strings of a bucket. Bucket hashes are cached and recomputed only on change. Every rule
+is tested in `tests/` without the game: several protocol nodes in one fengari state with a fake network between
+them.
 
 ## Protection against spam and fakes
 
@@ -240,7 +262,7 @@ wrong percentage), so this is enough.
 | Many fake IDs (Sybil) | One contribution gives no more than 20% of the weight in a cell with 5+ contributions. The tooltip always says "based on N catches from K players". `harvest` looks for outliers and adds blocked IDs to the seed (`banned`). |
 | Broken or old data | Version in the prefix, decoding in `pcall`, schema check (types, cell and size limits). |
 | Frame rate drops | Decoding and recomputing sums take no more than 2 ms per frame, the rest in the next frame (`C_Timer.After(0, ...)`). |
-| Privacy | Records have no names and no exact coordinates. The ID is random and can be regenerated. The whisper sender's name is kept only in session memory, not in SavedVariables. |
+| Privacy | Records have no names and no exact coordinates. The ID is random and tied to no name. The whisper sender's name is kept only in session memory, not in SavedVariables. |
 
 ## Seeding the database from releases
 
@@ -338,18 +360,19 @@ data for other places goes into tooltips.
 | Item tooltip (ItemHooks) | "Caught in: Zone A 12%, Zone B 8%", top 3 zones. |
 | Minimap button tooltip | Top 3 items of the current place. |
 | StatsFrame, "Catch catalog" tab | Every item in the database (seed, your own catch, network) with a search by name in the client's language. Choosing an item lists the places it was caught: zone, cell, chance, catches, skill range. Choosing a place sets a map pin there. |
-| Settings, a new "Shared database" page | "Share my catch", "Receive data from others", "Use the public channel" (off = guild and group only), "New anonymous ID", a status line. |
+| Settings, a new "Shared database" page | "Use the shared catch database" (part 2), "Use the public channel" (part 3; off = guild, group and friends only), a status line. |
 | `/okf share` | State: the seed and its epoch, records, peers in the last hour, last session, traffic in the last hour, pause and its reason. |
 | `/okf debug` | A new section with the same state for bug reports. |
-| First login after the update | A one-time toast: what is shared (no names) and where to turn it off. |
+| First login after the update | A one-time popup: what is shared (no names) and where to turn it off. |
 
 The chance in the tab = item / all catches in the cell, taking the contribution weights into account. Under 50
 catches "little data" is shown instead of a percentage. This covers ROADMAP item 2, "Catch chances".
 
 ## Implementation phases
 
-Phases 2 and 3 bring value without any network code and ship as a separate release. The network goes first to the
-guild and the group, where it is easy to test with friends, and only then to the public channel.
+All phases ship together in release 1.2.0, built one spec at a time (parts 1 to 4, "Releases and specs"). Release
+1.1.0 is the interface-language feature (`specs/001-interface-language`), released on its own. The network goes
+first to the guild and the group, where it is easy to test with friends, and only then to the public channel.
 
 1. **In-game spike** (no release). A separate branch with `/okf spike`, a checklist for the author: `CHANNEL` addon
    messages and `JoinTemporaryChannel` from an addon; the actual limits and result codes; whether whispers are
@@ -362,14 +385,15 @@ guild and the group, where it is easy to test with friends, and only then to the
    can be caught here" tab on your own data.
    - Done when: tests for the key and the record; two clients in different languages produce the same keys in game.
 3. **Seed and `harvest`.** `tools/harvest.mjs`, `SeedData.lua`, merging the seed with your own data, checks in
-   `npm run check`. Release 1.1.0.
+   `npm run check`. Part 1 (spec 002).
    - Done when: a fresh install sees data from the first login.
-4. **Network in the guild and the group.** Libraries, `Share.lua` (the protocol), `HELLO` to GUILD / PARTY, whisper
-   sessions, checks on receipt, pauses, `/okf share`. Release 1.2.0.
+4. **Network in the guild and the group.** `Comm.lua` (the transport) and `Share.lua` (the protocol), `HELLO` to
+   GUILD / PARTY / RAID and to friends, whisper and Battle.net sessions, checks on receipt, pauses, `/okf share`.
+   Part 2 (spec 003).
    - Done when: tests with two or three addon states converge to the same database; the author and a friend in a
      group exchanged data in game.
-5. **Public channel.** The hidden channel, peer selection, jitter, contribution weights, `banned`. Release 1.3.0 (if
-   the spike confirmed `CHANNEL`).
+5. **Public channel.** The hidden channel, peer selection, jitter, contribution weights, `banned`. Part 3 (spec 004;
+   left out of 1.2.0 if the spike shows that `CHANNEL` does not work).
    - Done when: a week in game without throttle errors or frame rate complaints; `harvest` sees records from
      players the author does not know.
 6. **Catalog, chances and tooltips.** The "Catch catalog" tab: every item in the database with a search, the
@@ -377,49 +401,69 @@ guild and the group, where it is easy to test with friends, and only then to the
    maps where `C_Map.CanSetUserWaypointOnMap` is false, such as instances). Item and minimap tooltips, a pool mark.
    Optionally, auction prices within a realm: the freshest scan wins, a price older than 3 days is not shared.
    - Done when: every item in the seed is found by a search in any interface language; a chosen place puts a pin
-     on the map and the navigation arrow points to it.
+     on the map and the navigation arrow points to it. Part 4 (spec 005).
 
-This plan lives in `docs/` while the feature is being built; when all four releases are out it moves to
+This plan lives in `docs/` while the feature is being built; when release 1.2.0 is out it moves to
 `docs/history/`. Item 1 of the ROADMAP links to it.
 
 ## Releases and specs
 
-The phases ship as four releases, each with its own spec (`speckit-specify`). Each brief below is the input for
-that spec: it says what and why, and repeats the shared rules, so every spec reads on its own. The technical
-design stays in this plan and goes into `speckit-plan`.
+The phases are built as four parts, each with its own spec (`speckit-specify`), all on the branch `002-shared-db`,
+and ship together as release 1.2.0 (decided on 2026-10-29; 1.1.0 is the interface-language release). Each brief
+below is the input for its spec: it says what and why, and repeats the shared rules, so every spec reads on its
+own. The technical design stays in this plan and goes into `speckit-plan`.
 
-| Release | Spec | Phases | Depends on |
+| Part | Spec | Phases | Depends on |
 | --- | --- | --- | --- |
-| 1.1.0 | `002-local-catch-db` | 2, 3 (+ the spike questions it needs) | - |
-| 1.2.0 | `003-guild-group-sync` | 1 (network questions), 4 | 1.1.0 |
-| 1.3.0 | `004-public-channel-sync` | 5 | 1.2.0, a spike that confirms `CHANNEL` |
-| 1.4.0 | `005-catch-catalog` | 6 | 1.1.0, 1.2.0 (1.3.0 optional) |
+| 1 | `002-local-catch-db` | 2, 3 (+ the spike questions it needs) | - |
+| 2 | `003-guild-group-sync` | 1 (network questions), 4 | part 1 |
+| 3 | `004-public-channel-sync` | 5 | part 2, a spike that confirms `CHANNEL` |
+| 4 | `005-catch-catalog` | 6 | parts 1 and 2 (part 3 optional) |
 
-- The spike (phase 1) has no release of its own. The questions 1.1.0 needs go into its spec:
-  `C_Map.GetPlayerMapPosition` while fishing, `GetLootSourceInfo` in a pool, whether the catch depends on the
-  skill at all. The network questions wait for 1.2.0, the map pin question for 1.4.0.
-- Each spec is written once the previous one is implemented, because the later ones depend on the spike answers.
+- The spike (phase 1) is one temporary command, `/okf spike`; each part adds the questions it needs: part 1
+  `C_Map.GetPlayerMapPosition` while fishing, `GetLootSourceInfo` in a pool, whether the catch depends on the skill
+  at all; part 2 the guild, group, whisper and Battle.net questions; part 3 the channel; part 4 the map pins.
+- Each spec is written once the previous one is implemented. The later ones depend on spike answers that come only
+  after the game launch, so they are built on `VERIFY` assumptions like the earlier ones.
 
-### 1.1.0: local catch data and bundled data
+### Release 1.2.0
+
+The game opens on 2026-11-04. Until then every part is built and tested without the game; after it, the debt of
+all parts is closed and the release goes out once:
+
+1. The author runs `/okf spike` (all sections, with a second player for the network) and the in-game checklists of
+   every part (`docs/checklists/`). The answers go into CLAUDE.md "Known API facts"; code is fixed where an
+   assumption was wrong; `VERIFY` markers are removed and the `verification.md` items of every spec are ticked.
+2. Part 3 ships only if the spike confirmed `CHANNEL`; otherwise its code is left out of 1.2.0 (its spec says how).
+3. `Spike.lua`, its TOC line, the `spike` command entry and `tests/spike_test.lua` are removed.
+4. The author fishes and runs `npm run harvest` for the first real seed (own data, friends' files and the records
+   the exchange collected); `SeedData.lua` and `seed/contributions.json` are committed.
+5. `develop` (which by then holds 1.1.0) is merged into `002-shared-db`. In `CHANGELOG.md`, the interface-language
+   entries stay under `[1.1.0]` and leave `[Unreleased]`.
+6. `package.json` and `CHANGELOG.md` get version 1.2.0; `npm run build` must pass with no `VERIFY` marker left.
+7. `002-shared-db` is merged into `develop`, `develop` into `main`, and the tag `1.2.0` is pushed
+   (`docs/publishing.md`).
+
+### Part 1 (spec 002): local catch data and bundled data
 
 Decisions (agreed on 2026-10-29, before the spec):
 
 | Topic | Decision |
 | --- | --- |
 | Place key | `<mapID>:<skill range>:<cell>`; the mapID as `C_Map.GetBestMapForUnit` returns it (no climb to the zone map) |
-| Grid | 10x10, plus an average catch point per cell (sums of x and y), for the 1.4.0 map pin |
+| Grid | 10x10, plus an average catch point per cell (sums of x and y), for the part 4 map pin |
 | Skill range | `floor(base rank / 75)`, no pole or lure bonus |
 | Contribution record | One per account (`OneKeyFishingDB.shared`, random `myID`); all characters add up; `epoch` and `seq` from the start |
 | What counts | Only fishing in fishing mode, as now |
 | Per item | Catches that contained the item and the number of pieces |
 | Chance | Catches with the item / all catches (misses left out); the average pieces per catch next to it; the miss rate on its own line |
-| Game version | `GetBuildInfo` in the record and the seed; `harvest --reset <mapID>` in 1.1.0 |
+| Game version | `GetBuildInfo` in the record and the seed; `harvest --reset <mapID>` in part 1 |
 | Pool or open water | Separate counters if the spike shows `GetLootSourceInfo` tells them apart; not shown in the tab yet |
 | Old statistics | Not converted; they keep working as they are |
 | Window | Tabs in the statistics window: "Statistics" and "What can be caught here" |
 | Little data | Under 50 catches in the cell: all cells of the same mapID; under 50 there too: "little data" instead of a percentage |
 | Skill filter | Own range by default; each range and "All" in a dropdown; no automatic switch, only a hint |
-| Source filter | "All / Only mine", "All" by default (in 1.2.0 "All" also takes in the network) |
+| Source filter | "All / Only mine", "All" by default (in part 2 "All" also takes in the network) |
 | Remembered | Only the last open tab; the filters reset to their defaults |
 | Auction price | Average unit price of the cheapest 20% of all listed pieces (instead of the lowest lot); under 5 pieces or 3 auctions listed: shown with a "few lots" mark and left out of catch value sums (vendor price there); the higher of vendor and auction as now; this also changes the value in the "Statistics" tab |
 | Harvest input | Every `WTF/Account/*/SavedVariables/OneKeyFishing.lua` under `WOW_ADDONS_DIR`, plus friends' files as arguments |
@@ -427,7 +471,7 @@ Decisions (agreed on 2026-10-29, before the spec):
 | Spike | Built now, run after the game launch on 2026-11-04 (the work goes ahead on assumptions marked `VERIFY(Vn)`, listed in `specs/002-local-catch-db/verification.md`; a release build refuses open markers): a temporary `/okf spike` and a checklist: `C_Map.GetPlayerMapPosition` while fishing, `GetLootSourceInfo` in a pool, what mapID caves and cities return, whether the auction house returns enough results for the cheapest 20%; the answers go into CLAUDE.md "Known API facts", the command is removed before the release |
 
 ```
-Catch database, part 1 of 4 (release 1.1.0): local catch data and bundled data, no network.
+Catch database, part 1 of 4 (release 1.2.0): local catch data and bundled data, no network.
 
 Who and why: players want to know what a fishing spot gives, and in what proportions, before spending time
 there. Today each player only sees their own statistics, keyed by localized subzone names.
@@ -468,7 +512,27 @@ Covers ROADMAP item 2 (catch chances) for own and bundled data. Design: docs/sha
 (phases 2 and 3, section "Releases and specs").
 ```
 
-### 1.2.0: exchange in the guild and the group
+### Part 2 (spec 003): exchange in the guild and the group
+
+Decisions (agreed on 2026-10-29, while writing `specs/003-guild-group-sync/spec.md`; they replace the matching parts
+of the brief below and of "UI and settings"):
+
+| Topic | Decision |
+| --- | --- |
+| Who | Guild, party, raid, and online friends (character and Battle.net friends playing Forever) |
+| When | Whenever online, also outside fishing mode; pauses as above |
+| Setting | One: "Use the shared catch database", on by default. Off = nothing sent, nothing received; received data is kept but not counted, and counts again when turned back on |
+| Anonymous ID | No "new ID" button |
+| First login | A popup, once per account: what is shared (no names), where to turn it off; "Got it" / "Settings"; no exchange before it is closed |
+| Settings page | A separate "Shared database" page: the setting, a short text, the status line (room for the part 3 channel setting) |
+| Tab | Source filter stays "All / Only mine" ("All" takes in the network); "N catches from K players"; a quiet status line ("Exchange: 3 players, 5 min ago" or the pause reason); no toasts |
+| `/okf share` | Translated, as other addon output; the `/okf debug` section stays English |
+| Libraries | None: the game's own `C_EncodingUtil` (CBOR, Deflate, Base64; in the Forever client) replaces LibSerialize and LibDeflate, an own small queue and framing replace ChatThrottleLib and AceComm (`specs/003-guild-group-sync/research.md` R4; the "Libraries" section above is updated) |
+| Battle.net | `C_BattleNet.SendGameData` (the global `BNSendGameData` is only a deprecated fallback in Forever) |
+| Protocol | The version lives only in the prefix (`OKF1`), not in `HELLO`; no epoch gate (a unit the seed absorbed is simply not wanted); crossing `SUM`s: the smaller node tag leads; a path the game refuses 5 times in a row is left out until logout, and with every path left out the exchange is "unavailable" |
+| Size limit | 20,000 places of other records; the oldest `seen` goes first, the own record never; the order by new information moves to part 3 ("Size and eviction" above) |
+| Player count | "N catches from K players": each contribution at most once; for bundled whole-map numbers K is a lower bound |
+| Release | All four parts ship together as 1.2.0 from `002-shared-db` ("Release 1.2.0" above); 1.1.0 is the interface-language release |
 
 ```
 Catch database, part 2 of 4 (release 1.2.0): exchange catch data with guild and group members in game.
@@ -497,10 +561,10 @@ Depends on part 1. Needs an in-game spike first (limits and result codes, whispe
 docs/shared-db-plan.md (phases 1 and 4).
 ```
 
-### 1.3.0: the hidden public channel
+### Part 3 (spec 004): the hidden public channel
 
 ```
-Catch database, part 3 of 4 (release 1.3.0): exchange catch data with every addon user through a hidden
+Catch database, part 3 of 4 (release 1.2.0): exchange catch data with every addon user through a hidden
 public channel.
 
 Who and why: guild and group exchange only reaches people the player already knows; a public channel lets data
@@ -522,10 +586,10 @@ whether they reach other layers and the other faction). Depends on part 2. Desig
 docs/shared-db-plan.md (phase 5).
 ```
 
-### 1.4.0: catch catalog, tooltips, pools, prices
+### Part 4 (spec 005): catch catalog, tooltips, pools, prices
 
 ```
-Catch database, part 4 of 4 (release 1.4.0): a catalog of everything caught in the game, and catch chances
+Catch database, part 4 of 4 (release 1.2.0): a catalog of everything caught in the game, and catch chances
 outside the current spot.
 
 Who and why: players want to find where a particular item is caught without going there first, and they look at
@@ -568,12 +632,12 @@ phases 2-4 do not depend on the channel.
 Open questions:
 
 - [ ] Do `CHANNEL` addon messages and `JoinTemporaryChannel` from an addon work in Forever? (spike)
-- [x] A 10x10 or a 20x20 grid? Decided for 1.1.0: 10x10 plus an average catch point per cell.
+- [x] A 10x10 or a 20x20 grid? Decided for part 1: 10x10 plus an average catch point per cell.
 - [ ] Does the catch in Forever depend on the skill at all (check on the gathered data; if not, drop the ranges)?
-  Decided for 1.1.0: ranges of 75 by base rank, no lure or pole bonus.
-- [ ] Sharing on or off by default? On builds the database many times faster; the toast at first login says so
+  Decided for part 1: ranges of 75 by base rank, no lure or pole bonus.
+- [x] Sharing on or off by default? Decided for part 2: on, with a one-time popup at first login that says so
   honestly.
-- [x] Pin precision: a cell is 10% of the map, so its centre may fall on land. Decided for 1.1.0: an average catch
+- [x] Pin precision: a cell is 10% of the map, so its centre may fall on land. Decided for part 1: an average catch
   point per cell (still not an exact position).
 - [ ] Is the auction house in Forever per realm or per region? This decides whether to share prices.
 - [ ] Does `GetLootSourceInfo` show a pool, so that pool catches can be separated?

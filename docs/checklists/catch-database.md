@@ -1,4 +1,4 @@
-# In-game checklist: Local Catch Database (1.1.0)
+# In-game checklist: Local Catch Database (part 1)
 
 What to check in the game for the catch database (`specs/002-local-catch-db`), on and after the game launch on
 2026-11-04. The feature was built before the game could be played, on the assumptions V1-V9 of

@@ -2,7 +2,7 @@
 
 Decisions taken for the plan, each with the reason and the alternatives that were rejected. The product decisions
 (grid, skill range, filters, prices) were settled with the author before the spec and are recorded in
-`docs/shared-db-plan.md` ("Releases and specs" -> "1.1.0"); this file covers how they are built.
+`docs/shared-db-plan.md` ("Releases and specs" -> "Part 1 (spec 002)"); this file covers how they are built.
 
 ## R1. In-game spike, built now, run after launch
 
@@ -134,7 +134,7 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   "little data", average pieces, price with a "few lots" mark), plus "and N more".
 - **Refresh**: `CatchDB.GetVersion()` is bumped on every change; the existing 1 s tick redraws the panel when the
   version, the current place key or the filters changed, and on `PRICES_CHANGED` / `GET_ITEM_INFO_RECEIVED`.
-- **Alternatives rejected**: a separate window (the author chose tabs; 1.4.0 adds a third tab); a scroll list (16
+- **Alternatives rejected**: a separate window (the author chose tabs; part 4 adds a third tab); a scroll list (16
   rows cover the items of a fishing spot; "and N more" keeps it simple, Principle VI).
 
 ## R8. Saved data and schema
@@ -173,6 +173,17 @@ chooses the assumptions.
   (<https://github.com/Ketho/BlizzardInterfaceResources/blob/forever/Resources/GlobalAPI.lua>). API notes:
   <https://warcraft.wiki.gg/wiki/Patch_1.60.1/API_changes/notes> (Midnight secret values and addon restrictions are
   active; GUID server and spawn IDs are scrambled but stable within a session).
+- **The author's live client, build 1.60.1.70685** (2026-10-29): exported with `exportInterfaceFiles code` from the
+  character screen (CLAUDE.md "Known API facts"). The newer build still has everything this feature calls:
+  - in `Blizzard_APIDocumentationGenerated`: `C_Map.GetBestMapForUnit`, `GetPlayerMapPosition`, `GetMapInfo`,
+    `GetBuildInfo`; the `C_AuctionHouse` functions of V4/V5 (`SendSearchQuery`, `GetNumCommoditySearchResults`,
+    `GetCommoditySearchResultInfo`, `GetCommoditySearchResultsQuantity`, `HasFullCommoditySearchResults`,
+    `RequestMoreCommoditySearchResults`, `GetNumItemSearchResults`, `GetItemSearchResultInfo`);
+    `C_Item.GetItemInfoInstant`; and, for part 4, `C_Map.SetUserWaypoint`, `CanSetUserWaypointOnMap`,
+    `C_SuperTrack.SetSuperTrackedUserWaypoint`;
+  - in `Blizzard_SharedXML`: `PanelTabButtonTemplate` and `PanelTemplates_SetTab` / `SetNumTabs`;
+  - `GetLootSourceInfo` is an old global: absent from the generated docs and from Blizzard's own code, but listed in
+    Ketho's GlobalAPI and already used by `Bags.lua` in 1.0.0, which the author tested in the 1.60.1 beta.
 - **V1/V2 (map)**: `C_Map.GetPlayerMapPosition`, `GetBestMapForUnit`, `GetMapInfo` exist with nullable returns and no
   secret-return markers; `AddOnRestrictionType.Map` targets dungeons and raids; on Retail the position is nil in
   instances since 7.1. `GetMapInfo` gives `mapType` (`Enum.UIMapType` 0-6) and `parentMapID` (0 at the top).
@@ -192,6 +203,6 @@ chooses the assumptions.
 - **Fishing in Forever** (fan guides from the beta, capped at level 30): Classic-like, skill 1-300, loot by zone,
   skill mainly stops fish from escaping; new Uncommon and Rare fish that need camp buffs. Loot tables above level 30
   were never public, so patches may still change them (the reset in R5 covers that).
-- **For 1.4.0**: `C_Map.SetUserWaypoint`, `CanSetUserWaypointOnMap` and `C_SuperTrack.SetSuperTrackedUserWaypoint`
+- **For part 4**: `C_Map.SetUserWaypoint`, `CanSetUserWaypointOnMap` and `C_SuperTrack.SetSuperTrackedUserWaypoint`
   exist in the dump.
 - **SavedVariables**: no official size limit; community reports of trouble only far above this feature's size.
