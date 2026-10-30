@@ -85,6 +85,15 @@ test("upgrade from 1.1: sharing is on and the notice not yet shown, nothing else
     eq(OneKeyFishingDB.schema, 1, "schema stays 1")
 end)
 
+test("part 3: the public channel is on and its notice not yet shown; a player's off is kept", function()
+    LoadWith({ schema = 1, settings = { shareChannel = false }, shareNotice = true }, { schema = 1 })
+    eq(OneKeyFishingDB.settings.shareChannel, false, "the player's choice kept")
+    eq(OneKeyFishingDB.shareNotice, true, "part 2 notice kept")
+    eq(OneKeyFishingDB.shareNoticeChannel, false, "the channel's notice not yet shown")
+    LoadWith(nil, nil)
+    eq(OneKeyFishingDB.settings.shareChannel, true, "on by default")
+end)
+
 test("a popup runs onCancel on its second button and onHide after either button", function()
     local log = {}
     ns.ShowPopup("OKF_TEST", "text", function() table.insert(log, "accept") end, "A", "B",

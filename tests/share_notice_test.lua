@@ -21,6 +21,10 @@ test("after combat the popup is shown with Got it and Settings", function()
     fire("PLAYER_REGEN_ENABLED")
     eq(rawget(_G, "last_popup"), POPUP, "shown")
     local dialog = StaticPopupDialogs[POPUP]
+    local first = L["OneKeyFishing now shares your catches under a random ID with other players who use it."]
+    eq(dialog.text:sub(1, #first), first, "the first sentence names other players (part 3, the channel)")
+    local channel = L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."]
+    assert(dialog.text:find(channel, 1, true), "the channel is named")
     local seen = L["No character names are sent, but the players you exchange with can tell which ID is yours."]
     assert(dialog.text:find(seen, 1, true), "says what the players exchanged with can see: " .. dialog.text)
     assert(dialog.text:find(L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."], 1, true),
@@ -49,8 +53,15 @@ end)
 test("Got it closes the popup for good and starts the exchange within 120 s", function()
     accept_popup()
     eq(ns.db.shareNotice, true, "saved")
+    eq(ns.db.shareNoticeChannel, true, "the channel's notice is read with it (part 3, FR-022)")
     advance(120)
-    eq(#addon_sent, 1, "a HELLO")
-    eq(addon_sent[1].chatType, "GUILD", "to the guild")
+    local guild, channel = 0, 0
+    for _, message in ipairs(addon_sent) do
+        guild = guild + (message.chatType == "GUILD" and 1 or 0)
+        channel = channel + (message.chatType == "CHANNEL" and 1 or 0)
+    end
+    eq(guild, 1, "a HELLO to the guild")
+    eq(channel, 1, "and one to the hidden channel, joined after the notice")
+    eq(#addon_sent, 2, "nothing else")
     eq(ns.Share.GetStatus().state, "alone", "nobody answered yet")
 end)

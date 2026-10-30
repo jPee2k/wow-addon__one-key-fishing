@@ -12,6 +12,12 @@ ns.SeedData = {
   absorbed = {               -- contribution ID -> { [epoch] = seq }: every unit summed, up to which seq
     ["k7f2q6xa"] = { [2] = 140, [3] = 41 },
   },
+  proofs = {                 -- part 3: contribution ID -> { [epoch] = proof }: the proof of the absorbed version
+    ["k7f2q6xa"] = { [2] = "a2cd...", [3] = "7kq2..." },  -- (16 base32 characters each)
+  },
+  blocked = {                -- part 3: contribution IDs the author blocked; their data is in no sum
+    ["zz7qkp2m"] = true,
+  },
   resets = {                 -- mapID -> first game version whose data counts for that map
     [1415] = "1.60.2",
   },
@@ -34,3 +40,10 @@ Rules:
   epoch of an ID): a client deletes or refuses a version up to that seq, keeps and passes on a newer one without
   counting it (the seed has its first part; the next harvest gets the rest), and rolls its own record when the seed
   names it (data-model.md, "Rolling the own record"). `npm run check` fails on an entry of another shape.
+- `proofs` and `blocked` come with part 3 (`specs/004-public-channel-sync/data-model.md` "Seed"): a newer version of
+  an absorbed unit must continue its proof, and a blocked ID is refused by every client. Both may be missing (an
+  older seed); `npm run check` checks their shape when present. The cells apply the weight limit per cell from five
+  contributors on (research R7 of part 3); `k` stays the number of contributors. A weighted cell scales each
+  contribution's catches and items by its catch factor and its misses by its cast factor; when the catches weighted by
+  casts differ from `c`, the cell carries them as `x` (optional), and a view takes the cell's miss rate from
+  `m / (x + m)` and its chances from `c`.

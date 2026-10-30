@@ -31,6 +31,7 @@ local version = 0
 local casts = {} -- cast ID (Catch.lua) -> { key, x, y, start, stop } until its catch or miss settles it
 local lastSeqBump -- GetTime() of the last seq bump
 local seqWaiting = false -- a change since the last bump
+local ownItems -- item ID -> true: the items of the own catch, for the views (OwnItems below)
 
 function CatchDB.GetVersion()
     return version
@@ -98,7 +99,7 @@ end
 -- Records
 ---------------------------------------------------------------------------
 -- The bundled seed (SeedData.lua) as read at runtime; a missing or malformed one counts as empty.
-local EMPTY_SEED = { epoch = 0, absorbed = {}, resets = {}, cells = {} }
+local EMPTY_SEED = { epoch = 0, absorbed = {}, proofs = {}, blocked = {}, resets = {}, cells = {} }
 
 local function Seed()
     local seed = ns.SeedData
@@ -140,6 +141,23 @@ function CatchDB.IsAbsorbed(id, epoch, seq, absorbed)
     return held ~= nil and seq <= held
 end
 
+local function IsProof(value)
+    return type(value) == "string" and #value == 16 and value:find("^[a-z2-7]+$") ~= nil
+end
+
+-- True when the seed's `blocked` names the contribution ID (the author blocked it, FR-019 of part 3).
+function CatchDB.IsBlocked(id)
+    return id ~= nil and SeedField("blocked")[id] == true
+end
+
+-- The proof of the version of unit <id>@<epoch> the seed holds (its `proofs`), or nil: a newer version of the unit
+-- must chain to it (specs/004-public-channel-sync, research.md R9).
+function CatchDB.SeedProof(id, epoch)
+    local epochs = SeedField("proofs")[id]
+    local proof = type(epochs) == "table" and epochs[epoch]
+    return IsProof(proof) and proof or nil
+end
+
 -- Other players' records are kept under "<id>@<epoch>" (Share.lua), the own one under its ID.
 function CatchDB.UnitKey(id, epoch)
     return ("%s@%d"):format(id, epoch)
@@ -160,13 +178,7 @@ function CatchDB.IsBuild(build)
     return type(build) == "string" and build:find("^%d+%.%d+%.%d+$") ~= nil
 end
 
-local function CountKeys(tbl)
-    local count = 0
-    for _ in pairs(tbl) do
-        count = count + 1
-    end
-    return count
-end
+local CountKeys = ns.CountKeys -- Data.lua
 
 -- True when game version `build` ("1.60.1") is older than `than`; "unknown" (the game gave no version) is older
 -- than any version, so a reset of a map leaves it out as the harvest does; false for anything else.
@@ -193,9 +205,140 @@ local function OwnRecord()
     return shared.records[shared.myID]
 end
 
+---------------------------------------------------------------------------
+-- The own record's version chain (specs/004-public-channel-sync/data-model.md "The version chain")
+---------------------------------------------------------------------------
+-- Link `top` is ProofStep(secret) and every lower link the ProofStep of the one above; a record at seq i carries
+-- link i as its proof. Only this account knows the links above the newest one it published, so nobody else can
+-- make a version a peer takes as newer. The marks (every MARK_STEP-th link) are built in the background.
+local CHAIN_LENGTH = 4096 -- the highest seq one chain proves; the record rolls when its seq reaches it
+local MARK_STEP = 64 -- a proof is at most MARK_STEP - 1 steps below the next mark
+local SECRET_LENGTH = 26 -- base32 characters of a chain's secret (130 bits); never sent, never shown
+CatchDB.CHAIN_LENGTH = CHAIN_LENGTH
+local building = false -- a step of the mark build is scheduled
+
+local function Chain()
+    local chain = ns.db.shared.chain
+    if type(chain) == "table" and type(chain.secret) == "string" and type(chain.marks) == "table"
+        and type(chain.top) == "number" and type(chain.epoch) == "number" then
+        return chain
+    end
+end
+
+-- The chain of the own record's epoch, or nil (none yet, or one left from another epoch).
+local function OwnChain(own)
+    local chain = own and Chain()
+    return chain and chain.epoch == own.epoch and chain or nil
+end
+
+-- Random draws, the clocks and the player's GUID through SHA-256: nobody can guess it from outside.
+local function NewSecret()
+    local parts = {}
+    for i = 1, 8 do
+        parts[i] = tostring(math.random(0, 2147483646))
+    end
+    table.insert(parts, tostring(time()))
+    table.insert(parts, tostring(GetTime()))
+    table.insert(parts, tostring(debugprofilestop and debugprofilestop() or 0))
+    table.insert(parts, tostring((UnitGUID("player"))))
+    return ns.HexToBase32(ns.SHA256(table.concat(parts, ":")), SECRET_LENGTH)
+end
+
+-- The proof of `seq`, or nil while the mark above it is not built yet.
+local function ProofFor(chain, seq)
+    if seq > chain.top then
+        return nil
+    end
+    local mark = math.max(MARK_STEP, math.ceil(seq / MARK_STEP) * MARK_STEP)
+    local link = chain.marks[mark]
+    if not link then
+        return nil
+    end
+    for _ = 1, mark - seq do
+        link = ns.ProofStep(link)
+    end
+    return link
+end
+
+local function SetOwnProof()
+    local own = OwnRecord()
+    local chain = OwnChain(own)
+    if chain then
+        own.proof = ProofFor(chain, own.seq)
+    end
+end
+
+-- One gap between two marks (MARK_STEP links) from the lowest mark built, so a build cut short by a logout goes on
+-- at the next login. Returns true when every mark is there.
+local function BuildMarkStep(chain)
+    if chain.marks[MARK_STEP] then
+        return true
+    end
+    local position = chain.top
+    if not chain.marks[position] then
+        chain.marks[position] = ns.ProofStep(chain.secret)
+    end
+    while position > MARK_STEP and chain.marks[position - MARK_STEP] do
+        position = position - MARK_STEP
+    end
+    local link = chain.marks[position]
+    for _ = 1, MARK_STEP do
+        position = position - 1
+        link = ns.ProofStep(link)
+    end
+    chain.marks[position] = link
+    return position <= MARK_STEP
+end
+
+local function BuildMarks()
+    building = false
+    local chain = Chain()
+    if not chain then
+        return
+    end
+    if BuildMarkStep(chain) then
+        SetOwnProof()
+    else
+        building = true
+        C_Timer.After(0, BuildMarks)
+    end
+end
+
+local function StartMarks()
+    local chain = Chain()
+    if chain and not chain.marks[MARK_STEP] and not building then
+        building = true
+        C_Timer.After(0, BuildMarks)
+    end
+end
+
+local function NewChain(epoch)
+    ns.db.shared.chain = { epoch = epoch, secret = NewSecret(), top = CHAIN_LENGTH, marks = {} }
+    StartMarks()
+end
+
+-- False while the marks are still being built after a roll or a login: the own record is not offered then.
+function CatchDB.OwnProofReady()
+    local own = OwnRecord()
+    local chain = OwnChain(own)
+    return chain ~= nil and chain.marks[MARK_STEP] ~= nil and own.proof ~= nil
+end
+
+-- "seq of top, marks ready" for /okf debug; never the secret.
+function CatchDB.ChainState()
+    local own = OwnRecord()
+    local chain = OwnChain(own)
+    if not chain then
+        return "none"
+    end
+    return ("%d of %d, marks %s"):format(own.seq, chain.top, chain.marks[MARK_STEP] and "ready" or "building")
+end
+
 local function BumpSeq()
-    OwnRecord().seq = OwnRecord().seq + 1
+    local own = OwnRecord()
+    own.seq = own.seq + 1
     lastSeqBump, seqWaiting = GetTime(), false
+    SetOwnProof()
 end
 
 -- True when a record has at least one cell (an empty one is neither kept on a roll nor offered to peers).
@@ -234,11 +377,18 @@ local function Roll()
         BumpSeq()
     end
     if old and CatchDB.HasCells(old) and not CatchDB.IsAbsorbed(shared.myID, old.epoch, old.seq) then
+        local chain = OwnChain(old)
+        if not old.proof and chain then
+            repeat until BuildMarkStep(chain) -- rare: a roll before the marks were ready; the kept record needs a proof
+            SetOwnProof()
+        end
         key = CatchDB.UnitKey(shared.myID, old.epoch)
         old.seen = time()
         shared.records[key] = old
     end
-    shared.records[shared.myID] = { id = shared.myID, epoch = NextEpoch(shared), seq = 0, builds = {} }
+    local epoch = NextEpoch(shared)
+    shared.records[shared.myID] = { id = shared.myID, epoch = epoch, seq = 0, builds = {} }
+    NewChain(epoch)
     return key
 end
 
@@ -285,7 +435,10 @@ end
 -- new to an own record of ROLL_PLACES places rolls the record first.
 local function TargetCells(key)
     local own = OwnRecord()
-    if not HasPlace(own, key) and CatchDB.CountPlaces(own, ROLL_PLACES) >= ROLL_PLACES then
+    local chain = OwnChain(own)
+    -- A seq at the chain's top cannot be bumped again (its proof is the last link): a new record goes on.
+    if (not HasPlace(own, key) and CatchDB.CountPlaces(own, ROLL_PLACES) >= ROLL_PLACES)
+        or (chain and own.seq >= chain.top) then
         local kept = Roll()
         if kept then
             ns.Fire("SHARED_DATA_CHANGED", { kept })
@@ -343,6 +496,11 @@ local function Settle(cast, caught, fromPool)
             cell.m = cell.m + 1
         end
     end
+    if ownItems and caught then
+        for itemID in pairs(caught) do
+            ownItems[itemID] = true
+        end
+    end
     Changed(CatchDB.IsBuild(build))
 end
 
@@ -356,6 +514,7 @@ local function IsCount(value)
     return type(value) == "number" and value >= 0 and value <= MAX_COUNT and value == math.floor(value)
 end
 CatchDB.IsCount = IsCount
+CatchDB.IsProof = IsProof
 
 -- Distinct places over all builds of a record (a place fished before and after a patch is one), as
 -- CheckRecord and the harvest count them: the unit of the place limits. limit (optional): counting stops above
@@ -381,8 +540,9 @@ function CatchDB.CountPlaces(record, limit)
     return count
 end
 
--- known: item IDs already found in the game during this check (the same fish repeat in every cell).
-local function CheckItems(items, catches, known)
+local MAX_ITEM_ID = 2147483647 -- item IDs are 32-bit; an item the client does not know yet is no fault (FR-017a)
+
+local function CheckItems(items, catches)
     if items == nil then
         return true
     end
@@ -390,25 +550,19 @@ local function CheckItems(items, catches, known)
         return false, "items are not a table"
     end
     for itemID, entry in pairs(items) do
-        if not (IsCount(itemID) and itemID > 0) then
-            return false, "item ID " .. tostring(itemID) .. " is not a positive number"
+        if not (IsCount(itemID) and itemID > 0 and itemID <= MAX_ITEM_ID) then
+            return false, "item ID " .. tostring(itemID) .. " is not a positive 32-bit number"
         end
         local withItem, pieces = type(entry) == "table" and entry[1], type(entry) == "table" and entry[2]
         if not (IsCount(withItem) and IsCount(pieces)) or withItem > catches or pieces < withItem
             or pieces > MAX_PIECES * withItem then
             return false, "item " .. itemID .. " has impossible counts"
         end
-        if known[itemID] == nil then
-            known[itemID] = C_Item.GetItemInfoInstant(itemID) ~= nil
-        end
-        if not known[itemID] then
-            known.unknownItem = known.unknownItem or itemID -- noted; the rest is still checked
-        end
     end
     return true
 end
 
-local function CheckCell(cell, known)
+local function CheckCell(cell)
     if type(cell) ~= "table" or not (IsCount(cell.c) and IsCount(cell.m) and IsCount(cell.t)) then
         return false, "not a cell"
     end
@@ -424,7 +578,7 @@ local function CheckCell(cell, known)
             return false, name .. " is out of range"
         end
     end
-    local ok, reason = CheckItems(cell.i, cell.c, known)
+    local ok, reason = CheckItems(cell.i, cell.c)
     if not ok then
         return false, reason
     end
@@ -432,13 +586,21 @@ local function CheckCell(cell, known)
         if type(cell.p) ~= "table" or not IsCount(cell.p.c) or cell.p.c > cell.c then
             return false, "the pool part does not fit the totals"
         end
-        return CheckItems(cell.p.i, cell.p.c, known)
+        return CheckItems(cell.p.i, cell.p.c)
     end
     return true
 end
 
--- True, or false and the reason, for a record received from another player (the store refuses the own ID); a
--- third value true when the only fault is an item this client does not know (it may be new).
+-- Casting per seq step (specs/004-public-channel-sync, research.md R9): the seq is bumped at most once a minute, on
+-- the first settled cast after it, so one step holds at most a minute plus two casts of casting. A record never holds
+-- more than STEP_SECONDS per step of its seq, whoever sends it: a copy made up at a seq its owner published can add
+-- only that much, and the limit needs no other version, so no copy can block the owner's next one.
+-- VERIFY(V26): a fishing cast lasts at most about 30 s in Forever, so no honest step reaches STEP_SECONDS
+local STEP_SECONDS = 180
+CatchDB.STEP_SECONDS = STEP_SECONDS
+
+-- True, or false and the reason, for a record received from another player (the store refuses the own ID). An item
+-- this client does not know is accepted: WoW Forever reveals some items only when they are found (FR-017a).
 -- Mirrors checkRecord / checkCell in tools/harvest.mjs, so what a client accepts the next seed accepts too, but
 -- rejects the whole record on any bad cell: a peer's data is refused, not cleaned up. No side effects.
 function CatchDB.CheckRecord(record)
@@ -452,13 +614,16 @@ function CatchDB.CheckRecord(record)
     if not (IsCount(record.epoch) and IsCount(record.seq)) then
         return false, "epoch or seq is not a count"
     end
+    if not IsProof(record.proof) then
+        return false, "the proof is not 16 base32 characters"
+    end
     if type(record.builds) ~= "table" then
         return false, "no builds"
     end
     if CatchDB.CountPlaces(record, MAX_RECORD_PLACES) > MAX_RECORD_PLACES then
         return false, "more than " .. MAX_RECORD_PLACES .. " places"
     end
-    local known, casts = {}, 0
+    local casts, seconds = 0, 0
     for build, cells in pairs(record.builds) do
         if not CatchDB.IsBuild(build) or type(cells) ~= "table" then
             return false, "build " .. tostring(build) .. " is not a game version"
@@ -467,11 +632,11 @@ function CatchDB.CheckRecord(record)
             if type(key) ~= "string" or not (key:find("^%d+:[0-4]:%d%d$") or key:find("^%d+:[0-4]:x$")) then
                 return false, "place key " .. tostring(key) .. " is not <mapID>:<range>:<cell>"
             end
-            local ok, reason = CheckCell(cell, known)
+            local ok, reason = CheckCell(cell)
             if not ok then
                 return false, key .. ": " .. reason
             end
-            casts = casts + cell.c + cell.m
+            casts, seconds = casts + cell.c + cell.m, seconds + cell.t
         end
     end
     -- The seq grows only after a settled cast, so it is never above the casts; a higher one is made up (it would
@@ -479,20 +644,74 @@ function CatchDB.CheckRecord(record)
     if record.seq > casts then
         return false, "seq " .. record.seq .. " is above the record's " .. casts .. " casts"
     end
-    if known.unknownItem then
-        return false, "item " .. known.unknownItem .. " is unknown to the game", true
+    if seconds > STEP_SECONDS * record.seq then
+        return false, "more casting than " .. record.seq .. " version steps allow"
     end
     return true
+end
+
+---------------------------------------------------------------------------
+-- Newer versions (specs/004-public-channel-sync, research.md R9)
+---------------------------------------------------------------------------
+-- Checks that a newer version of a unit continues the version held (the stored record, or { seq, proof } of the
+-- seed's absorbed version): its proof, stepped down to the held seq, must be the held proof, which only the owner
+-- can make. Walks at most `steps` links per call (all when nil) and returns "ok", "invalid" and the reason, or "more"
+-- and the state to pass to the next call. The incoming record passed CheckRecord (and so the casting limit).
+function CatchDB.CheckVersion(held, incoming, steps, state)
+    if not state then
+        if incoming.seq <= held.seq then
+            return "invalid", "not newer than the version held"
+        end
+        if incoming.seq - held.seq > CHAIN_LENGTH then
+            return "invalid", "a jump over a whole chain"
+        end
+        state = { link = incoming.proof, left = incoming.seq - held.seq }
+    end
+    for _ = 1, math.min(steps or state.left, state.left) do
+        state.link = ns.ProofStep(state.link)
+        state.left = state.left - 1
+    end
+    if state.left > 0 then
+        return "more", state
+    end
+    if state.link ~= held.proof then
+        return "invalid", "the proof does not continue the version held"
+    end
+    return "ok"
 end
 
 ---------------------------------------------------------------------------
 -- Views
 ---------------------------------------------------------------------------
 local LITTLE_DATA = 50 -- catches a scope needs before chances are shown
+-- Weights (specs/004-public-channel-sync, research.md R7): from WEIGHT_FROM contributions on, no other player's
+-- contribution carries more than WEIGHT_SHARE of the weight in the shown numbers.
+local WEIGHT_FROM, WEIGHT_SHARE = 5, 1 / 5
+local NEW_ITEM_REPORTERS = 3 -- other contributions that must report an item neither the seed nor the own catch has
 
--- A sum also tallies who it comes from: the IDs of the records with a summed cell and the seed's largest k.
+-- A sum also tallies who it comes from: the IDs of the records with a summed cell and the seed's largest k. The
+-- seed and the own catch go into the sum itself; each other player's contribution into its own part, so it can be
+-- weighted before the parts are added.
+-- x: the catches weighted by casts, for the miss rate (a seed cell's own x, else its catches).
 local function NewSum()
-    return { c = 0, m = 0, i = {}, ids = {}, seedK = 0 }
+    return { c = 0, m = 0, x = 0, i = {}, ids = {}, seedK = 0, parts = {} }
+end
+
+-- factor: the weight of the cell's counts (research.md R7 of part 3), 1 when nil.
+local function AddCounts(target, cell, factor)
+    factor = factor or 1
+    target.c = target.c + (tonumber(cell.c) or 0) * factor
+    target.m = target.m + (tonumber(cell.m) or 0) * factor
+    if type(cell.i) == "table" then
+        for itemID, entry in pairs(cell.i) do
+            if type(entry) == "table" then
+                local total = target.i[itemID] or { 0, 0 }
+                total[1] = total[1] + (tonumber(entry[1]) or 0) * factor
+                total[2] = total[2] + (tonumber(entry[2]) or 0) * factor
+                target.i[itemID] = total
+            end
+        end
+    end
 end
 
 local function AddCell(sum, cell, source)
@@ -507,18 +726,17 @@ local function AddCell(sum, cell, source)
             sum.ids[source.id] = true
         end
     end
-    sum.c = sum.c + (tonumber(cell.c) or 0)
-    sum.m = sum.m + (tonumber(cell.m) or 0)
-    if type(cell.i) == "table" then
-        for itemID, entry in pairs(cell.i) do
-            if type(entry) == "table" then
-                local total = sum.i[itemID] or { 0, 0 }
-                total[1] = total[1] + (tonumber(entry[1]) or 0)
-                total[2] = total[2] + (tonumber(entry[2]) or 0)
-                sum.i[itemID] = total
-            end
+    local target = sum
+    if source.other then
+        target = sum.parts[source.id]
+        if not target then
+            target = { c = 0, m = 0, x = 0, i = {} }
+            sum.parts[source.id] = target
         end
     end
+    AddCounts(target, cell)
+    -- A seed cell weighted by the harvest carries its catches weighted by casts (x); records never do (CleanCell).
+    target.x = target.x + ((source.seed and tonumber(cell.x)) or tonumber(cell.c) or 0)
 end
 
 -- The seed's keys per "<mapID>:<range>", built once per seed (the seed is large and never changes in place).
@@ -569,7 +787,8 @@ local function IndexRecord(key)
         for place, cell in pairs(type(cells) == "table" and cells or {}) do
             local prefix = KeyMapRange(place)
             if prefix then
-                local entry = { cell = cell, id = record.id, build = build, place = place, prefix = prefix }
+                local entry = { cell = cell, id = record.id, build = build, place = place, prefix = prefix,
+                    other = true }
                 AddToSet(others.byKey, place, entry)
                 AddToSet(others.byPrefix, prefix, entry)
                 table.insert(entries, entry)
@@ -701,12 +920,157 @@ local function SumMap(sources, mapID, ranges)
     return sum
 end
 
-local function BuildView(scope, sum)
+-- Catches of a sum with every other player's part, unweighted.
+local function RawCatches(sum)
+    local catches = sum.c
+    for _, part in pairs(sum.parts) do
+        catches = catches + part.c
+    end
+    return catches
+end
+
+-- What a contribution is capped by (research.md R7 of part 3): its catches for the chances and pieces, its casts for
+-- the miss rate (so one with few catches and many misses holds no more of the miss rate than of the chances).
+local function Catches(cell)
+    return cell.c
+end
+
+local function Casts(cell)
+    return cell.x + cell.m
+end
+
+-- The weight factor of each other player's contribution (research.md R7 of part 3): from WEIGHT_FROM contributions
+-- on, the largest ones by `amount` are capped one by one at T, where T is WEIGHT_SHARE of the weighted total; the
+-- seed block and the own catch are not capped. Five capped ones share the weight equally.
+local function WeightFactors(sum, players, amount)
+    local factors = {}
+    if players < WEIGHT_FROM then
+        return factors
+    end
+    local list, rest = {}, 0
+    for id, part in pairs(sum.parts) do
+        local value = amount(part)
+        if value > 0 then
+            table.insert(list, { id = id, c = value })
+            rest = rest + value
+        end
+    end
+    table.sort(list, function(a, b)
+        if a.c ~= b.c then
+            return a.c > b.c
+        end
+        return a.id < b.id
+    end)
+    local shares, base = 1 / WEIGHT_SHARE, amount(sum)
+    local cap, capped = (base + rest) * WEIGHT_SHARE, 0
+    for _, entry in ipairs(list) do
+        if entry.c <= cap then
+            break
+        end
+        capped, rest = capped + 1, rest - entry.c
+        if capped >= shares then
+            cap = entry.c
+            break
+        end
+        cap = (base + rest) / (shares - capped)
+    end
+    for _, entry in ipairs(list) do
+        if entry.c > cap then
+            factors[entry.id] = cap / entry.c
+        end
+    end
+    return factors
+end
+
+-- Adds the item IDs of every cell to `set` (item ID -> true).
+local function AddItemsOf(set, cells)
+    for _, cell in pairs(type(cells) == "table" and cells or {}) do
+        if type(cell) == "table" and type(cell.i) == "table" then
+            for itemID in pairs(cell.i) do
+                set[itemID] = true
+            end
+        end
+    end
+end
+
+-- Item ID -> true for every item of the seed, built once per seed.
+local seedItems, seedItemsOf
+
+local function SeedItems()
+    local cells = Seed().cells
+    if seedItemsOf ~= cells then
+        seedItems, seedItemsOf = {}, cells
+        AddItemsOf(seedItems, cells)
+    end
+    return seedItems
+end
+
+-- Item ID -> true for every item of the own catch (shared.mine and the records of the own ID), built once and grown
+-- by catches (ownItems is declared at the top: Settle grows it).
+local function OwnItems()
+    if not ownItems then
+        ownItems = {}
+        AddItemsOf(ownItems, ns.db.shared.mine)
+        for key, record in pairs(ns.db.shared.records) do
+            if type(record) == "table" and record.id == ns.db.shared.myID and type(record.builds) == "table"
+                and (key == record.id or CatchDB.IsOtherKey(key)) then
+                for _, cells in pairs(record.builds) do
+                    AddItemsOf(ownItems, cells)
+                end
+            end
+        end
+    end
+    return ownItems
+end
+
+-- Item ID -> the number of other players' contributions that report it anywhere on the map, in any range
+-- (FR-014: an item neither the seed nor the own catch has is shown from NEW_ITEM_REPORTERS of them on).
+local function Reporters(sources, mapID)
+    local ids, reporters = {}, {}
+    if not sources.others then
+        return reporters
+    end
+    for range = 0, MAX_RANGE do
+        for entry in pairs(sources.others.byPrefix[MapRange(mapID, range)] or {}) do
+            if type(entry.cell.i) == "table" and not (sources.reset and OlderBuild(entry.build, sources.reset)) then
+                for itemID, counts in pairs(entry.cell.i) do
+                    if type(counts) == "table" and (tonumber(counts[1]) or 0) > 0 then
+                        ids[itemID] = ids[itemID] or {}
+                        ids[itemID][entry.id] = true
+                    end
+                end
+            end
+        end
+    end
+    for itemID, set in pairs(ids) do
+        reporters[itemID] = CountKeys(set)
+    end
+    return reporters
+end
+
+-- rules: { mine = source "mine" (every item shown), reporters = Reporters(...) }.
+local function BuildView(scope, sum, rules)
+    local players = Players(sum)
+    local factors, castFactors = WeightFactors(sum, players, Catches), WeightFactors(sum, players, Casts)
+    local weighted, raw = { c = 0, m = 0, i = {} }, { c = 0, m = 0, i = {} }
+    local misses, casts = sum.m, Casts(sum) -- the miss rate's sums, weighted by casts
+    AddCounts(weighted, sum)
+    AddCounts(raw, sum)
+    for id, part in pairs(sum.parts) do
+        AddCounts(weighted, part, factors[id])
+        AddCounts(raw, part)
+        local factor = castFactors[id] or 1
+        misses, casts = misses + part.m * factor, casts + Casts(part) * factor
+    end
+    local seed, own, reporters = SeedItems(), OwnItems(), rules.reporters
     local items = {}
-    for itemID, entry in pairs(sum.i) do
-        if entry[1] > 0 then
-            table.insert(items, { itemID = itemID, catches = entry[1], chance = sum.c > 0 and entry[1] / sum.c or 0,
-                pieces = entry[2] / entry[1] })
+    for itemID, entry in pairs(weighted.i) do
+        local catches = raw.i[itemID][1]
+        local shown = rules.mine or seed[itemID] or own[itemID] or (reporters[itemID] or 0) >= NEW_ITEM_REPORTERS
+        if catches > 0 and entry[1] > 0 and shown then
+            table.insert(items, { itemID = itemID, catches = catches,
+                chance = weighted.c > 0 and entry[1] / weighted.c or 0, pieces = entry[2] / entry[1],
+                reporters = reporters[itemID] or 0, inSeed = seed[itemID] == true })
         end
     end
     table.sort(items, function(a, b)
@@ -715,20 +1079,24 @@ local function BuildView(scope, sum)
         end
         return a.itemID < b.itemID
     end)
-    return { scope = scope, littleData = sum.c < LITTLE_DATA, catches = sum.c, misses = sum.m, items = items,
-        players = Players(sum) }
+    return { scope = scope, littleData = raw.c < LITTLE_DATA, catches = raw.c, misses = raw.m,
+        missRate = casts > 0 and misses / casts or 0, items = items, players = players }
 end
 
 local cache, cacheVersion = {}, nil
+local reportersCache = {} -- "<mapID>|<source>" -> Reporters(...): the map's, whatever the spot or range
 
 -- What a place gives (contracts/catchdb-api.md): the spot, or the whole map when the spot has fewer than
 -- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }. A view is
--- { scope = "spot" | "map" | "none", littleData, catches, misses, items = { { itemID, catches, chance, pieces } },
--- players } (players: the contributions behind the numbers, a lower bound where the seed cannot tell;
--- specs/003-guild-group-sync/research.md R9).
+-- { scope = "spot" | "map" | "none", littleData, catches, misses, missRate, players,
+-- items = { { itemID, catches, chance, pieces, reporters, inSeed } } }: catches and misses are the real sums;
+-- chance, pieces and missRate come from the sums weighted by research.md R7 of part 3; an item neither the seed nor
+-- the own catch has needs NEW_ITEM_REPORTERS other contributions on the map (FR-014); players is a lower bound where
+-- the seed cannot tell (specs/003-guild-group-sync/research.md R9).
 function CatchDB.Query(mapID, cell, filter)
     if cacheVersion ~= version then
         wipe(cache)
+        wipe(reportersCache)
         cacheVersion = version
     end
     local cacheKey = table.concat({ mapID, cell, tostring(filter.range), filter.source }, "|")
@@ -737,23 +1105,31 @@ function CatchDB.Query(mapID, cell, filter)
     end
     local ranges = filter.range == "all" and CatchDB.RANGES or { filter.range }
     local sources = Sources(filter.source, mapID)
+    local reportersKey = mapID .. "|" .. filter.source
+    reportersCache[reportersKey] = reportersCache[reportersKey] or Reporters(sources, mapID)
+    local rules = { mine = filter.source == "mine", reporters = reportersCache[reportersKey] }
     local keys = {}
     for i, range in ipairs(ranges) do
         keys[i] = CatchDB.PlaceKey(mapID, range, cell)
     end
     local spot = SumSpot(sources, keys)
     local view
-    if spot.c >= LITTLE_DATA then
-        view = BuildView("spot", spot)
+    if RawCatches(spot) >= LITTLE_DATA then
+        view = BuildView("spot", spot, rules)
     else
         local map = SumMap(sources, mapID, ranges)
-        view = BuildView(map.c > 0 and "map" or "none", map) -- "none": nothing caught, misses or not
+        view = BuildView(RawCatches(map) > 0 and "map" or "none", map, rules) -- "none": nothing caught at all
     end
     cache[cacheKey] = view
     return view
 end
 
--- The bundled seed's epoch and number of places, for /okf share.
+-- The seed's cell of a place key, or nil (the eviction order of Share.lua weighs records by it).
+function CatchDB.SeedCell(key)
+    local cell = Seed().cells[key]
+    return type(cell) == "table" and cell or nil
+end
+
 function CatchDB.SeedInfo()
     return SeedEpoch(), CountKeys(Seed().cells)
 end
@@ -802,9 +1178,20 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     -- lacks goes on to the next harvest. shared.mine keeps the lifetime counts either way.
     elseif CatchDB.AbsorbedSeq(shared.myID, record.epoch) then
         Roll()
+    else
+        -- The version chain of the live record (specs/004-public-channel-sync, data-model.md): resumed, or made for
+        -- a record from before part 3 (no proof published yet, so a chain can start at its seq); a record whose
+        -- published proofs lost their chain, or whose seq is past a chain's top, starts over.
+        if OwnChain(record) then
+            StartMarks()
+        elseif record.proof == nil and record.seq < CHAIN_LENGTH then
+            NewChain(record.epoch)
+        else
+            Roll()
+        end
     end
     version = version + 1 -- the seed or the record may be new
-    others, frozen = nil, nil
+    others, frozen, ownItems = nil, nil, nil
 end)
 
 -- The place is read at every cast start, also for a cast picked up after a /reload: nothing is counted here,
@@ -851,8 +1238,12 @@ ns.On("FISH_MISSED", function(castID)
 end)
 
 -- Records under "<id>@<epoch>" came or went (other players', Share.lua, or the own one a roll kept), or sharing
--- was switched: the views and their index change.
-ns.On("SHARED_DATA_CHANGED", function(keys)
+-- was switched: the views and their index change. A change in another store (a protocol node of the tests) is not
+-- this player's data.
+ns.On("SHARED_DATA_CHANGED", function(keys, store)
+    if store ~= nil and ns.db and store ~= ns.db.shared then
+        return
+    end
     version = version + 1
     frozen = nil
     if others and keys then

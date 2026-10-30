@@ -81,16 +81,16 @@ is always read: `AddonMessageThrottle`, `ChannelThrottle`, `AddOnMessageLockdown
 ### What the player sees
 
 Nothing: addon messages do not reach the chat window, only addons with the same prefix receive them (the
-`CHAT_MSG_ADDON` event). Only the wrapping around them can become visible (the channel rows are for part 3,
-planned):
+`CHAT_MSG_ADDON` event). Only the wrapping around them can become visible (the channel rows are part 3,
+[specs/004-public-channel-sync](../specs/004-public-channel-sync/spec.md)):
 
 | What can slip through | How we hide it |
 | --- | --- |
-| The `OKFishData` channel in the channel list and the line about joining it | `ChatFrame_RemoveChannel` from every chat window; a `CHAT_MSG_CHANNEL_NOTICE` filter through `ChatFrame_AddMessageEventFilter`. |
+| The `OneKeyFishingShare` channel and the lines about joining it | The window's `RemoveChannel` on every chat window that lists it (`ChatFrame_RemoveChannel` is deprecated), again on `UPDATE_CHAT_WINDOWS`; filters (`ChatFrameUtil.AddMessageEventFilter`) for the channel's notices, joins, leaves and lines; the password popup of a locked channel closed in the same frame. The channel stays visible in the Chat Channels window and in Chat Settings (the game has no way to hide it there); the page and the README say so. |
 | General / Trade numbers shifting | Join the channel 30-60 s after login, when the common channels are already in place. |
-| Text someone types into the channel by hand (`/join OKFishData`) | A `CHAT_MSG_CHANNEL` filter for this channel. |
+| Text someone types into the channel by hand (`/join OneKeyFishingShare`) | A `CHAT_MSG_CHANNEL` filter for this channel. |
 | "Player X not found" after a whisper to a player who logged off | The `TargetOffline` result is read (`Comm.OnOffline`), and a `CHAT_MSG_SYSTEM` filter (`ChatFrameUtil.AddMessageEventFilter`) hides "No player named" for the names whispered in the last 10 s (part 2). |
-| All 10 channel slots are taken | The addon does not join the channel and works through the guild and the group; `/okf share` shows this. |
+| Fewer than two of the 20 chat channel slots are free | The addon does not join the channel and works through the guild and the group; `/okf share` shows this. When the player hits the limit while the addon is in its channel, it leaves at once with one chat line, so the player's next try works. |
 
 GUILD, PARTY, RAID and WHISPER are completely invisible for addon messages.
 
@@ -255,18 +255,19 @@ them.
 ## Protection against spam and fakes
 
 Without a server it is impossible to prove the data is honest, so the protection has layers: checks on receipt,
-the same checks in `harvest` before seeding, and (planned for part 3) contribution weights when showing. The stakes
+the same checks in `harvest` before seeding, and (part 3) contribution weights when showing. The stakes
 are low (someone sees a wrong percentage), so this is enough.
 
 | Threat | Protection |
 | --- | --- |
 | Flood from one sender | A limit per sender name (part 2, `Share.lua`): `HELLO` no more than 1 per 60 s (more are ignored), up to 1,160 units per hour (one per 240 bytes of a message, at least one per message: twice what an honest client can send to one peer in an hour), no more records in a session than it asked for and 175 records per hour, one record up to 32 KB encoded and 1,000 places. An offender is ignored until logout. A peer answered with a `DIFF` gets `BYE busy` to another `SUM` within 8 minutes. |
 | Impossible numbers | A cell has no more casts (catches + misses) than seconds of casting `t` (a cast takes at least a second). Per item: catches with it ≤ catches, pieces ≤ 20 × those catches. A record with any invalid cell is rejected entirely (the harvest skips only the cell). |
-| Made-up items | The item ID must exist (`C_Item.GetItemInfoInstant`); a record with an item this client does not know is dropped without blaming the sender (the item may be new). Planned for part 3: an item that is in neither the seed nor your own catch is shown only when at least 3 different IDs report it in the same zone. |
-| Many fake IDs (Sybil) | The tab says "N catches from K players" (from 2 players on). Planned for part 3: one contribution gives no more than 20% of the weight in a cell with 5+ contributions; `harvest` looks for outliers and adds blocked IDs to the seed (`banned`). |
+| Made-up items | Part 3: Forever hides items from the client until they are found, so an unknown item ID is accepted (bounded to a valid ID) and shown as "Unknown item"; an item that is in neither the seed nor your own catch is shown only when at least 3 different IDs report it on the map. |
+| Many fake IDs (Sybil) | The tab says "N catches from K players" (from 2 players on). Part 3: from 5 other contributions at a cell on, none gives more than a fifth of the others' weight (the seed and your own catch count in full); `harvest` reports outliers and the author's `--block` puts IDs in the seed's `blocked`, which every client drops. |
 | Broken or old data | Version in the prefix, decoding in `pcall`, schema check (types, cell and size limits). |
 | Frame rate drops | Received records are decoded, checked and stored one per frame step (`C_Timer.After(0, ...)`); `/okf debug` shows the longest step (goal under 5 ms). |
-| Forged versions of a record | Records are anonymous and unsigned, and a higher `seq` replaces a lower one. A record whose `seq` is above its casts is refused by the client and the harvest (the owner bumps it only after a settled cast), so a made-up `seq` needs as many made-up casts. Not covered yet: a forger who sends another player's ID and epoch with a higher `seq` and enough made-up casts makes the owner's real updates look older everywhere until a release names the unit, and the harvest keeps the forged version. Part 3 brings strangers in and has to close it before it ships: for example, limit how far a version may grow over the one held (casts and seq against the time since it was seen), or tie versions to the owner. |
+| Forged versions of a record | Closed by part 3: versions are bound to their owner. Each record carries a `proof`, link `seq` of a SHA-256 chain only its owner can extend, and a newer version must step down to the held one's proof (client and harvest). A version holds at most 180 s of casting per step of its `seq`. A copy made up at a `seq` the owner already published lives only until the owner's next version, and the weights cap its effect (research R9 of spec 004). |
+| Flood of message parts | Part 3: parts are taken only from the session's peer and never from the channel, all senders' parts together stay within 128 KB, and a sender of more unwanted parts in 10 minutes than a whole hourly budget carries is ignored until logout. |
 | Privacy | Records have no names. The ID is random, but a peer that gets a record from its owner sees the sender's name next to the ID; a cell carries the sums of its cast positions, the average spot fished from. The notice and the settings page say so. The whisper sender's name is kept only in session memory, not in SavedVariables. |
 
 ## Seeding the database from releases
@@ -591,6 +592,15 @@ Ships only if the in-game spike confirms that addon messages in custom channels 
 whether they reach other layers and the other faction). Depends on part 2. Design:
 docs/shared-db-plan.md (phase 5).
 ```
+
+Decisions ([specs/004-public-channel-sync](../specs/004-public-channel-sync/spec.md), with research.md R1-R14): the
+channel `OneKeyFishingShare` and five fixed fallbacks walked in order after a lock; joined 30-60 s after login with
+two of the 20 chat channel slots free, given up with one line when the player hits the limit; hidden from every chat
+window and filtered, but listed in the Chat Channels window; a channel `HELLO` every 30-50 min, and a hearer starts
+a session with the chance `min(1, 2 / H)`; guild, group and friends keep part 2's timing; contribution weights,
+owner-bound versions, the new-item rule and the block list close the open rows of "Protection against spam and
+fakes"; a "Use the public channel" setting; `Channel.AVAILABLE` takes the channel out of the release if the spike
+fails.
 
 ### Part 4 (spec 005): catch catalog, tooltips, pools, prices
 

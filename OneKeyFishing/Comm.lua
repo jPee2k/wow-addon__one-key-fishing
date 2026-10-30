@@ -1,9 +1,11 @@
 -- Comm: the transport of the catch exchange (Share.lua). Addon messages under the prefix OKF1 (the digit is the
--- protocol version) to the guild, the home group and by whisper, and Battle.net game data to friends playing
--- Forever. Long messages travel in parts; one paced send queue keeps an hourly budget and reads every send result;
--- everything pauses in combat, in instances, on loading screens and in restricted game states. Comm knows nothing
--- about records. Names live only in the queue, the part buffers and the chat filter's lines of the last 10 s.
--- See specs/003-guild-group-sync/contracts/sync-protocol.md and research.md R2, R7, R8, R10, R11.
+-- protocol version) to the guild, the home group, the hidden public channel (Channel.lua, part 3) and by whisper,
+-- and Battle.net game data to friends playing Forever. Long messages travel in parts; one paced send queue keeps
+-- an hourly budget and reads every send result; everything pauses in combat, in instances, on loading screens and
+-- in restricted game states. Comm knows nothing about records. Names live only in the queue, the part buffers and
+-- the chat filter's lines of the last 10 s.
+-- See specs/003-guild-group-sync/contracts/sync-protocol.md and research.md R2, R7, R8, R10, R11, and for the channel
+-- and the part rules specs/004-public-channel-sync/contracts/protocol.md and research.md R6.
 local _, ns = ...
 
 local Comm = {}
@@ -23,10 +25,16 @@ local THROTTLE_BACKOFF, MAX_THROTTLE_BACKOFF = 2, 8
 local LOCKDOWN_BACKOFF, MAX_LOCKDOWN_BACKOFF = 60, 15 * 60 -- seconds of pause after AddOnMessageLockdown
 local PART_TIMEOUT = 15 -- seconds without a new part before an unfinished message is dropped
 local PART_BUFFER = 64 * 1024 -- bytes of parts kept per sender
+local PART_BUFFER_TOTAL = 128 * 1024 -- bytes of parts kept over all senders (part 3, FR-010)
+local CHANNEL_REFUSALS = 2 -- refusals in a row on the channel path before Channel.lua moves on (research R4, R6)
 local FILTER_WINDOW = 10 -- seconds a whispered name's "No player named ..." line is hidden
 local PAUSE_RECHECK = 5 -- seconds between checks while paused
 local MAX_REFUSALS = 5 -- refusals in a row before a path is left out until logout
 local MAX_PARTS = 999
+-- Dropped parts of one sender within PART_FLOOD_MINUTES before it is reported (FR-010): more than an honest client's
+-- whole hourly budget can carry in parts (each but a message's last is a full MAX_MESSAGE, and a long message has at
+-- least two), so the leftovers of a session that ended (a timeout, a /reload) never get an honest peer ignored.
+local PART_FLOOD_LIMIT, PART_FLOOD_MINUTES = math.ceil(2 * BUDGET / MAX_MESSAGE), 10
 
 -- Send results, read from Enum.SendAddonMessageResult (C_BattleNet.SendGameData returns the same values), so a
 -- patch that renumbers them changes nothing here; the numbers of the 1.60.1 export are only the fallback.
@@ -36,7 +44,7 @@ local ADDON_THROTTLE, CHANNEL_THROTTLE = RESULT.AddonMessageThrottle or 3, RESUL
 local GENERAL_ERROR, NOT_IN_GUILD = RESULT.GeneralError or 9, RESULT.NotInGuild or 10
 local LOCKDOWN, TARGET_OFFLINE = RESULT.AddOnMessageLockdown or 11, RESULT.TargetOffline or 12
 
-local VIA = { GUILD = "guild", PARTY = "group", RAID = "group", WHISPER = "whisper" }
+local VIA = { GUILD = "guild", PARTY = "group", RAID = "group", WHISPER = "whisper", CHANNEL = "channel" }
 -- The restrictions of Enum.AddOnRestrictionType that block addon messages.
 local RESTRICTIONS = { "Chat", "Encounter", "ChallengeMode", "PvPMatch", "Map" }
 
@@ -51,12 +59,17 @@ local pumpAt -- GetTime() of the scheduled queue run
 local traffic = {} -- minute -> bytes sent
 local results = {} -- send result -> count, for /okf debug
 local anySuccess = false -- a message went out since the login: the game takes this account's addon messages
-local receivers, offlineHandlers, activityHandlers = {}, {}, {}
+local receivers, offlineHandlers, activityHandlers, floodHandlers = {}, {}, {}, {}
+local partFilter -- fn(address): true when parts of long messages are taken from it (Share: its session's peer)
+local dropped = {} -- address -> per-minute counts of the parts dropped by the part filter
+local flooded = {} -- addresses reported through OnFlood: every message from them is dropped until logout
+local channelRefusals = 0
 local paths = {
     guild = { failures = 0, disabled = false },
     group = { failures = 0, disabled = false },
     whisper = { failures = 0, disabled = false },
     bnet = { failures = 0, disabled = false },
+    channel = { failures = 0, disabled = false }, -- refusals move to the next channel (Channel.OnRefused) instead
 }
 local notFound = {} -- "No player named ..." line -> GetTime() of the whisper it would follow
 local buffers = {} -- address -> { bytes, checking, messages = { [key] = { parts, count, total, bytes, lastPart } } }
@@ -198,8 +211,9 @@ local function Refused(name)
         path.disabled = true
         DropWhere(function(message) return message.path == name end)
         local left = false
-        for _, other in pairs(paths) do
-            left = left or not other.disabled
+        for otherName, other in pairs(paths) do
+            -- The channel carries HELLO only and sessions go by whisper: it alone keeps nothing available.
+            left = left or (not other.disabled and otherName ~= "channel")
         end
         unavailable = not left
         UpdatePause()
@@ -224,6 +238,7 @@ local function SendNow(message)
         ok, result = pcall(C_BattleNet.SendGameData, message.target, PREFIX, message.text)
     else
         -- VERIFY(V10): SendAddonMessage works for GUILD, PARTY, RAID and WHISPER and shows nothing in chat
+        -- VERIFY(V19): SendAddonMessage to a custom channel takes its number and reaches the addon users in it
         ok, result = pcall(C_ChatInfo.SendAddonMessage, PREFIX, message.text, message.chatType, message.target)
     end
     if not ok or result == false then
@@ -244,6 +259,12 @@ local function Deliver(message)
     end
     if not whole.allowed then
         return
+    end
+    if message.chatType == "CHANNEL" then
+        message.target = ns.Channel.GetNumber() -- the number now: a move to a fallback channel changes it
+        if not message.target then
+            return -- left the channel meanwhile
+        end
     end
     if message.chatType == "WHISPER" and ERR_CHAT_PLAYER_NOT_FOUND_S then
         for line, at in pairs(notFound) do
@@ -267,7 +288,11 @@ local function Deliver(message)
         anySuccess = true
         throttleBackoff, lockdownBackoff = nil, nil
         paths[message.path].failures = 0
+        if message.path == "channel" then
+            channelRefusals = 0
+        end
     elseif result == ADDON_THROTTLE or result == CHANNEL_THROTTLE then
+        -- VERIFY(V25): addon messages to a channel throttle as on Retail and report ChannelThrottle
         Enqueue(message, true)
         throttleBackoff = throttleBackoff and math.min(throttleBackoff * 2, MAX_THROTTLE_BACKOFF) or THROTTLE_BACKOFF
         holdUntil = GetTime() + throttleBackoff
@@ -275,6 +300,14 @@ local function Deliver(message)
         lockdownBackoff = lockdownBackoff and math.min(lockdownBackoff * 2, MAX_LOCKDOWN_BACKOFF) or LOCKDOWN_BACKOFF
         lockdownUntil = GetTime() + lockdownBackoff
         UpdatePause()
+    elseif message.path == "channel" then
+        -- A channel that cannot carry messages any more (InvalidChannel or GeneralError when moderated or muted, or
+        -- any other refusal): the next one, never the part 2 path rule, which would keep the slot with no use.
+        channelRefusals = channelRefusals + 1
+        if channelRefusals >= CHANNEL_REFUSALS then
+            channelRefusals = 0
+            ns.Channel.OnRefused()
+        end
     elseif result == TARGET_OFFLINE then
         -- VERIFY(V12): a whisper to a player who just went offline returns TargetOffline
         Unreachable(message)
@@ -388,6 +421,15 @@ function Comm.Broadcast(text)
     end
 end
 
+-- Queues a HELLO to the hidden public channel, only while Channel.lua is in it (part 3).
+function Comm.ChannelBroadcast(text)
+    if not Enabled() or Comm.GetPause() or #text > MAX_MESSAGE or paths.channel.disabled
+        or ns.Channel.GetState() ~= "in" then
+        return
+    end
+    Queue({ text = text, path = "channel", broadcast = true, chatType = "CHANNEL", whole = {} })
+end
+
 -- True while messages to `address` wait in the queue (the other side cannot answer before they arrive).
 function Comm.IsSending(address)
     for _, message in ipairs(queue) do
@@ -443,6 +485,44 @@ function Comm.OnActivity(fn)
     table.insert(activityHandlers, fn)
 end
 
+-- fn(address): true when parts of long messages are taken from that address (part 3, FR-010).
+function Comm.SetPartFilter(fn)
+    partFilter = fn
+end
+
+-- fn(address) once when a sender's dropped parts pass PART_FLOOD_LIMIT within PART_FLOOD_MINUTES.
+function Comm.OnFlood(fn)
+    table.insert(floodHandlers, fn)
+end
+
+-- A part nobody asked for: dropped before any buffering; a sender who keeps sending them is reported once.
+local function DropPart(address)
+    dropped[address] = dropped[address] or {}
+    if ns.CountRecent(dropped[address], GetTime(), 1, PART_FLOOD_MINUTES) > PART_FLOOD_LIMIT then
+        flooded[address], dropped[address] = true, nil
+        for _, fn in ipairs(floodHandlers) do
+            fn(address)
+        end
+    end
+end
+
+-- Keeps the parts of all senders within PART_BUFFER_TOTAL: the buffer that got its last part longest ago goes first.
+local function CapBuffers()
+    local total, oldest, oldestAt = 0, nil, math.huge
+    for address, buffer in pairs(buffers) do
+        total = total + buffer.bytes
+        for _, entry in pairs(buffer.messages) do
+            if entry.lastPart and entry.lastPart < oldestAt then
+                oldest, oldestAt = address, entry.lastPart
+            end
+        end
+    end
+    if total > PART_BUFFER_TOTAL and oldest then
+        buffers[oldest] = nil
+        CapBuffers()
+    end
+end
+
 local function Whole(address, via, text)
     for _, fn in ipairs(receivers) do
         fn(address, via, text)
@@ -476,7 +556,7 @@ local function DropExpired(address, buffer)
 end
 
 local function OnMessage(address, via, text)
-    if not Enabled() or Comm.GetPause() or type(text) ~= "string" or text:find("\0", 1, true) then
+    if not Enabled() or Comm.GetPause() or type(text) ~= "string" or text:find("\0", 1, true) or flooded[address] then
         return
     end
     for _, fn in ipairs(activityHandlers) do
@@ -485,6 +565,11 @@ local function OnMessage(address, via, text)
     local head, id, part, total, chunk = text:match("^(%u%w%w)#(%w+)%.(%d+)%.(%d+) (.*)$")
     if not head then
         Whole(address, via, text)
+        return
+    end
+    -- Long messages come only inside a session, by whisper or Battle.net from its peer: never from the channel.
+    if via == "channel" or (partFilter and not partFilter(address)) then
+        DropPart(address)
         return
     end
     part, total = tonumber(part), tonumber(total)
@@ -512,6 +597,10 @@ local function OnMessage(address, via, text)
         buffers[address] = nil -- a flood: everything of this sender goes
         return
     end
+    CapBuffers()
+    if buffers[address] ~= buffer then
+        return -- this sender's buffer made room for the others
+    end
     entry.parts[part], entry.count, entry.bytes = chunk, entry.count + 1, entry.bytes + #chunk
     if entry.count == total then
         buffer.messages[key] = nil
@@ -520,8 +609,12 @@ local function OnMessage(address, via, text)
     end
 end
 
-ns.RegisterEvent("CHAT_MSG_ADDON", function(_, prefix, text, channel, sender)
+ns.RegisterEvent("CHAT_MSG_ADDON", function(_, prefix, text, channel, sender, target, _, _, name)
     if prefix ~= PREFIX or type(sender) ~= "string" or not VIA[channel] then
+        return
+    end
+    -- VERIFY(V19): a channel message names its channel in the name argument (or in target)
+    if channel == "CHANNEL" and not ns.Channel.IsOurs((type(name) == "string" and name ~= "") and name or target) then
         return
     end
     -- VERIFY(V11): the sender is "Name-Realm" and works as the WHISPER target as it is
@@ -602,6 +695,7 @@ function Comm.Describe()
         ("back-off: throttle %s s, lockdown %s s"):format(tostring(throttleBackoff or 0),
             tostring(lockdownBackoff or 0)),
         "paths with refusals: " .. (#out > 0 and table.concat(out, ", ") or "none"),
+        ("channel refusals in a row %d, senders flooding parts %d"):format(channelRefusals, ns.CountKeys(flooded)),
     }
 end
 

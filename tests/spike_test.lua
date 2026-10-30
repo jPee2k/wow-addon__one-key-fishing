@@ -64,3 +64,44 @@ test("a failing send shows a failure line, not a Lua error", function()
     assert(text:find("WHISPER to self: failed: ", 1, true), "failure line")
     assert(not text:find("!! failed", 1, true), text:match("!! failed[^\n]*") or "")
 end)
+
+test("the chat channel section joins a test channel, then checks it and leaves, without names", function()
+    local text = report()
+    assert(text:find("-- Chat channel (V19-V27) --", 1, true), "section")
+    assert(text:find("MaxChatChannels 20, active channels 0", 1, true), "slots")
+    assert(text:find("too many channels text: You can only be in 20 channels at a time.", 1, true), "limit text")
+    local name = channel_joins[#channel_joins].name
+    assert(name:find("^OKFSpike%d%d%d%d$"), "a test channel name: " .. name)
+    assert(text:find("JoinTemporaryChannel: 0, the test channel name", 1, true), "join result")
+    chat_window_add(1, name)
+    channel_notice("CHAT_MSG_CHANNEL_NOTICE", "YOU_CHANGED", name)
+    receive_addon("OKFSPIKE", "ping", "CHANNEL", "Other-Realm", name, 5, name)
+    text = report()
+    assert(text:find("chat window 1 listed it", 1, true), "window check")
+    assert(not ChatFrame1:ContainsChannel(name), "removed from the window")
+    assert(text:find("SendAddonMessage CHANNEL: 0", 1, true), "send result")
+    assert(text:find("CHAT_MSG_CHANNEL_NOTICE YOU_CHANGED", 1, true), "notice token")
+    assert(text:find("channel echo: sender Name-Realm, target the test channel name", 1, true), "echo shapes")
+    eq(channel_passwords[1].password, "x", "password set")
+    eq(channel_passwords[2].password, "", "password cleared")
+    eq(channel_leaves[#channel_leaves], name, "left the test channel")
+    assert(not text:find("Other-Realm", 1, true), "no name")
+    text = report()
+    assert(text:find("channel numbers back as before the last join: true", 1, true), "numbers compared")
+end)
+
+test("the chat channel section hides a password popup for the test channel and survives failing calls", function()
+    local name = channel_joins[#channel_joins].name
+    fire("CHANNEL_PASSWORD_REQUEST", name)
+    eq(popups_hidden[#popups_hidden], "CHAT_CHANNEL_PASSWORD", "popup hidden")
+    LeaveChannelByName(name) -- the last report joined it again
+    local join, send = JoinTemporaryChannel, C_ChatInfo.SendAddonMessage
+    JoinTemporaryChannel = function() error("boom") end
+    C_ChatInfo.SendAddonMessage = function() error("boom") end
+    local text = report()
+    JoinTemporaryChannel, C_ChatInfo.SendAddonMessage = join, send
+    assert(text:find("password request for the test channel", 1, true) or text:find("CHANNEL_PASSWORD_REQUEST", 1,
+        true), "the request is reported")
+    assert(text:find("JoinTemporaryChannel: failed: ", 1, true), "failure line")
+    assert(not text:find("!! failed", 1, true), text:match("!! failed[^\n]*") or "")
+end)

@@ -25,7 +25,11 @@ test("Got it on the retried notice closes it for good and starts the exchange", 
     accept_popup()
     eq(ns.db.shareNotice, true, "saved")
     advance(120)
-    eq(#addon_sent, 1, "a HELLO to the guild")
+    local guild = 0
+    for _, message in ipairs(addon_sent) do
+        guild = guild + (message.chatType == "GUILD" and 1 or 0)
+    end
+    eq(guild, 1, "a HELLO to the guild") -- the hidden channel's HELLO may come too (part 3)
     advance(60)
     eq(rawget(_G, "last_popup"), POPUP, "no second popup")
 end)

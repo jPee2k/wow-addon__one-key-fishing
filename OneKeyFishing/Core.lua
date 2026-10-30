@@ -220,8 +220,10 @@ local DB_DEFAULTS = {
         language = "auto", -- "auto" (the game client's language) or a language code, see Localization.lua
         languageHintShown = false, -- the one-time hint for clients without a translation was shown
         shareDB = true, -- exchange catch data with guild, group and friends (Share.lua); off: nothing sent or received
+        shareChannel = true, -- "Use the public channel" (Channel.lua); without effect while shareDB is off
     },
     shareNotice = false, -- true once the one-time popup about the exchange was closed (Share.lua)
+    shareNoticeChannel = false, -- true once the notice that names the public channel was closed (Share.lua)
     prices = {}, -- itemID -> { price = copper, quantity = pieces, lots = auctions, time = time() } from scans
     minimapAngle = 220,
     indicatorPos = nil, -- { point, relativePoint, x, y }

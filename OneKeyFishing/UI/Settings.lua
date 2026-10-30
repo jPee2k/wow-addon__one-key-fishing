@@ -426,12 +426,35 @@ local function CreateSharePage()
     checkbox:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -2, -14)
     checkbox.label:SetWidth(520)
 
-    local about = CreateText(page, "GameFontHighlightSmall", table.concat({
+    -- The public channel (part 3), only while the release has it: a second setting, greyed out while sharing is off,
+    -- and the channel's state under it.
+    local below, channelBox, channelLine = checkbox, nil, nil
+    if ns.Channel.AVAILABLE then
+        channelBox = CreateCheckbox(page, L["Use the public channel"],
+            function() return ns.Channel.IsEnabled() end,
+            function(value) ns.Channel.SetEnabled(value) end)
+        channelBox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -6)
+        channelBox.label:SetWidth(520)
+        channelLine = CreateText(page, "GameFontHighlightSmall")
+        channelLine:SetPoint("TOPLEFT", channelBox, "BOTTOMLEFT", 30, -2)
+        channelLine:SetWidth(530)
+        page.channelBox, page.channelLine = channelBox, channelLine
+        below = channelBox
+    end
+
+    local sentences = {
         L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."],
         L["They go to addon users in your guild, group and friends list. No names or gear."],
         L["The players you exchange with can tell which ID is yours."],
-    }, " "))
-    about:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 2, -12)
+    }
+    if ns.Channel.AVAILABLE then
+        table.insert(sentences,
+            L["With the public channel on, they also go to every other addon user, through a hidden chat channel."])
+        table.insert(sentences,
+            L["Anyone who joins that channel by its name can see which characters in it use the addon."])
+    end
+    local about = CreateText(page, "GameFontHighlightSmall", table.concat(sentences, " "))
+    about:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 2, channelLine and -24 or -12)
     about:SetWidth(560)
     local offText = CreateText(page, "GameFontHighlightSmall",
         L["Turned off: nothing is sent or received, and other players' data is not counted."])
@@ -445,12 +468,33 @@ local function CreateSharePage()
     status:SetWidth(560)
     page.status = status
 
+    -- The channel setting follows the first one: clickable only while sharing is on.
+    local function SyncChannelBox()
+        if channelBox then
+            local on = ns.Share.IsEnabled()
+            channelBox:SetEnabled(on)
+            channelBox:SetChecked(ns.Channel.IsEnabled())
+            channelBox.label:SetFontObject(on and "GameFontHighlight" or "GameFontDisable")
+        end
+    end
+    ns.On("SETTINGS_CHANGED", function(key)
+        if key == "shareDB" or key == "shareChannel" then
+            SyncChannelBox()
+        end
+    end)
+
     local elapsed = 0
     local function Update()
         elapsed = 0
         status:SetText(ns.Share.StatusLine())
+        if channelLine then
+            channelLine:SetText(ns.Share.ChannelLine())
+        end
     end
-    page:SetScript("OnShow", Update)
+    page:SetScript("OnShow", function()
+        SyncChannelBox()
+        Update()
+    end)
     page:SetScript("OnUpdate", function(_, delta)
         elapsed = elapsed + delta
         if elapsed >= STATUS_INTERVAL then

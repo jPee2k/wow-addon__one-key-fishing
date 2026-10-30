@@ -133,6 +133,9 @@ local function BuildReport()
         for _, line in ipairs(ns.Comm.Describe()) do
             add("%s", line)
         end
+        for _, line in ipairs(ns.Channel.Describe()) do
+            add("%s", line)
+        end
     end)
 
     Section(lines, "Game settings", function()

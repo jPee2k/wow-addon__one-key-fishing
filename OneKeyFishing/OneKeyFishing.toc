@@ -57,6 +57,7 @@ Stats.lua
 SeedData.lua
 CatchDB.lua
 Comm.lua
+Channel.lua
 Share.lua
 UI\CopyWindow.lua
 UI\Indicator.lua

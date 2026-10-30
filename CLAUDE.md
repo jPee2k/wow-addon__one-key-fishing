@@ -82,7 +82,7 @@ another module at runtime, not at file load time, unless it comes earlier in the
 | `Catch.lua` | casts and loot become `FISH_CAUGHT` / `FISH_MISSED` | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Stats.lua`, `Prices.lua`, `Auction.lua` | statistics; item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `SeedData.lua`, `CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
-| `Comm.lua`, `Share.lua` | the catch exchange: transport; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
+| `Comm.lua`, `Channel.lua`, `Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
 | `UI/*.lua` | indicator, settings, statistics window, "What can be caught here", toast, minimap, map pin, item hooks, copy window | [ui.md](docs/architecture/ui.md) |
 | `Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
 | `Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before the release | [ui.md](docs/architecture/ui.md) |
@@ -97,7 +97,8 @@ Cross-module rules:
   what is restored when is in constitution Principle III and [fishing-mode.md](docs/architecture/fishing-mode.md).
 - Slash commands are declared only in `Commands.lua`; modules register none.
 - Sharing is switched by `Share.SetEnabled`, never by a direct write of `settings.shareDB` (it fires
-  `SHARED_DATA_CHANGED`, which drops cached views).
+  `SHARED_DATA_CHANGED`, which drops cached views). The public channel likewise by `Channel.SetEnabled`, never by a
+  write of `settings.shareChannel` (it joins or leaves at once).
 - Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data
   tables that are plain data belong in `GameData/` (no logic, no `L`).
 
@@ -108,8 +109,9 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 - `FISH_CAUGHT` (items, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
 - `LURE_READY`, `SETTINGS_CHANGED`, `GEAR_LIST_CHANGED`
 - `AUCTION_STATE` (scan progress), `PRICES_CHANGED` (a scan finished or stopped)
-- `SHARED_DATA_CHANGED` (records under `<id>@<epoch>` came or went: other players', or the own one a roll kept; or
-  sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)
+- `SHARED_DATA_CHANGED` (keys, and the store when Share changed one: records under `<id>@<epoch>` came or went:
+  other players', or the own one a roll kept; or sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)
+- `CHANNEL_STATE` (state, index: the hidden public channel's state changed, Channel.lua)
 
 ## Forever API
 
@@ -129,3 +131,7 @@ public dumps, are in [docs/forever-api.md](docs/forever-api.md). New facts confi
 - `YES`, `NO` and `CANCEL` are in the client's language, not the addon's: popups use `L["Yes"]` / `L["No"]`.
 - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing); the
   tests do not catch it, so wrap such calls as `tostring((f()))`.
+- A player may be in 20 chat channels (`Constants.ChatFrameConstants.MaxChatChannels`). Joining a locked channel
+  opens the game's password popup (`CHAT_CHANNEL_PASSWORD`). A chat window shows only the channels in its own list,
+  so a channel is hidden with the window's `RemoveChannel` (`ChatFrame_RemoveChannel` is deprecated). Chat filters
+  and handlers must skip secret values (`issecretvalue`).

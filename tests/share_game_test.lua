@@ -23,8 +23,8 @@ local sentSince = addon_sent_since
 -- A fake peer: a test node whose messages reach the addon through CHAT_MSG_ADDON as "Peer-Realm", and which
 -- hears what the addon sends to it (whispers joined from their parts) and to the group.
 ---------------------------------------------------------------------------
-local peerStore = { myID = PEER_ID, mine = {}, records = { [PEER_ID] = { id = PEER_ID, epoch = 0, seq = 3,
-    builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(30, 2, { [FISH] = { 30, 30 } }) } } } } }
+local peerStore = { myID = PEER_ID, mine = {}, records = { [PEER_ID] = prove({ id = PEER_ID, epoch = 0, seq = 3,
+    builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(30, 2, { [FISH] = { 30, 30 } }) } } }) } }
 local peer = Share.NewNode(peerStore, {
     now = GetTime,
     time = GetTime,
@@ -331,4 +331,87 @@ test("the game refusing every path: unavailable", function()
     advance(60)
     eq(Share.GetStatus().state, "unavailable", "state")
     eq(Share.StatusLine(), L["Exchange unavailable: the game refuses addon messages"], "status line")
+end)
+
+---------------------------------------------------------------------------
+-- The public channel in /okf share and /okf debug (specs/004-public-channel-sync, US3)
+---------------------------------------------------------------------------
+test("/okf share prints the channel's line for each state, and none while the release has no channel", function()
+    local getState = ns.Channel.GetState
+    local cases = {
+        { "in", 1, L["Public channel: in use"] },
+        { "in", 3, (L["Public channel: in use (fallback channel %d)"]):format(3) },
+        { "off", nil, L["Public channel: off"] },
+        { "noslot", nil, L["Public channel: no free chat channel slot"] },
+        { "locked", nil, L["Public channel: locked or refused by the game"] },
+        { "left", nil, L["Public channel: you left it, back at the next login"] },
+        { "waiting", nil, L["Public channel: waiting"] },
+        { "notice", nil, L["Public channel: waiting"] },
+        { "paused", 1, L["Public channel: waiting"] },
+    }
+    for _, case in ipairs(cases) do
+        ns.Channel.GetState = function() return case[1], case[2] end
+        wipe(chat)
+        SlashCmdList.ONEKEYFISHING("share")
+        assert(chat_contains(case[3]), case[1] .. ": " .. case[3])
+    end
+    ns.Channel.GetState = function() return "unavailable" end
+    wipe(chat)
+    SlashCmdList.ONEKEYFISHING("share")
+    assert(not chat_contains("Public channel"), "no channel line")
+    ns.Channel.GetState = getState
+end)
+
+test("/okf share counts the channel among the players heard, while the release has the channel", function()
+    local heard = Share.GetStatus().heard
+    wipe(chat)
+    SlashCmdList.ONEKEYFISHING("share")
+    local line = L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"]
+    assert(chat_contains(line:format(heard.guild, heard.group, heard.friend, heard.bnet, heard.channel)),
+        "with the channel")
+    ns.Channel.AVAILABLE = false
+    wipe(chat)
+    SlashCmdList.ONEKEYFISHING("share")
+    local part2 = (L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"]):format(
+        heard.guild, heard.group, heard.friend, heard.bnet)
+    local found
+    for _, line in ipairs(chat) do
+        found = found or line == "  " .. part2
+    end
+    assert(found, "the part 2 line")
+    ns.Channel.AVAILABLE = true
+end)
+
+test("/okf debug has the channel, the population, the channel peers, the blocked counts and the chain state", function()
+    local report
+    local show = ns.ShowCopyWindow
+    ns.ShowCopyWindow = function(_, text) report = text end
+    ns.ShowReport()
+    ns.ShowCopyWindow = show
+    assert(report:find("channel: ", 1, true), "Channel.Describe")
+    assert(report:find("free slots", 1, true), "the slots")
+    assert(report:find("population", 1, true), "the population estimate")
+    assert(report:find("channel peers kept", 1, true), "the channel peers")
+    assert(report:find("blocked by the bundled data", 1, true), "the blocked counts")
+    assert(report:find("version chain: ", 1, true), "the chain state")
+    assert(not report:find(ns.db.shared.myID, 1, true), "no own ID")
+    assert(not report:find(ns.db.shared.chain.secret, 1, true), "never the chain's secret")
+    assert(not report:find("Peer", 1, true), "no name")
+end)
+
+test("GetStatus has the channel, its index, the channel peers and the blocked fields", function()
+    local status = Share.GetStatus()
+    eq(status.channel, ns.Channel.GetState(), "the channel's state")
+    eq(type(status.channelPeers), "number", "channel peers")
+    eq(type(status.blocked), "number", "blocked records")
+    eq(status.ownBlocked, false, "the own ID is not blocked")
+    ns.SeedData.blocked = { [ns.db.shared.myID] = true }
+    eq(Share.GetStatus().ownBlocked, true, "blocked")
+    local report
+    local show = ns.ShowCopyWindow
+    ns.ShowCopyWindow = function(_, text) report = text end
+    ns.ShowReport()
+    ns.ShowCopyWindow = show
+    assert(report:find("own record offered: no, blocked by the bundled data", 1, true), "the debug report says so")
+    ns.SeedData.blocked = nil
 end)

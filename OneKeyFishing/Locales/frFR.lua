@@ -333,4 +333,41 @@ ns.AddTranslation("frFR", "Français", function(L)
 
     -- UI/CatchHere.lua: other players' catches
     L["%d catches from %d players"] = "%d prises de %d joueurs"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "Objet inconnu"
+    L["The game has not shown this item yet."] = "Le jeu n'a pas encore montré cet objet."
+    L["Reported by %d players on this map"] = "Signalé par %d joueurs sur cette carte"
+    L["In the bundled data"] = "Dans les données fournies"
+    L["Item ID: %d"] = "ID de l'objet : %d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing a quitté son canal caché pour libérer une place de canal de discussion. Réessayez."
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "Utiliser le canal public"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "Avec le canal public activé, elles vont aussi à tous les autres utilisateurs de l'addon, par un canal de " ..
+        "discussion caché."
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "Quiconque rejoint ce canal par son nom peut voir quels personnages y utilisent l'addon."
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing partage désormais vos prises sous un identifiant aléatoire avec les autres joueurs qui " ..
+        "l'utilisent."
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "Cela atteint votre guilde, votre groupe et vos amis, et n'importe qui d'autre par un canal de discussion " ..
+        "caché."
+    L["Public channel: in use"] = "Canal public : en service"
+    L["Public channel: in use (fallback channel %d)"] = "Canal public : en service (canal de secours %d)"
+    L["Public channel: off"] = "Canal public : désactivé"
+    L["Public channel: no free chat channel slot"] = "Canal public : aucune place de canal de discussion libre"
+    L["Public channel: locked or refused by the game"] = "Canal public : verrouillé ou refusé par le jeu"
+    L["Public channel: you left it, back at the next login"] =
+        "Canal public : vous l'avez quitté, de retour à la prochaine connexion"
+    L["Public channel: waiting"] = "Canal public : en attente"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "Joueurs entendus dans la dernière heure : guilde %d, groupe %d, amis %d, Battle.net %d, canal %d"
 end)

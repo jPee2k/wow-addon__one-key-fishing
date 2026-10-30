@@ -5,15 +5,16 @@ local FISH = 6291
 local IDS = { "qqqqqqqq", "rrrrrrrr", "ssssssss" }
 
 -- Saved data of the last session: three other players' records, 10 + 20 + 30 catches at 1415:3:47 (60 in the
--- tab before the update, next to an empty own record), and a fourth at seq 3 with 9 catches.
+-- tab before the update, next to an empty own record), and a fourth at seq 3 with 9 catches. Their proofs are only
+-- well-formed: no newer version is checked against them here.
 local records = {}
 for i, id in ipairs(IDS) do
-    records[id .. "@0"] = { id = id, epoch = 0, seq = 2, seen = 100,
+    records[id .. "@0"] = { id = id, epoch = 0, seq = 2, seen = 100, proof = ("a"):rep(16),
         builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(10 * i, 0, { [FISH] = { 10 * i, 10 * i } }) } } }
 end
-records["ttttttt2@0"] = { id = "ttttttt2", epoch = 0, seq = 1, seen = 100,
+records["ttttttt2@0"] = { id = "ttttttt2", epoch = 0, seq = 1, seen = 100, proof = ("a"):rep(16),
     builds = { ["1.60.1"] = { ["1416:3:x"] = catch_cell(5, 0, { [FISH] = { 5, 5 } }) } } }
-records["uuuuuuuu@0"] = { id = "uuuuuuuu", epoch = 0, seq = 3, seen = 100,
+records["uuuuuuuu@0"] = { id = "uuuuuuuu", epoch = 0, seq = 3, seen = 100, proof = ("a"):rep(16),
     builds = { ["1.60.1"] = { ["1417:3:x"] = catch_cell(9, 0, { [FISH] = { 9, 9 } }) } } }
 OneKeyFishingDB = { shareNotice = true, shared = { mine = {}, records = records } }
 player_map_id = 1415

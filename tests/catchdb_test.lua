@@ -325,7 +325,7 @@ end)
 local OTHER_ID = "m3p7x2zd"
 
 local function validRecord()
-    return { id = OTHER_ID, epoch = 2, seq = 7, builds = {
+    return { id = OTHER_ID, epoch = 2, seq = 7, proof = proof_for(OTHER_ID, 7), builds = {
         ["1.60.1"] = {
             ["1415:3:47"] = { c = 3, m = 1, t = 40, px = 1500, py = 900, i = { [FISH] = { 2, 3 }, [OTHER] = { 1, 1 } },
                 p = { c = 1, i = { [FISH] = { 1, 1 } } } },
@@ -405,13 +405,19 @@ test("CountPlaces with a limit stops one place above it", function()
     eq(CatchDB.CountPlaces(record, 1000), 1001, "stops above the limit")
 end)
 
-test("CheckRecord rejects an item the game does not know", function()
-    known_items = { [FISH] = true }
-    local ok = CatchDB.CheckRecord(validRecord())
-    eq(ok, false, "OTHER is unknown")
-    known_items = { [FISH] = true, [OTHER] = true }
-    eq((CatchDB.CheckRecord(validRecord())), true, "both known")
-    known_items = nil
+test("CheckRecord accepts an item the game does not know (FR-017a), but not an item ID above 32 bits", function()
+    unknown_items[OTHER] = true
+    local ok, reason, third = CatchDB.CheckRecord(validRecord())
+    eq(ok, true, tostring(reason))
+    eq(third, nil, "no third value any more")
+    unknown_items[OTHER] = nil
+    rejects(function(r) r.builds["1.60.1"]["1415:3:x"].i[2147483648] = { 1, 1 } end, "item ID above 32 bits")
+end)
+
+test("CheckRecord rejects a missing or malformed proof", function()
+    rejects(function(r) r.proof = nil end, "no proof")
+    rejects(function(r) r.proof = "short" end, "too short")
+    rejects(function(r) r.proof = ("A"):rep(16) end, "not base32")
 end)
 
 ---------------------------------------------------------------------------
@@ -419,11 +425,11 @@ end)
 ---------------------------------------------------------------------------
 test("with sharing on, All sums the own record and every stored other record; off leaves the others out", function()
     record().builds["1.60.1"]["2100:3:11"] = cellOf(10, 0, { [FISH] = { 10, 10 } })
-    shared().records["qqqqqqqq@0"] = { id = "qqqqqqqq", epoch = 0, seq = 1, seen = 1,
-        builds = { ["1.60.1"] = { ["2100:3:11"] = cellOf(30, 1, { [FISH] = { 30, 30 } }) } } }
-    shared().records["rrrrrrrr@1"] = { id = "rrrrrrrr", epoch = 1, seq = 1, seen = 1,
+    shared().records["qqqqqqqq@0"] = prove({ id = "qqqqqqqq", epoch = 0, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2100:3:11"] = cellOf(30, 1, { [FISH] = { 30, 30 } }) } } })
+    shared().records["rrrrrrrr@1"] = prove({ id = "rrrrrrrr", epoch = 1, seq = 1, seen = 1,
         builds = { ["1.60.1"] = { ["2100:3:11"] = cellOf(25, 0, { [OTHER] = { 25, 25 } }) },
-            ["1.60.2"] = { ["2100:3:44"] = cellOf(5, 0, { [OTHER] = { 5, 5 } }) } } }
+            ["1.60.2"] = { ["2100:3:44"] = cellOf(5, 0, { [OTHER] = { 5, 5 } }) } } })
     ns.Fire("SHARED_DATA_CHANGED")
     local view = CatchDB.Query(2100, "11", ALL)
     eq(view.scope, "spot", "65 catches at the spot")
@@ -456,11 +462,11 @@ end)
 
 test("records that come, change and go through the store update the view without a full rebuild", function()
     local Store = ns.Share.Store
-    eq(Store.Accept(shared(), { id = "uuuuuuuu", epoch = 0, seq = 1,
-        builds = { ["1.60.1"] = { ["2200:3:11"] = cellOf(60, 0, { [FISH] = { 60, 60 } }) } } }), "new", "new")
+    eq(Store.Accept(shared(), prove({ id = "uuuuuuuu", epoch = 0, seq = 4,
+        builds = { ["1.60.1"] = { ["2200:3:11"] = cellOf(60, 0, { [FISH] = { 60, 60 } }) } } })), "new", "new")
     eq(CatchDB.Query(2200, "11", ALL).catches, 60, "counted")
-    eq(Store.Accept(shared(), { id = "uuuuuuuu", epoch = 0, seq = 2,
-        builds = { ["1.60.1"] = { ["2200:3:11"] = cellOf(70, 0, { [FISH] = { 70, 70 } }) } } }), "newer", "newer")
+    eq(Store.Accept(shared(), prove({ id = "uuuuuuuu", epoch = 0, seq = 5,
+        builds = { ["1.60.1"] = { ["2200:3:11"] = cellOf(70, 0, { [FISH] = { 70, 70 } }) } } })), "newer", "newer")
     eq(CatchDB.Query(2200, "11", ALL).catches, 70, "the new version replaces the old one")
     eq(CatchDB.Query(2200, "55", ALL).catches, 70, "on the whole map too")
     shared().records["uuuuuuuu@0"].seq = "broken"
@@ -469,10 +475,10 @@ test("records that come, change and go through the store update the view without
 end)
 
 test("a record with only misses at a place adds no player", function()
-    shared().records["vvvvvvvv@0"] = { id = "vvvvvvvv", epoch = 0, seq = 1, seen = 1,
-        builds = { ["1.60.1"] = { ["2300:3:11"] = cellOf(60, 0, { [FISH] = { 60, 60 } }) } } }
-    shared().records["wwwwwwww@0"] = { id = "wwwwwwww", epoch = 0, seq = 1, seen = 1,
-        builds = { ["1.60.1"] = { ["2300:3:11"] = cellOf(0, 5) } } }
+    shared().records["vvvvvvvv@0"] = prove({ id = "vvvvvvvv", epoch = 0, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2300:3:11"] = cellOf(60, 0, { [FISH] = { 60, 60 } }) } } })
+    shared().records["wwwwwwww@0"] = prove({ id = "wwwwwwww", epoch = 0, seq = 1, seen = 1,
+        builds = { ["1.60.1"] = { ["2300:3:11"] = cellOf(0, 5) } } })
     ns.Fire("SHARED_DATA_CHANGED")
     local view = CatchDB.Query(2300, "11", ALL)
     eq(view.catches, 60, "catches")
@@ -485,13 +491,10 @@ test("a place fished before and after a patch counts as one place", function()
 end)
 
 test("an unknown item does not hide another fault of the record", function()
-    known_items = { [OTHER] = true }
+    unknown_items[FISH] = true
     local record = validRecord()
     record.builds["1.60.2"]["1416:0:00"].c = 999 -- impossible, in another cell than the unknown fish
-    local ok, _, unknownItem = CatchDB.CheckRecord(record)
-    eq(ok, false, "refused")
-    eq(unknownItem, nil, "a hard fault: the sender is to blame")
-    ok, _, unknownItem = CatchDB.CheckRecord(validRecord())
-    eq(unknownItem, true, "only the unknown fish: no blame")
-    known_items = nil
+    eq((CatchDB.CheckRecord(record)), false, "refused for the impossible cell")
+    eq((CatchDB.CheckRecord(validRecord())), true, "the unknown fish alone is no fault")
+    unknown_items[FISH] = nil
 end)

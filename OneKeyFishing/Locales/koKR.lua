@@ -306,4 +306,37 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- UI/CatchHere.lua: other players' catches
     L["%d catches from %d players"] = "어획 %d회, 플레이어 %d명"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "알 수 없는 아이템"
+    L["The game has not shown this item yet."] = "게임에서 아직 이 아이템을 보여 주지 않았습니다."
+    L["Reported by %d players on this map"] = "이 지도에서 보고한 플레이어: %d명"
+    L["In the bundled data"] = "기본 데이터에 있음"
+    L["Item ID: %d"] = "아이템 ID: %d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing이 채팅 채널 자리를 비우려고 숨겨진 채널에서 나갔습니다. 다시 참여해 보세요."
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "공개 채널 사용"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "공개 채널을 켜면 숨겨진 채팅 채널을 통해 다른 모든 애드온 사용자에게도 전달됩니다."
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "이름으로 그 채널에 들어온 사람은 누구나 채널 안의 어떤 캐릭터가 이 애드온을 쓰는지 볼 수 있습니다."
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "이제 OneKeyFishing이 내 어획을 무작위 ID로 이 애드온을 쓰는 다른 플레이어에게 공유합니다."
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "길드, 파티와 친구에게, 그리고 숨겨진 채팅 채널을 통해 그 밖의 누구에게나 전달됩니다."
+    L["Public channel: in use"] = "공개 채널: 사용 중"
+    L["Public channel: in use (fallback channel %d)"] = "공개 채널: 사용 중 (예비 채널 %d)"
+    L["Public channel: off"] = "공개 채널: 꺼짐"
+    L["Public channel: no free chat channel slot"] = "공개 채널: 빈 채팅 채널 자리가 없음"
+    L["Public channel: locked or refused by the game"] = "공개 채널: 잠겼거나 게임이 거부함"
+    L["Public channel: you left it, back at the next login"] = "공개 채널: 직접 나감, 다음 접속 때 다시 참여"
+    L["Public channel: waiting"] = "공개 채널: 대기 중"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "지난 1시간 동안 확인된 플레이어: 길드 %d, 파티 %d, 친구 %d, Battle.net %d, 채널 %d"
 end)

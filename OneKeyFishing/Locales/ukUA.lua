@@ -320,4 +320,40 @@ ns.AddTranslation("ukUA", "Українська", function(L)
 
     -- UI/CatchHere.lua: other players' catches
     L["%d catches from %d players"] = "улов: %d, гравців: %d"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "Невідомий предмет"
+    L["The game has not shown this item yet."] = "Гра ще не показала цей предмет."
+    L["Reported by %d players on this map"] = "Повідомили гравців на цій карті: %d"
+    L["In the bundled data"] = "У вбудованих даних"
+    L["Item ID: %d"] = "ID предмета: %d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing вийшов зі свого прихованого каналу, щоб звільнити місце для каналу чату. Спробуйте ще раз."
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "Використовувати публічний канал"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "Коли публічний канал увімкнено, його отримують також усі інші користувачі аддона через прихований канал " ..
+        "чату."
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "Будь-хто, хто приєднається до цього каналу за його назвою, бачитиме, які персонажі в ньому користуються " ..
+        "аддоном."
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing тепер ділиться вашим уловом під випадковим ID з іншими гравцями, які ним користуються."
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "Його отримують ваша гільдія, група та друзі, а також будь-хто інший через прихований канал чату."
+    L["Public channel: in use"] = "Публічний канал: використовується"
+    L["Public channel: in use (fallback channel %d)"] = "Публічний канал: використовується (запасний канал %d)"
+    L["Public channel: off"] = "Публічний канал: вимкнено"
+    L["Public channel: no free chat channel slot"] = "Публічний канал: немає вільного місця для каналу чату"
+    L["Public channel: locked or refused by the game"] = "Публічний канал: заблоковано або гра відмовляє"
+    L["Public channel: you left it, back at the next login"] =
+        "Публічний канал: ви з нього вийшли, повернеться з наступним входом у гру"
+    L["Public channel: waiting"] = "Публічний канал: очікування"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "Гравці за останню годину: гільдія %d, група %d, друзі %d, Battle.net %d, канал %d"
 end)

@@ -41,6 +41,11 @@ export function setGlobalString(L, name, value) {
   lua.lua_setglobal(L, to_luastring(name));
 }
 
+export function setGlobalNumber(L, name, value) {
+  lua.lua_pushnumber(L, value);
+  lua.lua_setglobal(L, to_luastring(name));
+}
+
 // Sets a global Lua array of strings.
 export function setGlobalList(L, name, values) {
   lua.lua_createtable(L, values.length, 0);

@@ -301,4 +301,37 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
 
     -- UI/CatchHere.lua: other players' catches
     L["%d catches from %d players"] = "%d次渔获，来自%d名玩家"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "未知物品"
+    L["The game has not shown this item yet."] = "游戏尚未显示此物品。"
+    L["Reported by %d players on this map"] = "此地图上有%d名玩家报告"
+    L["In the bundled data"] = "在内置数据中"
+    L["Item ID: %d"] = "物品ID：%d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing已离开其隐藏频道，以空出一个聊天频道位置。请再试一次。"
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "使用公开频道"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "开启公开频道后，数据也会通过隐藏的聊天频道发送给其他所有插件用户。"
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "任何通过名称加入该频道的人，都能看到频道中哪些角色使用本插件。"
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing 现在会以随机ID与其他使用本插件的玩家分享你的渔获。"
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "数据会发送给你的公会、队伍和好友，也会通过隐藏的聊天频道发送给其他任何人。"
+    L["Public channel: in use"] = "公开频道：使用中"
+    L["Public channel: in use (fallback channel %d)"] = "公开频道：使用中（备用频道%d）"
+    L["Public channel: off"] = "公开频道：关闭"
+    L["Public channel: no free chat channel slot"] = "公开频道：没有空的聊天频道位置"
+    L["Public channel: locked or refused by the game"] = "公开频道：已锁定或被游戏拒绝"
+    L["Public channel: you left it, back at the next login"] = "公开频道：你已离开，下次登录时会重新加入"
+    L["Public channel: waiting"] = "公开频道：等待中"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "过去一小时听到的玩家：公会%d，队伍%d，好友%d，Battle.net %d，频道%d"
 end)

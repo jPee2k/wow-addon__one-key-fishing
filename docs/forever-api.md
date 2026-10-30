@@ -36,6 +36,23 @@ Signatures (not behaviour) can be checked without the game, in this order:
   (`specs/002-local-catch-db/research.md` R11, `specs/003-guild-group-sync/research.md`), including
   `C_EncodingUtil`, `Enum.SendAddonMessageResult`, `Enum.AddOnRestrictionType` and `PanelTabButtonTemplate`.
 
+## From the client export
+
+Facts read from the export of build 1.60.1.70685 for the public channel (`specs/004-public-channel-sync`, research
+R2-R4, R9). They say what exists and how Blizzard's own code uses it, not how it behaves; the spike checks that.
+
+- A player may be in `Constants.ChatFrameConstants.MaxChatChannels` (20) chat channels; `ChatFrameUtil.CanAddChannel`
+  checks it.
+- Joining a locked channel fires `CHANNEL_PASSWORD_REQUEST`, and Blizzard answers it with
+  `StaticPopup_Show("CHAT_CHANNEL_PASSWORD", ...)` (`EventRouting.lua`, `EventImplementation.lua`).
+- A chat window drops the lines of channels that are not in its own list (`ChatFrameOverrides.lua`), and
+  `ChatFrameMixin:RemoveChannel` takes one out of it (`ChatFrame_RemoveChannel` is deprecated). The Chat Channels
+  window and Chat Settings > Channels list every channel the player is in, with no filter.
+- `SetChannelPassword(name, password)` is what `/password` and the password popup call. There is no call that turns
+  channel moderation off (only `ChannelModerator` / `ChannelUnmoderator` for one player).
+- The `bit` library (`band`, `bor`, `bxor`, `bnot`, `lshift`, `rshift`) is called over 300 times in
+  Blizzard's code; whether its results are signed is not documented.
+
 ## Verified in game
 
 - The addon list (character screen -> AddOns) reads `## Notes-<code>` and `## Category-<code>` from the TOC in the
