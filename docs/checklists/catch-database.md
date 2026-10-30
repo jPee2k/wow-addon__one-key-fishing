@@ -3,8 +3,8 @@
 What to check in the game for the catch database (`specs/002-local-catch-db`), on and after the game launch on
 2026-11-04. The feature was built before the game could be played, on the assumptions V1-V9 of
 `specs/002-local-catch-db/verification.md`; each step below says which ones it closes. Tick each box, note
-anything that looks wrong, and paste the `/okf spike` reports back: the answers go into `CLAUDE.md` "Known API
-facts", and the `VERIFY` markers in the code are removed only after that.
+anything that looks wrong, and paste the `/okf spike` reports back: the answers go into `docs/forever-api.md`, and the
+`VERIFY` markers in the code are removed only after that.
 
 ## Setup
 
@@ -62,7 +62,7 @@ facts", and the `VERIFY` markers in the code are removed only after that.
 
 ## After the checklist
 
-1. Record the answers in `CLAUDE.md` "Known API facts"; fix the code where an assumption was wrong (with tests).
+1. Record the answers in `docs/forever-api.md`; fix the code where an assumption was wrong (with tests).
 2. Remove the `VERIFY` markers that are closed and tick V1-V9 in `specs/002-local-catch-db/verification.md`.
 3. Run the spike part of `docs/checklists/catch-exchange.md` (the catch exchange, part 2) in the same session,
    then remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua` and

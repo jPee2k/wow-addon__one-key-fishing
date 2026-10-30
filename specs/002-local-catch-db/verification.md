@@ -8,8 +8,8 @@ marker in the code: they are checked in game with the checklist and are not enfo
 spike command carries `-- VERIFY(spike)` (`Spike.lua`, its `Commands.lua` entry); that marker goes when the spike
 code is removed (tasks.md T042), after the spike steps of every part have run.
 
-Closing an item: run the step in game (`/okf spike` prints the facts), record the answer in CLAUDE.md "Known API
-facts", adjust the code if the answer differs from the assumption, remove its markers, and tick it here.
+Closing an item: run the step in game (`/okf spike` prints the facts), record the answer in `docs/forever-api.md`, adjust
+the code if the answer differs from the assumption, remove its markers, and tick it here.
 
 | ID | Assumption we build on | Evidence before launch (R11) | If it turns out wrong | How to verify | Status |
 | --- | --- | --- | --- | --- | --- |

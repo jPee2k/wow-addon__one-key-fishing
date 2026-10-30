@@ -65,7 +65,8 @@ worse bug than any missing feature.
 The target is WoW Forever (Interface `16001`), which runs the Mainline API.
 
 - Only API calls known to exist on Forever may be relied on; facts verified in game are recorded
-  in `CLAUDE.md` ("Known API facts") and MUST be updated when a new one is learned.
+  in `docs/forever-api.md` (the traps that matter most also in `CLAUDE.md`) and MUST be updated
+  when a new one is learned.
 - Calls with uncertain behaviour MUST be guarded and degrade gracefully, never error at load.
 - Every new WoW API global MUST be added to `.luacheckrc` `read_globals`.
 - Behaviour that only the game can show MUST be handed to the user with an in-game test
@@ -128,8 +129,9 @@ Rationale: a small addon stays maintainable only while each module has one clear
   publishes it. Steps and the policy checklist live in `docs/publishing.md`.
 - A change a player can see or use updates `CHANGELOG.md` (`[Unreleased]`) and the manual
   `OneKeyFishing/README.md` in the same commit (fixes of an unreleased feature need no changelog
-  line); architecture changes update `CLAUDE.md`; a finished feature leaves `docs/ROADMAP.md`;
-  finished plans go into `docs/history/`.
+  line); architecture changes update `CLAUDE.md` (the module map, the messages, the cross-module
+  rules) and the area document in `docs/architecture/`; a finished feature leaves
+  `docs/ROADMAP.md`; finished plans go into `docs/history/`.
 
 ## Governance
 
@@ -143,4 +145,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.5.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06
+**Version**: 1.5.1 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06

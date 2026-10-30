@@ -30,5 +30,3 @@ Technical debt to settle when `001-interface-language` is merged into `002-share
 - Switch the catch catalog's pin (`Catalog.PinTarget`, `CatalogTab.Pin`) to `ns.MapPin` (`UI/MapPin.lua`), which
   took that code over with the same saved field (`charDB.pin`) and texts; `ns.Toast` already has the `always`
   argument on both branches.
-- `docs/forever-api.md` exists only on `002-shared-db`: move the in-game facts that `001-interface-language` keeps
-  in `CLAUDE.md` ("Known API facts for Forever") there.

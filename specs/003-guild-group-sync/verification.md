@@ -6,7 +6,7 @@ markers share the code). The code that depends on an item carries a `-- VERIFY(V
 lists the open markers and `npm run build` (release) refuses to package while any is left.
 
 Closing an item: run the step in game (`/okf spike` prints the facts; the exchange steps need a second player or a
-second account), record the answer in CLAUDE.md "Known API facts", adjust the code if the answer differs from the
+second account), record the answer in `docs/forever-api.md`, adjust the code if the answer differs from the
 assumption, remove its markers, and tick it here.
 
 | ID | Assumption we build on | Evidence before launch | If it turns out wrong | How to verify | Status |

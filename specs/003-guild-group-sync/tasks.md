@@ -625,7 +625,7 @@ player or a second account is needed.
 - [ ] T039 Author: run `docs/checklists/catch-exchange.md` "Spike" steps N1-N7 in the same game session as the spike
   steps of the other parts, and paste the `/okf spike` reports. This must happen before
   `specs/002-local-catch-db/tasks.md` T042 removes `Spike.lua`.
-- [ ] T040 Record the answers in `CLAUDE.md` "Known API facts". For each of V10-V15, either remove its markers (the
+- [ ] T040 Record the answers in `docs/forever-api.md`. For each of V10-V15, either remove its markers (the
   assumption held) or change the code to the real behaviour (with tests) and then remove the markers. Tick the items
   in `specs/003-guild-group-sync/verification.md`. If V14 shows addon chat restricted in the open world, stop and
   plan a way around it with the author before anything else.
