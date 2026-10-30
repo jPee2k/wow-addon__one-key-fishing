@@ -4,7 +4,7 @@ What to check in the game for the exchange of catch data with the guild, the gro
 (`specs/003-guild-group-sync`), on and after the game launch on 2026-11-04. The feature was built before the game
 could be played, on the assumptions V10-V18 of `specs/003-guild-group-sync/verification.md`; each step below says
 which ones it closes. Tick each box, note anything that looks wrong, and paste the `/okf spike` reports back: the
-answers go into `CLAUDE.md` "Known API facts", and the `VERIFY` markers in the code are removed only after that.
+answers go into `docs/forever-api.md`, and the `VERIFY` markers in the code are removed only after that.
 
 **A second player is needed**: a friend with the addon, or a second account (a second game client on the same PC
 works). Steps marked "B" are done on the second client. Trial and Veteran accounts cannot send addon data, so use
@@ -82,7 +82,7 @@ report.
 
 ## After the checklist
 
-1. Record the answers in `CLAUDE.md` "Known API facts"; fix the code where an assumption was wrong (with tests).
+1. Record the answers in `docs/forever-api.md`; fix the code where an assumption was wrong (with tests).
 2. Remove the `VERIFY(V10)` to `VERIFY(V16)` and `VERIFY(V18)` markers that are closed and tick V10-V18 in
    `specs/003-guild-group-sync/verification.md`.
 3. The spike removal and the release are the steps of `docs/checklists/catch-database.md` "After the checklist";

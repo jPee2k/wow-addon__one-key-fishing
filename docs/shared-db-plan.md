@@ -383,7 +383,7 @@ first to the guild and the group, where it is easy to test with friends, and onl
    joining the channel and a whisper to an offline player show in chat; whether channel messages reach players on
    another layer and of the other faction (two accounts or a friend); when the Chat state of `AddOnRestrictionType`
    is active; whether `C_Map.SetUserWaypoint` and `C_SuperTrack.SetSuperTrackedUserWaypoint` work (map pins).
-   - Done when: the answers to every question are written into CLAUDE.md "Known API facts".
+   - Done when: the answers to every question are written into `docs/forever-api.md`.
 2. **Local data v2.** The new place key, your own contribution record, `myID` (new saved fields filled by
    `ApplyDefaults`; `DB_SCHEMA` stays 1, no migration). The "What can be caught here" tab on your own data.
    - Done when: tests for the key and the record; two clients in different languages produce the same keys in game.
@@ -435,7 +435,7 @@ The game opens on 2026-11-04. Until then every part is built and tested without 
 all parts is closed and the release goes out once:
 
 1. The author runs `/okf spike` (all sections, with a second player for the network) and the in-game checklists of
-   every part (`docs/checklists/`). The answers go into CLAUDE.md "Known API facts"; code is fixed where an
+   every part (`docs/checklists/`). The answers go into `docs/forever-api.md`; code is fixed where an
    assumption was wrong; `VERIFY` markers are removed and the `verification.md` items of every spec are ticked.
 2. Part 3 ships only if the spike confirmed `CHANNEL`; otherwise its code is left out of 1.2.0 (its spec says how).
 3. `Spike.lua`, its TOC line, the `spike` command entry and `tests/spike_test.lua` are removed.
@@ -471,7 +471,7 @@ Decisions (agreed on 2026-10-29, before the spec):
 | Auction price | Average unit price of the cheapest 20% of all listed pieces (instead of the lowest lot); under 5 pieces or 3 auctions listed: shown with a "few lots" mark and left out of catch value sums (vendor price there); the higher of vendor and auction as now; this also changes the value in the "Statistics" tab |
 | Harvest input | Every `WTF/Account/*/SavedVariables/OneKeyFishing.lua` under `WOW_ADDONS_DIR`, plus friends' files as arguments |
 | Release | Ships with whatever seed there is, no coverage threshold |
-| Spike | Built now, run after the game launch on 2026-11-04 (the work goes ahead on assumptions marked `VERIFY(Vn)`, listed in `specs/002-local-catch-db/verification.md`; a release build refuses open markers): a temporary `/okf spike` and a checklist: `C_Map.GetPlayerMapPosition` while fishing, `GetLootSourceInfo` in a pool, what mapID caves and cities return, whether the auction house returns enough results for the cheapest 20%; the answers go into CLAUDE.md "Known API facts", the command is removed before the release |
+| Spike | Built now, run after the game launch on 2026-11-04 (the work goes ahead on assumptions marked `VERIFY(Vn)`, listed in `specs/002-local-catch-db/verification.md`; a release build refuses open markers): a temporary `/okf spike` and a checklist: `C_Map.GetPlayerMapPosition` while fishing, `GetLootSourceInfo` in a pool, what mapID caves and cities return, whether the auction house returns enough results for the cheapest 20%; the answers go into `docs/forever-api.md`, the command is removed before the release |
 
 ```
 Catch database, part 1 of 4 (release 1.2.0): local catch data and bundled data, no network.

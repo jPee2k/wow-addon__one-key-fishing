@@ -44,7 +44,7 @@ Needs a guild, or a second player or a second account for steps N1 and N3. With 
   dungeon and during a boss fight. (V14)
 - **N5. Encoding.** Note the round-trip line and the encoded length. (V15)
 - **N6. Client constants.** Note the `BNET_CLIENT_WOW` and `WOW_PROJECT_ID` values. (V13)
-- **N7. Report back.** Paste the report back. The facts go into CLAUDE.md "Known API facts", the code is adjusted
+- **N7. Report back.** Paste the report back. The facts go into `docs/forever-api.md`, the code is adjusted
   where needed and the `VERIFY` markers are removed.
 
 ## In game: the feature (two players, A and B, both with the addon)

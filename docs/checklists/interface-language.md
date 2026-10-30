@@ -2,7 +2,7 @@
 
 What to check in the game for the interface language feature (`specs/001-interface-language`). Tick each box
 as you go and note anything that looks wrong next to it; the results go back into the feature (fonts into
-`specs/001-interface-language/research.md` R6 and `CLAUDE.md` "Known API facts").
+`specs/001-interface-language/research.md` R6 and `docs/forever-api.md`).
 
 ## Setup
 

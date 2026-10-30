@@ -361,7 +361,7 @@ together (`docs/shared-db-plan.md` "Release 1.2.0"). T040 runs in the same game 
 later parts.
 
 - [ ] T040 Author: run `docs/checklists/catch-database.md` "Spike" steps and paste the `/okf spike` reports.
-- [ ] T041 Record the answers in `CLAUDE.md` "Known API facts"; for each of V1-V7 either remove its markers (the
+- [ ] T041 Record the answers in `docs/forever-api.md`; for each of V1-V7 either remove its markers (the
   assumption held) or change the code to the real behaviour (with tests) and then remove the markers; tick the items
   in `specs/002-local-catch-db/verification.md`.
 - [ ] T042 Only when the spike steps of every part have run (the later parts add their own sections to

@@ -21,7 +21,7 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
      `HasFullCommoditySearchResults`, whether `RequestMoreCommoditySearchResults` brings more, and
      `GetNumItemSearchResults` / `GetItemSearchResultInfo` quantities.
   4. `GetBuildInfo()` (the version string recorded with the data).
-  The author runs it on launch day; the answers go into CLAUDE.md "Known API facts"; the file and its TOC line are
+  The author runs it on launch day; the answers go into `docs/forever-api.md`; the file and its TOC line are
   removed before the release.
 - **Rationale**: FR-002, FR-007 and FR-025 depend on behaviour only the game shows (Principle IV). Building on
   marked assumptions lets the work start now; the release gate makes sure none stays unchecked.
@@ -185,7 +185,7 @@ chooses the assumptions.
   <https://warcraft.wiki.gg/wiki/Patch_1.60.1/API_changes/notes> (Midnight secret values and addon restrictions are
   active; GUID server and spawn IDs are scrambled but stable within a session).
 - **The author's live client, build 1.60.1.70685** (2026-10-29): exported with `exportInterfaceFiles code` from the
-  character screen (CLAUDE.md "Known API facts"). The newer build still has everything this feature calls:
+  character screen (`docs/forever-api.md`). The newer build still has everything this feature calls:
   - in `Blizzard_APIDocumentationGenerated`: `C_Map.GetBestMapForUnit`, `GetPlayerMapPosition`, `GetMapInfo`,
     `GetBuildInfo`; the `C_AuctionHouse` functions of V4/V5 (`SendSearchQuery`, `GetNumCommoditySearchResults`,
     `GetCommoditySearchResultInfo`, `GetCommoditySearchResultsQuantity`, `HasFullCommoditySearchResults`,

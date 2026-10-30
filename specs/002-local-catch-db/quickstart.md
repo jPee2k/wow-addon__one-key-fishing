@@ -35,7 +35,7 @@ Each step closes items of [verification.md](verification.md). With `/okf spike` 
 4. An instance with water (if reachable): repeat step 1.
 5. Auction house: scan prices, then `/okf spike` for one fish (commodity) and one non-stacking item. Note the
    result counts, the total quantity and whether more results arrive.
-6. Paste the report back; the facts go into CLAUDE.md "Known API facts", the code is adjusted where needed and the
+6. Paste the report back; the facts go into `docs/forever-api.md`, the code is adjusted where needed and the
    `VERIFY` markers are removed.
 
 ## In game: the feature
