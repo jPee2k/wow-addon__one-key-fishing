@@ -13,13 +13,17 @@ local shared = ns.db.shared
 local changes = 0
 ns.On("SHARED_DATA_CHANGED", function() changes = changes + 1 end)
 
--- A record with one cell (`places` cells on map 3000 + i when given), with at least as many casts as its seq.
+-- A record with one cell (`places` cells on map 3000 + i when given), with at least as many casts as its seq; a big
+-- one gets the seq its casting needs (never more than CatchDB.STEP_SECONDS per step).
 local function rec(id, epoch, seq, places)
     local cells = { ["1415:3:47"] = catch_cell(math.max(2, seq), 1, { [FISH] = { 2, 2 } }) }
+    local seconds = cells["1415:3:47"].t
     for i = 2, places or 1 do
         cells[(3000 + i) .. ":0:x"] = catch_cell(1, 0)
+        seconds = seconds + cells[(3000 + i) .. ":0:x"].t
     end
-    return { id = id, epoch = epoch, seq = seq, builds = { ["1.60.1"] = cells } }
+    seq = math.max(seq, math.ceil(seconds / ns.CatchDB.STEP_SECONDS))
+    return prove({ id = id, epoch = epoch, seq = seq, builds = { ["1.60.1"] = cells } }, nil, 4096)
 end
 
 ---------------------------------------------------------------------------
@@ -131,6 +135,60 @@ test("eviction deletes the oldest seen first until 20000 places fit, never a rec
     eq(changes, 1, "one change message")
 end)
 
+test("eviction by new information: well-known places first, then stale, then the rest, rare places last", function()
+    for key, record in pairs(shared.records) do
+        if key:find("@", 1, true) and record.id ~= shared.myID then
+            shared.records[key] = nil -- the records of the tests above
+        end
+    end
+    -- 500 places per map: map 20 well known in the seed, 21 neither, 22 with little data.
+    local function key(map, j)
+        return ("%d:%d:%02d"):format(map, math.floor((j - 1) / 100) % 5, (j - 1) % 100)
+    end
+    local cells = {}
+    for j = 1, 500 do
+        cells[key(20, j)] = { c = 2000, m = 0, t = 20000, k = 9, i = {} }
+        cells[key(21, j)] = { c = 200, m = 0, t = 2000, k = 3, i = {} }
+        cells[key(22, j)] = { c = 10, m = 0, t = 100, k = 1, i = {} }
+    end
+    ns.SeedData = { epoch = 1, absorbed = {}, resets = {}, cells = cells }
+    local function big(id, map, seen)
+        local record = { id = id, epoch = 1, seq = 30, seen = seen, proof = ("a"):rep(16),
+            builds = { ["1.60.1"] = {} } }
+        for j = 1, 500 do
+            record.builds["1.60.1"][key(map, j)] = catch_cell(1, 0)
+        end
+        shared.records[id .. "@1"] = record
+    end
+    local now = time()
+    big("gaaaaaaa", 22, 10) -- D: rare places, though seen longest ago
+    big("haaaaaaa", 21, now - 61 * 86400) -- B: stale
+    big("iaaaaaaa", 21, now - 3600) -- C
+    big("jaaaaaaa", 20, now) -- A: well-known places, though seen last
+    local fillers = 0
+    local function filler() -- class D, the newest: goes after all four
+        fillers = fillers + 1
+        big("y" .. ns.Base32(fillers, 7), 22, now + fillers)
+    end
+    for _ = 1, 35 do
+        filler()
+    end
+    eq(Store.Evict(shared), 0, "19,500 places and the own frozen record: nothing to do")
+    local order = {}
+    for _ = 1, 4 do
+        filler()
+        eq(Store.Evict(shared), 1, "500 places over: one record")
+        for _, id in ipairs({ "jaaaaaaa", "haaaaaaa", "iaaaaaaa", "gaaaaaaa" }) do
+            if not shared.records[id .. "@1"] and not order[id] then
+                order[id] = true
+                table.insert(order, id)
+            end
+        end
+    end
+    eq(table.concat(order, " "), "jaaaaaaa haaaaaaa iaaaaaaa gaaaaaaa", "A, B, C, then D")
+    ns.SeedData = nil
+end)
+
 ---------------------------------------------------------------------------
 -- Hashes
 ---------------------------------------------------------------------------
@@ -181,4 +239,39 @@ test("bucket hashes do not depend on order; one seq change changes one bucket an
     end
     eq(changed, 1, "one bucket")
     assert(Share.WholeHash(h3) ~= Share.WholeHash(h1), "whole hash changed")
+end)
+
+---------------------------------------------------------------------------
+-- The block list (specs/004-public-channel-sync, FR-019, FR-020)
+---------------------------------------------------------------------------
+test("a blocked ID is refused without blame, cleaned up, not wanted, not offered; unblocked it comes back", function()
+    local X = "xaaaaaa2"
+    eq(Store.Accept(shared, rec(X, 1, 2), 9000), "new", "stored before the release")
+    ns.SeedData = { epoch = 2, absorbed = {}, resets = {}, cells = {}, blocked = { [X] = true } }
+    local result, reason = Store.Accept(shared, rec(X, 1, 3), 9001)
+    eq(result, "refused", "refused")
+    eq(reason, "blocked", "as blocked: the merge does not blame the sender")
+    eq(Store.Units(shared)[X .. "@1"], nil, "not offered")
+    local node = ns.Share.NewNode(shared, { now = GetTime, time = GetTime, after = C_Timer.After,
+        send = function() end, broadcast = function() end, forEachFriend = function() end,
+        canSend = function() return true end, absorbed = function() return {} end,
+        seedEpoch = function() return 0 end, encode = ns.Share.Encode, decode = ns.Share.Decode })
+    eq(node:Wanted(X .. "@1", 5), false, "not wanted")
+    eq(Store.CleanUp(shared), 1, "deleted at login")
+    eq(shared.records[X .. "@1"], nil, "gone")
+    ns.SeedData = { epoch = 3, absorbed = {}, resets = {}, cells = {}, blocked = {} }
+    eq(Store.Accept(shared, rec(X, 1, 3), 9002), "new", "a later release unblocks it")
+    ns.SeedData = nil
+end)
+
+test("an own blocked ID still counts for the player but is not offered", function()
+    local node = ns.Share.NewNode(shared, { now = GetTime, time = GetTime, after = C_Timer.After,
+        send = function() end, broadcast = function() end, forEachFriend = function() end,
+        canSend = function() return true end, absorbed = function() return {} end,
+        seedEpoch = function() return 0 end, encode = ns.Share.Encode, decode = ns.Share.Decode })
+    ns.SeedData = { epoch = 3, absorbed = {}, resets = {}, cells = {}, blocked = { [shared.myID] = true } }
+    local data, problem = node:OwnData(shared.records[shared.myID])
+    eq(data, false, "not offered")
+    eq(problem, "blocked by the bundled data", "why")
+    ns.SeedData = nil
 end)

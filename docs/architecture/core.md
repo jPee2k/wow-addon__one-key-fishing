@@ -35,7 +35,9 @@ message list are in `CLAUDE.md`; languages and translation file rules are in [la
 - Saved variables: `Migrate` runs `MIGRATIONS` up to `DB_SCHEMA`, then `ApplyDefaults` fills missing keys without
   overwriting. Bump `DB_SCHEMA` and add a migration whenever a saved field is renamed, moved or reshaped.
   - `OneKeyFishingDB` holds account-wide data: settings, fished item IDs, auction prices, the minimap button and
-    indicator positions, the last statistics tab `statsTab`, `shareNotice` and the catch database `shared`.
+    indicator positions, the last statistics tab `statsTab`, `shareNotice`, `shareNoticeChannel` (the notice that
+    names the public channel was closed, part 3) and the catch database `shared` (with `shared.chain`, the version
+    chain's secret and marks). The settings gain `shareChannel` (default on).
   - `OneKeyFishingCharDB` holds per-character data: fishing gear, statistics, and pending restore state.
 - The slash command dispatcher and help (`/okf` and `/onekeyfishing`; the commands themselves are in
   Commands.lua), `ns.version` from the TOC, and binding labels.
@@ -54,7 +56,11 @@ Shared data and helpers:
 - `ns.BASE32`, `ns.Base32(value, width)` and `ns.RandomBase32(length)`: IDs, tags and hashes of the catch
   database.
 - `ns.CountRecent(counts, now, weight, minutes)`: the per-minute rolling sum of Comm's budget and Share's
-  per-sender limits.
+  per-sender limits (and the channel's population estimate and part flood count).
+- `ns.SHA256(message)` (FIPS 180-4 through the game's `bit` library, each result taken modulo 2^32, so it is the
+  same on 5.1 and in the 5.3 tests), `ns.HexToBase32(hex, count)` and `ns.ProofStep(link)` (the first 80 bits of
+  the SHA-256 of a link as 16 base32 characters): one step down a version chain ([catch-db.md](catch-db.md)). The
+  tests swap a fast stand-in for `ns.ProofStep` unless `real_proof` is set.
 - `ns.GameObjectID(guid)`: the object ID of a game object GUID (Forever scrambles the spawn part), and
   `ns.BOBBER_OBJECT_ID`.
 

@@ -29,6 +29,9 @@ local START_DELAY_MIN, START_DELAY_MAX = 2, 20 -- seconds a hearer waits before 
 local FRIENDS_PER_ROUND = 20 -- HELLOs by whisper and Battle.net per round
 local HELLO_LIMIT = 60 -- seconds between HELLOs taken from one sender
 local SESSION_RECORDS = 25 -- records per direction and session, within SESSION_BYTES
+-- Links of a version chain walked per frame step while a received record is checked (research R9 of part 3).
+-- VERIFY(V26): PROOF_STEPS proof steps take well under 5 ms in the game (the spike times 64 of them)
+local PROOF_STEPS = 32
 local HOUR = 3600
 local ALONE_AFTER = 30 * 60 -- nobody heard for this long: "Nobody to exchange with right now"
 local FIRST_HELLO_MIN, FIRST_HELLO_MAX = 60, 120 -- seconds after the login (or the closed popup)
@@ -36,6 +39,16 @@ local ROUND_MIN, ROUND_MAX = 10 * 60, 15 * 60 -- between HELLO rounds
 local EXTRA_HELLO_MIN, EXTRA_HELLO_MAX = 5, 30 -- after a group change, a resumed pause or turning sharing on
 local EXTRA_HELLO_GAP = 120 -- at most one extra HELLO per this many seconds for group changes
 local HELLO_STALE = 10 * 60 -- after a pause, a HELLO only when the last one is older
+local FULL_REFRESH_GAP = 10 * 60 -- seconds between refreshes of every record's seen
+-- The hidden public channel (part 3: specs/004-public-channel-sync/contracts/protocol.md, research R5).
+local CHANNEL_TARGET = 2 -- sessions started per channel HELLO, on average, whatever the number of hearers
+local CHANNEL_WINDOW = 40 -- minutes of channel HELLOs counted: about the number of clients in the channel
+local NEAR_WINDOW = 15 * 60 -- a guild, group or friend peer heard this recently comes before channel peers
+local BUSY_RETRY_MIN, BUSY_RETRY_MAX = 120, 180 -- a near peer that answered BYE busy is tried again once
+local MAX_CHANNEL_PEERS = 300 -- peers known only from the channel kept in memory (FR-009)
+local CHANNEL_FIRST_MIN, CHANNEL_FIRST_MAX = 30, 90 -- seconds after joining before the first channel HELLO
+local CHANNEL_ROUND_MIN, CHANNEL_ROUND_MAX = 30 * 60, 50 * 60 -- between channel HELLOs
+local CHANNEL_MOVE_MIN, CHANNEL_MOVE_MAX = 5, 30 -- after a move to another channel
 -- Limits per sender and hour; above one the sender is ignored until logout. Derived from what one honest client can
 -- send to one peer in an hour, so an honest peer never reaches them:
 -- - sessions: one per GROUP_COOLDOWN (both sides keep it), one more at the edges of the hour;
@@ -58,6 +71,7 @@ Share.MESSAGE_LIMIT, Share.RECORD_LIMIT = MESSAGE_LIMIT, RECORD_LIMIT
 ---------------------------------------------------------------------------
 -- CatchDB owns the record format: the "<id>@<epoch>" keys, counts, the seed (it loads earlier in the TOC).
 local IsOther, IsCount, SeedAbsorbed = ns.CatchDB.IsOtherKey, ns.CatchDB.IsCount, ns.CatchDB.SeedAbsorbed
+local IsProof = ns.CatchDB.IsProof
 
 local function UnitOf(record)
     if type(record) == "table" and type(record.id) == "string" and IsCount(record.epoch) then
@@ -90,17 +104,23 @@ end
 local Store = {}
 Share.Store = Store
 
--- keys: the record keys that came, changed or went (CatchDB updates its index of them).
-local function Changed(keys)
-    ns.Fire("SHARED_DATA_CHANGED", keys)
-end
-
--- Bumped on every SHARED_DATA_CHANGED: a node's summary is current while its version matches (one listener for
--- every node, so a node of the tests is not kept alive by it).
+-- A node's summary is current while both versions match: the store's own, bumped when Share changes that store, and
+-- dataVersion, bumped by a SHARED_DATA_CHANGED from elsewhere (a roll of the own record, sharing switched). One
+-- listener for every node, so a node of the tests is not kept alive by it, and a change in one test node's store
+-- leaves the others' summaries alone.
 local dataVersion = 0
-ns.On("SHARED_DATA_CHANGED", function()
-    dataVersion = dataVersion + 1
+local storeVersions = setmetatable({}, { __mode = "k" })
+ns.On("SHARED_DATA_CHANGED", function(_, store)
+    if store == nil then
+        dataVersion = dataVersion + 1
+    end
 end)
+
+-- keys: the record keys of `store` that came, changed or went (CatchDB updates its index of them).
+local function Changed(store, keys)
+    storeVersions[store] = (storeVersions[store] or 0) + 1
+    ns.Fire("SHARED_DATA_CHANGED", keys, store)
+end
 
 -- store -> { unit -> seq } of the records Evict deleted this session: they are not wanted back, or eviction and
 -- the next session would trade the same records forever while the network holds more than the limit.
@@ -127,7 +147,8 @@ local function CleanCell(cell)
     return out
 end
 
--- A checked record with only the part 1 fields, so nothing else a peer sends reaches the saved data.
+-- A checked record with only the record's fields (part 1 and the proof of part 3), so nothing else a peer sends
+-- reaches the saved data.
 local function CleanRecord(record, seen)
     local builds = {}
     for build, cells in pairs(record.builds) do
@@ -136,20 +157,45 @@ local function CleanRecord(record, seen)
             builds[build][key] = CleanCell(cell)
         end
     end
-    return { id = record.id, epoch = record.epoch, seq = record.seq, builds = builds, seen = seen }
+    return { id = record.id, epoch = record.epoch, seq = record.seq, proof = record.proof, builds = builds,
+        seen = seen }
+end
+
+-- The seed's absorbed version of the record's unit ({ seq, proof }: the chain alone), or nil.
+local function SeedHeld(record, absorbed)
+    local seq = ns.CatchDB.AbsorbedSeq(record.id, record.epoch, absorbed)
+    local proof = seq and ns.CatchDB.SeedProof(record.id, record.epoch)
+    return proof and { seq = seq, proof = proof, seed = true } or nil
+end
+
+-- The version a newer record of the unit must continue (specs/004-public-channel-sync, research.md R9): the stored
+-- record, or the seed's absorbed version of it; nil when there is none.
+function Store.HeldFor(store, record, absorbed)
+    local stored = store.records[UnitOf(record)]
+    if type(stored) == "table" and IsCount(stored.seq) and IsProof(stored.proof) then
+        return stored
+    end
+    return SeedHeld(record, absorbed or SeedAbsorbed())
 end
 
 -- Keeps a received record (data-model.md "Rules for other players' records"): "new", "newer", "same" (only seen
--- is refreshed), "older" or "refused" with the reason (and true when only an item unknown to this client was
--- the reason). now: time() it was received; absorbed: the seed's table.
-function Store.Accept(store, record, now, absorbed)
+-- is refreshed), "older" or "refused" with the reason. now: time() it was received; absorbed: the seed's table.
+-- A newer version must continue the version held (CatchDB.CheckVersion); a merge that checked the record and walked
+-- its chain over several frame steps passes verified = true, otherwise both run here ("refused", "invalid: ...").
+function Store.Accept(store, record, now, absorbed, verified)
     absorbed = absorbed or SeedAbsorbed()
     if type(record) == "table" and record.id == store.myID then
         return "refused", "the own ID"
     end
-    local ok, reason, unknownItem = ns.CatchDB.CheckRecord(record)
-    if not ok then
-        return "refused", reason, unknownItem
+    if type(record) == "table" and ns.CatchDB.IsBlocked(record.id) then
+        Store.blocked = Store.blocked + 1
+        return "refused", "blocked" -- by the author, in the bundled data: no fault of the sender (FR-020)
+    end
+    if not verified then
+        local ok, reason = ns.CatchDB.CheckRecord(record)
+        if not ok then
+            return "refused", reason
+        end
     end
     local unit = UnitOf(record)
     if Absorbed(absorbed, unit, record.seq) then
@@ -165,30 +211,136 @@ function Store.Accept(store, record, now, absorbed)
             return "same"
         end
     end
+    if not verified then
+        local held = Store.HeldFor(store, record, absorbed)
+        if held and record.seq > held.seq then
+            local result, why = ns.CatchDB.CheckVersion(held, record)
+            if result ~= "ok" then
+                return "refused", "invalid: " .. tostring(why)
+            end
+        end
+    end
     store.records[unit] = CleanRecord(record, now or time())
-    Changed({ unit })
+    Changed(store, { unit })
     return stored and "newer" or "new"
 end
 
--- Deletes the records under "<id>@<epoch>" the seed holds whole, and damaged ones; returns how many went.
+-- Records refused or deleted as blocked by the bundled data this session (/okf debug).
+Store.blocked = 0
+
+-- Deletes the records under "<id>@<epoch>" the seed holds whole, and damaged ones (another player's without a
+-- valid proof among them); returns how many went.
 function Store.CleanUp(store, absorbed)
     absorbed = absorbed or SeedAbsorbed()
     local removed = {}
     for key, record in pairs(store.records) do
-        if IsOther(key) and (type(record) ~= "table" or type(record.builds) ~= "table"
-            or not IsCount(record.seq) or UnitOf(record) ~= key or Absorbed(absorbed, key, record.seq)) then
+        local blocked = IsOther(key) and type(record) == "table" and record.id ~= store.myID
+            and ns.CatchDB.IsBlocked(record.id)
+        if blocked then
+            Store.blocked = Store.blocked + 1
+        end
+        if IsOther(key) and (blocked or type(record) ~= "table" or type(record.builds) ~= "table"
+            or not IsCount(record.seq) or UnitOf(record) ~= key or Absorbed(absorbed, key, record.seq)
+            or (record.id ~= store.myID and not IsProof(record.proof))) then
             store.records[key] = nil
             table.insert(removed, key)
         end
     end
     if #removed > 0 then
-        Changed(removed)
+        Changed(store, removed)
     end
     return #removed
 end
 
--- Above MAX_OTHER_PLACES, deletes the other records seen longest ago until they fit; never one of the own ID (the
--- live record, or one frozen by a roll: maybe the only copy left).
+-- The stored versions of units the seed holds in part that must still be shown to continue the seed's proof (a copy
+-- made up before a release named the unit). Each entry: { key, held, record, state }.
+function Store.SeedChainWork(store, absorbed)
+    absorbed = absorbed or SeedAbsorbed()
+    local work = {}
+    for key, record in pairs(store.records) do
+        if IsOther(key) and type(record) == "table" and record.id ~= store.myID and IsProof(record.proof) then
+            local held = SeedHeld(record, absorbed)
+            if held and record.seq > held.seq then
+                table.insert(work, { key = key, held = held, record = record })
+            end
+        end
+    end
+    return work
+end
+
+-- Walks the chains of SeedChainWork, at most `budget` links (all when nil); a record whose chain does not reach the
+-- seed's proof is deleted. Returns true when the work is done.
+function Store.CheckSeedChains(store, work, budget)
+    while #work > 0 do
+        local entry = work[1]
+        local result, state = ns.CatchDB.CheckVersion(entry.held, entry.record, budget, entry.state)
+        if result == "more" then
+            entry.state = state
+            return false
+        end
+        table.remove(work, 1)
+        if result ~= "ok" and store.records[entry.key] == entry.record then
+            store.records[entry.key] = nil
+            Changed(store, { entry.key })
+        end
+        if budget then
+            return #work == 0
+        end
+    end
+    return true
+end
+
+-- The eviction order by new information (specs/004-public-channel-sync, data-model.md "Eviction by new information"):
+-- A, records about places the seed knows well, go first; then B, records no peer confirmed for long; then C; and D,
+-- records about places with little data in the seed, go last.
+local SATURATED_CATCHES = 1000 -- a place the seed holds this many catches of gains little from another record
+local RARE_CATCHES = 50 -- a place the seed holds fewer catches of (part 1's "little data"; no seed cell counts too)
+local STALE_SECONDS = 60 * 86400 -- not confirmed by any peer for this long
+
+-- Shares of a record's places that are saturated and rare in the seed, once per stored table (a stored record never
+-- changes; a new seed comes only with a new release, after a /reload at the least).
+local shareCache = setmetatable({}, { __mode = "k" })
+
+local function SeedShares(record)
+    local shares = shareCache[record]
+    if not shares then
+        local places, saturated, rare, seen = 0, 0, 0, {}
+        for _, cells in pairs(type(record.builds) == "table" and record.builds or {}) do
+            for key in pairs(type(cells) == "table" and cells or {}) do
+                if not seen[key] then
+                    seen[key] = true
+                    places = places + 1
+                    local cell = ns.CatchDB.SeedCell(key)
+                    local catches = cell and tonumber(cell.c) or 0
+                    if catches >= SATURATED_CATCHES then
+                        saturated = saturated + 1
+                    elseif catches < RARE_CATCHES then
+                        rare = rare + 1
+                    end
+                end
+            end
+        end
+        shares = { saturated = places > 0 and saturated / places or 0, rare = places > 0 and rare / places or 0 }
+        shareCache[record] = shares
+    end
+    return shares
+end
+
+-- 1 (A) to 4 (D): the first class a record fits, D before B and C.
+local function EvictionClass(record, now)
+    local shares = SeedShares(record)
+    if shares.rare > 0.5 then
+        return 4
+    elseif shares.saturated >= 0.5 then
+        return 1
+    elseif (tonumber(record.seen) or 0) < now - STALE_SECONDS then
+        return 2
+    end
+    return 3
+end
+
+-- Above MAX_OTHER_PLACES, deletes other records until they fit: by class (EvictionClass), the one seen longest ago
+-- first within a class; never one of the own ID (the live record, or one frozen by a roll: maybe the only copy left).
 function Store.Evict(store)
     local total = 0
     for key, record in pairs(store.records) do
@@ -199,30 +351,29 @@ function Store.Evict(store)
     if total <= MAX_OTHER_PLACES then
         return 0
     end
-    local others = {}
-    for key, record in pairs(store.records) do
-        if IsOther(key) and record.id ~= store.myID then
-            table.insert(others, { key = key, seen = tonumber(record.seen) or 0, places = OtherPlaces(record) })
-        end
-    end
-    table.sort(others, function(a, b)
-        if a.seen ~= b.seen then
-            return a.seen < b.seen
-        end
-        return a.key < b.key
-    end)
-    local removed = {}
+    local removed, now = {}, time()
     evicted[store] = evicted[store] or {}
-    for _, entry in ipairs(others) do
-        if total <= MAX_OTHER_PLACES then
+    while total > MAX_OTHER_PLACES do
+        -- The first by class, then seen, then key: one pass per deletion, since usually one or two go.
+        local pick, pickClass, pickSeen
+        for key, record in pairs(store.records) do
+            if IsOther(key) and record.id ~= store.myID then
+                local class, seen = EvictionClass(record, now), tonumber(record.seen) or 0
+                if not pick or class < pickClass or (class == pickClass
+                    and (seen < pickSeen or (seen == pickSeen and key < pick))) then
+                    pick, pickClass, pickSeen = key, class, seen
+                end
+            end
+        end
+        if not pick then
             break
         end
-        evicted[store][entry.key] = store.records[entry.key].seq
-        store.records[entry.key] = nil
-        total = total - entry.places
-        table.insert(removed, entry.key)
+        evicted[store][pick] = store.records[pick].seq
+        total = total - OtherPlaces(store.records[pick])
+        store.records[pick] = nil
+        table.insert(removed, pick)
     end
-    Changed(removed)
+    Changed(store, removed)
     return #removed
 end
 
@@ -240,7 +391,8 @@ function Store.Units(store, absorbed)
     local units = {}
     for key, record in pairs(store.records) do
         if IsOther(key) and type(record) == "table" and IsCount(record.seq)
-            and not Absorbed(absorbed, key, record.seq) then
+            and not Absorbed(absorbed, key, record.seq)
+            and (record.id == store.myID or not ns.CatchDB.IsBlocked(record.id)) then
             units[key] = record.seq
         end
     end
@@ -261,7 +413,7 @@ function Store.Get(store, unit)
     end
 end
 
--- A record as it is sent: the part 1 fields only (seen is local), without builds a peer would refuse (the own
+-- A record as it is sent: the record's fields only (seen is local), without builds a peer would refuse (the own
 -- record keeps "unknown" when the game gave no version; the harvest skips such builds too).
 function Store.ForSending(record)
     local builds = {}
@@ -270,7 +422,7 @@ function Store.ForSending(record)
             builds[build] = cells
         end
     end
-    return { id = record.id, epoch = record.epoch, seq = record.seq, builds = builds }
+    return { id = record.id, epoch = record.epoch, seq = record.seq, proof = record.proof, builds = builds }
 end
 
 ---------------------------------------------------------------------------
@@ -355,9 +507,12 @@ Node.__index = Node
 -- read for a peer), clock (optional: milliseconds, for the longest merge step), random (optional: math.random) }.
 function Share.NewNode(store, env)
     env.random = env.random or math.random
+    -- chainRefused: "<unit>.<seq>" of a newer version that failed to continue the stored copy -> that copy (weak:
+    -- gone with the copy).
     local node = setmetatable({ store = store, env = env, tag = ns.RandomBase32(4, env.random), peers = {},
         byTag = {}, cursor = 1, merges = {}, rejected = 0, longestStep = 0, cache = {}, ownData = {},
-        unknownItems = {} }, Node) -- unknownItems: unit -> seq refused for an item this client does not know
+        channelHeard = {}, skippedNear = {}, channelCount = 0, ignored = {},
+        chainRefused = setmetatable({}, { __mode = "v" }) }, Node)
     return node
 end
 
@@ -382,9 +537,12 @@ function Node:Summary(cached)
         self.env.prepare()
     end
     local own = OwnRecord(self.store)
-    local ownUnit = own and (UnitOf(own) .. "." .. own.seq)
     local cache = self.cache
-    if cache.dataVersion ~= dataVersion or cache.ownUnit ~= ownUnit then
+    local storeVersion = storeVersions[self.store]
+    -- Compared field by field, not as a built string: a summary is read on every message heard.
+    if cache.dataVersion ~= dataVersion or cache.storeVersion ~= storeVersion or cache.own ~= own
+        or (own and (cache.ownID ~= own.id or cache.ownEpoch ~= own.epoch or cache.ownSeq ~= own.seq
+            or cache.ownProof ~= own.proof)) then
         local units = Store.Units(self.store, self.env.absorbed())
         for unit in pairs(units) do
             local record = Store.Get(self.store, unit)
@@ -395,8 +553,10 @@ function Node:Summary(cached)
         local buckets = Share.Buckets(units)
         local hashTexts = Share.BucketHashes(buckets)
         local count, places = CountUnits(self.store, units)
-        cache = { dataVersion = dataVersion, ownUnit = ownUnit, units = units, buckets = buckets, hashTexts = hashTexts,
-            wholeText = Share.WholeHash(hashTexts), count = count, places = places }
+        cache = { dataVersion = dataVersion, storeVersion = storeVersion, own = own, ownID = own and own.id,
+            ownEpoch = own and own.epoch, ownSeq = own and own.seq, ownProof = own and own.proof, units = units,
+            buckets = buckets, hashTexts = hashTexts, wholeText = Share.WholeHash(hashTexts), count = count,
+            places = places }
         self.cache = cache
     end
     return cache
@@ -415,6 +575,15 @@ end
 
 -- Touches the units held in the given buckets (index -> true; all when nil).
 function Node:RefreshSeen(buckets)
+    if not buckets then
+        -- Every record: at most every FULL_REFRESH_GAP, since a HELLO with the same hash comes from many players and
+        -- seen only ages records over 60 days (eviction).
+        local now = self.env.now()
+        if self.fullRefresh and now - self.fullRefresh < FULL_REFRESH_GAP then
+            return
+        end
+        self.fullRefresh = now
+    end
     local units = self:Summary(true).units
     if buckets then
         local picked = {}
@@ -433,13 +602,56 @@ local function Recent(counts, now, weight)
     return ns.CountRecent(counts, now, weight, HOUR / 60)
 end
 
+-- Above MAX_CHANNEL_PEERS peers known only from the channel, the one heard longest ago is forgotten, its tag too;
+-- never a guild, group or friend peer, nor the session's (FR-009). An ignored one stays ignored (node.ignored).
+function Node:BoundChannelPeers(keep)
+    while self.channelCount > MAX_CHANNEL_PEERS do
+        local oldest, oldestAt
+        for address, peer in pairs(self.peers) do
+            local at = peer.heard or 0
+            if peer.via == "channel" and address ~= keep and not (self.session and self.session.peer == address)
+                and (not oldestAt or at < oldestAt) then
+                oldest, oldestAt = address, at
+            end
+        end
+        if not oldest then
+            return
+        end
+        local peer = self.peers[oldest]
+        if peer.node and self.byTag[peer.node] == oldest then
+            self.byTag[peer.node] = nil
+        end
+        self.peers[oldest], self.skippedNear[oldest] = nil, nil
+        self.channelCount = self.channelCount - 1
+    end
+end
+
 function Node:Peer(address, via)
     local peer = self.peers[address]
     if not peer then
-        peer = { via = via, messages = {}, records = {} }
+        peer = { via = via, messages = {}, records = {}, ignored = self.ignored[address] }
         self.peers[address] = peer
+        if via == "channel" then
+            self.channelCount = self.channelCount + 1
+            self:BoundChannelPeers(address)
+        end
     end
     return peer
+end
+
+-- The path of a peer: a guild, group or friend path is never replaced by the channel, except for a stranger who
+-- only whispered so far (a session it started after hearing this client in the channel).
+function Node:SetVia(address, peer, via)
+    if via ~= "channel" then
+        if peer.via == "channel" then
+            self.channelCount = self.channelCount - 1
+        end
+        peer.via = via
+    elseif peer.via == "whisper" and not peer.heard then
+        peer.via = "channel"
+        self.channelCount = self.channelCount + 1
+        self:BoundChannelPeers(address)
+    end
 end
 
 -- Sends a session message; one that would not fit the budget whole (a long DIFF or WANT) ends the session
@@ -471,6 +683,43 @@ end
 
 function Node:DropSession()
     self.session = nil
+    self:Reconsider()
+end
+
+-- The near peers whose HELLO came while a session ran or a start was too recent: considered again once that is over
+-- (research R5 of part 3), so a channel session never costs a guild, group or friend session its part 2 timing.
+function Node:Reconsider()
+    local skipped = self.skippedNear
+    if next(skipped) == nil or self.session or self.paused then
+        return -- kept until the session or the pause is over
+    end
+    local now = self.env.now()
+    if self.lastStart and now - self.lastStart < SESSION_GAP then
+        if not self.reconsidering then
+            self.reconsidering = true
+            -- At least 1 s: a clock that stops exactly at the gap may read a hair under it and wait again forever.
+            self.env.after(math.max(1, SESSION_GAP - (now - self.lastStart)), function()
+                self.reconsidering = nil
+                self:Reconsider()
+            end)
+        end
+        return
+    end
+    self.skippedNear = {}
+    for address in pairs(skipped) do
+        local peer = self.peers[address]
+        if peer and peer.hash and peer.hash ~= self:HashText() then
+            self:ConsiderSession(address, peer)
+        end
+    end
+end
+
+-- True when parts of long messages from `address` are expected: from the session's peer, or the one that just ended,
+-- also while a new session runs (Comm drops every other part before buffering it, part 3 FR-010).
+function Node:ExpectsParts(address)
+    local session, recent = self.session, self.recent
+    return (session ~= nil and session.peer == address)
+        or (recent ~= nil and recent.peer == address and self.env.now() - recent.finished < SESSION_TIMEOUT)
 end
 
 function Node:DropSessionWith(address)
@@ -479,12 +728,13 @@ function Node:DropSessionWith(address)
     end
 end
 
--- The sender flooded or sent bad data: ignored until logout.
+-- The sender flooded or sent bad data: ignored until logout, also after the peer bound forgot it.
 function Node:Ignore(address, peer)
     if not peer.ignored then
         peer.ignored = true
         self.rejected = self.rejected + 1
     end
+    self.ignored[address] = true
     self:DropSessionWith(address)
 end
 
@@ -494,15 +744,21 @@ function Node:Confirmed(peer)
     self.lastExchange = now
 end
 
--- A record of the own ID as sent, or false and why when a peer would not take it: without cells of a game version
--- (a build the game gave no version for is left out), refused by the check (over the place limit) or over
--- MAX_RECORD_BYTES encoded. Encoded once per version of each unit.
+-- A record of the own ID as sent, or false and why when a peer would not take it: its proof not ready yet (the
+-- chain's marks are still being built), without cells of a game version (a build the game gave no version for is
+-- left out), refused by the check (over the place limit) or over MAX_RECORD_BYTES encoded. Encoded once per version
+-- of each unit.
 function Node:OwnData(record)
+    if ns.CatchDB.IsBlocked(record.id) then
+        return false, "blocked by the bundled data" -- peers refuse it (FR-020); it still counts for this player
+    end
     local unit = UnitOf(record)
     local cached = self.ownData[unit]
-    if not cached or cached.seq ~= record.seq then
+    if not cached or cached.seq ~= record.seq or cached.proof ~= record.proof then
         local outgoing, data, problem = Store.ForSending(record), false, nil
-        if not ns.CatchDB.HasCells(outgoing) then
+        if not IsProof(record.proof) then
+            problem = "proof not ready"
+        elseif not ns.CatchDB.HasCells(outgoing) then
             problem = "no cells to send"
         elseif not ns.CatchDB.CheckRecord(outgoing) then
             problem = "a peer's check would refuse it"
@@ -512,7 +768,7 @@ function Node:OwnData(record)
                 data, problem = false, "too large for a peer"
             end
         end
-        cached = { seq = record.seq, data = data, problem = problem }
+        cached = { seq = record.seq, proof = record.proof, data = data, problem = problem }
         self.ownData[unit] = cached
     end
     return cached.data, cached.problem
@@ -532,6 +788,7 @@ function Node:Finish(session)
     end
     session.finished = self.env.now()
     self.recent = session -- records still on their way are taken for a while
+    self:Reconsider()
 end
 
 -- The session a message belongs to: the running one, or (for late records) the one that just ended.
@@ -589,14 +846,35 @@ end
 
 -- Only the hearer of a HELLO starts a session, after a random wait, if it is still needed then.
 function Node:ConsiderSession(address, peer)
-    if peer.starting or not self:CanStart(peer, self.env.now()) then
+    local now = self.env.now()
+    if peer.starting or not self:CanStart(peer, now) then
+        if peer.via ~= "channel" and not peer.starting
+            and (self.session or (self.lastStart and now - self.lastStart < SESSION_GAP)) then
+            self.skippedNear[address] = true -- a near peer met a session or a recent start: again when it is over
+            self:Reconsider()
+        end
         return
     end
     peer.starting = true
     self.env.after(self.env.random(START_DELAY_MIN, START_DELAY_MAX), function()
         peer.starting = nil
         local now = self.env.now()
-        if self.peers[address] ~= peer or not self:CanStart(peer, now) or peer.hash == self:HashText() then
+        if self.peers[address] ~= peer or peer.hash == self:HashText() then
+            return
+        end
+        if peer.via == "channel" and self:NearWaiting(now) then
+            return -- a near peer heard in the start delay goes first (research R5 of part 3)
+        end
+        if not self:CanStart(peer, now) then
+            -- A session or a start with somebody else in the start delay (a channel stranger's SUM): a near peer
+            -- waits for it to be over again. Not one with this peer itself: that exchanges what this start would.
+            local other = (self.session and self.session.peer ~= address)
+                or (not self.session and self.lastStart and now - self.lastStart < SESSION_GAP
+                    and peer.lastSession ~= self.lastStart)
+            if other and peer.via ~= "channel" then
+                self.skippedNear[address] = true
+                self:Reconsider()
+            end
             return
         end
         local sid = ns.RandomBase32(2, self.env.random)
@@ -621,6 +899,11 @@ function Handlers.H(self, address, peer, via, text)
     if not tag or tag == self.tag then
         return -- malformed, or our own broadcast echoing back
     end
+    if via == "channel" then
+        -- Heard announcing in the channel (Channel.lua tells a lock from its undo with it), also when the HELLO goes
+        -- no further below (too soon after its guild one, or the same client by another path).
+        peer.inChannel = true
+    end
     local now = self.env.now()
     local first = self.byTag[tag]
     local other = first and first ~= address and self.peers[first]
@@ -634,20 +917,47 @@ function Handlers.H(self, address, peer, via, text)
         return
     end
     if peer.heard and now - peer.heard < HELLO_LIMIT then
-        if via == "group" then
-            peer.via = "group" -- a guild member in the group: the group's shorter cooldown
+        if via == "group" or (via ~= "channel" and peer.via == "channel") then
+            self:SetVia(address, peer, via) -- a guild member in the group: the group's shorter cooldown
         end
         return
     end
     self.byTag[tag] = address
-    peer.node, peer.hash, peer.heard, peer.via = tag, hash, now, via
+    local heard -- channel HELLOs in the last CHANNEL_WINDOW minutes, this one included
+    if via == "channel" then
+        heard = ns.CountRecent(self.channelHeard, now, 1, CHANNEL_WINDOW)
+    end
+    self:SetVia(address, peer, via)
+    peer.node, peer.hash, peer.heard, peer.busyRetried = tag, hash, now, nil
     peer.pausedUntil = nil -- a peer that timed out (a pause on its side) is back
     if hash == self:HashText() then
         self:RefreshSeen(nil) -- the same database: nothing to exchange, every record confirmed
         self:Confirmed(peer)
         return
     end
+    -- A stranger from the channel: only by chance (about CHANNEL_TARGET of all hearers start), and not while a near
+    -- peer could start a session now (research R5 of part 3).
+    if peer.via == "channel" then -- only when this HELLO came by the channel (SetVia never makes a peer one otherwise)
+        if self.env.random() >= math.min(1, CHANNEL_TARGET / math.max(1, heard or 0)) or self:NearWaiting(now) then
+            return
+        end
+    end
     self:ConsiderSession(address, peer)
+end
+
+-- True when a guild, group or friend peer heard in the last NEAR_WINDOW with another database is about to get a
+-- session: its start is armed, its busy retry is due, or it waits in skippedNear for a session or a start to be over.
+-- One that nothing will start a session with (in its cooldown, paused, idle, refused busy twice) does not keep the
+-- channel waiting.
+function Node:NearWaiting(now)
+    local mine = self:HashText()
+    for address, peer in pairs(self.peers) do
+        if peer.via ~= "channel" and peer.heard and now - peer.heard < NEAR_WINDOW and peer.hash ~= mine
+            and (peer.starting or peer.retrying or self.skippedNear[address]) then
+            return true
+        end
+    end
+    return false
 end
 
 function Handlers.S(self, address, peer, _, text)
@@ -725,9 +1035,11 @@ end
 -- Not wanted: the own ID (the own record changes only by fishing), units the seed already holds and versions
 -- evicted for the size limit.
 function Node:Wanted(unit, seq)
-    return ns.CatchDB.ParseUnit(unit) ~= self.store.myID and not Absorbed(self.env.absorbed(), unit, seq)
-        and not WasEvicted(self.store, unit, seq)
-        and not (self.unknownItems[unit] and seq <= self.unknownItems[unit])
+    local id = ns.CatchDB.ParseUnit(unit)
+    local refused = self.chainRefused[unit .. "." .. seq]
+    return id ~= self.store.myID and not Absorbed(self.env.absorbed(), unit, seq)
+        and not WasEvicted(self.store, unit, seq) and not ns.CatchDB.IsBlocked(id)
+        and not (refused and refused == self.store.records[unit])
 end
 
 function Handlers.D(self, address, _, _, text)
@@ -829,17 +1141,16 @@ function Node:SendRecords(session)
         end
         -- Those of the own ID only go when a peer takes them. Others' records passed the check when they were
         -- stored, and are checked again: one damaged in the saved file since would get this client ignored by the
-        -- peer, so it is dropped instead (an item this client does not know is no damage).
+        -- peer, so it is dropped instead.
         local record, data = Store.Get(self.store, unit), nil
         if record and record.id == self.store.myID then
             data = self:OwnData(record)
         elseif record then
-            local ok, _, unknownItem = ns.CatchDB.CheckRecord(record)
-            if ok or unknownItem then
+            if ns.CatchDB.CheckRecord(record) then
                 data = self.env.encode(Store.ForSending(record))
             else
                 self.store.records[unit] = nil
-                Changed({ unit })
+                Changed(self.store, { unit })
             end
         end
         if data and #data <= MAX_RECORD_BYTES then
@@ -900,6 +1211,16 @@ function Handlers.B(self, address, peer, _, text)
         self:DropSession()
         if reason == "busy" then
             peer.lastSession = peer.previousSession
+            if peer.via ~= "channel" and not peer.busyRetried then
+                -- A near peer is tried again once soon (part 3, FR-007): a channel session may be what kept it busy.
+                peer.busyRetried, peer.retrying = true, true
+                self.env.after(self.env.random(BUSY_RETRY_MIN, BUSY_RETRY_MAX), function()
+                    peer.retrying = nil
+                    if self.peers[address] == peer and peer.hash and peer.hash ~= self:HashText() then
+                        self:ConsiderSession(address, peer)
+                    end
+                end)
+            end
         end
     end
 end
@@ -939,6 +1260,37 @@ function Node:ScheduleMerge()
     end)
 end
 
+-- Decodes and checks a received record: false for broken or unwanted data, true when it is ready to store
+-- (item.record), or "more" when a newer version's chain still has to be walked (item.verify keeps the state).
+function Node:MergeStart(item)
+    local record = self.env.decode(item.data)
+    local unit = UnitOf(record)
+    local session = item.session
+    if not (unit and session.ourWants[unit] and not session.received[unit]) or record.id == self.store.myID
+        or not ns.CatchDB.CheckRecord(record) then
+        return false
+    end
+    session.received[unit] = true
+    local held = Store.HeldFor(self.store, record, self.env.absorbed())
+    if held and record.seq > held.seq then
+        item.verify = { held = held, record = record }
+        return "more"
+    end
+    item.record = record
+    return true
+end
+
+-- Stores a checked record; false when the store refuses it.
+function Node:MergeStore(record)
+    local result, reason = Store.Accept(self.store, record, self.env.time(), self.env.absorbed(), true)
+    if result == "new" or result == "newer" then
+        Store.Evict(self.store)
+    end
+    return result ~= "refused" or reason == "blocked" -- a blocked ID is no fault of the sender (FR-020)
+end
+
+-- One frame step of the merge queue: a record's decode and check, or PROOF_STEPS links of its chain (a record whose
+-- chain is longer keeps the front of the queue), then its store.
 function Node:MergeOne()
     local item = table.remove(self.merges, 1)
     if not item or item.peer.ignored then
@@ -947,18 +1299,32 @@ function Node:MergeOne()
     local clock = self.env.clock
     local started = clock and clock()
     -- VERIFY(V16): one decode, check and merge per frame step stays smooth with 20,000 stored places
-    local record = self.env.decode(item.data)
-    local unit = UnitOf(record)
-    local session, ok = item.session, false
-    if unit and session.ourWants[unit] and not session.received[unit] then
-        session.received[unit] = true
-        local result, _, unknownItem = Store.Accept(self.store, record, self.env.time(), self.env.absorbed())
-        ok = result ~= "refused" or unknownItem -- this client may not know a new item yet: dropped, no blame
-        if unknownItem then
-            self.unknownItems[unit] = record.seq -- not wanted again this session (only a newer version)
+    local ok
+    if item.verify then
+        local verify = item.verify
+        local result, state = ns.CatchDB.CheckVersion(verify.held, verify.record, PROOF_STEPS, verify.state)
+        if result == "more" then
+            verify.state = state
+            table.insert(self.merges, 1, item)
+            ok = true
+        elseif result == "ok" then
+            ok = self:MergeStore(verify.record)
+        else
+            -- Refused either way, but only the seed's proof shows the sender wrong: a stored version may be a made-up
+            -- copy taken first (research R9), and then the one relaying the owner's real version is no forger. That
+            -- version is not wanted again while the copy is held (it would fail the same way); another seq still is,
+            -- since the forgery may be this version and not the copy.
+            if not verify.held.seed then
+                self.chainRefused[UnitOf(verify.record) .. "." .. verify.record.seq] = verify.held
+            end
+            ok = not verify.held.seed
         end
-        if result == "new" or result == "newer" then
-            Store.Evict(self.store)
+    else
+        ok = self:MergeStart(item)
+        if ok == "more" then
+            table.insert(self.merges, 1, item)
+        elseif ok then
+            ok = self:MergeStore(item.record)
         end
     end
     if not ok then
@@ -973,6 +1339,9 @@ end
 function Node:Receive(address, via, text)
     if self.paused or type(text) ~= "string" or text == "" then
         return
+    end
+    if via == "channel" and text:sub(1, 1) ~= "H" then
+        return -- the channel carries HELLO only; sessions go by whisper
     end
     local peer = self:Peer(address, via)
     if peer.ignored then
@@ -1014,6 +1383,21 @@ end
 
 function Node:Resume()
     self.paused = nil
+    self:Reconsider()
+end
+
+-- A HELLO to the hidden public channel (part 3; the rounds of research R5).
+function Node:ChannelHello()
+    if self.paused or not self.env.channelBroadcast or not self.env.canSend() then
+        return
+    end
+    self.env.channelBroadcast(self:HelloText())
+end
+
+-- The HELLO as it goes out (on the wire "H <node tag> <epoch> <count> <hash>").
+function Node:HelloText()
+    local summary = self:Summary()
+    return ("H %s %d %d %s"):format(self.tag, self.env.seedEpoch(), summary.count, self:HashText())
 end
 
 -- A HELLO round: the guild and the group, then up to FRIENDS_PER_ROUND friends, those known as peers first and
@@ -1022,8 +1406,7 @@ function Node:Hello()
     if self.paused or not self.env.canSend() then
         return false
     end
-    local summary = self:Summary()
-    local text = ("H %s %d %d %s"):format(self.tag, self.env.seedEpoch(), summary.count, self:HashText())
+    local text = self:HelloText()
     self.env.broadcast(text)
     local known, others = {}, {}
     self.env.forEachFriend(function(address)
@@ -1053,7 +1436,7 @@ function Node:Hello()
 end
 
 local function NoActivity()
-    return { heard = { guild = 0, group = 0, friend = 0, bnet = 0 }, exchanged = 0, recent = false }
+    return { heard = { guild = 0, group = 0, friend = 0, bnet = 0, channel = 0 }, exchanged = 0, recent = false }
 end
 
 -- The peers of the last hour: heard per path, exchanged with, anybody in the last 30 minutes, the last exchange.
@@ -1076,6 +1459,8 @@ end
 function Node:Status()
     local status, summary = self:Activity(), self:Summary(true)
     status.records, status.places = summary.count, summary.places
+    status.channelPeers = self.channelCount
+    status.population = ns.CountRecent(self.channelHeard, self.env.now(), 0, CHANNEL_WINDOW)
     status.rejected, status.longestStep = self.rejected, self.longestStep
     status.session, status.merges = self.session ~= nil, #self.merges
     return status
@@ -1156,6 +1541,7 @@ local function Start()
         after = C_Timer.After,
         send = ns.Comm.Send,
         broadcast = ns.Comm.Broadcast,
+        channelBroadcast = ns.Comm.ChannelBroadcast,
         forEachFriend = ns.Comm.ForEachFriend,
         canSend = ns.Comm.CanSend,
         busy = ns.Comm.IsSending,
@@ -1169,10 +1555,30 @@ local function Start()
     ns.Comm.OnReceive(function(address, via, text) node:Receive(address, via, text) end)
     ns.Comm.OnActivity(function(address) node:Heard(address) end)
     ns.Comm.OnOffline(function(address) node:Offline(address) end)
+    ns.Comm.SetPartFilter(function(address) return node:ExpectsParts(address) end)
+    ns.Comm.OnFlood(function(address) node:Ignore(address, node:Peer(address, "whisper")) end)
     commPause = ns.Comm.GetPause()
     groupSize = HomeGroupSize()
     SyncPause()
     C_Timer.After(math.random(FIRST_HELLO_MIN, FIRST_HELLO_MAX), Round)
+end
+
+-- True while a notice is owed: the part 2 one, or (while the release has the channel) the one that names it, which a
+-- player who closed the part 2 notice in an earlier release gets once more (FR-022). Channel.lua waits for it too.
+local function NoticeOwed()
+    return not ns.db.shareNotice or (ns.Channel.AVAILABLE and not ns.db.shareNoticeChannel)
+end
+Share.NoticeOwed = NoticeOwed
+
+-- Closing the notice (any button, Escape, or a setting changed on the page that says what is shared): the exchange
+-- starts, and while the release has the channel its notice counts as read too (part 3, FR-022).
+local function NoticeRead()
+    ns.db.shareNotice = true
+    if ns.Channel.AVAILABLE then
+        ns.db.shareNoticeChannel = true
+    end
+    Start()
+    ns.Channel.Update()
 end
 
 -- Turns the exchange on or off: off sends and accepts nothing and leaves other players' records out of the
@@ -1180,10 +1586,9 @@ end
 -- what is shared, so the one-time popup is not needed any more.
 function Share.SetEnabled(on)
     ns.db.settings.shareDB = on and true or false
-    if not ns.db.shareNotice then
-        ns.db.shareNotice = true
+    if NoticeOwed() then
         StaticPopup_Hide(NOTICE_POPUP)
-        Start()
+        NoticeRead()
     end
     SyncPause()
     if on and node then
@@ -1215,9 +1620,64 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     end
     Store.CleanUp(ns.db.shared)
     Store.Evict(ns.db.shared)
+    -- Copies of units the seed holds in part must continue the seed's proof: walked in the background.
+    local work = Store.SeedChainWork(ns.db.shared)
+    local function Step()
+        if not Store.CheckSeedChains(ns.db.shared, work, PROOF_STEPS) then
+            C_Timer.After(0, Step)
+        end
+    end
+    if #work > 0 then
+        C_Timer.After(0, Step)
+    end
 end)
 
 ns.RegisterEvent("PLAYER_LOGIN", Start)
+
+-- Channel HELLO rounds (research R5 of part 3): the first 30-90 s after joining (also the same channel again, after a
+-- kick, a slot given back or the setting turned off and on), then every 30-50 min, and 5-30 s after a move to another
+-- channel; a round outside the channel sends nothing, but checks the free slots again.
+local channelRound, channelIndex, channelState
+
+local function ChannelRound(token)
+    if token ~= channelRound then
+        return
+    end
+    if node and ns.Channel.GetState() == "in" then
+        node:ChannelHello()
+    end
+    ns.Channel.CheckSlots()
+    C_Timer.After(math.random(CHANNEL_ROUND_MIN, CHANNEL_ROUND_MAX), function() ChannelRound(token) end)
+end
+
+ns.On("CHANNEL_STATE", function(state, index)
+    local previous = channelState
+    channelState = state
+    -- The end of a pause on the same channel is no join: the client stayed in it, and its round goes on.
+    if state ~= "in" or (index == channelIndex and (previous == "in" or previous == "paused")) then
+        return
+    end
+    local moved = channelIndex ~= nil and index ~= channelIndex
+    channelIndex = index
+    local token = {}
+    channelRound = token
+    C_Timer.After(moved and math.random(CHANNEL_MOVE_MIN, CHANNEL_MOVE_MAX)
+        or math.random(CHANNEL_FIRST_MIN, CHANNEL_FIRST_MAX), function() ChannelRound(token) end)
+end)
+
+-- True when a player of that name (with or without the realm) announced in the channel this session.
+function Share.HeardInChannel(name)
+    if not node or type(name) ~= "string" or name == "" then
+        return false
+    end
+    for address, peer in pairs(node.peers) do
+        local sender = peer.inChannel and address:match("^w:(.+)$")
+        if sender and ns.SameCharacter(sender, name) then
+            return true
+        end
+    end
+    return false
+end
 
 ---------------------------------------------------------------------------
 -- The one-time popup: nothing is exchanged before the player closed it
@@ -1227,26 +1687,35 @@ local NOTICE_RETRY = 30 -- seconds until the next try when the game had no free 
 local noticeShown, noticeAfterCombat, noticeRetry = false, false, false
 
 local function ShowNotice()
-    if ns.db.shareNotice or noticeShown or not Share.IsEnabled() then
+    if not NoticeOwed() or noticeShown or not Share.IsEnabled() then
         return
     end
     if InCombatLockdown() then
         noticeAfterCombat = true
         return
     end
-    -- Three sentences, so each key fits a line; part 3 (the public channel) changes only the first.
-    local text = table.concat({
-        L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."],
+    -- Short sentences, so each key fits a line; while the release has the public channel (part 3), two sentences that
+    -- name it take the place of the first.
+    local sentences = {
         L["No character names are sent, but the players you exchange with can tell which ID is yours."],
         L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."],
-    }, " ")
+    }
+    if ns.Channel.AVAILABLE then
+        table.insert(sentences, 1,
+            L["OneKeyFishing now shares your catches under a random ID with other players who use it."])
+        table.insert(sentences, 2,
+            L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."])
+    else
+        table.insert(sentences, 1,
+            L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."])
+    end
+    local text = table.concat(sentences, " ")
     local dialog = ns.ShowPopup(NOTICE_POPUP, text, nil, L["Got it"], L["Settings"],
         function() ns.SettingsUI.OpenShare() end,
         function()
             -- Any button or Escape; not the whole interface hidden (Alt+Z, a cinematic), which hides the popup too.
-            if not ns.db.shareNotice and UIParent:IsShown() then
-                ns.db.shareNotice = true
-                Start()
+            if UIParent:IsShown() then
+                NoticeRead()
             end
         end)
     if dialog then
@@ -1262,7 +1731,7 @@ local function ShowNotice()
 end
 
 local function ShowNoticeSoon()
-    if not ns.db.shareNotice then
+    if NoticeOwed() then
         C_Timer.After(NOTICE_DELAY, ShowNotice)
     end
 end
@@ -1285,6 +1754,7 @@ local function IdleStatus()
     local status = NoActivity()
     status.records, status.places = CountUnits(ns.db.shared, Store.Units(ns.db.shared))
     status.rejected, status.longestStep, status.session, status.merges = 0, 0, false, 0
+    status.channelPeers, status.population = 0, 0
     return status
 end
 
@@ -1308,7 +1778,28 @@ function Share.GetStatus()
     local status = node and node:Status() or IdleStatus()
     status.state, status.reason = State(status)
     status.traffic = ns.Comm.GetTraffic()
+    status.channel, status.channelIndex = ns.Channel.GetState()
+    status.blocked, status.ownBlocked = Store.blocked, ns.CatchDB.IsBlocked(ns.db.shared.myID)
     return status
+end
+
+-- The channel's line for /okf share and the settings page (contracts/channel.md "Texts"), nil while the release
+-- ships without the channel. Built at runtime: the texts need the language.
+function Share.ChannelLine()
+    local state, index = ns.Channel.GetState()
+    if state == "unavailable" then
+        return nil
+    elseif state == "in" then
+        return index and index > 1 and L["Public channel: in use (fallback channel %d)"]:format(index)
+            or L["Public channel: in use"]
+    end
+    local texts = {
+        off = L["Public channel: off"],
+        noslot = L["Public channel: no free chat channel slot"],
+        locked = L["Public channel: locked or refused by the game"],
+        left = L["Public channel: you left it, back at the next login"],
+    }
+    return texts[state] or L["Public channel: waiting"] -- notice and paused too: the exchange's own line says why
 end
 
 -- Built at runtime: the texts need the language, which is set after the files load.
@@ -1350,17 +1841,29 @@ end
 function Share.PrintStatus()
     local status = Share.GetStatus()
     local epoch, seedPlaces = ns.CatchDB.SeedInfo()
+    local heard = status.heard
+    local heardLine
+    if ns.Channel.AVAILABLE then
+        heardLine = (L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"])
+            :format(heard.guild, heard.group, heard.friend, heard.bnet, heard.channel)
+    else
+        heardLine = (L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"]):format(
+            heard.guild, heard.group, heard.friend, heard.bnet)
+    end
     local lines = {
         (L["Bundled data: version %d, %d places"]):format(epoch, seedPlaces),
         (L["Records held: %d, %d places"]):format(status.records, status.places),
-        (L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"]):format(
-            status.heard.guild, status.heard.group, status.heard.friend, status.heard.bnet),
+        heardLine,
         (L["Players exchanged with in the last hour: %d"]):format(status.exchanged),
         status.lastExchange and (L["Last exchange: %s ago"]):format(ns.Stats.FormatShortTime(status.lastExchange))
             or L["Last exchange: none yet"],
         (L["Traffic in the last hour: %d KB"]):format(math.ceil(status.traffic / 1024)),
         Share.StatusLine(),
     }
+    local channel = Share.ChannelLine()
+    if channel then
+        table.insert(lines, channel)
+    end
     ns.Print(L["Shared database"])
     for _, line in ipairs(lines) do
         DEFAULT_CHAT_FRAME:AddMessage("  " .. line)
@@ -1390,8 +1893,13 @@ function Share.Describe()
             status.reason and (" (" .. status.reason .. ")") or "", tostring(Share.IsEnabled()),
             tostring(ns.db.shareNotice)),
         ("records %d, places %d"):format(status.records, status.places),
-        ("heard in the last hour: guild %d, group %d, friend %d, bnet %d; exchanged with %d"):format(heard.guild,
-            heard.group, heard.friend, heard.bnet, status.exchanged),
+        ("heard in the last hour: guild %d, group %d, friend %d, bnet %d, channel %d; exchanged with %d"):format(
+            heard.guild, heard.group, heard.friend, heard.bnet, heard.channel, status.exchanged),
+        ("channel HELLOs in the last %d min (population) %d, channel peers kept %d"):format(CHANNEL_WINDOW,
+            status.population, status.channelPeers),
+        ("blocked by the bundled data: %d records refused or deleted, own ID blocked %s"):format(status.blocked,
+            tostring(status.ownBlocked)),
+        "version chain: " .. ns.CatchDB.ChainState(),
         "last exchange: " .. (status.lastExchange and (math.floor(status.lastExchange) .. " s ago") or "none"),
         ("rejected senders %d, session running %s, merges queued %d, longest merge step %.2f ms"):format(
             status.rejected, tostring(status.session), status.merges, status.longestStep),

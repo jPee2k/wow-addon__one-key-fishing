@@ -11,7 +11,10 @@ bobber is still flying, up to 3 s after the channel start, no warning.
 
 - Canvas pages built from plain widgets, not the Settings setting-type API.
 - The "Shared database" subcategory holds the exchange setting, its text and a status line updated every second;
-  `SettingsUI.OpenShare()` opens it.
+  `SettingsUI.OpenShare()` opens it. While the release has the public channel (`Channel.AVAILABLE`), a second
+  checkbox "Use the public channel" sits under the first (greyed out while sharing is off, re-read on
+  `SETTINGS_CHANGED`), with the channel's state line (`Share.ChannelLine()`) under it, and the text gains two
+  sentences about the channel.
 - Bags cannot be opened while the Settings panel is open, so items are added through Alt+Click in bags
   (ItemHooks), not from the panel.
 
@@ -33,7 +36,12 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - redrawn on the 1 s tick when the data, the place or a filter changed;
 - the map and the skill range are read again on zone, loading-screen and skill events, the cell every second;
 - "N catches from K players" under "All" from 2 players on, and `Share.StatusLine()` at the bottom, updated on the
-  tick.
+  tick;
+- an item the client does not know yet (`GetItemInfoInstant` nil when the row is drawn) gets the "Unknown item" text,
+  a question mark icon (134400), no price, and one `C_Item.RequestLoadItemDataByID`; its tooltip says how many
+  players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
+  `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (part 3, FR-017a);
+- the miss line uses the view's `missRate` (weighted, part 3).
 
 ## Other frames
 

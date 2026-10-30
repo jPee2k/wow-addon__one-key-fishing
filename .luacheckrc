@@ -25,7 +25,7 @@ globals = {
 
 read_globals = {
     -- Lua extensions provided by the client
-    "strsplit", "strtrim", "wipe", "unpack", "time", "date",
+    "strsplit", "strtrim", "wipe", "unpack", "time", "date", "bit",
 
     -- Frames and UI
     "CreateFrame", "UIParent", "DEFAULT_CHAT_FRAME", "ChatFontNormal", "GameTooltip", "Minimap",
@@ -53,10 +53,13 @@ read_globals = {
     "GetNormalizedRealmName", "GetZoneText", "GetSubZoneText",
     "GetCameraZoom", "CameraZoomIn", "CameraZoomOut",
     "IsInGuild", "IsInGroup", "IsInRaid", "IsInInstance", "GetNumGroupMembers", "BNGetNumFriends",
-    "issecretvalue", "debugprofilestop",
+    "issecretvalue", "debugprofilestop", "Constants",
+    "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName", "GetChannelList", "GetChatWindowChannels",
+    "SetChannelPassword", "DisplayChannelOwner", "IsDisplayChannelOwner",
 
     -- Constants
     "WOW_PROJECT_ID", "INVSLOT_MAINHAND", "INVSLOT_OFFHAND", "INVSLOT_RANGED",
     "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED", "NUM_BAG_SLOTS",
-    "LE_PARTY_CATEGORY_HOME", "BNET_CLIENT_WOW", "ERR_CHAT_PLAYER_NOT_FOUND_S",
+    "LE_PARTY_CATEGORY_HOME", "BNET_CLIENT_WOW", "ERR_CHAT_PLAYER_NOT_FOUND_S", "ERR_TOO_MANY_CHAT_CHANNELS",
+    "NUM_CHAT_WINDOWS",
 }

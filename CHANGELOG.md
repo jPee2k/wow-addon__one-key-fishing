@@ -31,6 +31,18 @@ All notable changes to OneKeyFishing are listed here. The format follows
   earlier is kept but not counted), with a short text on what is shared and the state. A popup at the first
   login says what is shared and where to turn it off.
 - `/okf share` shows the state of the shared catch database; `/okf debug` has a section for it.
+- The public channel: the shared catch database also reaches every other addon user through a hidden chat channel,
+  `OneKeyFishingShare`. It is listed in the Chat Channels window but shows in no chat window, leaves General, Trade
+  and your own channels on their numbers, keeps a chat channel slot free for you (and gives its own up with one chat
+  line when you hit the limit), and moves to a fallback channel when somebody locks it. A setting under the first one,
+  "Use the public channel", turns only the channel off; its state shows on the page and in `/okf share`. The popup
+  that says what is shared names the channel and shows once more after this update.
+- Protections for data from strangers: where five or more players reported a spot, none counts for more than a fifth
+  of it; an item that is neither in the bundled data nor in your own catches shows once three players reported it on
+  the map; each player's data carries a proof that only its owner can extend, so nobody can make up a newer version
+  of it; a version holds at most as much fishing as its steps allow; the bundled data can block a contributor.
+- Items your game client does not know yet show as "Unknown item" with their item ID in the tooltip, and get their
+  name once the game knows them.
 
 ### Changed
 

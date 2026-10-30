@@ -47,8 +47,23 @@
 --   in_instance = true                  IsInInstance
 --   restrictions[Enum.AddOnRestrictionType.X] = true   C_RestrictedActions.IsAddOnRestrictionActive
 --   chat_filters[event] = { fn, ... }   filters added with ChatFrameUtil.AddMessageEventFilter (read)
--- Helpers: receive_addon(prefix, text, channel, sender), receive_bn(prefix, text, gameAccountID),
--- filter_hides(event, text).
+-- Helpers: receive_addon(prefix, text, chatType, sender, target, localID, name), receive_bn(prefix, text,
+-- gameAccountID), filter_hides(event, ...).
+-- The public channel (Channel.lua, specs/004-public-channel-sync):
+--   channels_joined                     { name, number } of the channels joined through JoinTemporaryChannel
+--   channel_extra = n                   the player's own other channels (numbers 1..n, counted as active)
+--   channel_join_result[name] = { ... } what JoinTemporaryChannel returns for that name ({}: nil)
+--   channel_joins, channel_leaves, channel_passwords, channel_owner_queries   calls recorded (read)
+--   window_removals                     { window, name } of each ChatFrameN:RemoveChannel (read)
+--   popups_hidden                       keys passed to StaticPopup_Hide (read)
+--   secret_values[value] = true         issecretvalue(value) is true
+--   unknown_items[itemID] = true        an item the client does not know (GetItemInfoInstant nil)
+--   item_load_requests                  IDs passed to C_Item.RequestLoadItemDataByID (read)
+--   bit_unsigned = true                 the bit stub returns unsigned results
+--   real_proof = true                   (before loading) the real SHA-256 ns.ProofStep instead of the fast stand-in
+-- Helpers: chat_window_add(i, name), channel_notice(event, token, channelName, player, actor),
+-- channel_text(channelName, text, sender), enter_world(isInitialLogin, isReloadingUi), item_loaded(itemID, ok),
+-- proof_for(secret, seq, top), prove(record, secret, top).
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -103,13 +118,51 @@ end
 
 -- Lua 5.1 functions that fengari does not have: an error instead of a silent stub. The 5.3 behaviour of
 -- __pairs, __ipairs and __len metamethods cannot be switched off; do not rely on them.
-local MISSING_51 = { getfenv = true, setfenv = true, gcinfo = true, newproxy = true, bit = true }
+local MISSING_51 = { getfenv = true, setfenv = true, gcinfo = true, newproxy = true }
 math.frexp = function() error("math.frexp exists in the game (Lua 5.1) but not in the test runtime", 2) end
 math.type, math.tointeger, math.ult, math.maxinteger, math.mininteger = nil, nil, nil, nil, nil
 string.pack, string.unpack, string.packsize = nil, nil, nil
 coroutine.isyieldable = nil
 utf8 = nil
 unpack = tunpack -- a global in Lua 5.1
+
+-- The game's bit library (specs/004-public-channel-sync/research.md R9). The operators are compiled from a string
+-- with loadstring: npm run check parses the tests as Lua 5.1, which has no bitwise operators, while fengari (Lua
+-- 5.3) has them. Results are signed 32-bit numbers as LuaBitOp gives them; bit_unsigned = true gives them unsigned
+-- (the game's signedness is not documented, and ns.SHA256 must not depend on it). Two operands, as the addon uses.
+-- fengari's integers are 32-bit, so an operand goes in as a signed 32-bit value (a float above 2^31 has no integer
+-- representation there), and its shifts and complements wrap at 32 bits, as LuaBitOp's do.
+local bitOps = loadstring([[
+    local M = 4294967296
+    local function S(a)
+        a = a % M
+        if a >= 2147483648 then
+            a = a - M
+        end
+        return a | 0 -- an integer: fengari's unary ~ rejects a float
+    end
+    return {
+        band = function(a, b) return S(a) & S(b) end,
+        bor = function(a, b) return S(a) | S(b) end,
+        bxor = function(a, b) return S(a) ~ S(b) end,
+        bnot = function(a) return ~S(a) end,
+        lshift = function(a, n) return S(a) << n end,
+        rshift = function(a, n) return S(a) >> n end,
+    }
+]])()
+local function BitResult(value)
+    value = value % 4294967296
+    if not rawget(_G, "bit_unsigned") and value >= 2147483648 then
+        return value - 4294967296
+    end
+    return value
+end
+bit = {}
+for name, op in pairs(bitOps) do
+    bit[name] = function(...)
+        return BitResult(op(...))
+    end
+end
 
 ---------------------------------------------------------------------------
 -- Test helpers
@@ -283,6 +336,31 @@ function Frame:SetText(text)
     self.text = text
 end
 
+-- Buttons and check buttons: enabled unless SetEnabled(false) or Disable() (read with IsEnabled).
+function Frame:SetEnabled(enabled)
+    self.enabled = enabled and true or false
+end
+
+function Frame:Enable()
+    self.enabled = true
+end
+
+function Frame:Disable()
+    self.enabled = false
+end
+
+function Frame:IsEnabled()
+    return self.enabled ~= false
+end
+
+function Frame:SetChecked(checked)
+    self.checked = checked and true or false
+end
+
+function Frame:GetChecked()
+    return self.checked == true
+end
+
 function Frame:GetText()
     return self.text
 end
@@ -293,6 +371,11 @@ end
 
 function Frame:GetWidth()
     return 100
+end
+
+-- A texture (CreateTexture makes a frame here): the file or file ID it shows.
+function Frame:SetTexture(texture)
+    self.texture = texture
 end
 
 Frame.GetHeight = Frame.GetWidth
@@ -389,6 +472,17 @@ function tick(frame, delta)
     end
 end
 
+-- The game tooltip: SetOwner starts over, AddLine and SetItemByID are recorded (tooltip_lines, tooltip_item), Show
+-- and Hide set tooltip_shown; any other method does nothing.
+tooltip_lines, tooltip_item, tooltip_shown = {}, nil, false
+GameTooltip = setmetatable({
+    SetOwner = function() tooltip_lines, tooltip_item = {}, nil end,
+    AddLine = function(_, text) table.insert(tooltip_lines, text) end,
+    SetItemByID = function(_, itemID) tooltip_item = itemID end,
+    Show = function() tooltip_shown = true end,
+    Hide = function() tooltip_shown = false end,
+}, { __index = function() return function() end end })
+
 UIParent = CreateFrame("Frame", "UIParent")
 Minimap = CreateFrame("Frame", "Minimap")
 DEFAULT_CHAT_FRAME = {
@@ -437,7 +531,9 @@ function cancel_popup()
     HidePopup(key)
 end
 
+popups_hidden = {} -- every key passed to StaticPopup_Hide, in order
 function StaticPopup_Hide(key)
+    table.insert(popups_hidden, key)
     if rawget(_G, "last_popup") == key then
         last_popup = nil
         HidePopup(key)
@@ -549,12 +645,30 @@ C_Item = {
     GetItemInfoInstant = function(item)
         local itemID = tonumber(item) or tonumber(tostring(item):match("item:(%d+)"))
         local known = rawget(_G, "known_items")
-        if known and not known[itemID] then
+        if (known and not known[itemID]) or unknown_items[itemID] then
             return nil
         end
         return itemID
     end,
+    DoesItemExistByID = function(item)
+        return not unknown_items[tonumber(item)]
+    end,
+    RequestLoadItemDataByID = function(item)
+        table.insert(item_load_requests, tonumber(item))
+    end,
 }
+
+-- Items the game client does not know yet (WoW Forever reveals some only when found): GetItemInfoInstant returns
+-- nil and DoesItemExistByID false for them. item_load_requests: the IDs passed to RequestLoadItemDataByID.
+unknown_items, item_load_requests = {}, {}
+
+-- The game answers a RequestLoadItemDataByID: on success the client knows the item from then on.
+function item_loaded(itemID, success)
+    if success then
+        unknown_items[itemID] = nil
+    end
+    fire("ITEM_DATA_LOAD_RESULT", itemID, success)
+end
 
 C_Container = {
     GetItemCooldown = function(itemID)
@@ -764,22 +878,159 @@ ChatFrameUtil = {
     end,
 }
 
--- True when a chat filter added for `event` hides a line with `text`.
-function filter_hides(event, text)
+-- True when a chat filter added for `event` hides a line with these event arguments (the text first).
+function filter_hides(event, ...)
     for _, fn in ipairs(chat_filters[event] or {}) do
-        if fn(DEFAULT_CHAT_FRAME, event, text) then
+        if fn(DEFAULT_CHAT_FRAME, event, ...) then
             return true
         end
     end
     return false
 end
 
-function receive_addon(prefix, text, channel, sender)
-    fire("CHAT_MSG_ADDON", prefix, text, channel, sender)
+-- The full CHAT_MSG_ADDON payload: prefix, text, chat type, sender, target, zoneChannelID, localID, name, instanceID.
+function receive_addon(prefix, text, chatType, sender, target, localID, name)
+    fire("CHAT_MSG_ADDON", prefix, text, chatType, sender, target, 0, localID, name, 0)
 end
 
 function receive_bn(prefix, text, gameAccountID)
     fire("BN_CHAT_MSG_ADDON", prefix, text, "WHISPER", gameAccountID)
+end
+
+---------------------------------------------------------------------------
+-- The public channel (Channel.lua): chat channels, chat windows, channel notices
+---------------------------------------------------------------------------
+channels_joined = {} -- { name, number } of every channel the player is in that a test or the addon joined
+channel_extra = 0 -- the player's own other channels, numbered 1..channel_extra (counted as active)
+channel_joins, channel_leaves, channel_passwords, channel_owner_queries = {}, {}, {}, {}
+channel_join_result = {} -- name -> the values JoinTemporaryChannel returns instead ({}: nil)
+window_removals = {} -- { window, name } for every ChatFrameN:RemoveChannel call
+secret_values = {} -- value -> true: issecretvalue(value) is true (chat lockdown)
+
+Constants = { ChatFrameConstants = { MaxChatChannels = 20, MaxChatWindows = 10 } }
+ERR_TOO_MANY_CHAT_CHANNELS = "You can only be in %d channels at a time."
+NUM_CHAT_WINDOWS = 10
+
+function issecretvalue(value)
+    return value ~= nil and secret_values[value] == true
+end
+
+local function JoinedChannel(nameOrNumber)
+    for _, entry in ipairs(channels_joined) do
+        if entry.name == nameOrNumber or entry.number == nameOrNumber then
+            return entry
+        end
+    end
+end
+
+-- type, name as the game returns them; the lowest free number above the player's own channels.
+function JoinTemporaryChannel(name, password, frameID)
+    table.insert(channel_joins, { name = name, password = password, frameID = frameID })
+    local forced = channel_join_result[name]
+    if forced then
+        return tunpack(forced)
+    end
+    if not JoinedChannel(name) then
+        local number = channel_extra + 1
+        while JoinedChannel(number) do
+            number = number + 1
+        end
+        table.insert(channels_joined, { name = name, number = number })
+    end
+    return 0, name
+end
+
+function LeaveChannelByName(name)
+    table.insert(channel_leaves, name)
+    for i, entry in ipairs(channels_joined) do
+        if entry.name == name then
+            table.remove(channels_joined, i)
+            break
+        end
+    end
+end
+
+function GetChannelName(nameOrNumber)
+    local entry = JoinedChannel(nameOrNumber)
+    if entry then
+        return entry.number, entry.name, 0, false
+    end
+    return 0
+end
+
+function GetChannelList()
+    local sorted, out = {}, {}
+    for _, entry in ipairs(channels_joined) do
+        table.insert(sorted, entry)
+    end
+    table.sort(sorted, function(a, b) return a.number < b.number end)
+    for _, entry in ipairs(sorted) do
+        table.insert(out, entry.number)
+        table.insert(out, entry.name)
+        table.insert(out, false)
+    end
+    return tunpack(out)
+end
+
+function SetChannelPassword(name, password)
+    table.insert(channel_passwords, { name = name, password = password })
+end
+
+-- The game answers with a CHANNEL_OWNER notice (a test fires it with channel_notice).
+function DisplayChannelOwner(name)
+    table.insert(channel_owner_queries, name)
+end
+
+C_ChatInfo.GetNumActiveChannels = function()
+    return #channels_joined + channel_extra
+end
+
+-- Chat windows with their channel lists (ChatFrameMixin's ContainsChannel and RemoveChannel).
+local ChatWindow = {}
+ChatWindow.__index = ChatWindow
+function ChatWindow:ContainsChannel(name)
+    for _, listed in ipairs(self.channelList) do
+        if listed == name then
+            return true
+        end
+    end
+    return false
+end
+function ChatWindow:RemoveChannel(name)
+    for i, listed in ipairs(self.channelList) do
+        if listed == name then
+            table.remove(self.channelList, i)
+            table.insert(window_removals, { window = self.index, name = name })
+            return
+        end
+    end
+end
+for i = 1, NUM_CHAT_WINDOWS do
+    _G["ChatFrame" .. i] = setmetatable({ index = i, channelList = {} }, ChatWindow)
+end
+
+function chat_window_add(i, name)
+    table.insert(_G["ChatFrame" .. i].channelList, name)
+end
+
+-- A channel notice as the game sends it: token, player, "", "<number>. <name>", actor, "", zone ID, number, name.
+function channel_notice(event, token, channelName, player, actor)
+    local entry = JoinedChannel(channelName)
+    local number = entry and entry.number or 0
+    fire(event, token, player or "", "", number .. ". " .. channelName, actor or "", "", 0, number, channelName)
+end
+
+-- True when a CHAT_MSG_CHANNEL filter discards a line typed into a channel.
+function channel_text(channelName, text, sender)
+    local entry = JoinedChannel(channelName)
+    local number = entry and entry.number or 0
+    return filter_hides("CHAT_MSG_CHANNEL", text, sender, "", number .. ". " .. channelName, sender, "", 0, number,
+        channelName)
+end
+
+-- Enters the world as the game does after a login (isInitialLogin) or a /reload (isReloadingUi).
+function enter_world(isInitialLogin, isReloadingUi)
+    fire("PLAYER_ENTERING_WORLD", isInitialLogin, isReloadingUi)
 end
 
 -- The addon messages sent after the first `from`, only those of `chatType` when given.
@@ -1081,12 +1332,55 @@ end
 ---------------------------------------------------------------------------
 ns = {} -- the addon namespace, shared by every file as in the game
 
+-- SHA-256 in fengari costs milliseconds per call, and an own record's chain takes thousands of them, so every test
+-- but tests/proof_test.lua (which sets real_proof = true before loading) runs with this fast stand-in for
+-- ns.ProofStep: deterministic, 16 base32 characters, not one-way. ns.real_ProofStep keeps the real one.
+local function FastProofStep(link)
+    local a, b = 7, 13
+    for i = 1, #link do
+        local byte = link:byte(i)
+        a = (a * 31 + byte) % 1048573
+        b = (b * 37 + byte) % 1048571
+    end
+    return ns.Base32(a, 4) .. ns.Base32(b, 4) .. ns.Base32((a * 7 + b) % 1048573, 4)
+        .. ns.Base32((b * 11 + a) % 1048571, 4)
+end
+
 -- Loads addon files (paths relative to the addon folder) in the given order.
 function load_files(files)
     for _, file in ipairs(files) do
         local chunk = assert(loadfile(ADDON_DIR .. "/" .. file))
         chunk("OneKeyFishing", ns)
+        if file == "Data.lua" and ns.ProofStep and not rawget(_G, "real_proof") then
+            ns.real_ProofStep, ns.ProofStep = ns.ProofStep, FastProofStep
+        end
     end
+end
+
+-- Link `seq` of a version chain of `top` links (default 256) made from `secret`, as the owner's client makes it
+-- (specs/004-public-channel-sync/data-model.md "The version chain"): link top = ProofStep(secret), every lower link
+-- the ProofStep of the one above. Chains are kept per secret and top, so the versions of one record agree.
+local chains = {}
+function proof_for(secret, seq, top)
+    top = top or 256
+    assert(seq <= top, "seq above the chain's top")
+    local key = secret .. "@" .. top
+    local chain = chains[key]
+    if not chain then
+        assert(ns.ProofStep, "ProofStep not loaded")
+        chain = { [top] = ns.ProofStep(secret) }
+        for i = top - 1, 0, -1 do
+            chain[i] = ns.ProofStep(chain[i + 1])
+        end
+        chains[key] = chain
+    end
+    return chain[seq]
+end
+
+-- Gives another player's record a valid proof for its seq (from `secret`, default its ID); returns the record.
+function prove(record, secret, top)
+    record.proof = proof_for(secret or record.id, record.seq, top)
+    return record
 end
 
 -- Reads Locales/<code>.lua on its own: returns the native name and the translated texts (key -> text).

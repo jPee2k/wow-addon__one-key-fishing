@@ -151,8 +151,8 @@ test("another player's record arriving shows on the next tick: N catches from 2 
     ns.CatchHere.SetRange(3)
     tick(window)
     eq(here.counts.text:sub(1, #"60 catches  "), (L["%d catches"]):format(60) .. "  ", "own catches only")
-    local other = { id = "qqqqqqqq", epoch = 0, seq = 1,
-        builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(30, 0, { [FISH] = { 30, 30 } }) } } }
+    local other = prove({ id = "qqqqqqqq", epoch = 0, seq = 2,
+        builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(30, 0, { [FISH] = { 30, 30 } }) } } })
     eq(ns.Share.Store.Accept(ns.db.shared, other), "new", "stored")
     tick(window)
     local expected = (L["%d catches from %d players"]):format(90, 2)
@@ -170,4 +170,63 @@ test("the status line of the exchange shows under the counts and follows the sta
     tick(window)
     eq(ns.CatchDB.GetVersion(), version, "the data did not change")
     eq(here.status.text, L["Nobody to exchange with right now"], "updated without reopening")
+end)
+
+---------------------------------------------------------------------------
+-- Items the game client does not know yet (specs/004-public-channel-sync, FR-017a)
+---------------------------------------------------------------------------
+local function rowOf(itemID)
+    for _, row in ipairs(here.rows) do
+        if row:IsShown() and row.itemID == itemID then
+            return row
+        end
+    end
+end
+
+test("an item the client does not know shows as an Unknown item row with its ID in the tooltip", function()
+    unknown_items[88888] = true
+    ns.SeedData = { epoch = 1, absorbed = {}, resets = {},
+        cells = { ["1415:3:47"] = { c = 40, m = 0, t = 400, k = 2,
+            i = { [88888] = { 10, 10 }, [FISH] = { 30, 30 } } } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    local row = assert(rowOf(88888), "a row for the unknown item")
+    eq(row.name.text, L["Unknown item"], "its name")
+    eq(row.icon.texture, 134400, "the question mark")
+    eq(row.price.text, "", "no price")
+    eq(item_load_requests[#item_load_requests], 88888, "the game is asked once")
+    local asked = #item_load_requests
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    eq(#item_load_requests, asked, "not asked again this session")
+    row = rowOf(88888)
+    row.scripts.OnEnter(row)
+    eq(tooltip_lines[1], L["Unknown item"], "tooltip title")
+    eq(tooltip_lines[2], L["The game has not shown this item yet."], "why")
+    eq(tooltip_lines[3], L["In the bundled data"], "from the seed")
+    eq(tooltip_lines[4], (L["Item ID: %d"]):format(88888), "the item ID")
+end)
+
+test("reported by other players, the tooltip counts them; once the game knows the item, the row is a normal one",
+    function()
+    for i = 1, 3 do
+        local id = ("r%07d"):format(i)
+        ns.db.shared.records[id .. "@0"] = { id = id, epoch = 0, seq = 1, seen = 1, proof = ("a"):rep(16),
+            builds = { ["1.60.1"] = { ["1415:3:47"] = catch_cell(10, 0, { [77777] = { 10, 10 } }) } } }
+    end
+    unknown_items[77777] = true
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    local row = assert(rowOf(77777), "three reports: listed")
+    row.scripts.OnEnter(row)
+    eq(tooltip_lines[3], (L["Reported by %d players on this map"]):format(3), "three players")
+    item_loaded(88888, true)
+    tick(window)
+    row = rowOf(88888)
+    assert(row.name.text ~= L["Unknown item"], "the game knows it now: " .. tostring(row.name.text))
+    row.scripts.OnEnter(row)
+    eq(tooltip_item, 88888, "the game's own item tooltip")
+    unknown_items[77777] = nil
+    ns.SeedData = nil
+    ns.Fire("SHARED_DATA_CHANGED")
 end)

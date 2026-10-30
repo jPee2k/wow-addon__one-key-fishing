@@ -96,7 +96,17 @@ local function CreateRow(parent, index)
     end
     row:EnableMouse(true)
     row:SetScript("OnEnter", function(self)
-        if self.itemID then
+        local unknown = self.unknown
+        if unknown then
+            -- An item the client does not know yet (specs/004-public-channel-sync, FR-017a): no game tooltip.
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(L["Unknown item"])
+            GameTooltip:AddLine(L["The game has not shown this item yet."], 1, 1, 1, true)
+            GameTooltip:AddLine(unknown.inSeed and L["In the bundled data"]
+                or (L["Reported by %d players on this map"]):format(unknown.reporters), 1, 1, 1, true)
+            GameTooltip:AddLine((L["Item ID: %d"]):format(unknown.itemID), 0.6, 0.6, 0.6)
+            GameTooltip:Show()
+        elseif self.itemID then
             ns.ShowItemTooltip(self, self.itemID, true)
         end
     end)
@@ -151,14 +161,32 @@ function CatchHere.Create(parent)
     return page
 end
 
+local UNKNOWN_ICON = 134400 -- INV_Misc_QuestionMark: an item the client does not know yet
+local loadAsked = {} -- item IDs asked from the game this session
+
 local function FillRow(row, item, littleData)
     row.itemID = item.itemID
-    local text, icon = ns.ItemDisplay(item.itemID)
-    row.icon:SetTexture(icon)
-    row.name:SetText(text)
+    -- Read when drawn, not from the cached view: the game may have learned the item since (ITEM_DATA_LOAD_RESULT).
+    if C_Item.GetItemInfoInstant(item.itemID) ~= nil then
+        row.unknown = nil
+        local text, icon = ns.ItemDisplay(item.itemID)
+        row.icon:SetTexture(icon)
+        row.name:SetText(text)
+        row.price:SetText(ns.Prices.FormatValue(item.itemID))
+    else
+        row.unknown = item
+        -- VERIFY(V27): GetItemInfoInstant returns nothing for an item the client does not know yet, the question mark
+        -- icon exists, and asking the game may make the item known
+        row.icon:SetTexture(UNKNOWN_ICON)
+        row.name:SetText(L["Unknown item"])
+        row.price:SetText("")
+        if not loadAsked[item.itemID] and C_Item.RequestLoadItemDataByID then
+            loadAsked[item.itemID] = true
+            C_Item.RequestLoadItemDataByID(item.itemID)
+        end
+    end
     row.chance:SetText(littleData and L["Little data"] or Percent(item.chance))
     row.pieces:SetText(("%.1f"):format(item.pieces))
-    row.price:SetText(ns.Prices.FormatValue(item.itemID))
     row:Show()
 end
 
@@ -180,7 +208,7 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     page.more:SetText("")
     page.message:SetText("")
     for _, row in ipairs(page.rows) do
-        row.itemID = nil
+        row.itemID, row.unknown = nil, nil
         row:Hide()
     end
     local hints = {}
@@ -199,13 +227,12 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         page.counts:SetText("")
         page.message:SetText(L["Nothing has been caught here yet."])
     else
-        local casts = view.catches + view.misses
         -- "from K players" once other players are behind the numbers; one player is just "N catches".
         local catches = (source == "all" and view.players >= 2)
             and (L["%d catches from %d players"]):format(view.catches, view.players)
             or (L["%d catches"]):format(view.catches)
         page.counts:SetText(catches .. "    " ..
-            (L["Nothing caught: %s"]):format(Percent(casts > 0 and view.misses / casts or 0)))
+            (L["Nothing caught: %s"]):format(Percent(view.missRate))) -- weighted (part 3, research R7)
         for i, item in ipairs(view.items) do
             if i > MAX_ROWS then
                 page.more:SetText((L["and %d more"]):format(#view.items - MAX_ROWS))
@@ -259,7 +286,7 @@ end
 ns.On("PRICES_CHANGED", MarkDirty)
 ns.On("SETTINGS_CHANGED", MarkDirty)
 
-ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
+local function ItemArrived(_, itemID, success)
     if success and page and page:IsShown() then
         for _, row in ipairs(page.rows) do
             if row.itemID == itemID then
@@ -267,4 +294,6 @@ ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
             end
         end
     end
-end)
+end
+ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", ItemArrived)
+ns.RegisterEvent("ITEM_DATA_LOAD_RESULT", ItemArrived) -- an unknown item the game now knows: its name and icon

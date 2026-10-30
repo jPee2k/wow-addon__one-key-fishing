@@ -1,7 +1,8 @@
 -- VERIFY(spike): temporary; remove this file, its TOC line, its Commands.lua entry and tests/spike_test.lua
 -- Spike: /okf spike prints the game facts the catch database was built on before the game could be played
--- (specs/002-local-catch-db/verification.md, V1-V7) and the catch exchange (specs/003-guild-group-sync/
--- verification.md, V10-V15). English like the debug report; counts and patterns only, never names.
+-- (specs/002-local-catch-db/verification.md, V1-V7), the catch exchange (specs/003-guild-group-sync/
+-- verification.md, V10-V15) and the public channel (specs/004-public-channel-sync/verification.md, V19-V27).
+-- English like the debug report; counts and patterns only, never names.
 local _, ns = ...
 
 local lastLoot -- lines about the last fishing loot window
@@ -238,6 +239,170 @@ local function NetworkSection(out)
         tostring(WOW_PROJECT_ID)))
 end
 
+---------------------------------------------------------------------------
+-- Chat channel (specs/004-public-channel-sync/research.md R13): a test channel, never the real one. The first
+-- report joins it; the next one runs the checks and leaves it again. Later events (notices, echoes, the password
+-- request, item loads) are collected here and shown on the next report.
+---------------------------------------------------------------------------
+local HASH_ABC = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+local testChannel -- "OKFSpike" and four random digits, once per session (channel names may not hold "-")
+local channelEvents = {} -- lines since the last report
+local numbersBefore -- the channel numbers before the last test join
+local loadRequested -- the item asked for with RequestLoadItemDataByID
+
+local function ReportChannelEvent(lines)
+    channelEvents = lines
+end
+
+-- What a notice or echo argument looks like: empty, the test channel's name, a number, a player-like name.
+local function ArgShape(value)
+    if value == nil or value == "" then
+        return "empty"
+    elseif value == testChannel then
+        return "the test channel name"
+    elseif tonumber(value) then
+        return "a number"
+    end
+    return SenderShape(value)
+end
+
+local function ChannelNumbers()
+    local list, numbers = { GetChannelList() }, {}
+    for i = 1, #list, 3 do
+        table.insert(numbers, tostring(list[i]))
+    end
+    return table.concat(numbers, ",")
+end
+
+for _, event in ipairs({ "CHAT_MSG_CHANNEL_NOTICE", "CHAT_MSG_CHANNEL_NOTICE_USER" }) do
+    ns.RegisterEvent(event, Safe(function(_, token, player, _, _, actor, _, _, _, name)
+        if testChannel and name == testChannel then
+            table.insert(channelEvents, ("  %s %s (player %s, actor %s)"):format(event, tostring(token),
+                ArgShape(player), ArgShape(actor)))
+        end
+    end, ReportChannelEvent))
+end
+
+ns.RegisterEvent("CHAT_MSG_ADDON", Safe(function(_, prefix, _, chatType, sender, target, _, localID, name)
+    if prefix == SPIKE_PREFIX and chatType == "CHANNEL" then
+        table.insert(channelEvents, ("  channel echo: sender %s, target %s, localID %s, name %s"):format(
+            SenderShape(sender), ArgShape(target), tostring(localID), ArgShape(name)))
+    end
+end, ReportChannelEvent))
+
+ns.RegisterEvent("CHANNEL_PASSWORD_REQUEST", Safe(function(_, channel)
+    if testChannel and channel == testChannel then
+        StaticPopup_Hide("CHAT_CHANNEL_PASSWORD")
+        table.insert(channelEvents, "  CHANNEL_PASSWORD_REQUEST for the test channel: popup hidden (note any flash)")
+    end
+end, ReportChannelEvent))
+
+ns.RegisterEvent("ITEM_DATA_LOAD_RESULT", Safe(function(_, itemID, success)
+    if itemID == loadRequested then
+        table.insert(channelEvents, ("  ITEM_DATA_LOAD_RESULT for the asked item: %s"):format(tostring(success)))
+    end
+end, ReportChannelEvent))
+
+-- Joined: the chat windows, a send, the owner and a password set and cleared, then the leave.
+local function ChannelChecks(out, name, number)
+    table.insert(out, "  channel number " .. tostring(number))
+    for i = 1, NUM_CHAT_WINDOWS or 10 do
+        local window = _G["ChatFrame" .. i]
+        local listed = false
+        local ok, values = pcall(function() return { GetChatWindowChannels(i) } end) -- name, zone, name, zone, ...
+        for _, value in ipairs(ok and values or {}) do
+            listed = listed or value == name
+        end
+        if window and window.ContainsChannel and window:ContainsChannel(name) then
+            pcall(window.RemoveChannel, window, name)
+            table.insert(out, ("  chat window %d listed it (GetChatWindowChannels %s); removed, now %s"):format(i,
+                tostring(listed), tostring(window:ContainsChannel(name))))
+        elseif listed then
+            table.insert(out, ("  chat window %d: GetChatWindowChannels lists it, the window does not"):format(i))
+        end
+    end
+    table.insert(out, "  SendAddonMessage CHANNEL: "
+        .. Try(C_ChatInfo.SendAddonMessage, SPIKE_PREFIX, "ping", "CHANNEL", number))
+    table.insert(out, "  IsDisplayChannelOwner: " .. Try(IsDisplayChannelOwner))
+    table.insert(out, "  DisplayChannelOwner (its CHANNEL_OWNER notice comes later): "
+        .. Try(DisplayChannelOwner, name))
+    table.insert(out, "  SetChannelPassword x: " .. Try(SetChannelPassword, name, "x")
+        .. ", cleared: " .. Try(SetChannelPassword, name, ""))
+    table.insert(out, "  LeaveChannelByName: " .. Try(LeaveChannelByName, name))
+end
+
+local function HashLines(out)
+    table.insert(out, ("  bit %s, bnot(0) %s, band(-1, 4294967295) %s"):format(tostring(bit ~= nil),
+        bit and Try(bit.bnot, 0) or "-", bit and Try(bit.band, -1, 4294967295) or "-"))
+    if not ns.SHA256 then
+        table.insert(out, "  SHA-256: not built yet")
+        return
+    end
+    local ok, digest = pcall(ns.SHA256, "abc")
+    table.insert(out, "  SHA256(abc) known digest: " .. (ok and tostring(digest == HASH_ABC) or ("failed: "
+        .. tostring(digest))))
+    local clock, link = debugprofilestop, "abcdefghijklmnop"
+    local started = clock and clock()
+    for _ = 1, 64 do
+        link = ns.ProofStep(link)
+    end
+    local finished = clock and clock()
+    table.insert(out, ("  64 proof steps: %s ms"):format(started and finished
+        and ("%.2f"):format(finished - started) or "no clock"))
+end
+
+local function ItemLines(out)
+    local seen, unknown, missing, first = {}, 0, 0, nil
+    for _, cell in pairs(ns.SeedData and ns.SeedData.cells or {}) do
+        for itemID in pairs(type(cell) == "table" and cell.i or {}) do
+            if not seen[itemID] then
+                seen[itemID] = true
+                if C_Item.GetItemInfoInstant(itemID) == nil then
+                    unknown, first = unknown + 1, first or itemID
+                end
+                if C_Item.DoesItemExistByID and not C_Item.DoesItemExistByID(itemID) then
+                    missing = missing + 1
+                end
+            end
+        end
+    end
+    table.insert(out, ("  bundled items unknown to GetItemInfoInstant %d, not existing (DoesItemExistByID) %d"):format(
+        unknown, missing))
+    if first and not loadRequested then
+        loadRequested = first
+        table.insert(out, "  RequestLoadItemDataByID on the first: " .. Try(C_Item.RequestLoadItemDataByID, first))
+    end
+end
+
+local function ChatChannelSection(out)
+    local max = Constants and Constants.ChatFrameConstants and Constants.ChatFrameConstants.MaxChatChannels
+    table.insert(out, ("  MaxChatChannels %s, active channels %s"):format(tostring(max),
+        Try(C_ChatInfo.GetNumActiveChannels)))
+    table.insert(out, "  too many channels text: " .. ((ERR_TOO_MANY_CHAT_CHANNELS and max)
+        and ERR_TOO_MANY_CHAT_CHANNELS:format(max) or "unknown"))
+    testChannel = testChannel or ("OKFSpike%04d"):format(math.random(0, 9999))
+    local number = GetChannelName(testChannel)
+    if not number or number == 0 then
+        if numbersBefore then
+            table.insert(out, "  channel numbers back as before the last join: " .. tostring(ChannelNumbers()
+                == numbersBefore))
+        end
+        numbersBefore = ChannelNumbers()
+        local ok, kind, joined = pcall(JoinTemporaryChannel, testChannel)
+        table.insert(out, "  JoinTemporaryChannel: " .. (ok and (tostring(kind) .. ", " .. ArgShape(joined))
+            or ("failed: " .. tostring(kind))))
+        table.insert(out, "  joined the test channel " .. testChannel .. ": run the report again in a few seconds")
+    else
+        ChannelChecks(out, testChannel, number)
+    end
+    for _, line in ipairs(channelEvents) do
+        table.insert(out, line)
+    end
+    channelEvents = {}
+    HashLines(out)
+    ItemLines(out)
+end
+
 local function BuildReport()
     local lines = { "OneKeyFishing spike report " .. tostring(ns.version) }
     Section(lines, "Build (V7)", function(out)
@@ -293,6 +458,7 @@ local function BuildReport()
             probeTab and "created" or "failed", tostring(PanelTemplates_SetTab ~= nil)))
     end)
     Section(lines, "Network (V10-V15)", NetworkSection)
+    Section(lines, "Chat channel (V19-V27)", ChatChannelSection)
     return table.concat(lines, "\n")
 end
 

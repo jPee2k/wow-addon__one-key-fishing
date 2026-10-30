@@ -33,6 +33,10 @@ It also lists the open `VERIFY` markers.
 
 Runs the Lua tests in `tests/` and the Node tests `tests/*_test.mjs` (they export `tests`, a list of
 `{ name, fn }`; used for `tools/harvest.mjs`). `npm test -- lures` runs only matching files.
+`OKF_SIM_NODES=1000 npm test -- channel_sim` runs the public channel simulation at that size (the global
+`SIM_NODES`); the default size (60 clients, about 15 s) keeps `npm test` fast, the full sizes run by hand before a
+release. The run time grows with the square of the size (every client hears every announcement), so 120 clients take
+about 45 s and 500 about 25 minutes.
 
 - `tests/run.mjs` runs every `tests/*_test.lua` in a fresh fengari state after `tests/wow.lua`.
 - `tests/wow.lua` holds the WoW API stubs: frames, events, a controllable clock and timers, configurable bag item

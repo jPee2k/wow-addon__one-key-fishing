@@ -4,9 +4,12 @@
 //   npm run harvest -- friend.lua other.lua       plus saved files friends handed over
 //   npm run harvest -- --reset 1415               map 1415 counts only data of the newest game version
 //   npm run harvest -- --synthetic 3000           a random seed of 3000 places for a load test (never commit it)
+//   npm run harvest -- --block <id> "why"         leave a contribution ID out of the seed (part 3, FR-019);
+//   npm run harvest -- --unblock <id>             the seed's `blocked` tells every client to drop it
 // Saved files are parsed, never executed. Accepted contributions are kept in seed/contributions.json, keyed by
 // "<id>@<epoch>": a newer seq replaces the stored record, so the same input never counts twice, and a run that
 // changes no sums leaves SeedData.lua and its epoch as they are.
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,6 +24,14 @@ const MAX_PIECES = 20;
 const ID = /^[a-z2-7]{8}$/;
 const BUILD = /^\d+\.\d+\.\d+$/;
 const PLACE_KEY = /^(\d+):([0-4]):(\d\d|x)$/;
+// The version chain and the weights of part 3 (specs/004-public-channel-sync, research R7 and R9), as in CatchDB.lua.
+const PROOF = /^[a-z2-7]{16}$/;
+const BASE32 = "abcdefghijklmnopqrstuvwxyz234567";
+const CHAIN_LENGTH = 4096; // CatchDB.CHAIN_LENGTH: the longest jump between two versions of a unit
+const STEP_SECONDS = 180; // CatchDB.STEP_SECONDS: casting per step of a record's seq
+const WEIGHT_FROM = 5; // contributors at a cell from which one contribution carries at most WEIGHT_SHARE
+const WEIGHT_SHARE = 1 / 5;
+const MAX_ITEM_ID = 2147483647;
 
 // --- Reading Lua tables (luaparse AST -> plain JS values) ------------------------------------------------------
 
@@ -112,6 +123,18 @@ export function seedProblems(ast) {
       problems.push(`cell key "${key}" is not "<mapID>:<range>:<cell>"`);
     }
   }
+  for (const [id, epochs] of Object.entries(seed.proofs || {})) {
+    const units = typeof epochs === "object" && epochs !== null ? Object.entries(epochs) : [];
+    if (!ID.test(id) || units.length === 0
+      || units.some(([epoch, proof]) => !/^\d+$/.test(epoch) || !PROOF.test(String(proof)))) {
+      problems.push(`proofs["${id}"] is not { [epoch] = "<16 base32>", ... }`);
+    }
+  }
+  for (const [id, value] of Object.entries(seed.blocked || {})) {
+    if (!ID.test(id) || value !== true) {
+      problems.push(`blocked["${id}"] is not true`);
+    }
+  }
   for (const [id, epochs] of Object.entries(seed.absorbed || {})) {
     const units = typeof epochs === "object" && epochs !== null ? Object.entries(epochs) : [];
     if (!ID.test(id) || units.length === 0
@@ -120,6 +143,52 @@ export function seedProblems(ast) {
     }
   }
   return problems;
+}
+
+// --- The version chain (specs/004-public-channel-sync, data-model.md "The version chain") ----------------------
+
+// One link down a chain: the first 80 bits of SHA-256 as 16 base32 characters, 5 hex digits to 4 characters
+// (ns.ProofStep and ns.HexToBase32 in Data.lua compute the same).
+export function proofStep(link) {
+  const hex = crypto.createHash("sha256").update(link, "latin1").digest("hex");
+  let out = "";
+  for (let group = 0; group < 4; group += 1) {
+    let value = parseInt(hex.slice(group * 5, group * 5 + 5), 16);
+    let chars = "";
+    for (let k = 0; k < 4; k += 1) {
+      chars = BASE32[value % 32] + chars;
+      value = Math.floor(value / 32);
+    }
+    out += chars;
+  }
+  return out;
+}
+
+// Why a newer version of a unit does not continue the stored one, or null: its proof, stepped down to the stored
+// seq, must be the stored proof (only the owner can make it). A stored record without a proof (from before part 3)
+// is no anchor.
+function chainProblem(stored, record) {
+  if (!PROOF.test(stored.proof || "")) {
+    return null;
+  }
+  if (record.seq - stored.seq > CHAIN_LENGTH) {
+    return "a jump over a whole chain";
+  }
+  let link = record.proof;
+  for (let i = stored.seq; i < record.seq; i += 1) {
+    link = proofStep(link);
+  }
+  return link === stored.proof ? null : "the proof does not continue the stored version";
+}
+
+// True when a version and one at the same or a higher seq cannot both be the owner's: the same seq with another
+// proof, or a higher one whose chain does not lead down to the lower one. Which one is made up is unknown; a version
+// without a proof (stored before part 3) tells nothing.
+function versionsSplit(lower, higher) {
+  if (!PROOF.test(lower.proof || "") || !PROOF.test(higher.proof || "")) {
+    return false;
+  }
+  return lower.seq === higher.seq ? lower.proof !== higher.proof : chainProblem(lower, higher) !== null;
 }
 
 // --- Validation (data-model.md "Validation") -------------------------------------------------------------------
@@ -134,8 +203,8 @@ function checkItems(items, catches, where) {
     throw new Error(`${where}: items are not a table`);
   }
   for (const [itemID, entry] of Object.entries(items)) {
-    if (!/^[1-9]\d*$/.test(itemID)) {
-      throw new Error(`${where}: item ID ${itemID} is not a positive number`);
+    if (!/^[1-9]\d*$/.test(itemID) || Number(itemID) > MAX_ITEM_ID) {
+      throw new Error(`${where}: item ID ${itemID} is not a positive 32-bit number`);
     }
     const withItem = entry && entry["1"];
     const pieces = entry && entry["2"];
@@ -178,17 +247,20 @@ function checkCell(cell, key) {
   }
 }
 
-// The casts (catches and misses) of every cell of every build whose counts are counts, valid or not otherwise.
+// The casts (catches and misses) and the seconds of casting of every cell of every build whose counts are counts,
+// valid or not otherwise.
 function rawCasts(record) {
   let casts = 0;
+  let seconds = 0;
   for (const cells of Object.values(record.builds || {})) {
     for (const value of Object.values(cells || {})) {
       if (value && isCount(value.c) && isCount(value.m)) {
         casts += value.c + value.m;
+        seconds += isCount(value.t) ? value.t : 0;
       }
     }
   }
-  return casts;
+  return { casts, seconds };
 }
 
 // Returns the record cleaned to { id, epoch, seq, builds }; throws with the reason when it must be rejected.
@@ -205,9 +277,16 @@ function checkRecord(record, notes) {
   // The seq grows only after a settled cast (as CatchDB.CheckRecord checks): a higher one is made up, and as the
   // newest seq it would replace the owner's real record here. Counted before odd cells are skipped, so a skipped
   // cell does not reject an honest record.
-  const casts = rawCasts(record);
+  const { casts, seconds } = rawCasts(record);
   if (record.seq > casts) {
     throw new Error(`seq ${record.seq} is above the record's ${casts} casts`);
+  }
+  // Part 3: the owner's proof, and no more casting than STEP_SECONDS per step of the seq (research R9).
+  if (!PROOF.test(record.proof || "")) {
+    throw new Error("the proof is not 16 base32 characters");
+  }
+  if (seconds > STEP_SECONDS * record.seq) {
+    throw new Error(`more casting than ${record.seq} version steps allow`);
   }
   const builds = {};
   const places = new Set();
@@ -235,7 +314,7 @@ function checkRecord(record, notes) {
   if (places.size > MAX_PLACES_PER_RECORD) {
     throw new Error(`${places.size} places, more than ${MAX_PLACES_PER_RECORD}`);
   }
-  return { id: record.id, epoch: record.epoch, seq: record.seq, builds };
+  return { id: record.id, epoch: record.epoch, seq: record.seq, proof: record.proof, builds };
 }
 
 // --- Sums ------------------------------------------------------------------------------------------------------
@@ -260,10 +339,88 @@ function addItems(target, items) {
   }
 }
 
+// The weight factor of each contributor at a cell (research R7 of part 3): from WEIGHT_FROM contributors on, the
+// largest are capped one by one at T, WEIGHT_SHARE of the weighted total; five capped ones share it equally.
+// totals: contributor ID -> what it is capped by at the cell (catches, or casts for the miss rate). players: the
+// contributors who caught something there; as in the views (CatchDB.lua) only they count toward WEIGHT_FROM.
+function weightFactors(totals, players) {
+  const factors = new Map();
+  if (players < WEIGHT_FROM) {
+    return factors;
+  }
+  const list = [...totals.entries()].filter(([, c]) => c > 0)
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+  const shares = 1 / WEIGHT_SHARE;
+  let rest = list.reduce((sum, [, c]) => sum + c, 0);
+  let cap = rest * WEIGHT_SHARE;
+  let capped = 0;
+  for (const [, c] of list) {
+    if (c <= cap) {
+      break;
+    }
+    capped += 1;
+    rest -= c;
+    if (capped >= shares) {
+      cap = c;
+      break;
+    }
+    cap = rest / (shares - capped);
+  }
+  for (const [id, c] of list) {
+    if (c > cap) {
+      factors.set(id, cap / c);
+    }
+  }
+  return factors;
+}
+
+function scaleItems(items, factor, catches) {
+  const out = {};
+  for (const [itemID, entry] of Object.entries(items || {})) {
+    const withItem = Math.min(Math.round(entry["1"] * factor), catches);
+    if (withItem > 0) {
+      out[itemID] = { 1: withItem, 2: Math.min(Math.max(Math.round(entry["2"] * factor), withItem),
+        MAX_PIECES * withItem) };
+    }
+  }
+  return out;
+}
+
+// A cell scaled by weight factors (the catches and items by `factor`, the misses by `missFactor`, the one of the
+// casts), rounded and still within the cell rules. Positions are summed per cast, so they go with the casts.
+function scaleCell(cell, factor, missFactor = factor) {
+  const c = Math.round(cell.c * factor);
+  const m = Math.round(cell.m * missFactor);
+  const scaled = { c, m, t: Math.max(Math.round(cell.t * Math.max(factor, missFactor)), c + m),
+    i: scaleItems(cell.i, factor, c) };
+  if (cell.px !== undefined) {
+    const casts = cell.c + cell.m;
+    const ratio = missFactor === factor || casts === 0 ? factor : (c + m) / casts;
+    scaled.px = Math.min(Math.round(cell.px * ratio), 1000 * (c + m));
+    scaled.py = Math.min(Math.round(cell.py * ratio), 1000 * (c + m));
+  }
+  if (cell.p) {
+    const poolCatches = Math.min(Math.round(cell.p.c * factor), c);
+    scaled.p = { c: poolCatches, i: scaleItems(cell.p.i, factor, poolCatches) };
+  }
+  return scaled;
+}
+
+// The stored contributions the author has not blocked (FR-019): only they reach the outlier report.
+function unblocked(store) {
+  return Object.values(store.contributions).filter((record) => store.blocked[record.id] === undefined);
+}
+
+// The stored contributions that reach the seed (its sums, absorbed and proofs): not blocked, and not of a disputed
+// unit, whose stored version may be the made-up one (absorbed at its seq would make clients delete the owner's copies,
+// its proof would make them refuse the owner's versions and blame whoever relays them).
+function included(store) {
+  return unblocked(store).filter((record) => store.disputed[`${record.id}@${record.epoch}`] === undefined);
+}
+
 function sumContributions(store) {
-  const cells = {};
-  const contributors = {}; // place key -> the IDs that fished there (an ID may have records of several epochs)
-  for (const record of Object.values(store.contributions)) {
+  const entries = {}; // place key -> { id, cell } of every contribution there (an ID may have several epochs)
+  for (const record of included(store)) {
     for (const [build, buildCells] of Object.entries(record.builds)) {
       for (const [key, cell] of Object.entries(buildCells)) {
         const mapID = key.match(PLACE_KEY)[1];
@@ -271,28 +428,152 @@ function sumContributions(store) {
         if (reset && compareBuilds(build, reset) < 0) {
           continue;
         }
-        const sum = cells[key] || { c: 0, m: 0, t: 0, k: 0, i: {} };
-        sum.c += cell.c;
-        sum.m += cell.m;
-        sum.t += cell.t;
-        if (cell.px !== undefined) {
-          sum.px = (sum.px || 0) + cell.px;
-          sum.py = (sum.py || 0) + cell.py;
-        }
-        addItems(sum.i, cell.i);
-        if (cell.p) {
-          sum.p = sum.p || { c: 0, i: {} };
-          sum.p.c += cell.p.c;
-          addItems(sum.p.i, cell.p.i);
-        }
-        contributors[key] = contributors[key] || new Set();
-        contributors[key].add(record.id);
-        sum.k = contributors[key].size;
-        cells[key] = sum;
+        (entries[key] = entries[key] || []).push({ id: record.id, cell });
       }
     }
   }
+  const cells = {};
+  for (const [key, list] of Object.entries(entries)) {
+    const totals = new Map();
+    const casts = new Map();
+    for (const { id, cell } of list) {
+      totals.set(id, (totals.get(id) || 0) + cell.c);
+      casts.set(id, (casts.get(id) || 0) + cell.c + cell.m);
+    }
+    const players = [...totals.values()].filter((c) => c > 0).length;
+    const factors = weightFactors(totals, players);
+    const castFactors = weightFactors(casts, players);
+    const sum = { c: 0, m: 0, t: 0, k: totals.size, i: {} };
+    let castCatches = 0; // the catches weighted by casts
+    for (const { id, cell: original } of list) {
+      const factor = factors.has(id) ? factors.get(id) : 1;
+      const castFactor = castFactors.has(id) ? castFactors.get(id) : 1;
+      const cell = factor !== 1 || castFactor !== 1 ? scaleCell(original, factor, castFactor) : original;
+      // The same factor for both: the rounded catches, so x appears only where the cast weighting differs.
+      castCatches += castFactor === factor ? cell.c : original.c * castFactor;
+      sum.c += cell.c;
+      sum.m += cell.m;
+      sum.t += cell.t;
+      if (cell.px !== undefined) {
+        sum.px = (sum.px || 0) + cell.px;
+        sum.py = (sum.py || 0) + cell.py;
+      }
+      addItems(sum.i, cell.i);
+      if (cell.p) {
+        sum.p = sum.p || { c: 0, i: {} };
+        sum.p.c += cell.p.c;
+        addItems(sum.p.i, cell.p.i);
+      }
+    }
+    // The catches weighted by casts, when they differ from those weighted by catches: the views take the miss rate
+    // from x + m (CatchDB.lua), so it is the one weighted by casts, while c gives the chances.
+    if (Math.round(castCatches) !== sum.c) {
+      sum.x = Math.round(castCatches);
+      sum.t = Math.max(sum.t, sum.x + sum.m);
+    }
+    cells[key] = sum;
+  }
   return cells;
+}
+
+// --- The outlier report (part 3, research R11) ----------------------------------------------------------------
+// Contributions whose numbers look odd next to the others at the same places. The author judges; the thresholds
+// only point at what to look at.
+const FAST_CAST_SECONDS = 3; // casting faster than this per cast on average is not fishing
+const FAST_MIN_CASTS = 50;
+const SHARE_REST_CATCHES = 100; // the others' catches a cell needs before its item shares are compared
+const SHARE_OWN_CATCHES = 50; // the contribution's own catches at that cell
+const SHARE_DISTANCE = 0.5; // total variation between the two item shares
+const SHARE_MIN_CELLS = 3;
+const PIECES_FACTOR = 3; // pieces per catch of an item this many times the others'
+const PIECES_MIN_CATCHES = 20;
+
+// Item ID -> share of the item catches in a list of item tables.
+function itemShares(itemTables) {
+  const counts = {};
+  let total = 0;
+  for (const items of itemTables) {
+    for (const [itemID, entry] of Object.entries(items || {})) {
+      counts[itemID] = (counts[itemID] || 0) + entry["1"];
+      total += entry["1"];
+    }
+  }
+  return { counts, total };
+}
+
+function outlierReport(store, oldItems) {
+  const records = unblocked(store);
+  const byKey = {}; // place key -> [{ record, cell }]
+  const itemOwners = {}; // item ID -> Set of contribution IDs
+  for (const record of records) {
+    for (const buildCells of Object.values(record.builds)) {
+      for (const [key, cell] of Object.entries(buildCells)) {
+        (byKey[key] = byKey[key] || []).push({ record, cell });
+        for (const itemID of Object.keys(cell.i || {})) {
+          (itemOwners[itemID] = itemOwners[itemID] || new Set()).add(record.id);
+        }
+      }
+    }
+  }
+  const lines = [];
+  for (const record of records) {
+    const reasons = [];
+    let odd = 0;
+    let pieces = false;
+    const lonely = new Set();
+    for (const buildCells of Object.values(record.builds)) {
+      for (const [key, cell] of Object.entries(buildCells)) {
+        const others = byKey[key].filter((entry) => entry.record !== record);
+        const rest = others.reduce((sum, entry) => sum + entry.cell.c, 0);
+        if (rest >= SHARE_REST_CATCHES && cell.c >= SHARE_OWN_CATCHES) {
+          const mine = itemShares([cell.i]);
+          const theirs = itemShares(others.map((entry) => entry.cell.i));
+          const ids = new Set([...Object.keys(mine.counts), ...Object.keys(theirs.counts)]);
+          let distance = 0;
+          for (const itemID of ids) {
+            distance += Math.abs((mine.counts[itemID] || 0) / (mine.total || 1)
+              - (theirs.counts[itemID] || 0) / (theirs.total || 1));
+          }
+          if (distance / 2 >= SHARE_DISTANCE) {
+            odd += 1;
+          }
+        }
+        for (const [itemID, entry] of Object.entries(cell.i || {})) {
+          // Only where the others fished too: a lone item of a place nobody else fished is just new data.
+          if (itemOwners[itemID].size === 1 && !oldItems.has(itemID) && rest >= SHARE_REST_CATCHES) {
+            lonely.add(itemID);
+          }
+          const otherEntries = others.map((e) => e.cell.i && e.cell.i[itemID]).filter(Boolean);
+          const otherCatches = otherEntries.reduce((sum, e) => sum + e["1"], 0);
+          const otherPieces = otherEntries.reduce((sum, e) => sum + e["2"], 0);
+          if (entry["1"] >= PIECES_MIN_CATCHES && otherCatches >= PIECES_MIN_CATCHES
+            && entry["2"] / entry["1"] >= PIECES_FACTOR * (otherPieces / otherCatches)) {
+            pieces = true;
+          }
+        }
+      }
+    }
+    const { casts, seconds } = rawCasts(record);
+    if (casts >= FAST_MIN_CASTS && seconds / casts < FAST_CAST_SECONDS) {
+      reasons.push(`casts every ${(seconds / casts).toFixed(1)} s on average`);
+    }
+    if (odd >= SHARE_MIN_CELLS) {
+      reasons.push(`item shares unlike the others' at ${odd} cells`);
+    }
+    if (lonely.size > 0) {
+      reasons.push(`items nobody else reports: ${[...lonely].sort(byNumber).join(", ")}`);
+    }
+    if (pieces) {
+      reasons.push(`pieces per catch ${PIECES_FACTOR} times the others'`);
+    }
+    if (reasons.length > 0) {
+      lines.push(`  outlier   ${record.id}@${record.epoch}: ${reasons.join("; ")}`);
+    }
+  }
+  if (lines.length > 0) {
+    lines.push('  block one with: npm run harvest -- --block <id> "why"');
+  }
+  return lines;
 }
 
 // --- Writing SeedData.lua --------------------------------------------------------------------------------------
@@ -332,6 +613,9 @@ function itemParts(items) {
 
 function cellLines(key, cell) {
   const head = [`c = ${cell.c}`, `m = ${cell.m}`, `t = ${cell.t}`];
+  if (cell.x !== undefined) {
+    head.push(`x = ${cell.x}`);
+  }
   if (cell.px !== undefined) {
     head.push(`px = ${cell.px}`, `py = ${cell.py}`);
   }
@@ -364,6 +648,10 @@ function seedText(seed) {
     ...block("absorbed", Object.keys(seed.absorbed).sort().flatMap((id) => wrap(`    ["${id}"] = {`,
       Object.keys(seed.absorbed[id]).sort(byNumber).map((epoch) => `[${epoch}] = ${seed.absorbed[id][epoch]}`),
       "      ", " },"))),
+    ...block("proofs", Object.keys(seed.proofs || {}).sort().flatMap((id) => wrap(`    ["${id}"] = {`,
+      Object.keys(seed.proofs[id]).sort(byNumber).map((epoch) => `[${epoch}] = "${seed.proofs[id][epoch]}"`),
+      "      ", " },"))),
+    ...block("blocked", Object.keys(seed.blocked || {}).sort().map((id) => `    ["${id}"] = true,`)),
     ...block("resets", Object.keys(seed.resets).sort(byNumber)
       .map((mapID) => `    [${mapID}] = "${seed.resets[mapID]}",`)),
     "  cells = {",
@@ -393,10 +681,11 @@ function accountFiles(dir) {
 
 function loadStore(file) {
   if (!fs.existsSync(file)) {
-    return { epoch: 0, resets: {}, contributions: {} };
+    return { epoch: 0, resets: {}, contributions: {}, blocked: {}, disputed: {} };
   }
   const store = JSON.parse(fs.readFileSync(file, "utf8"));
-  return { epoch: store.epoch || 0, resets: store.resets || {}, contributions: store.contributions || {} };
+  return { epoch: store.epoch || 0, resets: store.resets || {}, contributions: store.contributions || {},
+    blocked: store.blocked || {}, disputed: store.disputed || {} };
 }
 
 // The two files a harvest writes, inside the output folder (the repository by default).
@@ -451,11 +740,18 @@ export function harvest(options = {}) {
       try {
         const clean = checkRecord(record, notes);
         const storeKey = `${clean.id}@${clean.epoch}`;
-        units.add(storeKey);
         const stored = store.contributions[storeKey];
         if (!stored || clean.seq > stored.seq) {
+          const problem = stored && chainProblem(stored, clean);
+          if (problem) {
+            store.disputed[storeKey] = name; // not on one chain: either may be made up, the stored one too
+            throw new Error(problem);
+          }
           store.contributions[storeKey] = clean;
+        } else if (versionsSplit(clean, stored)) {
+          store.disputed[storeKey] = name;
         }
+        units.add(storeKey);
       } catch (error) {
         rejected += 1;
         notes.push(`  rejected  ${name} ${String(key).slice(0, 4)}...: ${error.message}`);
@@ -463,15 +759,31 @@ export function harvest(options = {}) {
     }
   }
 
+  const resetNotes = [];
+  for (const { id, note } of [].concat(options.block || [])) {
+    if (!ID.test(String(id))) {
+      return { ok: false, report: [`error: --block needs a contribution ID (8 base32 characters), got "${id}"`] };
+    }
+    store.blocked[id] = note || "";
+    resetNotes.push(`Blocked: ${id}${note ? ` (${note})` : ""}`);
+  }
+  for (const id of [].concat(options.unblock || [])) {
+    if (store.blocked[id] === undefined) {
+      return { ok: false, report: [`error: --unblock ${id}: it is not blocked`] };
+    }
+    delete store.blocked[id];
+    resetNotes.push(`Unblocked: ${id}`);
+  }
+  // The newest game version among the contributions that reach the seed: a blocked or disputed one (maybe made up,
+  // with any version number) must not decide the seed's build or where a --reset cuts a map off.
   let newest = null;
-  for (const record of Object.values(store.contributions)) {
+  for (const record of included(store)) {
     for (const build of Object.keys(record.builds)) {
       if (!newest || compareBuilds(build, newest) > 0) {
         newest = build;
       }
     }
   }
-  const resetNotes = [];
   for (const mapID of [].concat(options.reset || [])) {
     if (!/^\d+$/.test(String(mapID))) {
       return { ok: false, report: [`error: --reset needs a map ID, got "${mapID}"`] };
@@ -487,14 +799,19 @@ export function harvest(options = {}) {
   // Every unit summed, with the seq summed: a client keeps a newer seq of it (the rest goes to the next harvest),
   // and deletes the versions up to it.
   const absorbed = {};
-  for (const record of Object.values(store.contributions)) {
+  const proofs = {}; // the proof of every absorbed version: a newer one must continue it (research R9 of part 3)
+  for (const record of included(store)) {
     absorbed[record.id] = { ...absorbed[record.id], [record.epoch]: record.seq };
+    if (PROOF.test(record.proof || "")) {
+      proofs[record.id] = { ...proofs[record.id], [record.epoch]: record.proof };
+    }
   }
   // The epoch only grows, also when the contributions file was lost while the shipped seed is newer: an epoch that
   // repeated or went back would let clients count their own record next to a seed that already holds it.
   const baseEpoch = Math.max(store.epoch, Number.isInteger(previous?.epoch) ? previous.epoch : 0);
   const seed = { epoch: baseEpoch + 1, built: now.toISOString().slice(0, 10), build: newest || "", absorbed,
-    resets: store.resets, cells };
+    proofs, blocked: Object.fromEntries(Object.keys(store.blocked).map((id) => [id, true])), resets: store.resets,
+    cells };
   const text = seedText(seed);
   const bytes = Buffer.byteLength(text);
   // The same seed as the current file (apart from its epoch and date): nothing to release.
@@ -507,9 +824,14 @@ export function harvest(options = {}) {
     .filter((id) => !oldItems.has(id))).size;
   report.push(`Harvest: ${files.length} file(s), ${read} record(s) read, ${rejected} rejected`);
   report.push(...notes);
+  for (const unit of Object.keys(store.disputed).sort()) {
+    report.push(`Disputed: ${unit}: versions that are not on one chain (one is made up); left out of the seed, `
+      + "since the version stored may be the made-up one (the owner's next epoch is a new unit)");
+  }
   report.push(`Contributions: ${units.size} (each <id>@<epoch> once, its newest seq)`);
   report.push(`New places: ${newPlaces}   New items: ${newItems}   Places in total: ${Object.keys(cells).length}`);
   report.push(...resetNotes);
+  report.push(...outlierReport(store, oldItems));
   if (bytes > MAX_SEED_BYTES) {
     report.push(`error: the seed would be ${kb(bytes)}, more than the 1 MB limit; nothing was written`);
     return { ok: false, report, bytes };
@@ -558,10 +880,20 @@ function syntheticSeed(places, now) {
 function main(argv) {
   const files = [];
   const reset = [];
+  const block = [];
+  const unblock = [];
   let synthetic;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--reset") {
       reset.push(argv[++i]);
+    } else if (argv[i] === "--block") {
+      const id = argv[++i];
+      // The note is the next argument unless it is an option or a saved file.
+      const next = argv[i + 1];
+      const note = next !== undefined && !next.startsWith("--") && !next.endsWith(".lua") ? argv[++i] : "";
+      block.push({ id, note });
+    } else if (argv[i] === "--unblock") {
+      unblock.push(argv[++i]);
     } else if (argv[i] === "--synthetic") {
       synthetic = Number(argv[++i]);
       if (!Number.isInteger(synthetic) || synthetic <= 0) {
@@ -574,7 +906,7 @@ function main(argv) {
   }
   // The accounts come from WOW_ADDONS_DIR; with friends' files only, it may be left unset.
   const dir = synthetic ? null : addonsDir({ optional: files.length > 0 });
-  const result = harvest({ addonsDir: dir, files, reset, synthetic });
+  const result = harvest({ addonsDir: dir, files, reset, block, unblock, synthetic });
   for (const line of result.report) {
     (line.startsWith("error") ? console.error : console.log)(line);
   }

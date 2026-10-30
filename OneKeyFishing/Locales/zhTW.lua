@@ -283,4 +283,37 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
 
     -- UI/CatchHere.lua: other players' catches
     L["%d catches from %d players"] = "%d 次漁獲，來自 %d 名玩家"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "未知物品"
+    L["The game has not shown this item yet."] = "遊戲尚未顯示此物品。"
+    L["Reported by %d players on this map"] = "此地圖上有 %d 名玩家回報"
+    L["In the bundled data"] = "在內建資料中"
+    L["Item ID: %d"] = "物品 ID：%d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing 已離開其隱藏頻道，以空出一個聊天頻道位置。請再試一次。"
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "使用公開頻道"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "開啟公開頻道後，資料也會透過隱藏的聊天頻道傳給其他所有插件使用者。"
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "任何以名稱加入該頻道的人，都能看到頻道中哪些角色使用本插件。"
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing 現在會以隨機 ID 與其他使用本插件的玩家分享你的漁獲。"
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "資料會傳給你的公會、隊伍和好友，也會透過隱藏的聊天頻道傳給其他任何人。"
+    L["Public channel: in use"] = "公開頻道：使用中"
+    L["Public channel: in use (fallback channel %d)"] = "公開頻道：使用中（備用頻道 %d）"
+    L["Public channel: off"] = "公開頻道：關閉"
+    L["Public channel: no free chat channel slot"] = "公開頻道：沒有空的聊天頻道位置"
+    L["Public channel: locked or refused by the game"] = "公開頻道：已鎖定或遭遊戲拒絕"
+    L["Public channel: you left it, back at the next login"] = "公開頻道：你已離開，下次登入時會再加入"
+    L["Public channel: waiting"] = "公開頻道：等待中"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "過去一小時聽到的玩家：公會 %d，隊伍 %d，好友 %d，Battle.net %d，頻道 %d"
 end)

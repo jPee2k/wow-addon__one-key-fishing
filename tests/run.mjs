@@ -2,15 +2,19 @@
 // then the Node tests: every tests/*_test.mjs, which exports `tests`, a list of { name, fn } (fn may be async).
 //   npm test             all test files
 //   npm test -- lures    only the files whose name contains "lures"
+//   OKF_SIM_NODES=1000 npm test -- channel_sim   the channel simulation at that size (global SIM_NODES)
 // Exits with code 1 when a test fails.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { ADDON_DIR, TOC, parseToc } from "../tools/addon.mjs";
-import { getGlobalNumber, newState, run, setGlobalList, setGlobalString } from "./lua.mjs";
+import { getGlobalNumber, newState, run, setGlobalList, setGlobalNumber, setGlobalString } from "./lua.mjs";
 
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const filter = process.argv[2];
+// The size of tests/channel_sim_test.lua, when given (a positive integer).
+const simNodesText = process.env.OKF_SIM_NODES || "";
+const simNodes = /^[1-9]\d*$/.test(simNodesText) ? Number(simNodesText) : null;
 
 const tocFiles = parseToc(fs.readFileSync(path.join(ADDON_DIR, TOC), "utf8")).files;
 const stubs = fs.readFileSync(path.join(TESTS_DIR, "wow.lua"), "utf8");
@@ -31,6 +35,9 @@ for (const name of testFiles) {
   const L = newState();
   setGlobalString(L, "ADDON_DIR", ADDON_DIR.replace(/\\/g, "/"));
   setGlobalList(L, "TOC_FILES", tocFiles);
+  if (simNodes) {
+    setGlobalNumber(L, "SIM_NODES", simNodes);
+  }
   try {
     run(L, stubs, "@tests/wow.lua");
     run(L, fs.readFileSync(path.join(TESTS_DIR, name), "utf8"), `@tests/${name}`);

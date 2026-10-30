@@ -43,9 +43,27 @@ or before a 501st place:
   by map (updated in place for the keys `SHARED_DATA_CHANGED` names, rebuilt without keys).
 - Results are cached until `CatchDB.GetVersion()` changes, which `SHARED_DATA_CHANGED` bumps (so
   `Share.SetEnabled`, not a direct write of `settings.shareDB`, switches sharing).
+- Weights (part 3): where five or more other contributions report a cell, none counts for more than a fifth of the
+  others' part (water-filling over the raw counts); the seed and the own catch are not scaled. Chances and pieces
+  are weighted by catches, `missRate` by casts (so many misses with few catches are capped too); `catches` stays raw.
+- Items (part 3): an item neither in the seed nor in the own catch shows only once 3 other IDs reported it on the map
+  (`reporters` and `inSeed` per item). Items the client does not know yet are kept and shown as "Unknown item"
+  ([ui.md](ui.md)), which the tab reads when it draws the row.
 
 ## Checking a received record
 
 `CatchDB.CheckRecord(record)` checks a received record like the harvest's `checkRecord`, but rejects it whole.
-Plus: an 8-character base32 ID, at most 1,000 places, `seq` not above the record's casts, items known to
-`C_Item.GetItemInfoInstant`. The own ID is refused by Share's `Store.Accept`, not here ([exchange.md](exchange.md)).
+Plus: an 8-character base32 ID, at most 1,000 places, `seq` not above the record's casts, item IDs up to
+2,147,483,647 (an item the client does not know is accepted, part 3), a `proof` of 16 base32 characters, and at most
+`STEP_SECONDS` (180 s) of casting per step of `seq`. The own ID is refused by Share's `Store.Accept`, not here
+([exchange.md](exchange.md)). `CatchDB.IsBlocked(id)` reads the seed's `blocked`.
+
+## The version chain (part 3)
+
+Each epoch of the own record has a chain of 4,096 links from a 26-character secret in `shared.chain` (never sent,
+never shown): link 4,096 is `ns.ProofStep(secret)`, each lower link the step of the one above, and the record at seq
+`i` carries link `i` as `proof`. Only the owner can name a link above the newest one it published, so nobody can
+make up a newer version. Marks every 64 links are built in the background after a roll or a login
+(`CatchDB.OwnProofReady()`); a roll starts a new chain, and the seq reaching the top rolls too.
+`CatchDB.CheckVersion(held, incoming, steps, state)` steps the incoming proof down to the held seq (resumable) and
+compares; the seed carries the `proofs` of the versions it absorbed.

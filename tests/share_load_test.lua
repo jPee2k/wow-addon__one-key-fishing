@@ -19,7 +19,8 @@ load_addon(function()
                 catch_cell(5, 1, { [FISH] = { 3, 3 }, [OTHER] = { 2, 4 } })
         end
         local id = ID(1000 + r)
-        records[id .. "@0"] = { id = id, epoch = 0, seq = 1, seen = r, builds = { ["1.60.1"] = cells } }
+        records[id .. "@0"] = { id = id, epoch = 0, seq = 1, seen = r, proof = ("a"):rep(16),
+            builds = { ["1.60.1"] = cells } }
     end
     OneKeyFishingDB = { shareNotice = true, shared = { mine = {}, records = records } }
     started = os.clock()
@@ -51,6 +52,7 @@ test("a query for a busy map and for an empty map returns", function()
 end)
 
 test("a full session's records merge one per frame step", function()
+    advance(0) -- the own record's version chain is built in frame steps after the login: done before counting
     local node = Share.NewNode(ns.db.shared, {
         now = GetTime, time = GetTime, after = function(delay, fn) C_Timer.After(delay, fn) end,
         send = function() end, broadcast = function() end, forEachFriend = function() end,
@@ -66,8 +68,9 @@ test("a full session's records merge one per frame step", function()
             cells[(6100 + p) .. ":2:x"] = catch_cell(4, 0, { [FISH] = { 4, 4 } })
         end
         table.insert(units, id)
-        table.insert(entries, id .. ".0.1")
-        table.insert(data, Share.Encode({ id = id, epoch = 0, seq = 1, builds = { ["1.60.1"] = cells } }))
+        table.insert(entries, id .. ".0.3")
+        table.insert(data, Share.Encode({ id = id, epoch = 0, seq = 3, proof = ("b"):rep(16),
+            builds = { ["1.60.1"] = cells } }))
     end
     node:Receive("w:X", "group", "Dxx " .. ns.BASE32 .. " " .. table.concat(entries, " "))
     node:Receive("w:X", "group", "Wxx")

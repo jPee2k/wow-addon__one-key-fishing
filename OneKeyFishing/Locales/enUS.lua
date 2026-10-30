@@ -264,3 +264,30 @@ L["Turned off: nothing is sent or received, and other players' data is not count
 
 -- UI/CatchHere.lua: other players' catches
 L["%d catches from %d players"] = true
+
+-- UI/CatchHere.lua: items the game client does not know yet (part 3)
+L["Unknown item"] = true
+L["The game has not shown this item yet."] = true
+L["Reported by %d players on this map"] = true
+L["In the bundled data"] = true
+L["Item ID: %d"] = true
+
+-- Channel.lua: the hidden public channel (part 3)
+L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] = true
+
+-- UI/Settings.lua: the public channel (part 3)
+L["Use the public channel"] = true
+L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] = true
+L["Anyone who joins that channel by its name can see which characters in it use the addon."] = true
+
+-- Share.lua: the public channel (part 3)
+L["OneKeyFishing now shares your catches under a random ID with other players who use it."] = true
+L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] = true
+L["Public channel: in use"] = true
+L["Public channel: in use (fallback channel %d)"] = true
+L["Public channel: off"] = true
+L["Public channel: no free chat channel slot"] = true
+L["Public channel: locked or refused by the game"] = true
+L["Public channel: you left it, back at the next login"] = true
+L["Public channel: waiting"] = true
+L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] = true

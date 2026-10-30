@@ -32,9 +32,11 @@ local function Deliver(from, to, fromAddress, via, text)
     C_Timer.After(net.delay, function() to.node:Receive(fromAddress, via, text) end)
 end
 
+-- An own record of `catches` catches and a miss at `key`, at the seq its casting needs (CatchDB.STEP_SECONDS).
 local function OwnRecord(id, key, catches)
-    return { id = id, epoch = 0, seq = 1,
-        builds = { ["1.60.1"] = { [key] = catch_cell(catches, 1, { [FISH] = { catches, catches } }) } } }
+    local cell = catch_cell(catches, 1, { [FISH] = { catches, catches } })
+    return prove({ id = id, epoch = 0, seq = math.max(1, math.ceil(cell.t / ns.CatchDB.STEP_SECONDS)),
+        builds = { ["1.60.1"] = { [key] = cell } } })
 end
 
 -- A node named `name` with its own record of `catches` at place `key`. opts: guild, group (names of the shared
@@ -168,6 +170,7 @@ test("equal databases start no session; one differing bucket sends only its unit
     own.builds["1.60.1"]["1415:3:47"].c = 11
     own.builds["1.60.1"]["1415:3:47"].t = 120
     own.seq = 2
+    prove(own)
     local diffs = #net.log
     Rounds(4)
     local found = false
@@ -220,7 +223,8 @@ local function BigRecord(id, places)
     for i = 1, places do
         cells[(4000 + i) .. ":2:x"] = catch_cell(3, 1, { [FISH] = { 3, 3 } })
     end
-    return { id = id, epoch = 0, seq = 1, builds = { ["1.60.1"] = cells } }
+    return prove({ id = id, epoch = 0, seq = math.ceil(places * cells["4001:2:x"].t / ns.CatchDB.STEP_SECONDS),
+        builds = { ["1.60.1"] = cells } }, nil, 4096)
 end
 
 test("more than 8 KB of wanted records is split over two sessions; one record over 8 KB still goes", function()
@@ -668,24 +672,25 @@ test("a session that moved nothing is not repeated while both hashes stay the sa
     Rounds(6)
     eq(Count("S"), sums, "no more sessions that move nothing")
     a.store.records[A_ID].seq = 9
+    prove(a.store.records[A_ID])
     Rounds(3)
     assert(Count("S") > sums, "a change starts sessions again")
 end)
 
-test("a record with an item this client does not know is dropped without ignoring its honest sender", function()
+test("a record with an item this client does not know is kept and passed on, its sender not blamed (FR-017a)",
+    function()
     NewNet()
     local a = NewNode("A", A_ID)
     SessionWith(a, "w:X")
     a.node:Receive("w:X", "group", "Dxx k kkkkkkkk.0.1")
     a.node:Receive("w:X", "group", "Wxx")
-    known_items = { [1] = true }
+    unknown_items[FISH] = true
     a.node:Receive("w:X", "group", "Rxx " .. Share.Encode(Store.ForSending(OwnRecord("kkkkkkkk", "1415:3:47", 5))))
     advance(1)
-    known_items = nil
-    eq(a.store.records["kkkkkkkk@0"], nil, "not stored")
+    unknown_items[FISH] = nil
+    eq(a.store.records["kkkkkkkk@0"].seq, 1, "stored")
     eq(a.node.peers["w:X"].ignored, nil, "not ignored")
-    eq(a.node:Wanted("kkkkkkkk@0", 1), false, "not wanted again this session")
-    eq(a.node:Wanted("kkkkkkkk@0", 2), true, "a newer version is")
+    eq(a.node.unknownItems, nil, "no unknown-item rule any more")
 end)
 
 test("a peer that timed out is free again once it greets", function()
