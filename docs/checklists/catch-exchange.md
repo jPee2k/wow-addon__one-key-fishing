@@ -2,7 +2,7 @@
 
 What to check in the game for the exchange of catch data with the guild, the group and friends
 (`specs/003-guild-group-sync`), on and after the game launch on 2026-11-04. The feature was built before the game
-could be played, on the assumptions V10-V17 of `specs/003-guild-group-sync/verification.md`; each step below says
+could be played, on the assumptions V10-V18 of `specs/003-guild-group-sync/verification.md`; each step below says
 which ones it closes. Tick each box, note anything that looks wrong, and paste the `/okf spike` reports back: the
 answers go into `CLAUDE.md` "Known API facts", and the `VERIFY` markers in the code are removed only after that.
 

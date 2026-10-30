@@ -57,15 +57,17 @@ OneKeyFishingDB.shared = {
   mine = {                            -- lifetime counts of this account, never reset ("Only mine")
     ["1415:3:47"] = cell,
   },
-  records = {                         -- contributions; in part 1 only this account's own
-    ["k7f2q6xa"] = {
+  records = {                         -- contributions
+    ["k7f2q6xa"] = {                  -- the live own record, under the bare ID
       id = "k7f2q6xa",
-      epoch = 3,                      -- seed epoch the record started against
-      seq = 41,                       -- grows at most once a minute and on logout (not for a cast under "unknown")
+      epoch = 3,                      -- the next epoch when the record started (Rolling the own record)
+      seq = 41,                       -- see "seq" below
       builds = {                      -- game version -> place key -> cell
         ["1.60.1"] = { ["1415:3:47"] = cell },
       },
     },
+    ["k7f2q6xa@2"] = record,          -- an own record a roll kept (with seen), never changed again
+    ["p7d2m4qa@5"] = record,          -- another player's record (Share.lua, specs/003-guild-group-sync), with seen
   },
 }
 OneKeyFishingDB.prices[itemID] = {
@@ -75,6 +77,10 @@ OneKeyFishingDB.prices[itemID] = {
   time = 1761234567,
 }
 ```
+
+`seq` of the own record: a change bumps it when the last bump is a minute old or more, otherwise the change waits; a
+waiting change is bumped at logout, on a roll and before the record goes to a peer (`CatchDB.FlushSeq`), so a record
+always has a seq for all its cells. A cast under `"unknown"` does not bump it.
 
 Filter state (skill range, source) is kept in memory only and resets on login (FR-015).
 
@@ -143,7 +149,7 @@ version is bumped, and `seq` too unless the version is `"unknown"`: that build n
 
 | Filter | Data summed for a place key |
 | --- | --- |
-| Source "All" | seed cell + own record cells of every build (cells of maps in `seed.resets` from older builds, and from "unknown", left out) |
+| Source "All" | seed cell + cells of every build of the own record and of the own records a roll kept, unless the seed holds them in part + with `settings.shareDB` on, cells of other players' records (not those the seed holds in part); cells of maps in `seed.resets` from older builds, and from "unknown", left out |
 | Source "Only mine" | `mine` cell |
 | Skill: a range | keys with that range |
 | Skill: "All" | keys of ranges 0 to 4 |

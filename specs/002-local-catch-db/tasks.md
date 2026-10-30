@@ -70,21 +70,20 @@ runs after launch and closes the debt.
   `tests/load_test.lua` (it calls `ns.RegisterCommand`) and add a test that `/okf` prints the English help on a
   non-English client; update `CLAUDE.md` (Core.lua slash commands, Localization.lua "in a `RegisterCommand`
   description", a new **Commands.lua** line).
-- [X] T007 Create `OneKeyFishing/Spike.lua` (TOC: after `Debug.lua`) with a first line
-  `-- VERIFY(spike): temporary; remove this file and its TOC line before the release` and
-  `ns.ShowSpikeReport()`, declared as `spike` with the English description "print API facts for the verification
-  checklist" in `OneKeyFishing/Commands.lua` (marked `-- VERIFY(spike)` there too); the report is English like the
-  debug report; it shows in `ns.ShowCopyWindow` a report of: `GetBuildInfo()` (all four
-  values, V7); `UnitChannelInfo("player")` spell ID; `C_Map.GetBestMapForUnit("player")`, its `GetMapInfo` mapType,
-  parentMapID and name, the parent chain up to 0 (V2); `C_Map.GetPlayerMapPosition(mapID, "player")` x and y or
-  "nil" (V1); the restriction state for `Enum.AddOnRestrictionType.Map` via
-  `C_RestrictedActions.GetAddOnRestrictionState` when it exists; for the last fishing loot (kept from `LOOT_READY`
-  while `IsFishingLoot()`): every slot's link and every `GetLootSourceInfo(slot)` GUID with its type and object ID
-  (split by `-`) (V3); for the last auction search (kept from the result events): item ID, number of results,
-  `GetCommoditySearchResultsQuantity`, `HasFullCommoditySearchResults`, the first 5 results' `unitPrice` /
-  `quantity` (commodities) or `buyoutAmount` / `quantity` (items), and whether the prices are ascending (V4, V5);
-  whether `PanelTabButtonTemplate` tabs could be created (V6). Each part in `pcall`, like `Debug.lua` sections.
-  Add new globals to `.luacheckrc`.
+- [X] T007 Create `OneKeyFishing/Spike.lua` (TOC: after `Debug.lua`) with a first line `-- VERIFY(spike): temporary;
+  remove this file, its TOC line, its Commands.lua entry and tests/spike_test.lua` and `ns.ShowSpikeReport()`, declared
+  as `spike` with the English description "print API facts for the verification checklist" in
+  `OneKeyFishing/Commands.lua` (marked `-- VERIFY(spike)` there too); the report is English like the debug report; it
+  shows in `ns.ShowCopyWindow` a report of: `GetBuildInfo()` (all four values, V7); `UnitChannelInfo("player")` spell
+  ID; `C_Map.GetBestMapForUnit("player")`, its `GetMapInfo` mapType, parentMapID and name, the parent chain up to 0
+  (V2); `C_Map.GetPlayerMapPosition(mapID, "player")` x and y or "nil" (V1); the restriction state for
+  `Enum.AddOnRestrictionType.Map` via `C_RestrictedActions.GetAddOnRestrictionState` when it exists; for the last
+  fishing loot (kept from `LOOT_READY` while `IsFishingLoot()`): every slot's link and every `GetLootSourceInfo(slot)`
+  GUID with its type and object ID (split by `-`) (V3); for the last auction search (kept from the result events): item
+  ID, number of results, `GetCommoditySearchResultsQuantity`, `HasFullCommoditySearchResults`, the first 5 results'
+  `unitPrice` / `quantity` (commodities) or `buyoutAmount` / `quantity` (items), and whether the prices are ascending
+  (V4, V5); whether `PanelTabButtonTemplate` tabs could be created (V6). Each part in `pcall`, like `Debug.lua`
+  sections. Add new globals to `.luacheckrc`.
 
 **Checkpoint**: `npm run check` lists the spike marker; `npm run build -- --release` (on a clean commit) refuses.
 
@@ -114,20 +113,20 @@ data-model.md). Blocks every story.
   picked up, with `t` counted from the pickup; fishing with the mode off records
   nothing; `myID` is 8 characters of `[a-z2-7]` and stays the same after a reload; `seq` grows at most once per
   60 s of `advance` and on `PLAYER_LOGOUT`; `CatchDB.GetVersion()` grows on every change.
-- [X] T010 [P] In `tests/catchdb_test.lua`, failing tests for the pool part: with
-  `loot_sources[1] = "GameObject-0-1-2-3-180582-4"` the cell gets `p = { c = 1, m = 0, i = { [6291] = { 1, 2 } } }`
-  and the totals as well; with the bobber `"GameObject-0-1-2-3-35591-4"` or no source, no `p` is written.
+- [X] T010 [P] In `tests/catchdb_test.lua`, failing tests for the pool part: with `loot_sources[1] =
+  "GameObject-0-1-2-3-180582-4"` the cell gets `p = { c = 1, i = { [6291] = { 1, 2 } } }` (no `m`: a miss has no loot
+  source) and the totals as well; with the bobber `"GameObject-0-1-2-3-35591-4"` or no source, no `p` is written.
 
 - [X] T011 [P] In `tests/core_test.lua`, a failing test for the upgrade from 1.0.0 (FR-008, SC-007): saved data with
   `schema = 1`, `prices[6291] = { price = 500, time = 1 }` and a character DB with `stats.total`, `stats.zones` and
-  `session` filled; after `load_addon()` `schema` is 2, `shared.myID` exists, and `stats`, `session` and `prices` are
-  unchanged field by field; the statistics window shows the same values as before.
+  `session` filled; after `load_addon()` `schema` is still 1, `shared.myID` exists, and `stats`, `session` and `prices`
+  are unchanged field by field; the statistics window shows the same values as before.
 
 ### Implementation
 
-- [X] T012 In `OneKeyFishing/Core.lua`, set `DB_SCHEMA = 2` (comment: only new fields, no migration function) and
-  add to `DB_DEFAULTS`: `statsTab = "stats"` (comment: `"stats" | "here"`) and `shared = { mine = {}, records = {}
-  }`. Update `tests/core_test.lua` if it asserts the schema number.
+- [X] T012 In `OneKeyFishing/Core.lua`, keep `DB_SCHEMA = 1` (only new fields, which `ApplyDefaults` fills; no
+  migration, research R8) and add to `DB_DEFAULTS`: `statsTab = "stats"` (comment: `"stats" | "here"`) and `shared = {
+  mine = {}, records = {} }`. `tests/core_test.lua` asserts that the schema stays 1.
 - [X] T013 Create `OneKeyFishing/SeedData.lua` (TOC: after `Stats.lua`) as the empty seed in the format of
   [contracts/seed-data.md](contracts/seed-data.md): header `-- Generated by npm run harvest; do not edit.`,
   `ns.SeedData = { epoch = 0, built = "", build = "", absorbed = {}, resets = {}, cells = {} }`.
@@ -140,15 +139,15 @@ data-model.md). Blocks every story.
   `GetCurrentPlace` (map from `C_Map.GetBestMapForUnit("player")` as returned, `-- VERIFY(V2)`; position from
   `C_Map.GetPlayerMapPosition`, `-- VERIFY(V1): a position while fishing in the open world and cities, nil in
   instances`; range from `ns.Skill.Get()`), `GetVersion`; in `ADDON_LOADED` (after Core's handler) create
-  `ns.db.shared.myID` when missing (8 random characters of `abcdefghijklmnopqrstuvwxyz234567`) and the own record
-  `{ id, epoch = seed epoch, seq = 0, builds = {} }`; the build key from `GetBuildInfo()` (first value, `"unknown"`
-  when empty, `-- VERIFY(V7)`). Recording per data-model.md "State transitions": place and position read at
-  `FISHING_CAST_START`, always, also for a cast picked up after a `/reload` (nothing is counted at the start, so
-  nothing can be counted twice; `t` runs from the pickup), `c`/items/
-  `p` on `FISH_CAUGHT`, `m` on `FISH_MISSED`, `t` and `px`/`py` (rounded `x * 1000`, `y * 1000`, absent for cell
-  `"x"`) on `FISHING_CAST_STOP`, each into both `mine` and the own record; items as `{ catches, pieces }` with
-  "`i[id][1] <= i[id][2] <= 20 * i[id][1]`" (cap pieces per catch at 20); `seq` bump rule from research R3. No work
-  at file load. Make T008-T010 pass.
+  `ns.db.shared.myID` when missing (8 random characters of `abcdefghijklmnopqrstuvwxyz234567`) and the own record `{ id,
+  epoch = next epoch, seq = 0, builds = {} }`; the build key from `GetBuildInfo()` (first value, `"unknown"` when empty,
+  `-- VERIFY(V7)`). Recording per data-model.md "State transitions": place and position read at `FISHING_CAST_START`,
+  always, also for a cast picked up after a `/reload` (nothing is counted at the start, so nothing can be counted twice;
+  `t` runs from the pickup), the stop time kept on `FISHING_CAST_STOP`, and the cast settled on `FISH_CAUGHT`
+  (`c`/items/`p`) or `FISH_MISSED` (`m`), adding `t` (start to stop, at least 1 s) and `px`/`py` (rounded `x * 1000`, `y
+  * 1000`, absent for cell `"x"`) then, each into both `mine` and the own record; items as `{ catches, pieces }` with
+  "`i[id][1] <= i[id][2] <= 20 * i[id][1]`" (cap pieces per catch at 20); `seq` bump rule from research R3. No work at
+  file load. Make T008-T010 pass.
 
 **Checkpoint**: catches are recorded account-wide under numeric place keys; existing `stats_test.lua` unchanged.
 
@@ -194,14 +193,13 @@ few catches and to a new map; switch filters (quickstart.md "In game: the featur
   column headers "Item", "Chance", "Per catch", "Price"; the skill range labels "0-74", "75-149", "150-224",
   "225-299", "300+" stay plain text without `L`.
 - [X] T020 [US1] Create `OneKeyFishing/UI/CatchHere.lua` (TOC: before `UI/StatsFrame.lua`) with `ns.CatchHere.Create
-  (parent)` and `Refresh()`: header with the place name (`C_Map.GetMapInfo(mapID).name` and `GetSubZoneText()` when
-  different), the scope text, "%d catches" and the miss line ("Nothing caught: %s" with the percentage); a skill
-  filter button and a source filter button opening `MenuUtil.CreateContextMenu` menus (guarded as in
-  `UI/Settings.lua`); up to 16 rows (icon, name, chance or "Little data", average pieces with one decimal, price via
-  `ns.Prices.Get` and `ns.FormatMoney`) and "and %d more"; a row tooltip with the item (`GameTooltip:SetItemByID`);
-  filter state in locals, reset on login; the skill filter follows the current range while the player has not
-  picked a range by hand since login, and a hand-picked range stays until the next login. Item names that are not
-  loaded yet fill in on `GET_ITEM_INFO_RECEIVED`.
+  (parent)` and `Refresh()`: header with the place name (`ns.Stats.PlaceName(mapID)`, "Zone - Subzone"), the scope text,
+  "%d catches" and the miss line ("Nothing caught: %s" with the percentage); a skill filter button and a source filter
+  button opening `MenuUtil.CreateContextMenu` menus (guarded as in `UI/Settings.lua`); up to 16 rows (icon, name, chance
+  or "Little data", average pieces with one decimal, price via `ns.Prices.FormatValue`) and "and %d more"; a row tooltip
+  with the item and its price (`ns.ShowItemTooltip`); filter state in locals, reset on login; the skill filter follows
+  the current range while the player has not picked a range by hand since login, and a hand-picked range stays until the
+  next login. Item names that are not loaded yet fill in on `GET_ITEM_INFO_RECEIVED`.
 - [X] T021 [US1] In `OneKeyFishing/UI/StatsFrame.lua`, move today's content into a child frame `f.statsPage`, add
   `f.herePage = ns.CatchHere.Create(f)`, and two tabs at the bottom from `PanelTabButtonTemplate`
   (`f.Tabs`, `PanelTemplates_SetNumTabs(f, 2)`, `PanelTemplates_SetTab`, `PanelTemplates_TabResize`), guarded
@@ -224,13 +222,13 @@ add exactly 5; "Only mine" shows only own catches (quickstart.md "In game: the f
 
 - [X] T022 [P] [US2] In `tests/catchdb_test.lua`, failing tests with a test seed set on `ns.SeedData` before
   `load_addon()`: seed 1,000 catches at a key plus 5 own catches -> `Query` "All" gives 1,005 and "Only mine" 5;
-  `absorbed[myID] = record.epoch` and `seed.epoch` higher -> after `load_addon()` the own record is a new empty one
-  with `epoch = seed.epoch` and "All" equals the seed, while `mine` keeps its counts; `absorbed` missing `myID` ->
-  the own record counts in full; `resets[1415] = "1.60.2"` -> own cells of map 1415 under build `"1.60.1"` are left
-  out of "All"; a missing or malformed `ns.SeedData` -> treated as an empty seed with epoch 0 and
-  `CatchDB.HasSeed()` false; a generated seed of
-  3,000 places across 300 maps -> `Query` for a map fallback returns the right sums and the per-map index is built
-  once (count calls through a test hook).
+  `absorbed[myID] = { [record.epoch] = record.seq }` and `seed.epoch` higher -> after `load_addon()` the own record
+  rolls to a new empty one with `epoch = seed.epoch` and "All" equals the seed, while `mine` keeps its counts; a seed
+  that holds the record only up to an older seq -> the old record is kept under `"<myID>@<epoch>"`, not counted, and a
+  new one starts; `absorbed` missing `myID` -> the own record counts in full; `resets[1415] = "1.60.2"` -> own cells of
+  map 1415 under build `"1.60.1"` are left out of "All"; a missing or malformed `ns.SeedData` -> treated as an empty
+  seed with epoch 0 and `CatchDB.HasSeed()` false; a generated seed of 3,000 places across 300 maps -> `Query` for a map
+  fallback returns the right sums and the per-map index is built once (count calls through a test hook).
 - [X] T023 [P] [US2] Extend `tests/catchhere_test.lua`: with a seed and no own catches the panel lists the seed's
   items; switching the source filter to "Only mine" shows the empty text.
 
@@ -259,26 +257,27 @@ written seed and the report; run again: no change; run with `--reset`: the map's
 
 ### Tests first
 
-- [X] T026 [P] [US3] Create `tests/harvest_test.mjs` (exported `tests` array) that builds in `os.tmpdir()` a fake
-  game tree `<tmp>/Game/Interface/AddOns` and `<tmp>/Game/WTF/Account/{A,B}/SavedVariables/OneKeyFishing.lua` with
+- [X] T026 [P] [US3] Create `tests/harvest_test.mjs` (exported `tests` array) that builds in `os.tmpdir()` a fake game
+  tree `<tmp>/Game/Interface/AddOns` and `<tmp>/Game/WTF/Account/{A,B}/SavedVariables/OneKeyFishing.lua` with
   `OneKeyFishingDB = { shared = { records = { ... } } }`, a friend's file and a broken file (not valid Lua), and calls
-  the exported `harvest({ addonsDir, files, reset, outDir })` of `tools/harvest.mjs`. Failing tests: the sums equal
-  the sum of all valid records; the broken file and a record with "`c + m <= t`" violated are listed as rejected
-  while the other records of that file are used; `epoch` grows by 1 and `absorbed` maps each ID to its highest
-  epoch; a second run with the same files gives the same `cells`; a record with a higher `seq` replaces the stored
-  one for the same `id@epoch`; `--reset 1415` drops map 1415 cells of older builds and stores `resets`; a result
-  over 1 MB writes nothing and reports the error; every written line is at most 120 characters and ASCII; keys are
-  sorted.
+  the exported `harvest({ addonsDir, files, reset, outDir })` of `tools/harvest.mjs`. Failing tests: the sums equal the
+  sum of all valid records; the broken file is listed as rejected and a cell with "`c + m <= t`" violated is skipped
+  with a note, while the rest of that file is used; `epoch` grows by 1 and `absorbed` names every unit with the seq
+  summed (`absorbed[id][epoch] = seq`); a second run with the same files gives the same `cells`; a record with a higher
+  `seq` replaces the stored one for the same `id@epoch`; `--reset 1415` drops map 1415 cells of older builds and stores
+  `resets`; a result over 1 MB writes nothing and reports the error; every written line is at most 120 characters and
+  ASCII; keys are sorted.
 
 ### Implementation
 
 - [X] T027 [US3] Create `tools/harvest.mjs`: CLI parsing (`[files...] [--reset <mapID>]`), `addonsDir()` from
   `tools/addon.mjs` (accounts under `path.resolve(addonsDir, "..", "..", "WTF", "Account")`), reading with `luaparse`
   and converting table constructors only (never executing), validation per contracts/harvest-command.md and
-  data-model.md "Validation" (IDs "8 base32 characters", builds `digits.digits.digits`, keys
-  `^\d+:[0-4]:(\d\d|x)$`, at most 2,000 cells per record), merge into `seed/contributions.json` by `id@epoch` and
-  `seq`, sums with `k`, writing `OneKeyFishing/SeedData.lua` per contracts/seed-data.md (sorted keys, wrapped at 120
-  characters, ASCII), the report and exit codes; export `harvest(options)` for the test. Make T026 pass.
+  data-model.md "Validation" (IDs "8 base32 characters", builds `digits.digits.digits`, keys `^\d+:[0-4]:(\d\d|x)$`, at
+  most 20,000 distinct places per record; an odd cell or build is skipped with a note, not the record), merge into
+  `seed/contributions.json` by `id@epoch` and `seq`, sums with `k`, writing `OneKeyFishing/SeedData.lua` per
+  contracts/seed-data.md (sorted keys, wrapped at 120 characters, ASCII), the report and exit codes; export
+  `harvest(options)` for the test. Make T026 pass.
 - [X] T028 [P] [US3] Add `"harvest": "node tools/harvest.mjs"` to `package.json` scripts, `seed` to the `.pkgmeta`
   `ignore` list, and create `seed/contributions.json` as `{ "epoch": 0, "resets": {}, "contributions": {} }`.
 
@@ -314,21 +313,20 @@ prices and values (quickstart.md "In game: the feature" step 8).
 
 ### Implementation
 
-- [X] T032 [US4] In `OneKeyFishing/Auction.lua`, on `COMMODITY_SEARCH_RESULTS_UPDATED` and
-  `ITEM_SEARCH_RESULTS_UPDATED` collect the loaded results, sort by unit price, average the cheapest
-  `max(1, ceil(total * 0.2))` pieces (`total` from `GetCommoditySearchResultsQuantity` when available, else the
-  loaded sum) and store `prices[itemID] = { price, quantity = total, time }`; mark the assumptions
-  `-- VERIFY(V4): unitPrice/quantity per result, total from GetCommoditySearchResultsQuantity` and
-  `-- VERIFY(V5): buyoutAmount is for the whole auction`; keep the coverage (pieces loaded / total) for the debug
-  report; update the file header comment. Make T031 pass with T033.
+- [X] T032 [US4] In `OneKeyFishing/Auction.lua`, on `COMMODITY_SEARCH_RESULTS_UPDATED` and `ITEM_SEARCH_RESULTS_UPDATED`
+  collect the loaded results, sort by unit price, average the cheapest `max(1, ceil(total * 0.2))` pieces (`total` from
+  `GetCommoditySearchResultsQuantity` when available, else the loaded sum) and store `prices[itemID] = { price,
+  quantity, lots, time }` (`quantity`: the pieces loaded, `lots`: the result rows the price came from); mark the
+  assumptions `-- VERIFY(V4): unitPrice/quantity per result, total from GetCommoditySearchResultsQuantity` and `--
+  VERIFY(V5): buyoutAmount is for the whole auction`; keep the coverage (pieces loaded / total) for the debug report;
+  update the file header comment. Make T031 pass with T033.
 - [X] T033 [US4] In `OneKeyFishing/Prices.lua`, `Prices.Get` returns the vendor price when the auction entry has
-  `quantity < 5`; add `Prices.GetAuction(itemID)` returning `price, fewLots`; update the header comment.
+  `quantity < 5` or `lots < 3`; add `Prices.GetAuction(itemID)` returning `price, fewLots`; update the header comment.
 - [X] T034 [US4] Show the "few lots" mark: in `OneKeyFishing/UI/CatchHere.lua` rows and the top catches of
   `OneKeyFishing/UI/StatsFrame.lua` (a small "(few lots)" after the price and the auction price in the row tooltip);
-  change the "Value" row tip text; add the texts ("few lots", "Auction price: %s (few lots)", the new value tip
-  "Items caught, at the higher of the vendor price and the auction price (the average of the cheapest 20% of
-  listed pieces; with fewer than 5 pieces listed, the vendor price).") to `Locales/enUS.lua` and all nine
-  translations, removing the old tip text.
+  change the "Value" row tip text; add the texts ("few lots", "Auction price: %s (few lots)", the new value tip "Items
+  caught, at the higher of vendor and auction price; with few lots listed, the vendor price.") to `Locales/enUS.lua` and
+  all nine translations, removing the old tip text.
 
 **Checkpoint**: all four stories work; SC-005 holds in the tests.
 

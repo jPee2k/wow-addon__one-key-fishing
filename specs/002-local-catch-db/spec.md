@@ -200,7 +200,9 @@ a few pieces on sale; compare the shown prices and catch values with the expecte
   nothing has been caught here yet.
 - **FR-013**: A skill filter MUST offer each skill range and "All", with the player's own range as the default. The
   addon MUST NOT switch the filter by itself; with little data in the chosen range it MAY suggest "All".
-- **FR-014**: A source filter MUST offer "All" (own and bundled data) and "Only mine", with "All" as the default.
+- **FR-014**: A source filter MUST offer "All" (own and bundled data) and "Only mine", with "All" as the default. "Only
+  mine" shows the account's lifetime counts. "All" sums the bundled data, the own record and the own records a roll kept
+  (data-model.md); with the catch exchange on (spec 003), it also sums the records received from other players.
 - **FR-015**: Both filters MUST return to their defaults on the next login.
 - **FR-016**: The tab MUST follow the player to a new place without being reopened.
 - **FR-017**: Place and item names MUST be shown in the addon's interface language and the client's data; every new

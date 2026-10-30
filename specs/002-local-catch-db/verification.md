@@ -1,9 +1,12 @@
 # Verification debt: Local Catch Database
 
-The game cannot be played before its launch on 2026-11-04, so part 1 of the shared catch database is built on the assumptions below and verified
-afterwards. Each item has an ID; the code that depends on it carries a `-- VERIFY(Vn): ...` comment.
-`npm run check` lists the open markers, and `npm run build` (release) refuses to package while any marker is left,
-so release 1.2.0 (all four parts) cannot ship with open debt.
+The game cannot be played before its launch on 2026-11-04, so part 1 of the shared catch database is built on the
+assumptions below and verified afterwards. Each item has an ID. The code that depends on V1-V7 carries a
+`-- VERIFY(Vn): ...` comment; `npm run check` lists the open markers, and `npm run build` (release) refuses to
+package while any marker is left, so release 1.2.0 (all four parts) cannot ship with those open. V8 and V9 have no
+marker in the code: they are checked in game with the checklist and are not enforced by the build. The temporary
+spike command carries `-- VERIFY(spike)` (`Spike.lua`, its `Commands.lua` entry); that marker goes when the spike
+code is removed (tasks.md T042), after the spike steps of every part have run.
 
 Closing an item: run the step in game (`/okf spike` prints the facts), record the answer in CLAUDE.md "Known API
 facts", adjust the code if the answer differs from the assumption, remove its markers, and tick it here.
@@ -16,7 +19,7 @@ facts", adjust the code if the answer differs from the assumption, remove its ma
 | V4 | Commodity search results carry `unitPrice` and `quantity`, `GetCommoditySearchResultsQuantity` gives the total listed, and `HasFullCommoditySearchResults` / `RequestMoreCommoditySearchResults` page the results | Fields and paging functions in the dump; page size and sort order undocumented | The price uses the loaded results only; `/okf debug` shows the coverage | Spike step 5 | Built, waiting for launch |
 | V5 | Item (non-commodity) search results carry `buyoutAmount` for the whole auction and `quantity` | `buyoutAmount` is for the whole auction (inferred from Blizzard's UI) | Unit price wrong for stacked non-commodities; switch to the field the spike shows | Spike step 5 | Built, waiting for launch |
 | V6 | `PanelTabButtonTemplate` and `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab` exist | Template and functions in the Forever FrameXML | The fallback draws the tabs with `ns.CreateButton` | Open `/okf stats` | Built, waiting for launch |
-| V7 | `GetBuildInfo()` returns the version as `"1.60.1"`-style text | Return values in the dump | Data is recorded under `"unknown"`; the harvest reset works per map only | Spike report header (any step) | Built, waiting for launch |
+| V7 | `GetBuildInfo()` returns the version as `"1.60.1"`-style text | Return values in the dump | Data is recorded under `"unknown"`: it counts in the tab, but Share never sends that build and the harvest skips it, so no data reaches peers or the seed | Spike report header (any step) | Built, waiting for launch |
 | V8 | Login and the window stay smooth with a whole-world seed (SC-004) | None | Load the seed lazily on first use of the tab | Feature step 10 with a generated large seed | Built, waiting for launch |
 | V9 | The whole in-game checklist of the feature passes | None | Fix and re-run | quickstart.md "In game: the feature" | Built, waiting for launch |
 

@@ -12,8 +12,9 @@ The addon MUST stay within Blizzard's UI Add-On Development Policy at all times.
   automatic hook on the bobber splash, no sound monitoring, no timed or chained actions.
 - No external tools, no traffic outside the game, no collection of personal data, no
   advertising, no paid or locked features, no obfuscated code.
-- Server-facing work (auction searches) MUST run one request at a time, respect the throttle
-  and time out.
+- Server-facing work MUST stay light. Auction searches run one request at a time, respect the
+  throttle and time out. The catch exchange's addon messages go through one paced queue with an
+  hourly byte budget; every send result is read, and a throttle or lockdown backs off.
 
 Rationale: a policy breach can get the addon removed or players banned; no feature is worth it.
 
@@ -40,10 +41,16 @@ Rationale: a fishing addon that works only on English clients fails most of its 
 
 ### III. Safe, Restorable State
 
-Fishing mode changes the player's settings, gear and camera; the player MUST always get them back.
+Fishing mode changes the player's settings, gear and camera. The player MUST always get the
+settings and the gear back, and the camera whenever the mode ends in the same session.
 
-- Every change (CVar, equipped slot, camera, mode flag) MUST be recorded in saved variables
-  *before* it is applied, so exit, logout, `/reload`, disconnects and crashes all restore it.
+- Every changed CVar and equipped slot MUST be recorded in saved variables *before* it is
+  applied, so exit, logout, `/reload` and disconnects restore it, and the next login puts back
+  what the saved file still holds after a crash.
+- The camera zoom is restored on exit and kept across a `/reload`; a real login forgets it,
+  because a zoom from an earlier session means nothing.
+- Fishing mode resumes by itself only after a `/reload` (a flag set at logout while the mode is
+  on). After a real login it stays off, and the CVars and the gear come back.
 - Only what the addon changed is restored, and only while it still holds what the addon put
   there.
 - Combat rules MUST be honoured: protected changes wait until combat ends; weapons return at once.
@@ -70,9 +77,9 @@ silent failures that tests cannot catch.
 ### V. Checked and Tested Changes
 
 - `npm run check` and `npm test` MUST pass after every change and before every commit.
-- Logic that can run without the game (Core, Bags, Catch, Stats, Prices, statistics window
-  logic) MUST get a new or extended test in `tests/` when it changes; stubs live in
-  `tests/wow.lua`.
+- Logic that can run without the game (Core, Bags, Catch, Stats, Prices, CatchDB, Comm, Share,
+  statistics window logic) MUST get a new or extended test in `tests/` when it changes; stubs
+  live in `tests/wow.lua`.
 - Addon code MUST stay Lua 5.1 compatible and free of 5.1/5.3 differences; a failure caused only
   by fengari's Lua 5.3 is fixed in the test or the stub, not by bending the addon.
 
@@ -136,4 +143,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06
+**Version**: 1.5.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06

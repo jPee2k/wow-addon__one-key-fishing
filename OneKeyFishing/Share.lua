@@ -896,7 +896,7 @@ function Handlers.B(self, address, peer, _, text)
             self:RefreshSeen(nil) -- every bucket was equal
         end
         self:Finish(session)
-    else -- busy, paused, off, limit: the peer tries again after the next HELLO
+    else -- busy, limit or an unknown reason: the peer tries again after the next HELLO
         self:DropSession()
         if reason == "busy" then
             peer.lastSession = peer.previousSession

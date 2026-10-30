@@ -42,9 +42,3 @@ stays for part 3 with strangers). The low ones come when the code around them is
    budget the same empty session (about 1 KB of `SUM`, `DIFF`, `WANT` and `BYE`) repeats every HELLO round until
    the budget frees. Direction: end with `BYE limit` when the first record did not fit, or let `CanStart` require
    room for one record.
-
-### Checked, not a bug
-
-- A HELLO with an equal hash counts the peer as exchanged (`Node:Confirmed`): `data-model.md` defines
-  `lastExchange` as "the last session that moved or confirmed data", and the equal hash confirms every record.
-  `contracts/share-api.md` says "peers with a finished session"; align that wording.

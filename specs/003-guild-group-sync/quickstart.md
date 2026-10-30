@@ -3,7 +3,7 @@
 ## Automated
 
 ```text
-npm run check      # new globals in .luacheckrc; open VERIFY markers listed (V1-V9 of part 1 and V10-V17)
+npm run check      # new globals in .luacheckrc; open VERIFY markers listed (V1-V9 of part 1 and V10-V18)
 npm test           # share, comm, catchdb, catchhere and harvest tests plus the existing ones
 npm test -- share
 ```
@@ -64,8 +64,14 @@ Needs a guild, or a second player or a second account for steps N1 and N3. With 
 6. **Setting off.** B turns the setting off: A's data disappears from B's tab, and `/okf share` says off. With
    `/okf share` on A, no new exchange with B appears. Turning it on brings the data back at once. (FR-020, SC-007)
 7. **Relay.** A third player C exchanges only with A. After A meets B, B sees C's catches. (FR-003)
-8. **Debug.** `/okf debug` has the "Shared database" section with no names and no IDs. (FR-023)
-9. **Performance.** Watch the frame rate while a session runs and while the tab is open with many records. Login
-   takes no noticeable extra time, and the longest step in `/okf debug` stays under 5 ms. (SC-006, V16)
-10. **Harvest.** Before the release, `npm run harvest` on the author's PC lists other players' contributions, and a
+8. **Offline peer.** B logs out in the middle of an exchange (right after a group join): no line about it appears
+   in A's chat. (FR-004, V12)
+9. **Debug.** `/okf debug` has the "Shared database" section with no names and no IDs. After fishing at several
+   places, its line "own record offered: yes, N bytes encoded for P places" gives N / P x 500 under 24 KB.
+   (FR-023, V18)
+10. **Performance.** Watch the frame rate while a session runs and while the tab is open with many records. Login
+    takes no noticeable extra time, and the longest step in `/okf debug` stays under 5 ms. (SC-006, V16)
+11. **Harvest.** Before the release, `npm run harvest` on the author's PC lists other players' contributions, and a
     client that updates to that release shows the same counts as before. (US4, SC-008)
+12. **Refused account.** With a Trial or Veteran account in a guild, after an hour of HELLO rounds the status line
+    says "Exchange unavailable: the game refuses addon messages", not "Nobody to exchange with". (V10)

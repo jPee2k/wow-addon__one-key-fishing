@@ -661,8 +661,9 @@ local function SumSpot(sources, keys)
     return sum
 end
 
--- Contributions behind a sum, each at most once (research R9): records of IDs the seed never absorbed are
--- other players for sure; those it absorbed may be among the seed's k, so they only count above it.
+-- Contributions behind a sum, each at most once (specs/003-guild-group-sync/research.md R9): records of IDs
+-- the seed never absorbed are other players for sure; those it absorbed may be among the seed's k, so they
+-- only count above it.
 local function Players(sum)
     local absorbed, known, fresh = SeedField("absorbed"), 0, 0
     for id in pairs(sum.ids) do
@@ -723,7 +724,8 @@ local cache, cacheVersion = {}, nil
 -- What a place gives (contracts/catchdb-api.md): the spot, or the whole map when the spot has fewer than
 -- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }. A view is
 -- { scope = "spot" | "map" | "none", littleData, catches, misses, items = { { itemID, catches, chance, pieces } },
--- players } (players: the contributions behind the numbers, a lower bound where the seed cannot tell; research R9).
+-- players } (players: the contributions behind the numbers, a lower bound where the seed cannot tell;
+-- specs/003-guild-group-sync/research.md R9).
 function CatchDB.Query(mapID, cell, filter)
     if cacheVersion ~= version then
         wipe(cache)

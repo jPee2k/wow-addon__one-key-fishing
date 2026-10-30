@@ -14,7 +14,7 @@ becomes optional.
 
 | Blizzard rule | What it means for the feature |
 | --- | --- |
-| The addon is free and its code is open | Libraries ship in the package as they are. Data compression is allowed: it is the data that is compressed, not the code. |
+| The addon is free and its code is open | No libraries are needed ("Libraries" below). Data compression is allowed: it is the data that is compressed, not the code. |
 | Do no harm to the server or to players ("excessive use of the chat system", "slow frame rates") | A hard traffic budget, jitter, a queue with a limit. Data is processed in chunks through `C_Timer`, so the frame rate does not drop. |
 | No advertising or donation requests in game | The feature's interface shows nothing but data. Donations only on CurseForge. |
 | An addon shows information, it does not act for the player | The database only shows statistics. The addon's rule does not change: every action is a real key press. |
@@ -30,9 +30,10 @@ They already exist in `Stats.lua` and `Catch.lua`; only a new place key is neede
 
 | Data | Source in the addon | Why | Shared |
 | --- | --- | --- | --- |
-| Item (item ID) and count | `FISH_CAUGHT` | What is caught and in what proportion | Yes, phase 2 |
-| Catches and misses | `FISH_CAUGHT` / `FISH_MISSED` | Chances (ROADMAP item 2) | Yes, phase 2 |
-| Minutes of fishing at the place | `modeTime` in Stats | Plausibility check (no more catches than the time allows) | Yes, rounded to minutes |
+| Item (item ID), catches with it and pieces | `FISH_CAUGHT` | What is caught and in what proportion | Yes, part 2 |
+| Catches and misses | `FISH_CAUGHT` / `FISH_MISSED` | Chances (ROADMAP item 2) | Yes, part 2 |
+| Seconds of casting in the cell (`t`) | Cast start to stop, added when the cast settles (`CatchDB.lua`) | Plausibility check (no more casts than seconds of casting) | Yes |
+| Sums of the cast positions (`px`, `py`) | `C_Map.GetPlayerMapPosition` at cast start, in 1/1000 of the map | The average catch point of a cell, for the part 4 map pin | Yes |
 | Skill range | `Skill.lua` (base rank) | The catch may depend on the skill | Yes, as a range number |
 | Pool or open water | `GetLootSourceInfo` (check in game) | Pools have a different catch | If the spike confirms it |
 | Auction prices | `Auction.lua` | Catch value without your own scan | Later, phase 6 |
@@ -53,8 +54,8 @@ enUS player get different keys for the same lake. The shared database needs a ke
   the map). This also protects privacy: the exact position is not stored.
 - The skill range is `floor(base rank / 75)`: 0, 1, 2, 3, 4+. Pole and lure bonuses are left out, so a cell does
   not split in two whenever a lure runs out (decided for part 1).
-- The display name is built on the client: `C_Map.GetMapInfo(mapID).name` plus the cell coordinates. The local
-  subzone name is remembered only for cells the player has been to.
+- The display name is built on the client for the place the player stands at: `Stats.PlaceName(mapID)`, "Zone -
+  Subzone" in the client's language, as the statistics tab shows it. Nothing is remembered per cell.
 - If the position is not available (dungeons, the Map state of `AddOnRestrictionType`), the cell is `x` (the
   whole zone).
 - The existing statistics do not change: the new key is written alongside, into its own contribution record (next
@@ -62,15 +63,15 @@ enUS player get different keys for the same lake. The shared database needs a ke
 
 ## Transport
 
-The public channel carries only short announcements ("I am here, I have this data"); the data itself goes by
-whisper between two players. Whispers outside instances are not subject to the per-prefix limit, and the channel
-is not flooded.
+Announcements ("I am here, I have this data") go to the guild, the group and friends (part 2), and to a public
+channel in part 3 (planned); the data itself goes by whisper or Battle.net between two players. Whispers outside
+instances are not subject to the per-prefix limit, and no channel is flooded.
 
 | Type | Who hears it | Limits | Role |
 | --- | --- | --- | --- |
-| `CHANNEL` (a hidden channel, for example `OKFishData`) | Every player with the addon in the mode (to check: all layers or only your own, both factions or one) | 10 messages of headroom, +1 per second; allowed on Retail, disabled on Classic | Only `HELLO`: who is online and with what data |
+| `CHANNEL` (a hidden channel, for example `OKFishData`; part 3, planned) | Every player with the addon in the mode (to check: all layers or only your own, both factions or one) | 10 messages of headroom, +1 per second; allowed on Retail, disabled on Classic | Only `HELLO`: who is online and with what data |
 | `WHISPER` | One player | No per-prefix limit outside instances (the server may change this) | Main data transfer; `HELLO` to character friends |
-| `GUILD` | The guild | Per-prefix limit | `HELLO`; the fallback path if `CHANNEL` does not work |
+| `GUILD` | The guild | Per-prefix limit | `HELLO` (part 2); the fallback path if `CHANNEL` does not work |
 | `PARTY` / `RAID` | The group | Per-prefix limit | The same, for friends who fish together |
 | Battle.net game data (`C_BattleNet.SendGameData`) | One Battle.net friend playing Forever | To check in the spike | `HELLO` and sessions with Battle.net friends (part 2) |
 
@@ -80,23 +81,25 @@ is always read: `AddonMessageThrottle`, `ChannelThrottle`, `AddOnMessageLockdown
 ### What the player sees
 
 Nothing: addon messages do not reach the chat window, only addons with the same prefix receive them (the
-`CHAT_MSG_ADDON` event). Only the wrapping around them can become visible:
+`CHAT_MSG_ADDON` event). Only the wrapping around them can become visible (the channel rows are for part 3,
+planned):
 
 | What can slip through | How we hide it |
 | --- | --- |
 | The `OKFishData` channel in the channel list and the line about joining it | `ChatFrame_RemoveChannel` from every chat window; a `CHAT_MSG_CHANNEL_NOTICE` filter through `ChatFrame_AddMessageEventFilter`. |
 | General / Trade numbers shifting | Join the channel 30-60 s after login, when the common channels are already in place. |
 | Text someone types into the channel by hand (`/join OKFishData`) | A `CHAT_MSG_CHANNEL` filter for this channel. |
-| "Player X not found" after a whisper to a player who logged off | 12.0 has the `TargetOffline` code, probably silent. If not, a `CHAT_MSG_SYSTEM` filter for the names we have just whispered. |
+| "Player X not found" after a whisper to a player who logged off | The `TargetOffline` result is read (`Comm.OnOffline`), and a `CHAT_MSG_SYSTEM` filter (`ChatFrameUtil.AddMessageEventFilter`) hides "No player named" for the names whispered in the last 10 s (part 2). |
 | All 10 channel slots are taken | The addon does not join the channel and works through the guild and the group; `/okf share` shows this. |
 
 GUILD, PARTY, RAID and WHISPER are completely invisible for addon messages.
 
 ### How the addon finds others
 
-Every client sends a `HELLO` to the channel, the guild or the group from time to time. `CHAT_MSG_ADDON` brings the
-sender's name, and that name becomes the whisper address. The peer list lives only in session memory: name, time of
-the last `HELLO`, database hash. A peer with no `HELLO` for 30 min is removed.
+Every client sends a `HELLO` to the guild, the group and its friends (the channel in part 3) from time to time.
+`CHAT_MSG_ADDON` brings the sender's name, and that name becomes the whisper address. The peer list lives only in
+session memory: address, time of the last `HELLO`, database hash. A peer is never removed during the session; with
+nobody heard for 30 min the state is "alone" ("Nobody to exchange with right now").
 
 ### Libraries
 
@@ -124,11 +127,12 @@ The values for part 2 are in `specs/003-guild-group-sync/research.md` R7.
 
 Syncing pauses on:
 - `InCombatLockdown()`;
-- the add-on restrictions `Chat`, `Encounter`, `ChallengeMode` and `PvPMatch`;
+- the add-on restrictions `Chat`, `Encounter`, `ChallengeMode`, `PvPMatch` and `Map`;
 - `C_ChatInfo.InChatMessagingLockdown()` (not `AreOutgoingAddonChatMessagesRestricted()`: it is about chat
   messages sent by addons, allowed on tournament realms only, so it is true on a normal realm);
 - an instance (`IsInInstance()`);
-- a loading screen.
+- a loading screen;
+- the back-off after an `AddOnMessageLockdown` result (60 s, doubling up to 15 min).
 
 It is re-checked on the matching events (`ADDON_RESTRICTION_STATE_CHANGED` among them) and every 5 s while paused.
 A path the game keeps refusing is left out until logout.
@@ -142,36 +146,27 @@ different people is not counted twice.
 Why not just add up counters: in a network without a server the same data arrives by several paths. Summing over
 paths inflates the numbers. A record with an owner and a version number (a simplified CRDT) solves this.
 
-```lua
--- OneKeyFishingDB.shared (account-wide)
-shared = {
-  myID = "k7f2q6xa",    -- random, created once per account; never a character name
-  seedEpoch = 3,         -- epoch of the bundled SeedData.lua
-  records = {
-    ["k7f2q6xa"] = {    -- contributor ID
-      epoch = 3,         -- seed epoch the owner counted against
-      seq = 41,          -- grows on every change of the owner's data
-      seen = 1761234567, -- local: when we last received it (for eviction)
-      cells = {
-        ["1415:3:47"] = {
-          c = 120, m = 9, t = 38,                   -- catches, misses, minutes fishing
-          sx = 5420, sy = 8190,                     -- sums of catch positions (0-100), for the average point
-          i = { [6291] = 64, [6303] = 41, [6358] = 7 }, -- item ID -> count
-        },
-      },
-    },
-  },
-}
-```
+The saved shape in short (`OneKeyFishingDB.shared`, account-wide); the full model is in
+`specs/002-local-catch-db/data-model.md`, the protocol in `specs/003-guild-group-sync/contracts/sync-protocol.md`:
+
+- `myID`: 8 random base32 characters, created once per account; never a character name, never in `/okf debug`.
+- `mine`: the account's lifetime counts per place key, never reset ("Only mine").
+- `records`: the own record under `myID`, own records a roll kept under `"<myID>@<epoch>"`, and other players'
+  records under `"<id>@<epoch>"` (plain tables with a local `seen`). A record is `{ id, epoch, seq, builds }`;
+  `builds` maps a game version (`"1.60.1"`) to place keys and cells.
+- A cell: catches `c`, misses `m`, seconds of casting `t`, position sums `px` / `py` in 1/1000 of the map (none for
+  cell `x`), per item `{ catches containing it, pieces }`, and a pool part `p` when pools can be told apart.
 
 Merge rules:
 
-1. Only the owner changes their own record, on every `FISH_CAUGHT` / `FISH_MISSED` and every minute of fishing.
-   `seq` grows at most once a minute, so no needless versions are produced.
+1. Only the owner changes their own record, when a cast settles (`FISH_CAUGHT` / `FISH_MISSED`). `seq` grows at most
+   once a minute, so no needless versions are produced; a waiting change is bumped at logout, on a roll and before
+   the record goes to a peer.
 2. Someone else's record replaces the local one only when it has a higher `seq` (same ID and `epoch`). Duplicates
    and old versions are ignored.
-3. The database shown = `SeedData` + the sum of the records not yet absorbed into the seed. The sums are cached per
-   cell and recomputed only for the cells that changed.
+3. The database shown = `SeedData` + the records the seed does not hold (other players' records only with sharing
+   on). A query result is cached until the data changes (`CatchDB.GetVersion()`); the one index of other players'
+   cells is updated in place for the records `SHARED_DATA_CHANGED` names.
 
 ### Epochs: how the seed and the records are not counted twice
 
@@ -193,12 +188,13 @@ seq they hold it up to.
   new epoch at 500 places, so it always fits and keeps reaching the network.
 - Part 2, among guild, group and friends: other records hold at most 20,000 places (~2 MB). Above the limit, the
   record with the oldest `seen` is evicted first, and no record of your own ID ever is.
-- Part 3, with strangers: the order below replaces it. Above the limit, the records that add the least new information
-  are evicted: first those whose cells already have thousands of catches in the seed, then those not seen for over
-  60 days. Contributions for rare places (low-level zones, little data) are evicted last. `seen` is updated not
-  only when a new version arrives, but also when a peer in a session confirms the same version (the bucket matched
-  in `SUM` or `DIFF`). This way the records of players who stopped playing live on as long as they are in the
-  network. Your own record is never evicted.
+- Part 3, with strangers (planned, not built): the order below replaces it. Above the limit, the records that add the
+  least new information are evicted: first those whose cells already have thousands of catches in the seed, then those
+  not seen for over 60 days. Contributions for rare places (low-level zones, little data) are evicted last. Your own
+  record is never evicted.
+- `seen` is updated not only when a new version arrives, but also when a peer in a session confirms the same version
+  (the bucket matched in `SUM` or `DIFF`; built in part 2). This way the records of players who stopped playing live
+  on as long as they are in the network.
 - A renamed, moved or reshaped field = `DB_SCHEMA` +1 and a migration in `Core.lua`, as CLAUDE.md requires; a new
   field is filled by `ApplyDefaults` without a bump.
 
@@ -208,14 +204,16 @@ Goal: the feature adds no noticeable lag, neither in game nor on the loading scr
 
 | Where it can slow down | Protection |
 | --- | --- |
-| Loading SavedVariables at login | Other players' records are stored as compressed strings (as they arrived from the network), not as thousands of nested tables. The game reads a string many times faster. |
-| Decompressing and computing the sums | Lazily and in chunks: up to 2 ms per frame, the rest in the next frames. Sums are computed only for the cells the UI looks at, and cached. |
-| Receiving data from the network | One session at a time, up to 8 KB. Validation and merging go through the same queue with a per-frame limit. |
-| Combat, instances, restrictions | All network work stops. Deferred work is processed later, not all at once. |
-| Fishing | Your own record is updated by plain counter additions, as Stats does now; compression only before sending. |
+| Loading SavedVariables at login | Other players' records are plain tables (copied field by field from the checked record, the part 1 shape plus `seen`), at most 20,000 places in all (about 2 MB); the harvest reads them unchanged. The seed is read at runtime only. |
+| Decoding and computing the sums | One received record is decoded, checked and stored per frame step (`C_Timer.After(0)`). Sums are computed only for the place the tab looks at and cached until the data changes; the seed's per-map index is built once, and the index of other players' cells is updated in place. |
+| Receiving data from the network | One session at a time, up to 8 KB and 25 records per direction; the records go through the same one-per-step queue. |
+| Combat, instances, restrictions | All network work stops; the session and the queued merges are dropped and come again in a later session. |
+| Fishing | Your own record is updated by plain counter additions, as Stats does now; it is encoded only for sending, once per version. |
 
-Check: a test with 5,000 synthetic records in `tests/` measures loading and summing time. In game `/okf share`
-shows the database size, memory (`GetAddOnMemoryUsage`) and the longest step in milliseconds (`debugprofilestop`).
+Check: `tests/share_load_test.lua` logs in with 20,000 stored places, runs queries and merges a full session one
+record per step; `tests/catchdb_seed_test.lua` sums a seed of 3,000 places. In game `/okf share` shows the records
+and places held; `/okf debug` shows the longest merge step in milliseconds (`debugprofilestop`; goal under 5 ms,
+`specs/003-guild-group-sync/spec.md` SC-006).
 
 ## Sync protocol
 
@@ -230,12 +228,12 @@ reach it. The exact message forms, the part format and the limits on what is rec
 
 | Message | Where | Content | Size |
 | --- | --- | --- | --- |
-| `HELLO` | CHANNEL / GUILD / PARTY / RAID, whisper or Battle.net to friends | node tag of this login, `seedEpoch`, number of records, hash of the whole database (never the anonymous ID) | 1 message |
+| `HELLO` | GUILD / PARTY / RAID (CHANNEL in part 3, planned), whisper or Battle.net to friends | node tag of this login, `seedEpoch`, number of units (record versions) held, hash of the whole database (never the anonymous ID) | 1 message |
 | `SUM` | WHISPER | 32 bucket hashes (bucket = the first character of the ID in base32) | 1 |
 | `DIFF` | WHISPER | `id.epoch.seq` for the buckets that differ | 1-10 |
 | `WANT` | WHISPER | the `id@epoch` units needed | 1-3 |
 | `REC` | WHISPER | a record, `C_EncodingUtil` CBOR + Deflate + Base64, in parts | up to 8 KB per session |
-| `BYE` | WHISPER | end of session or refusal (sent, done, busy, paused, off, limit) | 1 |
+| `BYE` | WHISPER | end of session or refusal (sent, done, busy, limit); a pause or switching off drops the session without a `BYE` | 1 |
 
 Session flow:
 
@@ -257,17 +255,17 @@ them.
 ## Protection against spam and fakes
 
 Without a server it is impossible to prove the data is honest, so the protection has layers: checks on receipt,
-contribution weights when showing, and cleanup in `harvest` before seeding. The stakes are low (someone sees a
-wrong percentage), so this is enough.
+the same checks in `harvest` before seeding, and (planned for part 3) contribution weights when showing. The stakes
+are low (someone sees a wrong percentage), so this is enough.
 
 | Threat | Protection |
 | --- | --- |
-| Flood from one sender | A limit per sender name (part 2, `Share.lua`): `HELLO` no more than 1 per 60 s (more are ignored), up to 1,160 units per hour (one per 240 bytes of a message, at least one per message: twice what an honest client can send to one peer in an hour), no more records in a session than it asked for and 175 records per hour, one record up to 32 KB encoded and 1,000 places. An offender is ignored until the end of the session. A peer answered with a `DIFF` gets `BYE busy` to another `SUM` within 8 minutes. |
-| Impossible numbers | Catches in a cell no more than `t × 60 / 5` (a cast takes several seconds). The item sum ≤ catches × the maximum count per cast. An invalid record is rejected entirely. |
-| Made-up items | The item ID must exist (`C_Item.GetItemInfoInstant`). An item that is in neither the seed nor your own catch is shown only when at least 3 different IDs report it in the same zone. |
-| Many fake IDs (Sybil) | One contribution gives no more than 20% of the weight in a cell with 5+ contributions. The tooltip always says "based on N catches from K players". `harvest` looks for outliers and adds blocked IDs to the seed (`banned`). |
+| Flood from one sender | A limit per sender name (part 2, `Share.lua`): `HELLO` no more than 1 per 60 s (more are ignored), up to 1,160 units per hour (one per 240 bytes of a message, at least one per message: twice what an honest client can send to one peer in an hour), no more records in a session than it asked for and 175 records per hour, one record up to 32 KB encoded and 1,000 places. An offender is ignored until logout. A peer answered with a `DIFF` gets `BYE busy` to another `SUM` within 8 minutes. |
+| Impossible numbers | A cell has no more casts (catches + misses) than seconds of casting `t` (a cast takes at least a second). Per item: catches with it ≤ catches, pieces ≤ 20 × those catches. A record with any invalid cell is rejected entirely (the harvest skips only the cell). |
+| Made-up items | The item ID must exist (`C_Item.GetItemInfoInstant`); a record with an item this client does not know is dropped without blaming the sender (the item may be new). Planned for part 3: an item that is in neither the seed nor your own catch is shown only when at least 3 different IDs report it in the same zone. |
+| Many fake IDs (Sybil) | The tab says "N catches from K players" (from 2 players on). Planned for part 3: one contribution gives no more than 20% of the weight in a cell with 5+ contributions; `harvest` looks for outliers and adds blocked IDs to the seed (`banned`). |
 | Broken or old data | Version in the prefix, decoding in `pcall`, schema check (types, cell and size limits). |
-| Frame rate drops | Decoding and recomputing sums take no more than 2 ms per frame, the rest in the next frame (`C_Timer.After(0, ...)`). |
+| Frame rate drops | Received records are decoded, checked and stored one per frame step (`C_Timer.After(0, ...)`); `/okf debug` shows the longest step (goal under 5 ms). |
 | Forged versions of a record | Records are anonymous and unsigned, and a higher `seq` replaces a lower one. A record whose `seq` is above its casts is refused by the client and the harvest (the owner bumps it only after a settled cast), so a made-up `seq` needs as many made-up casts. Not covered yet: a forger who sends another player's ID and epoch with a higher `seq` and enough made-up casts makes the owner's real updates look older everywhere until a release names the unit, and the harvest keeps the forged version. Part 3 brings strangers in and has to close it before it ships: for example, limit how far a version may grow over the one held (casts and seq against the time since it was seen), or tie versions to the owner. |
 | Privacy | Records have no names. The ID is random, but a peer that gets a record from its owner sees the sender's name next to the ID; a cell carries the sums of its cast positions, the average spot fished from. The notice and the settings page say so. The whisper sender's name is kept only in session memory, not in SavedVariables. |
 
@@ -289,33 +287,27 @@ Updated addon  <--  Release on CurseForge (SeedData.lua)  <--  npm run harvest (
 The network carries records between players, and `harvest` freezes them into the seed once per release. This way
 the database grows without manual filling.
 
-1. The author logs in a day before the release and stays online for several hours. They can use a heightened
-   collection mode (`/okf share collect`): sessions more often, but within the same budget. They will not send
-   more.
-2. `npm run harvest`:
+1. The author logs in a day before the release and stays online for several hours, so the exchange collects
+   records. (A heightened collection mode, `/okf share collect`, with sessions more often within the same budget,
+   is an idea, not built.)
+2. `npm run harvest` (`specs/002-local-catch-db/contracts/harvest-command.md`):
    - finds `WTF/Account/*/SavedVariables/OneKeyFishing.lua` from `WOW_ADDONS_DIR` in `.env` (what already exists
-     for `link`);
-   - reads the Lua table through fengari, which is already in the repository;
-   - applies the same checks as the addon, plus outlier detection (a contribution that differs sharply from the
-     rest in the same cell);
-   - adds the new contributions to the old seed and writes `SeedData.lua`: `epoch + 1`, sums per cell, `absorbed`,
-     `banned`;
-   - prints a report: new cells, new items, rejected contributions, file size.
+     for `link`), plus friends' files given as arguments;
+   - parses the Lua table with `luaparse` and never executes the file;
+   - applies the same checks as the addon (an odd cell or build is skipped with a note, a bad record is rejected
+     whole); outlier detection is planned for part 3;
+   - keeps every accepted contribution in `seed/contributions.json` (by `<id>@<epoch>`, the newest `seq`),
+     recomputes the sums from all of them and writes `SeedData.lua`: the epoch one above the last, sums per cell,
+     `absorbed`, `resets`; a run without new sums leaves the seed and its epoch alone;
+   - prints a report: contributions, new places, new items, rejected and skipped data, file size.
 3. A commit to `develop` and the usual release (CHANGELOG, merge into `main`, tag). `npm run check` checks the
    seed's format and size (up to ~1 MB; the whole world is about 1,500 cells with water, ~3,000 combinations with
    skill and ~450 KB of text).
 
-The `SeedData.lua` format is ASCII, uncompressed, so it can be read in review:
-
-```lua
-local _, ns = ...
-ns.SeedData = {
-  epoch = 4, built = "2026-12-01",
-  cells = { ["1415:3:47"] = { c = 1840, m = 122, t = 610, k = 14, i = { [6291] = 912, [6303] = 655 } } },
-  absorbed = "k7f2q6xa,m3p7x2zd,...", -- comma list, parsed on demand
-  banned = "",
-}
-```
+The `SeedData.lua` format is ASCII, uncompressed, so it can be read in review. It holds `epoch`, `built`, `build` (the
+newest game version in the data), `absorbed` (ID -> `{ [epoch] = seq }`: every unit the sums hold and up to which seq),
+`resets` (mapID -> the first game version that counts for it) and `cells` (place key -> the cell shape of "Data model
+and merging" plus `k`, the number of contributors). Format and rules: `specs/002-local-catch-db/contracts/seed-data.md`.
 
 Start before the network exists: the first seed is built from the author's own catch by the same `harvest`.
 Friends can voluntarily send their SavedVariables file; this is an option, not a duty. `harvest` accepts several
@@ -343,18 +335,21 @@ stitches together the parts that never meet directly. Catch tables are the same 
 
 ### The data does not age
 
-The seed only accumulates: every `harvest` adds new contributions to the old sums, and nothing is removed over
-time. Low-level zones where almost nobody fishes after launch keep everything gathered before. The data of level 60
-players in the same zones goes into a different skill range and does not mix with the data of newcomers.
+The seed only accumulates: every `harvest` sums all contributions gathered so far (`seed/contributions.json`), and
+nothing is removed over time. Low-level zones where almost nobody fishes after launch keep everything gathered before.
+The data of level 60 players in the same zones goes into a different skill range and does not mix with the data of
+newcomers.
 
 The exception is a patch that changes the catch tables:
 
-- `HELLO`, the records and the seed carry the game version (`GetBuildInfo`, for example `1.60.1`). After a new
-  version the owner starts a new record, so data from before and after the patch does not mix.
-- `harvest` compares item shares before and after the patch in every zone and prints the zones with a notable
-  difference or new items.
-- `npm run harvest -- --reset <uiMapID>` resets the zone's old sums, and from then on it counts only data from the
-  new version. This is a rare manual step, only when Blizzard really changed something.
+- The records and the seed carry the game version (`GetBuildInfo`, for example `1.60.1`; `HELLO` does not). A
+  record keeps its cells per version (`builds`), so data from before and after the patch does not mix; it rolls to
+  a new record only when the seed names it or before a 501st place.
+- Planned, not built: `harvest` compares item shares before and after the patch in every zone and prints the zones
+  with a notable difference or new items.
+- `npm run harvest -- --reset <uiMapID>` leaves the map's cells of older versions out of the sums (clients do the same
+  with the seed's `resets`), so from then on it counts only data from the new version. This is a rare manual step, only
+  when Blizzard really changed something.
 
 ## UI and settings
 
@@ -363,17 +358,18 @@ data for other places goes into tooltips.
 
 | Where | What it shows |
 | --- | --- |
-| StatsFrame, "What can be caught here" tab | Items of the current cell (or zone, when there is little data) for your skill range: icon, chance %, price, "1,840 catches · 14 players". A source mark: your catch / network / seed. |
-| Item tooltip (ItemHooks) | "Caught in: Zone A 12%, Zone B 8%", top 3 zones. |
-| Minimap button tooltip | Top 3 items of the current place. |
-| StatsFrame, "Catch catalog" tab | Every item in the database (seed, your own catch, network) with a search by name in the client's language. Choosing an item lists the places it was caught: zone, cell, chance, catches, skill range. Choosing a place sets a map pin there. |
-| Settings, a new "Shared database" page | "Use the shared catch database" (part 2), "Use the public channel" (part 3; off = guild, group and friends only), a status line. |
-| `/okf share` | State: the seed and its epoch, records, peers in the last hour, last session, traffic in the last hour, pause and its reason. |
-| `/okf debug` | A new section with the same state for bug reports. |
+| StatsFrame, "What can be caught here" tab | Items of the current cell (or the whole map, when there is little data) for the chosen skill range and source: icon, name, chance %, pieces per catch, price; "1,840 catches from 14 players" (from 2 players on), the miss rate and the exchange status line. Planned (part 4): a source mark (your catch / network / seed). |
+| Item tooltip (ItemHooks) | Planned (part 4): "Caught in: Zone A 12%, Zone B 8%", top 3 zones. |
+| Minimap button tooltip | Planned (part 4): top 3 items of the current place. |
+| StatsFrame, "Catch catalog" tab | Planned (part 4): every item in the database (seed, your own catch, network) with a search by name in the client's language. Choosing an item lists the places it was caught: zone, cell, chance, catches, skill range. Choosing a place sets a map pin there. |
+| Settings, a "Shared database" page | "Use the shared catch database" (part 2), a short text and a status line; "Use the public channel" (part 3, planned; off = guild, group and friends only). |
+| `/okf share` | State: the bundled data's version and places, the records and places held, players heard in the last hour (guild, group, friends, Battle.net), players exchanged with in the last hour, the last exchange, traffic in the last hour, and the status line (with the pause reason). |
+| `/okf debug` | A section with the same state in English for bug reports, plus rejected senders, the running session, queued merges, the longest merge step and whether the own record is offered. |
 | First login after the update | A one-time popup: what is shared (no names) and where to turn it off. |
 
-The chance in the tab = item / all catches in the cell, taking the contribution weights into account. Under 50
-catches "little data" is shown instead of a percentage. This covers ROADMAP item 2, "Catch chances".
+The chance in the tab = catches with the item / all catches in the cell (misses left out); contribution weights
+are planned for part 3. Under 50 catches at the spot the whole map is used; under 50 there too, "little data" is
+shown instead of a percentage. This covers ROADMAP item 2, "Catch chances".
 
 ## Implementation phases
 
@@ -381,15 +377,15 @@ All phases ship together in release 1.2.0, built one spec at a time (parts 1 to 
 1.1.0 is the interface-language feature (`specs/001-interface-language`), released on its own. The network goes
 first to the guild and the group, where it is easy to test with friends, and only then to the public channel.
 
-1. **In-game spike** (no release). A separate branch with `/okf spike`, a checklist for the author: `CHANNEL` addon
-   messages and `JoinTemporaryChannel` from an addon; the actual limits and result codes; whether whispers are
-   unlimited; `C_Map.GetPlayerMapPosition` while fishing; `GetLootSourceInfo` in a pool and in open water; whether
+1. **In-game spike** (no release). A temporary `/okf spike` command (`Spike.lua` on the `002-shared-db` branch,
+   removed before the release) and a checklist for the author: `CHANNEL` addon messages and `JoinTemporaryChannel`
+   from an addon; the actual limits and result codes; whether whispers are unlimited; `C_Map.GetPlayerMapPosition` while fishing; `GetLootSourceInfo` in a pool and in open water; whether
    joining the channel and a whisper to an offline player show in chat; whether channel messages reach players on
    another layer and of the other faction (two accounts or a friend); when the Chat state of `AddOnRestrictionType`
    is active; whether `C_Map.SetUserWaypoint` and `C_SuperTrack.SetSuperTrackedUserWaypoint` work (map pins).
    - Done when: the answers to every question are written into CLAUDE.md "Known API facts".
-2. **Local data v2.** The new place key, your own contribution record, `myID`, a `DB_SCHEMA` migration. The "What
-   can be caught here" tab on your own data.
+2. **Local data v2.** The new place key, your own contribution record, `myID` (new saved fields filled by
+   `ApplyDefaults`; `DB_SCHEMA` stays 1, no migration). The "What can be caught here" tab on your own data.
    - Done when: tests for the key and the record; two clients in different languages produce the same keys in game.
 3. **Seed and `harvest`.** `tools/harvest.mjs`, `SeedData.lua`, merging the seed with your own data, checks in
    `npm run check`. Part 1 (spec 002).
@@ -498,8 +494,8 @@ What the player gets:
 - Places are identified by numbers only (map, a 10x10 grid cell, a skill range of 75 points of base rank), so
   players in different client languages get the same places; the shown name is built in the player's language.
 - Auction prices become robust: the average of the cheapest 20% of listed pieces instead of the lowest lot;
-  with under 5 pieces listed the price is marked "few lots" and catch value sums use the vendor price. This
-  also applies to the existing statistics.
+  with under 5 pieces or 3 auctions listed the price is marked "few lots" and catch value sums use the vendor
+  price. This also applies to the existing statistics.
 
 Author's side: one command before a release finds every account's saved data on the author's PC (plus friends'
 files given to it), checks it, and writes the bundled data file, with a report (new places, new items, rejected
@@ -507,10 +503,10 @@ data, file size). It can reset a zone after a game patch that changed its catch.
 
 Rules: only fishing in fishing mode counts. One anonymous contribution per account; no names, exact
 coordinates or gear in it (only a per-cell average catch point). The game version is recorded with the data.
-Existing statistics keep working unchanged and are not converted (the new data is recorded alongside, with a
-saved-data migration). Bundled data is readable text and size-limited. No noticeable effect on frame rate or
-login time. Data does not expire, except that a game patch that changes catch tables can reset a zone. Pool
-and open-water catches are counted apart if the game can tell them apart (not shown yet).
+Existing statistics keep working unchanged and are not converted (the new data is recorded alongside, in new
+saved fields; no saved-data migration). Bundled data is readable text and size-limited. No noticeable effect on frame
+rate or login time. Data does not expire, except that a game patch that changes catch tables can reset a zone. Pool and
+open-water catches are counted apart if the game can tell them apart (not shown yet).
 
 Before the release: an in-game spike checks position while fishing, pool detection, map IDs of caves and cities,
 and how many auction results the game returns (built now, run after the game launch on 2026-11-04).
@@ -539,7 +535,7 @@ of the brief below and of "UI and settings"):
 | Protocol | The version lives only in the prefix (`OKF1`), not in `HELLO`; no epoch gate (a unit the seed absorbed is simply not wanted); crossing `SUM`s: the smaller node tag leads; a path the game refuses 5 times in a row is left out until logout, and with every path left out the exchange is "unavailable"; the state also says "unavailable" while nothing went out since the login and every path tried is left out |
 | Size limit | 20,000 places of other records; the oldest `seen` goes first, no record of the own ID; the order by new information moves to part 3 ("Size and eviction" above) |
 | Player count | "N catches from K players": each contribution at most once; for bundled whole-map numbers K is a lower bound; a newer epoch of an ID the seed absorbed counts only above the seed's k. Shown from 2 players on; one player is just "N catches" |
-| Storage of others' records | Plain tables in `shared.records` (the part 1 shape plus `seen`), copied field by field from the checked record, not compressed strings: the harvest reads them unchanged, and the view indexes each stored record per map once (built at runtime, never saved) |
+| Storage of others' records | Plain tables in `shared.records` (the part 1 shape plus `seen`), copied field by field from the checked record, not compressed strings: the harvest reads them unchanged, and the view keeps one index of all their cells by place and by map, updated in place for the records that change (built at runtime, never saved) |
 | Own record's seq | Before a `HELLO` or a session the waiting seq bump of the own record is done at once (`CatchDB.FlushSeq`), so a peer never gets cells under an old seq |
 | Absorbed | `absorbed` names every unit with the seq the seed holds, not only an ID's newest epoch: a newer version of a unit (an older copy reached the author's harvest) is kept and passed on instead of being deleted; the own record rolls when the seed names it or at 500 places (`docs/tech-debt.md`, the review of 2026-10-29) |
 | Release | All four parts ship together as 1.2.0 from `002-shared-db` ("Release 1.2.0" above); 1.1.0 is the interface-language release |
@@ -635,9 +631,9 @@ phases 2-4 do not depend on the channel.
 | `CHANNEL` is not available in Forever | GUILD / PARTY / WHISPER + seed; phase 5 is postponed. |
 | Blizzard changes the limits or adds Chat restrictions | Result codes are always read, the backoff is exponential. The budget is constants in one place. |
 | Few users at launch | The seed and your own data bring the value; the network only speeds things up. |
-| Data poisoning | The "Protection" section + cleanup in `harvest` + `banned` in the seed. |
+| Data poisoning | The "Protection" section + the checks in `harvest` (+ `banned` in the seed, planned for part 3). |
 | A bloated SavedVariables, a long login | The ~2 MB limit and eviction; the seed absorbs old records with every release. |
-| Other mapIDs in Classic / Anniversary / SoD (a ROADMAP plan) | `HELLO` and the seed carry `WOW_PROJECT_ID`; a separate seed for each game version. In Classic `CHANNEL` is definitely disabled. |
+| Other mapIDs in Classic / Anniversary / SoD (a ROADMAP plan) | If that ever comes: `HELLO` and the seed would carry `WOW_PROJECT_ID` (they do not now), with a separate seed for each game version. In Classic `CHANNEL` is definitely disabled. |
 
 Open questions:
 

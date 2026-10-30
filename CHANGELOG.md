@@ -31,8 +31,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 - `/okf debug` has a catch database section.
 - Auction prices: the average of the cheapest fifth of the pieces on sale instead of the cheapest lot, so one
-  lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 auctions on
-  sale the price is marked "(few lots)" and the catch value uses the vendor price.
+  lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 different
+  offers (prices) on sale the price is marked "(few lots)" and the catch value uses the vendor price.
 - Slash commands and the `/okf` help are always in English, whatever the interface language.
 
 ## [1.1.0] - 2026-11-05

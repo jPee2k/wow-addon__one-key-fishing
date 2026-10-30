@@ -178,9 +178,9 @@ Players who fish together see each other's catches right away, without waiting f
 3. The addon looks up every item you have ever caught, one at a time.
 
 The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far
-below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 auctions are on sale
-(one seller's stack is not a market), the price is shown with **(few lots)** and the catch value uses the vendor
-price instead.
+below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 different offers are on
+sale (the auction house shows sellers at the same price as one offer; one seller's stack is not a market), the price
+is shown with **(few lots)** and the catch value uses the vendor price instead.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
 scanned auction prices for catch value**.

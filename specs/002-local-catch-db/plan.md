@@ -134,7 +134,7 @@ Phases 1 to 8 run now, before the game launch; phase 9 runs after 2026-11-04.
 
 1. **Verification debt tooling**: the `-- VERIFY(Vn)` marker convention (documented in CLAUDE.md), `npm run check`
    listing open markers, `npm run build -- --release` refusing them; `Spike.lua` with `/okf spike` covering V1-V7.
-2. **Foundation**: `DB_SCHEMA` 2 and defaults; `tests/wow.lua` stubs; `CatchDB.lua` place key and recording into
+2. **Foundation**: new defaults (`DB_SCHEMA` stays 1); `tests/wow.lua` stubs; `CatchDB.lua` place key and recording into
    `mine` and the own record (US1, without the panel), on the V1-V3 and V7 assumptions; `catchdb_test.lua`.
 3. **Panel (US1)**: tabs in `StatsFrame.lua` (V6 with its fallback), `UI/CatchHere.lua` with the fallback, filters
    and remembered tab; texts and translations; `catchhere_test.lua`.
