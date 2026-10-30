@@ -24,7 +24,7 @@ first in each phase and must fail before the implementation.
 | US4 | Network data reaches the next release | P4 |
 
 **Verification debt**: the game opens on 2026-11-04.
-- Phases 1 to 7 are done before that, on the assumptions V10-V17 of [verification.md](verification.md).
+- Phases 1 to 7 are done before that, on the assumptions V10-V18 of [verification.md](verification.md).
 - Every line of code that relies on one of them carries `-- VERIFY(Vn): <what>`.
 - Phase 8 runs after launch, together with the debt of the other parts.
 
@@ -154,8 +154,8 @@ story builds on.
 - [X] T004 [P] Write the failing tests for `CatchDB.CheckRecord` in `tests/catchdb_test.lua` (research R6,
   contracts/share-api.md). `CheckRecord` accepts a valid record of two builds and three cells. It rejects, with a
   reason:
-  - an `id` not matching `^[a-z2-7]{8}$`, and `id == myID`;
-  - a non-count `epoch` or `seq`;
+  - an `id` not matching `^[a-z2-7]{8}$` (the own ID is refused by `Share.Store.Accept`, T006);
+  - a non-count `epoch` or `seq`, or a `seq` above the record's casts (`c + m` over all cells);
   - a build not `^%d+%.%d+%.%d+$`;
   - a place key not `^%d+:[0-4]:(%d%d|x)$`;
   - `c + m > t`;
@@ -163,52 +163,54 @@ story builds on.
   - only one of `px` / `py`, or `px > 1000 * (c + m)`;
   - a pool part with `p.c > c`;
   - more than 1,000 places over all builds;
-  - an item ID for which `C_Item.GetItemInfoInstant` returns nil (set the stub to know only some IDs).
+  - an item ID for which `C_Item.GetItemInfoInstant` returns nil (set the stub to know only some IDs); then a third
+    value `true` says the unknown item was the only fault.
 
   A record with one bad cell is rejected whole; unlike the harvest, cells are not skipped.
 - [X] T005 Implement `CatchDB.CheckRecord(record)` in `OneKeyFishing/CatchDB.lua`. It returns `true` or
-  `false, reason`, with no side effects, and checks exactly the rules of T004. Use the existing `MAX_PIECES` and
-  `ID_CHARS` constants and a new `MAX_RECORD_PLACES = 1000`. Comment that it mirrors `checkRecord` / `checkCell` in
-  `tools/harvest.mjs`, but rejects the whole record.
-- [X] T006 [P] Write the failing store tests in a new `tests/share_test.lua`, using `load_addon()` and
+  `false, reason` (plus `true` when only an unknown item failed), with no side effects, and checks exactly the
+  rules of T004. Use the existing `MAX_PIECES` and `ID_CHARS` constants and a new `MAX_RECORD_PLACES = 1000`.
+  Comment that it mirrors `checkRecord` / `checkCell` in `tools/harvest.mjs`, but rejects the whole record.
+- [X] T006 [P] Write the failing store tests in a new `tests/share_store_test.lua`, using `load_addon()` and
   `ns.Share.Store` (T007), against `ns.db.shared`:
   - **Accept:** a valid record is stored under `"<id>@<epoch>"` with `seen = time()`.
   - **Replace:** the same unit with a higher `seq` replaces it; an equal `seq` only refreshes `seen`; a lower `seq` is
     ignored.
   - **Other epoch:** a record of another epoch of the same ID is stored next to it.
   - **Own ID:** a record with `id == myID` is refused.
-  - **Absorbed:** a unit with `epoch <= ns.SeedData.absorbed[id]` is refused. A stored unit absorbed by the seed is
-    deleted by `Store.CleanUp()`, which runs at login.
+  - **Absorbed:** a version with `seq <= ns.SeedData.absorbed[id][epoch]` (the seed holds it whole) is refused. A
+    stored one is deleted by `Store.CleanUp()`, which runs at login; a newer version (held in part) is kept.
   - **Eviction:** with other records holding more than 20,000 places together, `Store.Evict()` deletes the oldest
     `seen` first until they fit, and never the own record.
-  - **Change message:** every change fires `SHARED_DATA_CHANGED` once.
+  - **Change message:** every change fires `SHARED_DATA_CHANGED` once, with the changed keys.
 - [X] T007 Create `OneKeyFishing/Share.lua`, listed in `OneKeyFishing/OneKeyFishing.toc` after `CatchDB.lua`
   (leave room for `Comm.lua` before it, T013). Start it with a header comment on its job (contracts/share-api.md)
   and add `ns.Share = Share` and `Share.Store`, whose functions take the `shared` table:
-  - `Accept(store, record, now)`: returns `"new" | "newer" | "same" | "older" | "refused"` and runs the rules of
-    data-model.md "Rules for other players' records" through `ns.CatchDB.CheckRecord` and
-    `ns.SeedData.absorbed`.
-  - `CleanUp(store)` and `Evict(store)` (`MAX_OTHER_PLACES = 20000`).
-  - `Units(store)` returns every `id@epoch` held with its `seq`, the own record included and absorbed units left out.
+  - `Accept(store, record, now, absorbed)`: returns `"new" | "newer" | "same" | "older"`, or `"refused"` with the
+    reason (and `true` when only an unknown item failed), and runs the rules of data-model.md "Rules for other
+    players' records": the own ID first, then `ns.CatchDB.CheckRecord` and the seed's `absorbed`.
+  - `CleanUp(store, absorbed)` and `Evict(store)` (`MAX_OTHER_PLACES = 20000`).
+  - `Units(store, absorbed)` returns every `id@epoch` held with its `seq`, the own record included when it has cells
+    of a game version, and versions the seed holds whole left out.
   - `Get(store, unit)` returns the record for a unit.
 
-  A change fires `ns.Fire("SHARED_DATA_CHANGED")`. On `ADDON_LOADED`, after `CatchDB`'s own handler, run `CleanUp`
-  and `Evict`. Strip `seen` from a record before it is handed out for sending.
-- [X] T008 Write the failing hash tests in `tests/share_test.lua` (after T006, same file):
+  A change fires `ns.Fire("SHARED_DATA_CHANGED", keys)`. On `ADDON_LOADED`, after `CatchDB`'s own handler, run
+  `CleanUp` and `Evict`. `Store.ForSending(record)` strips `seen` from a record before it is sent.
+- [X] T008 Write the failing hash tests in `tests/share_store_test.lua` (after T006, same file):
   - `Share.Hash(text)` is a 32-bit value equal to a fixed expected number for a fixed input, computed by hand from
     the rule;
-  - `Share.Base32(value, 7)` gives 7 characters;
+  - `ns.Base32(value, 7)` (Data.lua) gives 7 characters;
   - `Share.Buckets(units)` puts each unit in the bucket of the first character of its ID;
   - the bucket hashes and the whole hash do not depend on insertion order;
   - a change of one `seq` changes exactly one bucket hash and the whole hash.
 - [X] T009 Implement the hashes in `OneKeyFishing/Share.lua` (research R5):
   - `Hash(text)`: `h = (h * 31 + byte) % 4294967291`, starting at 5381, plain arithmetic, no `bit`. Comment why: the
     hash must agree between the client and fengari.
-  - `Base32(value, width)` with the `ID_CHARS` alphabet.
+  - `ns.Base32(value, width)` in `Data.lua`, with the base32 alphabet of the IDs (`ns.BASE32`).
   - `Buckets(units)` returns the 32 lists of sorted `id.epoch.seq` lines.
-  - `BucketHashes(units)` and `WholeHash(bucketHashes)`.
-  - A cache keyed per bucket and invalidated on `SHARED_DATA_CHANGED` and on the own record's `seq` change
-    (compare the last seen `seq`).
+  - `BucketHashes(buckets)` (the 7-character texts `SUM` sends) and `WholeHash(hashTexts)`.
+  - A node's summary (units, buckets, hashes) cached whole and rebuilt after `SHARED_DATA_CHANGED` or a change of
+    the own record's `seq` (compare the last seen `seq`).
 
 **Checkpoint**: other records can be checked, stored, evicted and hashed; nothing is sent yet.
 
@@ -219,7 +221,7 @@ story builds on.
 **Goal**: clients in one guild, group or friends list find each other and exchange records in the background,
 invisibly. "What can be caught here" counts the others' catches and says from how many players.
 
-**Independent Test**: in `tests/share_test.lua`, three nodes reach each other over guild, group, whisper and
+**Independent Test**: in `tests/share_protocol_test.lua`, three nodes reach each other over guild, group, whisper and
 Battle.net paths, and end with the same records and counts. In game (quickstart.md, feature steps 2, 3 and 7), two
 or three players see each other's catches, and nothing shows in chat.
 
@@ -239,8 +241,9 @@ or three players see each other's catches, and nothing shows in chat.
     repeats.
   - **Offline result:** result 12 reports the address to the handler registered with `Comm.OnOffline`.
   - **Pause reasons:** `GetPause()` is `"combat"` with `in_combat`, `"instance"` with `in_instance`, `"loading"`
-    between `LOADING_SCREEN_ENABLED` and `_DISABLED`, and `"restricted"` with `restrictions[5]`, `chat_lockdown` or
-    `addon_chat_restricted`. While paused nothing is sent and incoming messages are dropped.
+    between `LOADING_SCREEN_ENABLED` and `_DISABLED`, and `"restricted"` with `restrictions[5]` (`Chat`), the `Map`
+    restriction or `chat_lockdown`; `addon_chat_restricted` (true on every normal realm) pauses nothing. While paused
+    nothing is sent and incoming messages are dropped.
   - **Friends:** `Comm.ForEachFriend` lists only connected character friends, and Battle.net game accounts that are
     online, on `BNET_CLIENT_WOW` and on `WOW_PROJECT_ID`.
   - **Broadcast:** `Comm.Broadcast` goes to `GUILD` only when `in_guild`, and to `RAID` or `PARTY` by `group_type`.
@@ -249,9 +252,10 @@ or three players see each other's catches, and nothing shows in chat.
   - **Validation:** a message with another prefix, or with a `"\0"`, is ignored.
   - **Refused paths** (contracts/sync-protocol.md "Paths the game refuses"): five results of 9 (`GeneralError`) in a
     row on `WHISPER` leave the `whisper` path out (`Comm.GetPaths().whisper.disabled`), and later sends to `w:`
-    addresses are dropped. A success in between resets the count. Results 3, 8, 10, 11 and 12 never count. With
-    all four paths left out, `GetPause()` is `"unavailable"` and stays so.
-- [X] T011 [P] [US1] Write the failing protocol tests in `tests/share_test.lua`, with three or more nodes from
+    addresses are dropped. A success in between resets the count. Results 3, 8, 10, 11 and 12 never count, nor
+    does a refused greeting (a `HELLO` to a friend). With all four paths left out, `GetPause()` is `"unavailable"`
+    and stays so.
+- [X] T011 [P] [US1] Write the failing protocol tests in `tests/share_protocol_test.lua`, with three or more nodes from
   `Share.NewNode(store, env)` on separate store tables and a fake network in the test. The network routes `send` /
   `broadcast` between nodes through `C_Timer.After(0.1, ...)` and lets a test cut a path or reorder deliveries
   (contracts/sync-protocol.md "A session").
@@ -267,9 +271,10 @@ or three players see each other's catches, and nothing shows in chat.
   - **Session size:** more than 8 KB of wanted records is split over two sessions, and one record larger than 8 KB
     still goes.
   - **Timeout:** no reply for 15 s drops the session and pauses the peer for 30 min.
-  - **Rejects:** a `REC` that was not wanted, or that fails `CheckRecord`, makes the sender ignored until logout.
-    More than 1 `HELLO` per 60 s, 600 messages per hour or 50 records per hour from one sender is ignored as
-    contracts/sync-protocol.md says.
+  - **Rejects:** a `REC` that was not wanted, or that fails `CheckRecord` (not only for an item this client does
+    not know), makes the sender ignored until logout. More than 1 `HELLO` per 60 s, 1,160 message units per hour
+    or 175 records per hour from one sender (`Share.MESSAGE_LIMIT`, `Share.RECORD_LIMIT`, derived from
+    `Comm.BUDGET` and the session limits) is handled as contracts/sync-protocol.md says.
   - **Echo:** a node ignores its own `HELLO` echo (same node tag). `HELLO` never contains `myID`.
   - **Merge pace:** received records are merged at most one per frame step (`C_Timer.After(0, ...)`).
   - **Pause:** `node:Pause("combat")` mid-session sends nothing more; the peer side times out.
@@ -280,8 +285,8 @@ or three players see each other's catches, and nothing shows in chat.
     round greets the 2 known peers plus 18 others. The next rounds continue from the cursor, so all are greeted
     within 3 rounds.
 
-  **Game node** (same file, through `load_addon()` with `shareNotice = true`, the T001 fakes and `advance`; these
-  fail until T015):
+  **Game node** (in `tests/share_game_test.lua`, through `load_addon()` with `shareNotice = true`, the T001 fakes
+  and `advance`; these fail until T015):
   - the first `HELLO` goes to `GUILD` 60-120 s after login when `in_guild`;
   - after `group_type = "party"` and `GROUP_ROSTER_UPDATE`, a `HELLO` goes to `PARTY` within 30 s, and a second
     roster event within 2 min sends no extra one;
@@ -294,8 +299,9 @@ or three players see each other's catches, and nothing shows in chat.
   - With `settings.shareDB` true, source "All" sums the seed, the own record and every stored other record. With it
     false, the others are left out.
   - The part 1 reset rule applies to other records' builds too.
-  - `players` counts the records with a summed cell (own included), plus `k` of the seed cell at a spot, or the
-    largest `k` of the summed seed cells for the whole map.
+  - `players` counts each record ID with a summed cell of catches (own included) once, next to `k` of the seed cell
+    at a spot, or the largest `k` of the summed seed cells for the whole map; an ID the seed absorbed counts only
+    above that `k`.
   - The cached view changes after `SHARED_DATA_CHANGED` and after switching `shareDB`.
 
 ### Implementation for User Story 1
@@ -314,13 +320,13 @@ or three players see each other's catches, and nothing shows in chat.
     | Part timeout | 15 s |
     | Part buffer | 64 KB per sender |
     | Filter window | 10 s |
-  - **Sending:** one queue drained by a `C_Timer` ticker that runs only while the queue is not empty.
+  - **Sending:** one queue, drained by `C_Timer.After` runs scheduled only while the queue is not empty.
   - **Receiving:** `CHAT_MSG_ADDON` and `BN_CHAT_MSG_ADDON`, joined into whole messages for `Comm.OnReceive`
     handlers.
   - **Pause rule** (research R8):
     - re-checked on `PLAYER_REGEN_DISABLED`, `PLAYER_REGEN_ENABLED`, `LOADING_SCREEN_ENABLED`,
-      `LOADING_SCREEN_DISABLED`, `ZONE_CHANGED_NEW_AREA` and `ADDON_RESTRICTION_STATE_CHANGED`, and every 5 s while
-      paused;
+      `LOADING_SCREEN_DISABLED`, `ZONE_CHANGED_NEW_AREA`, `PLAYER_ENTERING_WORLD` and
+      `ADDON_RESTRICTION_STATE_CHANGED` (on the next frame), and every 5 s while paused;
     - fires `ns.Fire("SHARE_PAUSE", reason)` when the reason changes (a new message, listed in CLAUDE.md, T036).
   - **Results:** every send result is read; the throttle and lockdown back-offs, `Comm.OnOffline` handlers, and the
     error counts kept for `Comm.Describe()`.
@@ -362,27 +368,30 @@ or three players see each other's catches, and nothing shows in chat.
 - [X] T015 [US1] Bind the game node in `OneKeyFishing/Share.lua` (research R3), until the "Game node" tests of
   T011 pass.
   - **Setup:** on `PLAYER_LOGIN`, create one node over `ns.db.shared` with `env` bound to:
-    - `GetTime` and `C_Timer.After`;
-    - `Comm.Send`, `Comm.Broadcast`, `Comm.ForEachFriend` and `Comm.CanSend`;
-    - `myID`, `ns.SeedData.absorbed`, `ns.CatchDB.CheckRecord`;
+    - `GetTime`, `time` and `C_Timer.After`;
+    - `Comm.Send`, `Comm.Broadcast`, `Comm.ForEachFriend`, `Comm.CanSend` and `Comm.IsSending`;
+    - the seed's `absorbed` and epoch, `CatchDB.FlushSeq` (before the units are read for a peer) and
+      `debugprofilestop` (the longest merge step); the own ID is `ns.db.shared.myID`, and the node checks records
+      with `ns.CatchDB.CheckRecord` itself;
     - `encode` / `decode` = the `C_EncodingUtil` chain of research R4, each step in `pcall`, with
       `-- VERIFY(V15)`.
   - **`HELLO` rounds:** `node:Hello()` the first 60-120 s after login, then every 10-15 min (random).
   - **Extra `HELLO`:** 5-30 s after `GROUP_ROSTER_UPDATE` when the group got a member (at most once per 2 min).
   - **Pause:** on `SHARE_PAUSE` with a reason, `node:Pause`. When the pause ends, `node:Resume` and a `HELLO` after
     5-30 s if the last one is older than 10 min. `"unavailable"` never ends before logout.
-  - **Gating:** nothing runs while `settings.shareDB` is false (T021 adds the notice gate).
+  - **Gating:** the node stays paused (`"off"`) while `settings.shareDB` is false (T021 adds the notice gate).
   - **Markers:** `-- VERIFY(V16)` at the merge step.
 - [X] T016 [US1] In `OneKeyFishing/CatchDB.lua`, make T012 pass:
-  - `Sources("all", mapID)` adds every `ns.db.shared.records` entry whose key is not `myID` when
-    `ns.db.settings.shareDB` is true, with the reset rule per build.
+  - `Sources("all", mapID)` adds the other players' records (`"<id>@<epoch>"`, not held in part by the seed)
+    when sharing is on, through one index of their cells by place key and by map, with the reset rule per build.
   - Views gain `players` (research R9).
-  - The cache key includes the sharing flag.
-  - `ns.On("SHARED_DATA_CHANGED", ...)` bumps `version`.
+  - The cache key stays the map, cell, range and source: switching sharing goes through `Share.SetEnabled`, which
+    fires `SHARED_DATA_CHANGED`.
+  - `ns.On("SHARED_DATA_CHANGED", ...)` bumps `version` (and updates the index for the keys it names).
 
   Update the `catchdb-api.md` view shape in a comment above `Query`.
 - [X] T017 [US1] In `OneKeyFishing/UI/CatchHere.lua`, show `L["%d catches from %d players"]` instead of
-  `L["%d catches"]` when the source is "All" and `view.players` is at least 1; "Only mine" keeps `"%d catches"`.
+  `L["%d catches"]` when the source is "All" and `view.players` is at least 2; "Only mine" keeps `"%d catches"`.
   Add the text to `Locales/enUS.lua` and all nine translations. Extend `tests/catchhere_test.lua`: with one stored
   other record at the current spot the counts line reads "N catches from 2 players"; under "Only mine" it reads
   "N catches". With the window open, a record that arrives (`Share.Store.Accept` plus `SHARED_DATA_CHANGED`) shows
@@ -398,13 +407,15 @@ V10-V15 hold.
 **Goal**: a one-time popup explains the sharing. One setting on a "Shared database" page turns it on or off; off
 means nothing sent, nothing received, and received data kept but not counted.
 
-**Independent Test**: in `tests/share_test.lua` and `tests/settings_test.lua`, the popup shows once, gates the
+**Independent Test**: in the `tests/share_notice*_test.lua` files, `tests/share_game_test.lua` and
+`tests/settings_test.lua`, the popup shows once, gates the
 exchange, and the buttons work; the setting stops all sends and hides others' data, which comes back when it is
 turned on. In game: quickstart.md, feature steps 1 and 6.
 
 ### Tests for User Story 2
 
-- [X] T018 [P] [US2] Write the failing tests in `tests/share_test.lua`:
+- [X] T018 [P] [US2] Write the failing tests in `tests/share_notice_test.lua` (the popup),
+  `tests/settings_test.lua` (its Settings button) and `tests/share_game_test.lua` (off and on again):
   - **Popup on first login:** with `shareNotice` false, after `PLAYER_ENTERING_WORLD` and the loading screen, out of
     combat, the popup is shown. Nothing is in `addon_sent` before it closes.
   - **Accept:** `accept_popup()` sets `shareNotice = true`, and a `HELLO` follows within 120 s.
@@ -428,30 +439,32 @@ turned on. In game: quickstart.md, feature steps 1 and 6.
 
 - [X] T020 [US2] Implement `Share.IsEnabled()` / `Share.SetEnabled(on)` in `OneKeyFishing/Share.lua`. Setting the
   value means:
-  - write `settings.shareDB`;
+  - write `settings.shareDB`, and close the notice if it is still open (the page says what is shared);
   - when off, `node:Pause("off")` drops the session, and `Comm` ignores incoming messages and refuses sends while
     the setting is off (check it at the top of the queue and of the receive handler);
   - fire `SHARED_DATA_CHANGED` and `SETTINGS_CHANGED`;
   - when on, `node:Resume()` and a `HELLO` after 5-30 s.
 - [X] T021 [US2] Implement the one-time popup in `OneKeyFishing/Share.lua` (contracts/share-api.md).
-  - **When:** on `PLAYER_ENTERING_WORLD` with `shareNotice` false, wait for `LOADING_SCREEN_DISABLED` and for out of
-    combat (`PLAYER_REGEN_ENABLED` if needed).
+  - **When:** 2 s after `PLAYER_ENTERING_WORLD` or `LOADING_SCREEN_DISABLED` with `shareNotice` false and sharing
+    on, out of combat (`PLAYER_REGEN_ENABLED` if needed); again after 30 s when the game had no free dialog frame.
   - **Popup:** `ns.ShowPopup("ONEKEYFISHING_SHARE_NOTICE", text, nil, L["Got it"], L["Settings"], onCancel =
     ns.SettingsUI.OpenShare, onHide = ...)`. `onHide` sets `shareNotice = true` and starts the `HELLO` rounds of
-    T015.
+    T015 (not when the whole interface was hidden, Alt+Z).
   - **Gate:** the node does not start while `shareNotice` is false.
-  - **Text:** `L["OneKeyFishing now shares your catch counts anonymously with addon users in your guild, group and
-    friends list. No character names are sent. Turn it off in Options -> AddOns -> OneKeyFishing -> Shared
-    database."]`. Part 3 replaces this text with one that also names the public channel (FR-021); keep it a single
-    `L` key so that change touches one key and its nine translations.
+  - **Text:** three `L` keys joined by a space: `L["OneKeyFishing now shares your catches under a random ID with
+    your guild, group and friends who use it."]`, `L["No character names are sent, but the players you exchange
+    with can tell which ID is yours."]` and `L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared
+    database."]`. Part 3 replaces only the first with one that also names the public channel (FR-021), so that
+    change touches one key and its nine translations.
 
   Add the texts to `Locales/enUS.lua` and all nine translations.
 - [X] T022 [US2] In `OneKeyFishing/UI/Settings.lua`, add `CreateSharePage()`, registered with
   `Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateSharePage(), L["Shared database"])`. It holds:
   - the checkbox `L["Use the shared catch database"]`, through the file's `CreateCheckbox`, calling
     `ns.Share.SetEnabled`;
-  - the explanation `L["Your catches (items, counts, places as map numbers) are exchanged with addon users in your
-    guild, group and friends list, under a random ID. No names, gear or exact positions."]` and
+  - the explanation, three keys joined by a space: `L["Your catches (items, counts, map cells, the average spot you
+    fish from) are shared under a random ID."]`, `L["They go to addon users in your guild, group and friends list.
+    No names or gear."]` and `L["The players you exchange with can tell which ID is yours."]`; then
     `L["Turned off: nothing is sent or received, and other players' data is not counted."]`;
   - a status line set from `ns.Share.StatusLine()` on `OnShow` and every 1 s while shown.
 
@@ -468,24 +481,27 @@ turned on. In game: quickstart.md, feature steps 1 and 6.
 **Goal**: a quiet status line in the tab and on the settings page; `/okf share` with the full state; a
 `/okf debug` section.
 
-**Independent Test**: in `tests/share_test.lua`, `tests/commands_test.lua` and `tests/catchhere_test.lua`, the status
-and texts match each state (alone, active, paused with each reason, off, notice). In game: quickstart.md, feature
+**Independent Test**: in `tests/share_game_test.lua`, `tests/commands_test.lua` and `tests/catchhere_test.lua`, the
+status and texts match each state (alone, active, paused with each reason, off, notice). In game: quickstart.md, feature
 steps 4, 5 and 8.
 
 ### Tests for User Story 3
 
-- [X] T023 [P] [US3] Write the failing tests in `tests/share_test.lua` for `Share.GetStatus()` and
+- [X] T023 [P] [US3] Write the failing tests in `tests/share_game_test.lua` (and `tests/share_refused_test.lua`
+  for `unavailable`) for `Share.GetStatus()` and
   `Share.StatusLine()` (contracts/share-api.md, data-model.md "State of the exchange"):
   - **States:** `off`, `notice`, `unavailable`, `paused` with each reason, `alone`, `active`, in that order of
     precedence.
-  - **Counts:** `heard` per path for the last hour; `exchanged` = peers with a finished session in the last hour;
+  - **Counts:** `heard` per path for the last hour; `exchanged` = peers confirmed in the last hour (a finished
+    session, or a `HELLO` with the same hash);
     `lastExchange`, `traffic`, `records` and `places`. Use `advance` to age entries past one hour.
   - **Status lines:**
     - "Exchange: 3 players, 5 min ago";
     - "Exchange paused: in combat" (one text per reason);
     - "Exchange unavailable: the game refuses addon messages";
     - "Shared catch database is off";
-    - "Nobody to exchange with right now".
+    - "Nobody to exchange with right now";
+    - "Last exchange: %s ago" when a peer is heard but nobody was confirmed in the last hour.
 - [X] T024 [P] [US3] Extend `tests/commands_test.lua`:
   - `/okf share` prints the localized lines of FR-022 into chat (`chat_contains`) on an English and on a German
     client;
@@ -504,7 +520,9 @@ steps 4, 5 and 8.
     `L["Exchange paused: loading screen"]`, `L["Exchange paused: the game restricts addon messages here"]`,
     `L["Exchange paused: the game asked to slow down"]`,
     `L["Exchange unavailable: the game refuses addon messages"]`, `L["Shared catch database is off"]`,
-    `L["Nobody to exchange with right now"]` and `L["Waiting for you to read the notice"]`.
+    `L["Nobody to exchange with right now"]`, `L["Waiting for you to read the notice"]`,
+    `L["Last exchange: %s ago"]` (nobody confirmed in the last hour) and
+    `L["Exchange: waiting for the first exchange"]` (active, nothing confirmed yet).
   - **`PrintStatus()`:** prints the seed epoch and places, records held and their places, peers heard per path,
     peers exchanged with, the last exchange, the traffic of the last hour in KB, and the state line, through
     `ns.Print` with `L` texts.
@@ -531,8 +549,8 @@ steps 4, 5 and 8.
 stop counting their network copies.
 
 **Independent Test**: in `tests/harvest_test.mjs`, an author file with other players' records yields one seed with
-each contribution once. In `tests/share_test.lua`, after the seed absorbs those units, the counts do not change and
-re-sent copies are refused. In game: quickstart.md, feature step 10.
+each contribution once. In `tests/share_absorbed_test.lua`, after the seed absorbs those units, the counts do not
+change and re-sent copies are refused. In game: quickstart.md, feature step 10.
 
 ### Tests for User Story 4
 
@@ -545,7 +563,7 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
     - `seen` and the table keys do not matter;
     - the report counts the contributions;
     - a second run with the same files changes nothing.
-- [X] T031 [P] [US4] Extend `tests/share_test.lua`: a node holding three other units has its counts noted. Then
+- [X] T031 [P] [US4] Add `tests/share_absorbed_test.lua`: a node holding three other units has its counts noted. Then
   `ns.SeedData` is replaced with a seed containing the same sums and `absorbed` for those IDs, and the addon is
   reloaded. Expect:
   - the stored units are deleted;
@@ -565,7 +583,7 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
 
 ## Phase 7: Polish & Cross-Cutting Concerns (before launch)
 
-- [X] T033 [P] Add a load test to `tests/share_test.lua`.
+- [X] T033 [P] Add a load test, `tests/share_load_test.lua`.
   - **Setup:** fill the store with synthetic other records totalling 20,000 places over 200 records.
   - **Expect:**
     - `ADDON_LOADED` cleanup and eviction finish;
@@ -589,10 +607,10 @@ re-sent copies are refused. In game: quickstart.md, feature step 10.
   - **Known API facts:** the dump facts and the deprecated-globals rule are already there (2026-10-29); re-check
     them against a fresh `exportInterfaceFiles code` if the client was patched since.
 - [X] T037 [P] Create `docs/checklists/catch-exchange.md` from quickstart.md "In game: spike" (N1-N7) and "In game:
-  the feature" (1-10). Give each step a checkbox and the V-IDs it closes, and say that a second player is needed.
+  the feature" (1-12). Give each step a checkbox and the V-IDs it closes, and say that a second player is needed.
   Link it from `docs/checklists/catch-database.md` "After the checklist".
 - [X] T038 Run `npm run check`, `npm test` and `npm run dev`. Confirm that the only open markers are V1-V7, `spike`
-  (part 1) and V10-V16, each listed in a verification.md. Set the "Status" column of
+  (part 1), V10-V16 and V18, each listed in a verification.md. Set the "Status" column of
   `specs/003-guild-group-sync/verification.md` to "Built, waiting for launch".
 
 **Checkpoint**: part 2 is complete except for the in-game verification; it ships with the other parts in 1.2.0.
@@ -612,8 +630,8 @@ player or a second account is needed.
   in `specs/003-guild-group-sync/verification.md`. If V14 shows addon chat restricted in the open world, stop and
   plan a way around it with the author before anything else.
 - [ ] T041 Author: run the "Feature" steps of `docs/checklists/catch-exchange.md` with a second player (closes V16,
-  V17); fix what fails and repeat.
-- [ ] T042 Mark part 2 ready for release 1.2.0: T039-T041 done, V10-V17 ticked in
+  V17, V18); fix what fails and repeat.
+- [ ] T042 Mark part 2 ready for release 1.2.0: T039-T041 done, V10-V18 ticked in
   `specs/003-guild-group-sync/verification.md`, no `VERIFY(V1x)` marker left. The release itself is one task for
   all parts, `specs/002-local-catch-db/tasks.md` T045 (`docs/shared-db-plan.md` "Release 1.2.0"); its harvest also
   bundles the network records the author's client collected.
@@ -645,7 +663,7 @@ player or a second account is needed.
 
 ```text
 T010 transport tests in tests/comm_test.lua
-T011 protocol tests in tests/share_test.lua
+T011 protocol tests in tests/share_protocol_test.lua
 T012 view tests in tests/catchdb_test.lua
 ```
 
@@ -673,5 +691,5 @@ touch different files than the protocol, so they can run alongside the late US1 
 - Every task keeps `npm run check` and `npm test` green; commit after each task or logical group, on `002-shared-db`.
 - A `VERIFY` marker is removed only after the author's in-game confirmation (Principle IV), never because a source
   "says so".
-- Names live only in memory (peers, the queue, the filter's 10 s list); never write them to saved variables, the
-  debug report or `/okf share`.
+- Names live only in memory (peers, the queue, the part buffers, the filter's 10 s list); never write them to saved
+  variables, the debug report or `/okf share`.

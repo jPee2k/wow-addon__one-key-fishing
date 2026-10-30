@@ -36,7 +36,8 @@ The translations other than Ukrainian have not been reviewed by native speakers 
 - Settings -> OneKeyFishing -> **Language** (top right): **Game client language** (the default) or any language
   from the table, each named in its own language.
   - **Game client language** uses the translation that matches the client (`GetLocale()`), and English when
-    there is none (also for `ruRU`).
+    there is none (also for `ruRU`). An `enGB` client gets English (`enUS`) and a `ptPT` client Português
+    (`ptBR`).
   - Ukrainian is available only by picking it: the game has no Ukrainian client locale.
 - The tooltip of the button warns that Korean and Chinese may show as squares on a client in another
   language; the menu always shows "English" in Latin letters, so the way back stays readable.

@@ -1,6 +1,7 @@
 # Roadmap
 
-Ideas for versions after 1.0.0. Nothing here is scheduled yet: each item gets its own plan before work starts.
+Features for versions after 1.0.0. Item 3 is built for release 1.1.0 and items 1 and 2 are planned for release
+1.2.0; neither is released yet. The rest is not scheduled: each item gets its own plan before work starts.
 Every feature must keep the addon's rule: every game action is a real key press, nothing reacts to the
 bobber by itself.
 
@@ -11,17 +12,18 @@ as release 1.2.0, in [shared-db-plan.md](shared-db-plan.md). Part 1 (own data, t
 and a bundled database refreshed by `npm run harvest`) is built in `specs/002-local-catch-db`; part 2 (exchange
 in the guild, the group and with friends) is built in
 [specs/003-guild-group-sync](../specs/003-guild-group-sync/spec.md) (`Comm.lua`, `Share.lua`, `/okf share`). Both
-wait for the in-game checks after the game launch. The notes below are the original idea.
+wait for the in-game checks after the game launch. Parts 3 (a hidden public channel) and 4 (catch catalog,
+tooltips, pools) are planned in the same file and have no spec yet.
 
-- Built from the catches players record with the addon (the addon already stores caught items per zone and
-  subzone in `OneKeyFishingCharDB.stats.zones`).
-- An addon cannot send data out of the game, so the shared data travels as a data file bundled with new
-  releases: players export their catches (a copy window, like the debug report), the data is merged outside
-  the game and shipped in the next version.
-- In game: a "What can be caught here" list for the current zone, merged from the bundled data and your own
-  catches.
-- Open questions: export format and privacy (no character names), how to merge and validate submissions,
-  keeping the data file small, zones that differ between game versions.
+How it works now:
+
+- Every cast in fishing mode is counted per map, grid cell and skill range under a random account ID, with no
+  character names.
+- The counts travel between addon users in the guild, the group and the friends list (`Comm.lua`, `Share.lua`).
+- Before a release, `npm run harvest` turns the saved catch data (the author's accounts, which also hold what the
+  exchange brought in, and saved files players send) into the database bundled with the release.
+- In game: the "What can be caught here" tab, from the bundled data, your own catches and what other players
+  shared.
 
 ## 2. Catch chances
 

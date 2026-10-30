@@ -6,7 +6,7 @@ recorded in `docs/shared-db-plan.md` ("Part 2 (spec 003): exchange in the guild 
 bucket hashes, then only the missing records) comes from the plan's "Sync protocol"; this file fixes how it is built
 in WoW Forever. API facts below were read from the Forever 1.60.1.70532 dumps (Gethe `wow-ui-source@forever`,
 Ketho `BlizzardInterfaceResources@forever`) on 2026-10-29; they prove that a function exists, not how it behaves,
-so behaviour is an assumption in [verification.md](verification.md) (V10-V17).
+so behaviour is an assumption in [verification.md](verification.md) (V10-V18).
 
 Checked again on 2026-10-29 against the author's live client, build 1.60.1.70685 (newer than the 70532 dump).
 The author ran `exportInterfaceFiles code` from the character screen. Everything this plan calls exists there with
@@ -29,7 +29,7 @@ an API.
 ## R1. Built now, verified after launch
 
 - **Decision**: as in part 1 (`specs/002-local-catch-db/research.md` R1): the exchange is built before the game opens
-  on 2026-11-04, every behaviour only the game shows is marked `-- VERIFY(Vn)` (V10-V17, numbered after part 1's
+  on 2026-11-04, every behaviour only the game shows is marked `-- VERIFY(Vn)` (V10-V18, numbered after part 1's
   V1-V9 because the markers share the code), `npm run check` lists them and the release build refuses them. The
   temporary `/okf spike` (`Spike.lua`) gets a network section (R12), so one game session on launch day closes the
   part 1 and the part 2 questions. A second player (a friend or a second account) is needed for the exchange steps.
@@ -124,7 +124,8 @@ an API.
     answer `BYE busy` and could miss each other on every round.
   - Hash: a 32-bit polynomial hash over the sorted `id.epoch.seq` lines of a bucket, computed with plain arithmetic
     modulo the prime 4294967291 (no `bit` library: the client has one, fengari does not, and the hash must be the
-    same in both). The whole-database hash is the same hash over the 32 bucket hashes. Cached per bucket.
+    same in both). The whole-database hash is the same hash over the 32 bucket hashes. The summary (units, buckets
+    and hashes) is cached and rebuilt whole on its next use after any change of the records or of the own seq.
   - Seed epochs: no epoch gate. A unit the receiver's seed already absorbed is simply not wanted (R6), so clients
     with different releases still exchange everything both count.
 - **Rationale**: when two databases are equal the session ends after `HELLO` (no session at all) or `SUM` + `BYE`;
@@ -139,10 +140,13 @@ an API.
   the cell rules (`c + m <= t`, item catches within the catches, pieces at most 20 per catch, positions in range,
   pool part within the totals), the place key pattern and a game version per build. Unlike the harvest it rejects
   the whole record on any bad cell (a peer's data is not cleaned up, it is refused), and also checks: `id` is 8
-  base32 characters and is not `myID`; at most 1,000 places; every item ID resolves with
-  `C_Item.GetItemInfoInstant` (an unknown item is a made-up item). Then `Share` keeps it per `id@epoch` when its
-  `seq` is newer, unless the seed absorbed that epoch (data-model.md). A sender whose record fails is ignored until
-  logout.
+  base32 characters; at most 1,000 places; `seq` not above the record's casts (`c + m` over all cells: the owner
+  bumps it only after a settled cast, so a higher one is made up); every item ID resolves with
+  `C_Item.GetItemInfoInstant`. The own ID is refused by `Share.Store.Accept` before the check (FR-012). Then `Share`
+  keeps it per `id@epoch` when its `seq` is newer, unless the seed holds that version whole (data-model.md). A
+  sender whose record fails is ignored until logout, except when the only fault is an unknown item: the client may
+  not know a new item yet (or not be patched), so the record is dropped without blaming the sender, and that
+  version is not wanted again this session.
 - **Size limit**: other records together hold at most 20,000 places (about 2 MB). Above it the record with the
   oldest `seen` goes first; `seen` is refreshed whenever a peer confirms the same version, so records still alive in
   the network stay and those of players who stopped playing go. The own record is never deleted (FR-013).
@@ -165,6 +169,7 @@ an API.
   | Session size | 8 KB of encoded records per direction, but always at least one record (a record encodes to at most 32 KB) |
   | Total sent | 50 KB per hour per client (SC-005), headers included; above it only `BYE` is sent |
   | Timeout | 15 s without a message from the peer: the session is dropped, the peer paused for 30 min |
+  | Session life | 5 min in all, however busy (parts alone must not hold the one session slot): dropped the same way |
 
   `AddonMessageThrottle` and `ChannelThrottle` put the message back and pause sending for 2 s, doubling up to 8 s
   (under the 15 s session and part timeouts, or the peer gives up while this side waits); `AddOnMessageLockdown`
@@ -184,13 +189,15 @@ an API.
 
 - **Decision**: the exchange sends nothing and drops incoming messages while any of these holds:
   `InCombatLockdown()`; `IsInInstance()`; a loading screen (`LOADING_SCREEN_ENABLED` to `..._DISABLED`);
-  `C_RestrictedActions.IsAddOnRestrictionActive(t)` for `Chat`, `Encounter`, `ChallengeMode` or `PvPMatch`
+  `C_RestrictedActions.IsAddOnRestrictionActive(t)` for `Chat`, `Encounter`, `ChallengeMode`, `PvPMatch` or `Map`
   (`Enum.AddOnRestrictionType`); `C_ChatInfo.InChatMessagingLockdown()`;
   a lockdown back-off (R7). Not `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()`: by its API doc it is about
   the chat messages addons may send (allowed on tournament realms), so it is true on a normal realm; the spike
   still reports it. It re-checks on
-  `PLAYER_REGEN_ENABLED`, `LOADING_SCREEN_DISABLED`, `ZONE_CHANGED_NEW_AREA` and `ADDON_RESTRICTION_STATE_CHANGED`,
-  and every 5 s while paused. A session running when a pause starts is dropped without a message (the peer times
+  `PLAYER_REGEN_DISABLED`, `PLAYER_REGEN_ENABLED`, `LOADING_SCREEN_ENABLED`, `LOADING_SCREEN_DISABLED`,
+  `ZONE_CHANGED_NEW_AREA`, `PLAYER_ENTERING_WORLD` and `ADDON_RESTRICTION_STATE_CHANGED` (read on the next frame:
+  the event fires before the restriction is active), and every 5 s while paused; every send and every received
+  message reads the rule too. A session running when a pause starts is dropped without a message (the peer times
   out); nothing was merged half-way, because a record is merged only whole.
 - **Rationale**: FR-002 and the Midnight-level restrictions Forever has; incoming data is not worth handling in
   combat either.
@@ -198,10 +205,12 @@ an API.
 
 ## R9. "N catches from K players"
 
-- **Decision**: `CatchDB.Query` adds `players` to a view, counting each contribution at most once: for the records,
-  the exact number of records with at least one summed cell (own included); for the seed, the cell's `k` at a spot
-  and the largest `k` of the summed cells for the whole map (a lower bound, FR-016). The tab shows "60 catches from 3 players" in place of "60 catches" (and keeps "60 catches" under
-  "Only mine").
+- **Decision**: `CatchDB.Query` adds `players` to a view, counting each contribution at most once, and only for
+  summed cells with at least one catch: for the seed, the cell's `k` at a spot and the largest `k` of the summed
+  cells for the whole map; for the records, each ID with such a cell once (own included), but an ID the seed
+  absorbed may be among its `k`, so those IDs count only above it (`max(k, absorbed IDs) + the other IDs`). The
+  result is a lower bound (FR-016). The tab shows "60 catches from 3 players" in place of "60 catches" from 2
+  players on (and keeps "60 catches" under "Only mine").
 - **Rationale**: the seed stores contributors per cell only; summing `k` over cells would count one player many
   times. The largest `k` is a lower bound and never counts anybody twice (FR-016).
 - **Alternatives rejected**: a per-map contributor count in the seed (a new seed field and harvest output for a
@@ -256,12 +265,20 @@ an API.
   - `UI/Settings.lua`: the "Shared database" subcategory page. `UI/CatchHere.lua`: the player count and the status
     line. `Commands.lua`: `share`. `Debug.lua`: the section. `Core.lua`: defaults, `ns.ShowPopup` gains an
     `onCancel` and an `onHide`.
-  - Tests: `share_test.lua` (protocol, convergence of three nodes over several paths, duplicates, absorbed units,
-    own ID, limits, eviction, crossing `SUM`s, pauses, setting off; and the game node through `load_addon`: the
-    `HELLO` triggers, the friend rotation, the pause messages, no names in saved data), `comm_test.lua` (framing,
-    reassembly out of order, pace, budget, back-off, result codes, refused paths, chat filter), extended `catchdb_test.lua` (CheckRecord, views with others, players) and
-    `catchhere_test.lua`; `tests/wow.lua` gains the addon message, Battle.net, friends, restriction and
-    `C_EncodingUtil` fakes; `harvest_test.mjs` gains an author file holding other players' records (US4).
+  - Tests (the store and the protocol were planned as one `share_test.lua`; they were split by subject):
+    - `share_store_test.lua`: the store (accept, replace, own ID, absorbed units, eviction) and the hashes.
+    - `share_protocol_test.lua`: several nodes over a fake network: convergence of three nodes over several paths,
+      duplicates, limits, crossing `SUM`s, pauses, timeouts, the friend rotation, the own record's offers.
+    - `share_game_test.lua`: the game node through `load_addon`: the `HELLO` triggers, a full exchange, the pause
+      messages, the setting, the state, `/okf share`, `/okf debug`, no names in saved data.
+    - `share_absorbed_test.lua` (an update whose seed absorbed network records), `share_load_test.lua` (20,000
+      stored places), `share_refused_test.lua` (an account the game refuses), and `share_notice_test.lua`,
+      `share_notice_busy_test.lua`, `share_notice_off_test.lua` (the one-time popup).
+    - `comm_test.lua` (framing, reassembly out of order, pace, budget, back-off, result codes, refused paths, chat
+      filter) and `comm_enum_test.lua` (result codes read from the enum); `settings_test.lua` (the page).
+    - Extended: `catchdb_test.lua` (CheckRecord, views with others, players) and `catchhere_test.lua`;
+      `tests/wow.lua` gains the addon message, Battle.net, friends, restriction and `C_EncodingUtil` fakes;
+      `harvest_test.mjs` gains an author file holding other players' records (US4).
 - **Rationale**: Principle VI (one job per module) and Principle V (the protocol is logic that can run without the
   game).
 - **Alternatives rejected**: two addon instances in one fengari state (the addon uses globals: saved variables,

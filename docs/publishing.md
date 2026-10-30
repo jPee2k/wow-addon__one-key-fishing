@@ -60,9 +60,9 @@ How a release is built and published, and what it is checked against.
 | Free of charge, no paid features | Yes, MIT licensed, nothing is locked |
 | Code is not obfuscated | Plain, readable Lua |
 | No in-game advertising or donation requests | None |
-| No collection of personal data, no traffic outside the game | None; saved variables stay on the player's computer. The catch data holds only counts and a grid-cell average position under a random account ID; it reaches the bundled database only when a player sends the saved file to the author outside the game |
+| No collection of personal data, no traffic outside the game | None; saved variables stay on the player's computer. The catch data holds only counts and a grid-cell average position under a random account ID. It travels only inside the game, as addon messages to addon users in the guild, the group and the friends list (one setting turns it off), and reaches the bundled database through `npm run harvest`: from the author's own client, which holds what the exchange brought in, or from a saved file a player sends the author outside the game |
 | No automation: every action needs a hardware event | Cast, hook, lure and open happen only on a key press, through a secure action button and override bindings. Nothing reacts to the bobber splash by itself, no sounds are monitored |
-| Must not hurt realm performance | Auction searches run one at a time, wait for the throttle and time out |
+| Must not hurt realm performance | Auction searches run one at a time, wait for the throttle and time out. The catch exchange sends through one queue: guild and group messages 2 s apart, whispers and Battle.net messages 0.5 s apart, at most 50 KB per hour (`Comm.BUDGET`); a throttled send backs off 2-8 s, a lockdown pauses it 60 s to 15 min, and nothing is sent in combat, instances, loading screens or while the game restricts addon messages |
 
 ## CurseForge packaging requirements
 

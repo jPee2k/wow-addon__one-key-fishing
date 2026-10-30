@@ -6,7 +6,12 @@ Run by the author before a release, on their PC.
 npm run harvest                                   all accounts found under WOW_ADDONS_DIR
 npm run harvest -- friend1.lua D:/x/friend2.lua   plus friends' saved files
 npm run harvest -- --reset 1415                   also reset map 1415 to the newest game version
+npm run harvest -- --synthetic 3000               a random seed of 3000 places for a load test (never commit it)
 ```
+
+`--synthetic <places>` reads no saved files and leaves `seed/contributions.json` alone: it writes a random
+`SeedData.lua` (epoch 0) for the load test of verification.md V8, to be restored with `git checkout
+OneKeyFishing/SeedData.lua`.
 
 ## Inputs
 
@@ -51,11 +56,16 @@ the report; the record's other builds are used.
 - Report on stdout:
 
 ```text
-Harvest: 3 file(s), 4 record(s) read, 1 rejected
-  rejected  friend2.lua k3m9... cell 1415:3:47: 900 catches in 120 s of casting
+Harvest: 3 file(s), 5 record(s) read, 1 rejected
+  skipped   k3m9q2xa cell 1415:3:47: 900 casts in 120 s of casting
+  rejected  friend2.lua p7d2...: seq 4000 is above the record's 310 casts
+Contributions: 4 (each <id>@<epoch> once, its newest seq)
 New places: 37   New items: 5   Places in total: 412
 Reset: map 1415 (data before 1.60.2 left out)
 Wrote OneKeyFishing/SeedData.lua: epoch 4, 212 KB
 ```
+
+A run whose sums come out unchanged ends with `Nothing new: OneKeyFishing/SeedData.lua stays at epoch 4` instead
+of the `Wrote` line.
 
 Exit code 0 when the files were written, 1 on a configuration error or when the size limit is exceeded.

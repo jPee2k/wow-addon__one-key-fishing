@@ -212,7 +212,9 @@ that the counts do not grow.
 **Data**
 
 - **FR-008**: A contribution MUST stay one account's catch data under its random anonymous identifier, as in part 1;
-  no character names, guild, exact positions, session times or gear MUST be sent or stored with it.
+  no character names, guild names, session times or gear MUST be sent or stored with it. Positions are sent only as
+  each cell's sums of the cast positions (`px`, `py`, part 1), whose average is the spot fished from in that cell
+  (for a cell of one cast, that cast's spot); the "Shared database" page MUST say so.
 - **FR-009**: Names of the players exchanged with MUST be kept only in memory for the current session, never in
   saved data.
 - **FR-010**: Data received twice, from several players or by several paths MUST be counted once; a newer version

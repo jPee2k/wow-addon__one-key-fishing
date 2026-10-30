@@ -121,7 +121,7 @@ Players who fish together see each other's catches right away, without waiting f
 2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
 3. The addon looks up every item you have ever caught, one at a time.
 
-The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 auctions are on sale (one seller's stack is not a market), the price is shown with **(few lots)** and the catch value uses the vendor price instead.
+The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 different offers are on sale (the auction house shows sellers at the same price as one offer; one seller's stack is not a market), the price is shown with **(few lots)** and the catch value uses the vendor price instead.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use scanned auction prices for catch value**.
 
@@ -221,7 +221,7 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 | `npm run check` | Lua syntax, globals, line length, locale keys, TOC, seed and version checks; lists open `VERIFY` markers |
 | `npm test` | run the tests in `tests/` (`npm test -- lures` runs only the matching files) |
 | `npm run harvest` | before a release: build the bundled catch database `OneKeyFishing/SeedData.lua` from the saved catch data of your accounts (and saved files given as arguments) |
-| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: changes show up after a `/reload` |
+| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: restart the game once, then changes show up after a `/reload` (a new file or a TOC change needs a restart) |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
 | `npm run build` | refuse uncommitted changes and open `VERIFY` markers, run the checks and tests, then package the last commit |

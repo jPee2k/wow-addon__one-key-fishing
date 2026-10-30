@@ -18,20 +18,21 @@ came by (a guild or group `HELLO` -> whisper to the sender).
 
 ## Messages
 
-Every message is at most 255 bytes, ASCII only. `<sid>` is a 2-character session ID (base32) chosen by the
-initiator; all session messages carry it.
+Every message is at most 255 bytes, ASCII only, and starts with the single letter of its type: `H` (`HELLO`), `S`
+(`SUM`), `D` (`DIFF`), `W` (`WANT`), `R` (`REC`), `B` (`BYE`); a message of any other type is ignored. `<sid>` is a
+2-character session ID (base32) chosen by the initiator; all session messages carry it right after the letter.
 
 | Message | Form | Sent by | Meaning |
 | --- | --- | --- | --- |
-| `HELLO` | `H <node> <epoch> <count> <hash>` | everyone | "I am here": node tag of this login (4 base32), seed epoch, records held, whole-database hash (7 base32) |
+| `HELLO` | `H <node> <epoch> <count> <hash>` | everyone | "I am here": node tag of this login (4 base32), seed epoch, units held (the numbers in decimal), whole-database hash (7 base32) |
 | `SUM` | `S<sid> <h1><h2>...<h32>` | initiator | the 32 bucket hashes, 7 base32 characters each, buckets in base32 order |
-| `DIFF` | `D<sid> <buckets> <entry> <entry> ...` | both | the buckets that differ (their base32 characters) and every `id.epoch.seq` the sender holds in them |
-| `WANT` | `W<sid> <id@epoch> ...` | both | the units the sender wants from the other side (may be empty) |
+| `DIFF` | `D<sid> <buckets> <entry> <entry> ...` | both | the buckets that differ (their base32 characters, one word) and every `id.epoch.seq` the sender holds in them (none when it holds nothing there) |
+| `WANT` | `W<sid> <id@epoch> ...` | both | the units the sender wants from the other side (may be empty: then just `W<sid>`) |
 | `REC` | `R<sid> <data>` | both | one record, `EncodeBase64(CompressString(SerializeCBOR(record)))` |
-| `BYE` | `B<sid> <reason>` | both | `sent` (I sent all you wanted, or all the limit allowed), `done` (the session is over), `busy`, `paused`, `off`, `limit` |
+| `BYE` | `B<sid> <reason>` | both | `sent` (I sent all you wanted, or all the limit allowed), `done` (the session is over), `busy`, `limit`; the receiver ends the session on any other reason |
 
 A message longer than 255 bytes is sent in parts: `<type><sid>#<msg>.<part>.<total> <chunk>`, where `<msg>` is a
-per-sender counter (base32, 1-2 characters) and parts are numbered from 1. The receiver joins the chunks by part
+per-sender counter (base32, always 2 characters) and parts are numbered from 1. The receiver joins the chunks by part
 number (Battle.net delivery is unordered), keeps at most 64 KB of parts per peer and drops a message whose parts
 did not get a new part for 15 s (a 32 KB record takes over a minute at the whisper pace). `HELLO` and `BYE` always fit one message.
 
@@ -44,8 +45,9 @@ B: the hash differs, B is not paused, not in a session, within budget, and the c
    (a new session at least 2 min after the last one started; with A at most once per 10 min in a group,
    30 min otherwise) -> waits a random 2-20 s, re-checks
 B -> A  SUM
-A -> B  BYE busy | paused | off | limit          (A in another session or answered B's last SUM with a DIFF
-                                                  less than 8 min ago, paused, sharing off, over budget)
+A -> B  BYE busy | limit                         (A in another session or answered B's last SUM with a DIFF
+                                                  less than 8 min ago; over budget). A paused node or one with
+                                                  sharing off drops the SUM unanswered: B times out
 A -> B  BYE done                                 (all bucket hashes equal: both refresh `seen` of every unit)
 A -> B  DIFF <differing buckets> <A's entries>   (equal buckets: A refreshes `seen` of their units)
 B -> A  DIFF <same buckets> <B's entries>        (B refreshes `seen` of units equal on both sides)
@@ -104,7 +106,9 @@ A path (`guild`, `group`, `whisper`, `bnet`) that the game refuses 5 times in a 
 throttle codes, `AddOnMessageLockdown`, `TargetOffline`, `NotInGuild` and `NotInGroup`) is left out until logout; a
 success resets the count. A refusal of a whisper or Battle.net message counts once for that player: the rest queued
 to them is dropped and they are treated as offline (`TargetOffline`: the session with them ends, no session with
-them for 30 min), so one unreachable player, whatever code the game reports, never costs more than one refusal.
+them for 30 min), so one unreachable player, whatever code the game reports, never costs more than one refusal. A
+refused `HELLO` to a friend (a greeting) costs none, so a few odd names on the friends list cannot leave the
+whisper or Battle.net path out.
 Peers reached only by a left-out path are not contacted. With every path left out the
 exchange is unavailable until logout. The state also says unavailable while nothing went out since the login and
 every path tried with more than a greeting is left out (a Trial account in a guild never tries the other paths);

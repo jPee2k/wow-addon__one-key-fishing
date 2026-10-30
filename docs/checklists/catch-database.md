@@ -67,4 +67,5 @@ facts", and the `VERIFY` markers in the code are removed only after that.
 3. Run the spike part of `docs/checklists/catch-exchange.md` (the catch exchange, part 2) in the same session,
    then remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua` and
    `tests/spike_test.lua`.
-4. Fish, run `npm run harvest` for the first real seed, commit it, and release (`docs/publishing.md`).
+4. Fish, run `npm run harvest` for the first real seed and commit it. The release waits for all four parts of the
+   shared catch database: release 1.2.0 (`docs/shared-db-plan.md` "Release 1.2.0", `docs/publishing.md`).

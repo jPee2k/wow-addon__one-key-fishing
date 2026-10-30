@@ -64,8 +64,9 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 - **A cast across a /reload**: the place is read when the cast is picked up, like any cast start; nothing is counted
   at the start, so its catch or miss is recorded once and `t` runs from the pickup. (Stats needs its `countedCast`
   check only because it counts casts at the start.)
-- **`seq`**: bumped on the first change at least 60 s after the previous bump and on logout, so `harvest` can keep
-  the newest version of a record.
+- **`seq`**: bumped on the first change at least 60 s after the previous bump; a change that waits is bumped at
+  logout, on a roll and before the record goes to a peer (`CatchDB.FlushSeq`), so `harvest` can keep the newest
+  version of a record.
 - **Alternatives rejected**: extending the Stats buckets (per character, keyed by localized names, would mix two
   responsibilities); one table for "mine" and the contribution (the contribution is reset when absorbed into a
   seed, which would empty "Only mine").
@@ -75,8 +76,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 - **Decision**: `OneKeyFishing/SeedData.lua` defines `ns.SeedData = { epoch, built, build, cells, absorbed,
   resets }` (contracts/seed-data.md). The tab shows `seed + own contribution`, where the own contribution counts
   unless the seed absorbed it:
-  - If `seed.absorbed` lists `myID` with an epoch >= the record's epoch, the record is already in the seed: it is
-    replaced by an empty record with `epoch = seed.epoch` (once, at login).
+  - If `seed.absorbed[myID]` names the record's epoch, the seed holds the record (in part or whole): at login it
+    rolls to a new empty record (see the amendment below for the final rule).
   - Otherwise the record counts in full.
   `mine` is never touched, so "Only mine" keeps the full history.
 - **Rationale**: FR-019 (never twice), also for the author whose data went into the seed; the loss is limited to
@@ -90,10 +91,14 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   that may be older than their owners'. A record the seed names rolls instead of starting over: kept under
   `"<myID>@<epoch>"` when it is newer than what the seed holds, so its later catches reach the next harvest instead
   of being lost; it also rolls at 500 places, so a peer always takes it (data-model.md, "Rolling the own record").
+  The new record's epoch is the seed's epoch, or one above the highest epoch of the own ID still held when that is
+  higher, so every unit of the own ID is new (`NextEpoch` in `CatchDB.lua`). This replaces the "empty record with
+  `epoch = seed.epoch`" of the original decision.
 
 ## R5. The harvest command
 
-- **Decision**: `tools/harvest.mjs`, `npm run harvest [-- <file>...] [--reset <mapID>]`:
+- **Decision**: `tools/harvest.mjs`, `npm run harvest [-- <file>...] [--reset <mapID>]` (plus
+  `--synthetic <places>`, a random seed for the load test of verification.md V8, never committed):
   1. Finds `WTF/Account/*/SavedVariables/OneKeyFishing.lua` two levels above `WOW_ADDONS_DIR` (`addonsDir()` from
      `tools/addon.mjs`), plus the files given as arguments.
   2. Reads each file with `luaparse` (already a dev dependency) and converts only table constructors to JS; the
@@ -103,7 +108,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
      stored one only with a higher `seq`, so the same input never counts twice; a run that changes no sums
      leaves the seed and its epoch alone.
   5. Sums all stored contributions (dropping old-build cells of reset maps) into `OneKeyFishing/SeedData.lua` with
-     `epoch + 1`, the `absorbed` map `id -> epoch`, sorted keys and lines up to 120 characters.
+     the epoch one above the higher of the store's and the current seed's, `absorbed[id][epoch] = seq` for every
+     stored unit, sorted keys and lines up to 120 characters.
   6. Prints the report; stops with an error instead of writing a file over 1 MB.
 - **Rationale**: one command, no manual steps (SC-006); keeping the absorbed contributions in the repository makes
   the merge idempotent (the same contribution is replaced, not added) and lets a reset recompute the sums.
@@ -114,13 +120,13 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 ## R6. Robust auction price
 
 - **Decision**: In `Auction.lua`, on the result event, sort the loaded results by unit price (the order is not
-  documented, R11), walk them cheapest first and average the unit
-  price of the first 20% of all listed pieces (`ceil(total * 0.2)`, at least 1); `total` from
-  `GetCommoditySearchResultsQuantity` when available, else the loaded quantities. Non-commodity results use
-  `buyoutAmount / quantity`, skipping bid-only results. Stored as `prices[itemID] = { price, quantity, time }`.
-  `Prices.Get` (value sums) returns the vendor price on few lots (`quantity < 5` or `lots < 3`, `lots` = the
-  result rows on sale, i.e. price points, so one seller's stack alone is not a market); `Prices.GetAuction` returns the price and
-  a "few lots" flag for display. Prices saved by 1.0.0 have no `quantity` and are used as they are until rescanned.
+  documented, R11), walk them cheapest first and average the unit price of the first 20% of all listed pieces
+  (`ceil(total * 0.2)`, at least 1); `total` from `GetCommoditySearchResultsQuantity` when available, else the loaded
+  quantities. Non-commodity results use `buyoutAmount / quantity`, skipping bid-only results. Stored as `prices[itemID]
+  = { price, quantity, lots, time }`. `Prices.Get` (value sums) returns the vendor price on few lots (`quantity < 5` or
+  `lots < 3`, `lots` = the result rows on sale, i.e. price points, so one seller's stack alone is not a market);
+  `Prices.GetAuction` returns the price and a "few lots" flag for display. Prices saved by 1.0.0 have no `quantity` and
+  are used as they are until rescanned.
 - **Rationale**: FR-025 to FR-027; a single cheap or expensive lot moves the average of the cheapest 20% very little
   (SC-005).
 - **Alternatives rejected**: the most listed price (unstable when sellers undercut by a copper); the median of all
@@ -133,9 +139,9 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab`, guarded with a fallback to `ns.CreateButton`). Today's
   content moves into a child frame; the new panel lives in `UI/CatchHere.lua` (loaded before `StatsFrame.lua`),
   which `StatsFrame` creates at runtime. The last tab is saved in `OneKeyFishingDB.statsTab`.
-- **Panel**: a header (place name built from `C_Map.GetMapInfo(mapID).name` plus `GetSubZoneText()`, whether the
-  numbers are for the spot or the whole map, "N catches", the miss rate), two filter buttons opening menus through
-  `MenuUtil` (as the language setting does), and up to 16 item rows sorted by chance (icon, name, chance or
+- **Panel**: a header (place name from `Stats.PlaceName(mapID)`, "Zone - Subzone" as the statistics tab shows it,
+  whether the numbers are for the spot or the whole map, "N catches", the miss rate), two filter buttons opening menus
+  through `MenuUtil` (as the language setting does), and up to 16 item rows sorted by chance (icon, name, chance or
   "little data", average pieces, price with a "few lots" mark), plus "and N more".
 - **Refresh**: `CatchDB.GetVersion()` is bumped on every change; the existing 1 s tick redraws the panel when the
   version, the current place key or the filters changed, and on `PRICES_CHANGED` / `GET_ITEM_INFO_RECEIVED`.

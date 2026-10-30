@@ -63,7 +63,7 @@ After the reload, everything below is in Ukrainian:
 - [ ] Minimap button tooltip and right-click menu.
 - [ ] Item tooltip line (fishing gear / Alt+Click hint).
 - [ ] Chat messages (for example `/okf toggle` twice: fishing mode on / off).
-- [ ] `/okf` help: command descriptions translated, command names unchanged.
+- [ ] `/okf` help: command names and descriptions stay in English (they are not translated on purpose).
 - [ ] Options -> Keybindings -> AddOns -> OneKeyFishing: both binding names.
 
 ## 4. The choice is kept

@@ -11,7 +11,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
     globals when it is opened).
   - `ns.RegisterCommand(name, description, fn)` takes the description as a function returning the text
     (`function() return L["..."] end`), called when the help is printed. Five commands: scan, debug, toggle,
-    config, stats.
+    config, stats. (Superseded later: every command is now declared in `Commands.lua` (`ns.COMMANDS`), and
+    the descriptions and the `/okf` help are English on every client, constitution Principle II.)
   - `UI/Settings.lua` `TOGGLES`, `UI/StatsFrame.lua` `ROWS`, `UI/Indicator.lua` `LABELS`, `Skill.lua`
     `RANK_NAMES` / `NEXT_RANK`: built by a function on first use instead of at file load.
 - **Rationale**: WoW loads saved variables after all addon files have run, just before `ADDON_LOADED`, so the
@@ -47,7 +48,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 
 - **Decision**: `ns.ResolveLanguage(preference, clientLocale)`:
   1. preference is a registered code → that code;
-  2. otherwise (`"auto"`, or a code no longer shipped) → `clientLocale` if registered;
+  2. otherwise (`"auto"`, or a code no longer shipped) → `clientLocale` if registered, after mapping the
+     client variants of a shipped language (`enGB` → `enUS`, `ptPT` → `ptBR`);
   3. otherwise → `"enUS"`.
   Ukrainian has no client locale, so it can only come from step 1. `ruRU` is not registered and falls to
   English. Lookups go: chosen translation → English key.
