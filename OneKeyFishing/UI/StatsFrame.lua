@@ -26,7 +26,7 @@ local pages
 
 local FormatTime = ns.Stats.FormatTime -- Stats.lua loads earlier in the TOC
 local FormatShortTime = ns.Stats.FormatShortTime
-local CreateButton = ns.CreateButton -- Core.lua
+local CreateButton = ns.CreateButton -- UI/Widgets.lua
 
 local function PerHour(amount, seconds)
     if seconds < 60 then
@@ -80,7 +80,7 @@ local function BuildRows()
     }
 end
 
-local CreateText = ns.CreateText -- Core.lua
+local CreateText = ns.CreateText -- UI/Widgets.lua
 
 local function ShowRowTooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")

@@ -29,7 +29,7 @@ local function OpenMenu(owner)
             root:CreateButton(L["Pin: next Fishing rank"], ns.Skill.PinNextRank)
         end
         root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)
-        root:CreateButton(L["Debug report"], ns.ShowReport)
+        root:CreateButton(L["Debug report"], ns.ShowDebugReport)
     end)
 end
 

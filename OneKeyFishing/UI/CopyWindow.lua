@@ -72,3 +72,9 @@ function ns.ShowCopyWindow(title, text)
     window.edit:SetCursorPosition(0)
     window:Show()
 end
+
+-- The debug report (Core/Debug.lua) in the copy window: the /okf debug command, the minimap menu and the settings
+-- page all show it this way.
+function ns.ShowDebugReport()
+    ns.ShowCopyWindow(ns.Debug.Report())
+end

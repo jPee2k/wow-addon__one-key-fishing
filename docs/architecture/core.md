@@ -64,10 +64,8 @@ frame.
 - Helpers: `ns.ShowPopup` (two-button popups; the default buttons are the addon's `L["Yes"]` / `L["No"]`, never
   the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix), `ns.ReportSection` (a titled block
   of the debug report). The frame helpers (`ns.CreateButton`, `ns.CreateText`, `ns.ItemDisplay`,
-  `ns.ShowItemTooltip`, `ns.OpenRadioMenu`) are the view's, in `UI/Widgets.lua` ([ui.md](ui.md)).
+  `ns.ShowItemTooltip`, `ns.OpenRadioMenu`, `ns.KeyText`) are the view's, in `UI/Widgets.lua` ([ui.md](ui.md)).
 - `ns.FormatDecimal(value, digits)`: the client's `DECIMAL_SEPERATOR`, the same as gold amounts.
-- `ns.KeyText(binding, short, unbound, separator)`: every key bound to a binding, in the game's order, joined
-  with " / "; the minimap tooltip, the settings key line and the indicator use it.
 - `ns.TallGlyphs()`: the addon is in Korean or Chinese on a client in another language. The minimap and Language
   tooltips then do not wrap and end with a blank line, because the game measures the lines with the client's
   shorter font; the other tooltips do not use it yet (spec 007 research R9).
@@ -134,7 +132,8 @@ Shared data and helpers:
   interact target is the bobber).
 - Bags: `ns.ForEachBagItem`, the shared bag iterator.
 - Names: `ns.WithRealm(name)` and `ns.SameCharacter(a, b)` (character names with their realm, as the exchange
-  addresses them); `ns.CountKeys(tbl)`.
+  addresses them); `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as whole percent); `ns.ItemIDFromLink(text)`
+  (the item ID in an item link).
 - Text: `ns.FoldCase(text)` (lower case for ASCII, Latin-1 Supplement and Cyrillic by UTF-8 byte patterns, the same
   in 5.1 and 5.3), `ns.SearchKey(text)` (folds after the game's `CaseAccentInsensitiveParse` when present) and
   `ns.CompareText(a, b)` (`strcmputf8i` when present, else the search keys): the catalog's search and order, and

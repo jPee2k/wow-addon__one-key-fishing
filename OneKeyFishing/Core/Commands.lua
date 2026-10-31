@@ -8,7 +8,7 @@ ns.COMMANDS = {
         run = function(rest) ns.StatsFrame.OpenCatalog(ns.Catalog.CommandArg(rest)) end },
     { name = "config", description = "open the settings", run = function() ns.SettingsUI.Open() end },
     { name = "debug", description = "show a report to copy into a bug report",
-        run = function() ns.ShowCopyWindow(ns.Debug.Report()) end },
+        run = function() ns.ShowDebugReport() end },
     { name = "scan", description = "scan auction prices of caught items (auction house must be open)",
         run = function() ns.Auction.Scan() end },
     { name = "share", description = "show the state of the shared catch database",

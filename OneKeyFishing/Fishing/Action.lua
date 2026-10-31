@@ -106,6 +106,15 @@ local function BindInteract()
     ns.Fire("ACTION_STATE", "hook")
 end
 
+-- The binding that fits the cast state: the hook while channeling, the cast otherwise.
+local function Bind()
+    if channeling then
+        BindInteract()
+    else
+        BindCast()
+    end
+end
+
 -- Returns false (with a chat hint) when the key cannot work yet.
 function Action.Enable()
     local spellID = ns.GetFishingSpellID()
@@ -130,11 +139,7 @@ function Action.Enable()
         end
     end
     -- `channeling` is left to CHANNEL_STOP: re-entering during a cast must still bind the hook.
-    if channeling then
-        BindInteract()
-    else
-        BindCast()
-    end
+    Bind()
     return true
 end
 
@@ -164,17 +169,13 @@ function Action.Rebind()
         return
     end
     RefreshKeys()
-    if channeling then
-        BindInteract()
-    else
-        BindCast()
-    end
+    Bind()
 end
 
 -- Our own overrides fire this event too, so rebind only when the keys really changed.
 ns.RegisterEvent("UPDATE_BINDINGS", function()
     if enabled and not InCombatLockdown() and RefreshKeys() then
-        Action.Rebind()
+        Bind()
     end
 end)
 

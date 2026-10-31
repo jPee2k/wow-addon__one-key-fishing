@@ -1,4 +1,4 @@
--- ns.KeyText (Core.lua): every key bound to an action, the same everywhere (spec 007, User Story 4).
+-- ns.KeyText (UI/Widgets.lua): every key bound to an action, the same everywhere (spec 007, User Story 4).
 -- Players bind a punctuation key once per keyboard layout, so two keys per action are common.
 
 local recorded = {} -- the minimap tooltip's lines

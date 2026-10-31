@@ -96,6 +96,8 @@ local function CheckAreas(areas, casts)
     return true
 end
 
+local POSITION_FIELDS = { "px", "py" }
+
 local function CheckCell(cell)
     if type(cell) ~= "table" or not (IsCount(cell.c) and IsCount(cell.m) and IsCount(cell.t)) then
         return false, "not a cell"
@@ -107,7 +109,7 @@ local function CheckCell(cell)
     if (cell.px == nil) ~= (cell.py == nil) then
         return false, "px and py come together"
     end
-    for _, name in ipairs({ "px", "py" }) do
+    for _, name in ipairs(POSITION_FIELDS) do
         if cell[name] ~= nil and not (IsCount(cell[name]) and cell[name] <= 1000 * casts) then
             return false, name .. " is out of range"
         end

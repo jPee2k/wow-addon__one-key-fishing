@@ -285,3 +285,13 @@ function ns.ForEachBagItem(fn)
         end
     end
 end
+
+-- A share (0..1) as whole percent: "45%".
+function ns.Percent(value)
+    return ("%d%%"):format(math.floor(value * 100 + 0.5))
+end
+
+-- The item ID of an item link (or any text holding one), or nil.
+function ns.ItemIDFromLink(text)
+    return type(text) == "string" and tonumber(text:match("|Hitem:(%d+)")) or nil
+end

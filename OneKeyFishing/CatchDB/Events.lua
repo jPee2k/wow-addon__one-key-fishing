@@ -34,17 +34,15 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     -- lacks goes on to the next harvest. shared.mine keeps the lifetime counts either way.
     elseif CatchDB.AbsorbedSeq(shared.myID, record.epoch) then
         Roll()
+    -- The version chain of the live record (specs/004-public-channel-sync, data-model.md): resumed, or made for
+    -- a record from before part 3 (no proof published yet, so a chain can start at its seq); a record whose
+    -- published proofs lost their chain, or whose seq is past a chain's top, starts over.
+    elseif OwnChain(record) then
+        StartMarks()
+    elseif record.proof == nil and record.seq < CHAIN_LENGTH then
+        NewChain(record.epoch)
     else
-        -- The version chain of the live record (specs/004-public-channel-sync, data-model.md): resumed, or made for
-        -- a record from before part 3 (no proof published yet, so a chain can start at its seq); a record whose
-        -- published proofs lost their chain, or whose seq is past a chain's top, starts over.
-        if OwnChain(record) then
-            StartMarks()
-        elseif record.proof == nil and record.seq < CHAIN_LENGTH then
-            NewChain(record.epoch)
-        else
-            Roll()
-        end
+        Roll()
     end
     P.version = P.version + 1 -- the seed or the record may be new
     P.others, P.frozen, P.ownItems, P.ownIndex, P.poolData = nil, nil, nil, nil, nil

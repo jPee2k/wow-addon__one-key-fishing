@@ -77,3 +77,22 @@ function ns.OpenRadioMenu(owner, choices, isSelected, choose)
         end
     end)
 end
+
+-- Every key bound to a binding, readable, joined with " / " (players bind a punctuation key once per keyboard
+-- layout, so two keys are common). The order is the game's (GetBindingKey), as in its Keybindings columns; the game
+-- may swap the two on a reload. It is the same wherever the keys are shown. `short` asks the game for the short key
+-- names (small labels); `unbound` is the text without a key, the red "not bound" by default; `separator`
+-- joins two keys, " / " by default.
+function ns.KeyText(binding, short, unbound, separator)
+    local texts, seen = {}, {}
+    for _, key in ipairs({ GetBindingKey(binding) }) do
+        if not seen[key] then
+            seen[key] = true
+            table.insert(texts, GetBindingText(key, short))
+        end
+    end
+    if #texts == 0 then
+        return unbound or ("|cffff5555" .. ns.L["not bound"] .. "|r")
+    end
+    return table.concat(texts, separator or " / ")
+end

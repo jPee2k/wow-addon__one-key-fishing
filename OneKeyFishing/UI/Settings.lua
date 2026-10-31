@@ -64,9 +64,9 @@ local function CreateCheckbox(parent, label, getValue, setValue)
     return checkbox
 end
 
-local CreateButton = ns.CreateButton -- Core.lua
+local CreateButton = ns.CreateButton -- UI/Widgets.lua
 
-local ItemDisplay = ns.ItemDisplay -- Core.lua
+local ItemDisplay = ns.ItemDisplay -- UI/Widgets.lua
 
 ---------------------------------------------------------------------------
 -- Language
@@ -231,7 +231,7 @@ local function CreateMainPage()
     actionsHeader:SetPoint("TOPLEFT", cameraLabel, "BOTTOMLEFT", 0, -18)
     local toggleButton = CreateButton(page, L["Toggle fishing mode"], 180, function() ns.Mode.Toggle() end)
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
-    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowReport() end)
+    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowDebugReport() end)
     reportButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
     local statsButton = CreateButton(page, L["Open statistics"], 140, function() ns.StatsFrame.Toggle() end)
     statsButton:SetPoint("LEFT", reportButton, "RIGHT", 8, 0)

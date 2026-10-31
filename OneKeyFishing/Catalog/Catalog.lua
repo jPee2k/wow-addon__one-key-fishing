@@ -28,9 +28,7 @@ function Catalog.GetVersion()
     return version
 end
 
-local function FilterKey(filter)
-    return tostring(filter.range) .. "|" .. filter.source .. "|" .. (filter.water or "all")
-end
+local FilterKey = ns.CatchDB.FilterKey -- the same key the views are cached by
 
 local DEFAULT_KEY = FilterKey(DEFAULT_FILTER)
 
@@ -314,9 +312,10 @@ local spots = {} -- "<itemID>|<mapID>|<filter key>" -> { cells = the QueryCells 
 -- spot's), itemCatches, players, littleData, ranges, pin }. Summed when a zone is expanded, kept until the map's
 -- stamp moves (CatchDB.QueryCells keeps its views as long).
 function Catalog.Spots(itemID, mapID, filter)
-    Freshen(IndexFor(filter))
-    local key = itemID .. "|" .. mapID .. "|" .. FilterKey(filter)
-    local cells = ns.CatchDB.QueryCells(mapID, IndexFor(filter).filter)
+    local index = IndexFor(filter)
+    Freshen(index)
+    local key = itemID .. "|" .. mapID .. "|" .. index.key
+    local cells = ns.CatchDB.QueryCells(mapID, index.filter)
     local cached = spots[key]
     if cached and cached.cells == cells then
         return cached.rows
@@ -378,7 +377,7 @@ function Catalog.PinTarget(mapID, spot)
 end
 
 -- "45, 72": a spot's point in whole percent of the map, as the game's map coordinates read.
-local function Coordinates(point)
+function Catalog.Coordinates(point)
     return ("%d, %d"):format(math.floor(point.x * 100 + 0.5), math.floor(point.y * 100 + 0.5))
 end
 
@@ -390,9 +389,9 @@ function Catalog.SpotName(spot)
     end
     local area = spot.area and C_Map.GetAreaInfo(spot.area)
     if type(area) == "string" and area ~= "" then
-        return L["%s (%s)"]:format(area, Coordinates(spot.point))
+        return L["%s (%s)"]:format(area, Catalog.Coordinates(spot.point))
     end
-    return Coordinates(spot.point)
+    return Catalog.Coordinates(spot.point)
 end
 
 local zoneNames = {} -- map ID -> its name, for the session
@@ -420,13 +419,17 @@ end
 
 local TOOLTIP_PLACES = 3 -- zones in an item tooltip, items in the minimap tooltip
 
-local function Percent(value)
-    return ("%d%%"):format(math.floor(value * 100 + 0.5))
+-- "N catches from K players" from 2 players on (part 3, FR-025), else "N catches".
+function Catalog.CatchesText(catches, players)
+    if players >= 2 then
+        return (L["%d catches from %d players"]):format(catches, players)
+    end
+    return (L["%d catches"]):format(catches)
 end
 
 -- A chance (or "Little data") with the players behind it from 2 on (part 3, FR-025).
 local function ChanceText(chance, littleData, players)
-    local text = littleData and L["Little data"] or Percent(chance)
+    local text = littleData and L["Little data"] or ns.Percent(chance)
     return players >= 2 and (L["%s (%d players)"]):format(text, players) or text
 end
 
@@ -472,12 +475,10 @@ function Catalog.MinimapLines()
         local entry = NameOf(item.itemID)
         if entry.known and not IsPoor(entry) then
             table.insert(items, { name = entry.name, right = view.littleData and L["Little data"]
-                or Percent(item.chance) })
+                or ns.Percent(item.chance) })
         end
     end
-    local footer = view.players >= 2 and (L["%d catches from %d players"]):format(view.catches, view.players)
-        or (L["%d catches"]):format(view.catches)
-    return { items = items, footer = footer }
+    return { items = items, footer = Catalog.CatchesText(view.catches, view.players) }
 end
 
 -- The item IDs of the default index whose name contains the text (any letter case), sorted by name.
@@ -495,7 +496,7 @@ end
 
 -- What /okf catalog passes on: the item ID of an item link, nil for no text, else the text.
 function Catalog.CommandArg(rest)
-    local itemID = tonumber((rest or ""):match("|Hitem:(%d+)"))
+    local itemID = ns.ItemIDFromLink(rest)
     if itemID then
         return itemID
     end

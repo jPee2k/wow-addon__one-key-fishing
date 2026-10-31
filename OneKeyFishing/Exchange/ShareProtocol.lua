@@ -196,7 +196,8 @@ function Handlers.D(self, address, _, _, text)
     for i = 2, #words do
         local id, epoch, seq = words[i]:match("^([a-z2-7]+)%.(%d+)%.(%d+)$")
         if id and #id == ns.CatchDB.ID_LENGTH and buckets[BucketIndex(id)] then
-            local unit, mine = id .. "@" .. epoch, summary.units[id .. "@" .. epoch]
+            local unit = id .. "@" .. epoch
+            local mine = summary.units[unit]
             seq = tonumber(seq)
             if mine == seq then
                 equal[unit] = true
