@@ -83,7 +83,8 @@ OneKeyFishing/
 │   ├── enUS.lua               # English list only (engine moves out); registers "English"; new texts
 │   ├── deDE.lua esES.lua esMX.lua frFR.lua ukUA.lua koKR.lua ptBR.lua zhTW.lua zhCN.lua   # NEW
 ├── Core.lua                   # settings.language default; resolve + SetLanguage in ADDON_LOADED;
-│                              # binding names set there; RegisterCommand descriptions as functions;
+│                              # binding names set there; RegisterCommand descriptions as functions
+│                              # (superseded: commands moved to Commands.lua with English descriptions);
 │                              # ns.CreateButton grows to its text
 ├── Skill.lua                  # rank tables built at runtime
 ├── Debug.lua                  # report: preference, effective language, client locale

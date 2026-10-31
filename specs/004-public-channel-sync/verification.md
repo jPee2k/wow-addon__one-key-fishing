@@ -4,10 +4,11 @@ The game cannot be played before its launch on 2026-11-04, so part 3 is built on
 afterwards, as parts 1 and 2 are (`specs/002-local-catch-db/verification.md` V1-V9,
 `specs/003-guild-group-sync/verification.md` V10-V18; the IDs continue because the markers share the code). The
 code that depends on an item carries a `-- VERIFY(Vn): ...` comment; `npm run check` lists the open markers and
-`npm run build` (release) refuses to package while any is left.
+`npm run build` (release) refuses to package while any is left. V20, V28 and V29 have no marker: nothing in the
+code depends on V20, and the other two are the week of play and the whole checklist, not enforced by the build.
 
-Closing an item: run the step in game (`/okf spike` prints the facts; steps 6 and 7 of its chat-channel section and
-most of the feature checklist need a second player, the lock test a third), record the answer in
+Closing an item: run the step in game (`docs/checklists/spike.md` part 3 prints the facts; its steps C6 and C7 and
+most of the feature checklist `docs/checklists/public-channel.md` need a second player, the lock test a third), record the answer in
 `docs/forever-api.md`, adjust the code if the answer differs from the assumption, remove its markers, and tick it
 here.
 
@@ -27,6 +28,6 @@ protections (V26, V27) are closed as usual.
 | V26 | The game has the `bit` library with LuaBitOp results, `ns.SHA256("abc")` gives the known digest, and 64 proof steps take under 5 ms | `bit.band`, `bxor`, `rshift`, `lshift`, `bnot` called over 300 times in the export; signedness not documented, so `ns.SHA256` reduces every result modulo 2^32; SHA-256 test vectors and Node's digest in the tests (research R9) | Without `bit`: SHA-256 in plain arithmetic (slower: fewer `PROOF_STEPS` per frame, marks every 32 links) | Spike step 8 | Built, waiting for launch |
 | V27 | `C_Item.GetItemInfoInstant` returns nothing for an item the client does not know yet; asking the game to load it (`C_Item.RequestLoadItemDataByID`, `ITEM_DATA_LOAD_RESULT`) either brings its name and icon or keeps it unknown until the player meets it; the question mark icon exists | `GetItemInfoInstant` (may return nothing), `DoesItemExistByID`, `RequestLoadItemDataByID` and `ITEM_DATA_LOAD_RESULT` in the export (research R8); nothing about hidden items in the docs; the author's note that Forever reveals some items only when found | If items never become known before they are met, the row stays "Unknown item", as designed; another icon if the question mark is missing | Spike step 9; checklist step 9 | Built, waiting for launch |
 | V28 | A busy channel (hundreds of `HELLO`s per hour) and floods from strangers keep the longest exchange step under 5 ms, and a week of play brings no throttle error and no chat line (SC-004, SC-005) | The simulation (`channel_sim_test.lua`) and the load test of part 2 | Lower `CHANNEL_TARGET`, longer rounds, fewer channel peers kept | Checklist step 10 | Built, waiting for launch |
-| V29 | The whole in-game checklist of the feature passes, with two or three accounts | None | Fix and re-run | quickstart.md "In game: the feature" | Built, waiting for launch |
+| V29 | The whole in-game checklist of the feature passes, with two or three accounts | None | Fix and re-run | `docs/checklists/public-channel.md` | Built, waiting for launch |
 
 Evidence found before launch (research.md) lowers the risk but does not close an item: only the game does.

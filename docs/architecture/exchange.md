@@ -3,7 +3,7 @@
 Comm.lua (the transport), Channel.lua (the hidden public channel) and Share.lua (the protocol, other players' records
 and the state). The spec, model and contracts are in `specs/003-guild-group-sync/` (`data-model.md`,
 `contracts/sync-protocol.md` for the wire format, `contracts/share-api.md`) and, for the public channel and the
-protections of part 3, in `specs/004-public-channel-sync/`; the in-game checklists are
+protections against strangers, in `specs/004-public-channel-sync/`; the in-game checklists are
 [catch-exchange.md](../checklists/catch-exchange.md) and [public-channel.md](../checklists/public-channel.md).
 
 ## Comm.lua
@@ -35,7 +35,7 @@ The transport of the catch exchange; it knows nothing about records.
 - A `CHAT_MSG_SYSTEM` filter (`ChatFrameUtil.AddMessageEventFilter`) hides "No player named" for names whispered
   in the last 10 s.
 - Names live only in the queue, the part buffers and that list.
-- The channel path (part 3): `Comm.ChannelBroadcast` queues a `HELLO` with chat type `CHANNEL` only while
+- The channel path: `Comm.ChannelBroadcast` queues a `HELLO` with chat type `CHANNEL` only while
   Channel.lua is in its channel, at the broadcast pace; the channel's number is read when the message goes out. A
   `CHANNEL` message counts only from one of `Channel.NAMES` (the `name` argument, else `target`), as
   `via = "channel"`. Two refusals in a row (`InvalidChannel`, `GeneralError`, any result but a success, a
@@ -49,7 +49,7 @@ The transport of the catch exchange; it knows nothing about records.
 
 ## Channel.lua
 
-The hidden public channel (part 3); it knows nothing about records.
+The hidden public channel; it knows nothing about records.
 
 - Names: `OneKeyFishingShare`, then `OneKeyFishingShare2`..`6`, walked in this order by every client. The switch
   `Channel.AVAILABLE` takes the channel out of a release whose spike failed (V19).
@@ -78,7 +78,7 @@ The hidden public channel (part 3); it knows nothing about records.
 
 `Share.Store` keeps received records in `shared.records` under `<id>@<epoch>` with `seen`:
 
-- only the part 1 fields; a higher `seq` replaces;
+- only the record fields of `specs/002-local-catch-db/data-model.md`; a higher `seq` replaces;
 - the own ID and versions the seed holds whole are refused; a newer version of a unit it holds in part is kept and
   passed on;
 - those held whole and damaged ones are deleted, and above 20,000 places the oldest `seen` goes (never one of the
@@ -86,7 +86,7 @@ The hidden public channel (part 3); it knows nothing about records.
 - `SHARED_DATA_CHANGED` carries the changed keys so CatchDB updates its one index of other players' cells in place,
   and the store, so a protocol node's cached summary (versioned per store) and CatchDB (only the game's store) know
   whose data changed.
-- Part 3: a record needs a proof (`CatchDB.CheckRecord`), and a newer version of a held unit must continue its chain
+- A record needs a proof (`CatchDB.CheckRecord`), and a newer version of a held unit must continue its chain
   (`CatchDB.CheckVersion`, walked in steps of 32 links by the merge, or at once with `verified` unset). A record of
   an ID in the seed's `blocked` is refused without blame, deleted at login, not wanted and not offered; the own
   blocked record still counts locally. Eviction goes by class (half the places saturated in the seed, stale over 60
@@ -122,26 +122,26 @@ The hidden public channel (part 3); it knows nothing about records.
 - A session that moved nothing is not repeated with that peer until one of the two hashes changes.
 - The records of the own ID (the live one and those a roll kept) are offered only when a peer would take them
   (`node:OwnData`: checked and encoded once per version; never while the proof is not ready or the ID is blocked).
-- The public channel (part 3, research R5 of `specs/004-public-channel-sync/`):
+- The public channel (research R5 of `specs/004-public-channel-sync/`):
   - the game node sends a channel `HELLO` 30-90 s after joining, then every 30-50 min, and 5-30 s after a move to
     a fallback; from the channel only whole `HELLO`s are handled, sessions go by whisper;
   - a stranger's channel `HELLO` starts a session with the chance `min(1, 2 / H)`, `H` being the channel
     `HELLO`s heard in the last 40 min (about the number of clients), and not while a guild, group or friend peer
     heard in the last 15 min is about to get one (its start armed, its busy retry due, or waiting for a session or a
     start to end);
-  - near peers keep the part 2 timing: one that answered `BYE busy` is tried once more 120-180 s later, and one
+  - near peers (guild, group, friends) keep the timing above: one that answered `BYE busy` is tried once more 120-180 s later, and one
     skipped because a session ran (or a start was under 2 min ago) is considered again when that is over;
   - at most 300 peers known only from the channel; a channel peer has the 30 min cooldown, and a guild, group or
     friend `HELLO` from it upgrades its path;
   - the full refresh of every record's `seen` (a `HELLO` with the same hash) runs at most every 10 min.
 - `tests/channel_sim_test.lua` runs many nodes through one fake channel (`OKF_SIM_NODES`); measured numbers in
-  research R5 of part 3.
+  research R5 of `specs/004-public-channel-sync/`.
 
 ## Share.lua: setting and state
 
 `Share.SetEnabled` (the setting), `Share.GetStatus()` / `StatusLine()` / `PrintStatus()` / `Describe()` (states
-off, notice, unavailable, paused, alone, active). Part 3 adds `Share.ChannelLine()` (the channel's line for
-`/okf share` and the settings page), the channel fields of `GetStatus` (`channel`, `channelIndex`, `channelPeers`,
-`population`, `blocked`, `ownBlocked`), and the notice that names the channel: closing the popup sets
-`shareNotice` and, while the release has the channel, `shareNoticeChannel`; a player who closed only the part 2
-notice sees it once more.
+off, notice, unavailable, paused, alone, active); `Share.ChannelLine()` is the channel's line for `/okf share`
+and the settings page, and `GetStatus` carries the channel fields (`channel`, `channelIndex`, `channelPeers`,
+`population`, `blocked`, `ownBlocked`). The one-time notice names the channel: closing the popup sets
+`shareNotice` and, while the release has the channel, `shareNoticeChannel`; a player who closed an earlier notice
+that did not name the channel sees it once more.

@@ -6,8 +6,10 @@ afterwards. Parts 1 to 3 work the same way: `specs/002-local-catch-db/verificati
 IDs continue because the markers share the code. The code that depends on an item carries a `-- VERIFY(Vn): ...`
 comment; `npm run check` lists the open markers and `npm run build` (release) refuses to package while any is left.
 
-Closing an item: run the step in game (`/okf spike` prints the facts in its "Map pins and areas" section; the pin, the
-map and the tooltips are checked through the catalog, [quickstart.md](quickstart.md)). Then:
+Closing an item: run the step in game (`docs/checklists/spike.md` part 4 prints the facts of its "Map pins and
+areas" section; the pin, the map and the tooltips are checked through the catalog,
+`docs/checklists/catch-catalog.md`). V39 and V40 have no marker: the load test and the whole checklist are not
+enforced by the build. Then:
 - record the answer in `docs/forever-api.md`;
 - adjust the code if the answer differs from the assumption;
 - remove its markers, and tick it here.
@@ -27,4 +29,4 @@ filter waits on part 1's V3.
 | V37 | `WowScrollBoxList`, `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`, `MinimalScrollBar`, `CreateDataProvider`, `SearchBoxTemplate` and the atlas `Waypoint-MapPin-Untracked` render inside the statistics window | All in `Blizzard_SharedXML.toc` without a game-type limit; Forever's friends list uses the scroll list (`Camelot/FriendsFrame.lua:335, 354, 795`) | The fixed-row fallback of research R8 and a text pin button | Spike step 5; checklist step 1 | Built, waiting for launch |
 | V38 | The `TooltipDataProcessor` item post call fires for items in bags, the auction house, chat links (`ItemRefTooltip`) and the addon's own rows, and lines added there show; item tooltip data holds no secret values | The post call already serves the gear line (part 1.0); the item getters carry no secret flags (`TooltipInfoDocumentation.lua`) | Add the lines from `GameTooltip:HookScript` where the post call is missing; skip tooltips whose data is secret | Checklist step 7 | Built, waiting for launch |
 | V39 | Building the catalog with the database a week after launch, a tooltip hover, a search and expanding a zone keep the longest step under 5 ms (`/okf debug`), and players notice no stutter (SC-003) | `catalog_load_test.lua` bounds the work per step (research R11) | Lower the step budget (3 ms) or the maps per step; build only the default index in the background | Checklist step 8 | Built, waiting for launch |
-| V40 | The whole in-game checklist of the feature passes, also on a second client language | None | Fix and re-run | quickstart.md "In game: the feature" | Built, waiting for launch |
+| V40 | The whole in-game checklist of the feature passes, also on a second client language | None | Fix and re-run | `docs/checklists/catch-catalog.md` | Built, waiting for launch |

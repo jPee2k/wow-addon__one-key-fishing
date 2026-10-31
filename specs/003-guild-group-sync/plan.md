@@ -142,7 +142,7 @@ tests/
 └── harvest_test.mjs           # extended: other players' records in the author's file
 
 .luacheckrc                    # new WoW API globals
-README.md CHANGELOG.md CLAUDE.md docs/shared-db-plan.md docs/ROADMAP.md docs/checklists/
+README.md CHANGELOG.md CLAUDE.md docs/history/shared-db-plan.md docs/ROADMAP.md docs/checklists/
 ```
 
 **Structure Decision**: the existing single-addon layout with two new runtime modules (transport and protocol), a
@@ -153,7 +153,7 @@ in the saved data; only its test grows.
 
 Phases 1 to 8 run now, before the game launch; phase 9 runs after 2026-11-04, together with the debt of the other
 parts. Release: 1.2.0 ships all four parts of the shared catch database together from `002-shared-db`, once no
-`VERIFY` marker is left (`docs/shared-db-plan.md` "Release 1.2.0"); 1.1.0 is the interface-language release.
+`VERIFY` marker is left (`docs/release-plan.md`); 1.1.0 is the interface-language release.
 
 1. **Verification and spike**: the V10-V18 markers convention (as part 1); the network section of `/okf spike`
    (research R12); `tests/wow.lua` fakes for every new API, `C_EncodingUtil` included.
@@ -172,7 +172,7 @@ parts. Release: 1.2.0 ships all four parts of the shared catch database together
    - README: what is shared and how to turn it off.
    - CHANGELOG `[Unreleased]`.
    - CLAUDE.md: modules, the message, the protocol, new API facts once known.
-   - `docs/shared-db-plan.md`: libraries replaced by `C_EncodingUtil`, decisions.
+   - `docs/history/shared-db-plan.md`: libraries replaced by `C_EncodingUtil`, decisions.
    - ROADMAP.
    - `docs/checklists/` with the two-player checklist.
 8. **Hand-off**: the spike and feature checklists and [verification.md](verification.md) ready for launch day; the

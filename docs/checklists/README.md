@@ -10,8 +10,14 @@ verified only after that (constitution, Principle IV).
 |---|---|---|---|
 | [fishing-mode.md](fishing-mode.md) | the 1.0.0 core: fishing mode, the key, gear, lures, containers, statistics, auction prices, the minimap button, settings | none (built before Spec Kit) | one character with Fishing |
 | [interface-language.md](interface-language.md) | the interface languages and the language setting | `specs/001-interface-language` | one client |
+| [spike.md](spike.md) | the game facts the shared catch database was built on (`/okf spike`), run once before the four below | 002 to 005, their `verification.md` | a second player, several waters, the auction house |
+| [catch-database.md](catch-database.md) | "What can be caught here", the bundled data, robust prices | `specs/002-local-catch-db` | one character, a real seed |
+| [catch-exchange.md](catch-exchange.md) | the exchange with guild, group and friends | `specs/003-guild-group-sync` | a second player (and a third) |
+| [public-channel.md](public-channel.md) | the hidden public channel and the protections | `specs/004-public-channel-sync` | three accounts sharing nothing |
+| [catch-catalog.md](catch-catalog.md) | the catalog tab, map pins, subzones, tooltips | `specs/005-catch-catalog` | two client languages, a fresh item cache |
 
-The order and what each release waits for are in [docs/release-plan.md](../release-plan.md).
+The order and what each release waits for are in [docs/release-plan.md](../release-plan.md): the first two for
+1.1.0, the rest for 1.2.0.
 
 ## How a checklist is built
 

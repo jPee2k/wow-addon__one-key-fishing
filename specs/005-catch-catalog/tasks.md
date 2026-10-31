@@ -30,7 +30,7 @@ of [verification.md](verification.md); every line of code that relies on one of 
 `-- VERIFY(Vn): <what>`. Phase 8 runs after launch, together with the debt of the other parts.
 
 **Branch and release**: all shared-db work stays on `002-shared-db` (no branch per spec). Release 1.2.0 ships all four
-parts together once the debt of all of them is closed (`docs/shared-db-plan.md` "Release 1.2.0").
+parts together once the debt of all of them is closed (`docs/release-plan.md`).
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -686,7 +686,7 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
   (each V-row's "If it turns out wrong").
 - [ ] T054 Remove the `VERIFY(V30..V40)` markers once the author confirms each behaviour, and tick V30-V40 in
   [verification.md](verification.md).
-- [ ] T055 Release 1.2.0 with the other parts (`docs/shared-db-plan.md` "Release 1.2.0").
+- [ ] T055 Release 1.2.0 with the other parts (`docs/release-plan.md`).
 
 ---
 

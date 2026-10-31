@@ -12,7 +12,7 @@ Module functions used by the UI, the debug report, Share.lua and the tests. Noth
 | `CatchDB.GetCell(mapID)` | `cell, x, y` of the player on that map (`"x"` without a position) |
 | `CatchDB.GetCurrentPlace()` | `mapID, range, cell, x, y` of the player now (cell `"x"` and no `x, y` without a position), or nil without Fishing or a map |
 | `CatchDB.PlaceKey(mapID, range, cell)` | the key string |
-| `CatchDB.Query(mapID, cell, filter)` | a view (below); `filter = { range = 0..4 or "all", source = "all" or "mine" }` |
+| `CatchDB.Query(mapID, cell, filter)` | a view (below); `filter = { range = 0..4 or "all", source = "all" or "mine" }`; superseded by `specs/005-catch-catalog/contracts/api.md`: `filter.water` ("all", "open", "pool") was added |
 | `CatchDB.Describe()` | lines for `/okf debug` (seed epoch and places, own places, current key, pool detection, game version key) |
 | `CatchDB.SeedInfo()` | `epoch, places` of the bundled seed, for `/okf share` and `/okf debug` |
 | `CatchDB.SeedEpoch()` | the seed's epoch (0 for a missing or malformed seed) |
@@ -26,7 +26,7 @@ Module functions used by the UI, the debug report, Share.lua and the tests. Noth
 | `CatchDB.HasCells(record)` | true when the record has at least one cell (an empty one is neither kept on a roll nor offered) |
 | `CatchDB.FlushSeq()` | bumps a waiting seq change of the own record (at logout and before the record goes to a peer) |
 | `CatchDB.CountPlaces(record, limit)` | distinct places over all builds of a record; counting stops above `limit` |
-| `CatchDB.CheckRecord(record)` | `true`, or `false, reason` for a record received from another player; a third value `true` when the only fault is an item unknown to this client |
+| `CatchDB.CheckRecord(record)` | `true`, or `false, reason` for a record received from another player. Superseded by `specs/004-public-channel-sync/contracts/api.md`: an item unknown to this client is accepted, so the third return value is gone, and a `proof` is required |
 | `CatchDB.IsCount(value)` | true for a whole number from 0 to 10^12 |
 | `CatchDB.ID_LENGTH` | 8, the length of an account's base32 ID |
 

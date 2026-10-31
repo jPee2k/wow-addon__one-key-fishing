@@ -315,7 +315,7 @@ Forever (`Blizzard_SharedXML.toc`, no game-type limit), and Forever's own friend
 ## R12. What leaves the plan
 
 - **Decision**: shared auction prices are out of 1.2.0 and go to `docs/ROADMAP.md` with the open question of which
-  auction house a player uses. The source mark is dropped. `docs/shared-db-plan.md` records the part 4 decisions
+  auction house a player uses. The source mark is dropped. `docs/history/shared-db-plan.md` records the part 4 decisions
   (done with the spec). No `DB_SCHEMA` bump: only new fields (`settings.tooltipChances`, `charDB.pin`, the cell
   field `a`).
 - **Rationale**: the author's decisions of 2026-10-31.

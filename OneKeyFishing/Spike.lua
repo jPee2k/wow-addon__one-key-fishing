@@ -2,7 +2,7 @@
 -- Spike: /okf spike prints the game facts the catch database was built on before the game could be played
 -- (specs/002-local-catch-db/verification.md, V1-V7), the catch exchange (specs/003-guild-group-sync/
 -- verification.md, V10-V15), the public channel (specs/004-public-channel-sync/verification.md, V19-V27) and the
--- catch catalog (specs/005-catch-catalog/verification.md, V30-V36).
+-- catch catalog (specs/005-catch-catalog/verification.md, V30-V37).
 -- English like the debug report; counts and patterns only, never names.
 local _, ns = ...
 
@@ -622,7 +622,7 @@ local function BuildReport()
     end)
     Section(lines, "Network (V10-V15)", NetworkSection)
     Section(lines, "Chat channel (V19-V27)", ChatChannelSection)
-    Section(lines, "Map pins and areas (V30-V36)", MapPinSection)
+    Section(lines, "Map pins and areas (V30-V37)", MapPinSection)
     return table.concat(lines, "\n")
 end
 

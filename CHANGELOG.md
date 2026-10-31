@@ -10,31 +10,31 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 - "What can be caught here", a second tab in the statistics window: the items of the spot you stand at, with
   their chance, pieces per catch and price, the number of catches behind them and the share of casts that catch
-  nothing. Few catches at a spot: the whole map; few on the map too: "Little data". Filters for the skill range
-  and for the source (all, or only your own catches).
+  nothing. Few catches at a spot: the whole map; few on the map too: "Little data". Filters for the skill range,
+  for the source (all, or only your own catches) and, once there are catches from fish pools, for the water
+  (everywhere, open water, pools).
 - A catch database bundled with every release, so the tab has numbers from the first login. Your own catches
   are recorded for it per map, grid cell and skill range, under a random ID (no names; per cell only the average
-  spot you fished from).
+  spot you fished from and the game's number of the subzone, so spots get a name in every client language).
 - Shared catch database: catch counts travel under a random ID and in the background between addon users in your
   guild, group and friends list (Battle.net friends playing WoW Forever included), and what they got from others
-  reaches you too. No character names are sent or saved (the players you exchange with directly can tell which ID is
-  yours); it pauses in combat, in instances and on loading screens, stays within 50 KB per hour and never shows
-  anything in chat. "What can be caught here" counts it under "All" and says how many players the numbers come from
-  ("60 catches from 3 players"), with a quiet status line at the bottom.
-- "Shared database" settings page: one setting turns the exchange off (nothing sent or received; data received
-  earlier is kept but not counted), with a short text on what is shared and the state. A popup at the first
-  login says what is shared and where to turn it off.
-- `/okf share` shows the state of the shared catch database; `/okf debug` has a section for it.
+  reaches you too. No character names are sent or saved (the players you exchange with directly can tell which
+  ID is yours); it pauses in combat, in instances and on loading screens, stays within 50 KB per hour and never
+  shows anything in chat. "What can be caught here" counts it under "All" and says how many players the numbers
+  come from ("60 catches from 3 players"), with a quiet status line at the bottom.
 - The public channel: the shared catch database also reaches every other addon user through a hidden chat channel,
   `OneKeyFishingShare`. It is listed in the Chat Channels window but shows in no chat window, leaves General, Trade
   and your own channels on their numbers, keeps a chat channel slot free for you (and gives its own up with one chat
-  line when you hit the limit), and moves to a fallback channel when somebody locks it. A setting under the first one,
-  "Use the public channel", turns only the channel off; its state shows on the page and in `/okf share`. The popup
-  that says what is shared names the channel and shows once more after this update.
+  line when you hit the limit), and moves to a fallback channel when somebody locks it.
+- "Shared database" settings page: "Use the shared catch database" turns the exchange off (nothing sent or received;
+  data received earlier is kept but not counted); "Use the public channel" under it turns only the channel off; a
+  short text on what is shared and the state. A popup at the first login says what is shared and where to turn it
+  off (once more after the update that brings the public channel).
 - Protections for data from strangers: where five or more players reported a spot, none counts for more than a fifth
   of it; an item that is neither in the bundled data nor in your own catches shows once three players reported it on
   the map; each player's data carries a proof that only its owner can extend, so nobody can make up a newer version
   of it; a version holds at most as much fishing as its steps allow; the bundled data can block a contributor.
+  Data that does not add up is refused, and its sender is ignored until the end of the session.
 - Items your game client does not know yet show as "Unknown item" with their item ID in the tooltip, and get their
   name once the game knows them.
 - "Catch catalog", a third tab in the statistics window: every item of the catch database with a search by its name
@@ -44,12 +44,11 @@ All notable changes to OneKeyFishing are listed here. The format follows
   caught here" opens that item.
 - Item tooltips show "Caught in:" with the item's three best zones and its chance; in fishing mode the minimap
   tooltip shows the three most likely catches of the place. "Show catch chances in tooltips" turns both off.
-- Casts record the game's number of their subzone, so spots get a name in every client language.
-- A "Water" filter (Everywhere, Open water, Pools) on both tabs once the database holds catches from fish pools.
+- `/okf share` shows the state of the shared catch database; `/okf debug` has sections for the catch database, the
+  exchange and the catalog.
 
 ### Changed
 
-- `/okf debug` has a catch database section and a catch catalog section.
 - Auction prices: the average of the cheapest fifth of the pieces on sale instead of the cheapest lot, so one
   lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 different
   offers (prices) on sale the price is marked "(few lots)" and the catch value uses the vendor price.

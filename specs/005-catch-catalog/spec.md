@@ -23,7 +23,7 @@ auction prices, so the catch value shows without a scan of one's own (the freshe
 days are not shared), only if the auction house scope in Forever allows it. Rules: the pin is the game's own user
 waypoint, the same one a player sets by hand; nothing acts for the player. Searching and listing stay smooth with the
 whole database loaded. Needs a spike check that map pins work in WoW Forever. Depends on parts 1 and 2 (part 3
-optional). Design: docs/shared-db-plan.md (phase 6)."
+optional). Design: docs/history/shared-db-plan.md (phase 6)."
 
 ## Clarifications
 

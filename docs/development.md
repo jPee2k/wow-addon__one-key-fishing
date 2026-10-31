@@ -1,12 +1,13 @@
 # Development
 
-The tools, the tests and the packaging in detail. `CLAUDE.md` has the short list; release steps are in
-[publishing.md](publishing.md).
+The tools, the tests, the packaging and the definition of done. `CLAUDE.md` has the short list; release steps are
+in [publishing.md](publishing.md).
 
 ## Layout
 
 The addon lives in `OneKeyFishing/`: exactly what goes into `Interface/AddOns` (the TOC, Lua files,
-`Bindings.xml`, `Locales/`, `UI/`, the player manual `README.md`). `tools/`, `tests/`, `docs/` and project files stay in the repository root.
+`Bindings.xml`, `Locales/`, `UI/` and the player manual `README.md`). `tools/`, `tests/`, `docs/`, `specs/` and
+project files stay in the repository root; the root `README.md` is the developer page.
 The tools need Node.js 18+ (`npm install` once).
 
 ## `npm run check`
@@ -28,9 +29,12 @@ Run it after every change. It checks:
 - locale keys in sync;
 - the bundled seed `SeedData.lua`: at most 1 MB, the `ns.SeedData` fields, place keys;
 - no packager keywords in addon Lua and XML (see Packaging);
+- the TOC has `Interface`, `Title`, `Notes`, `Category`, `Author` and `Version: @project-version@`, and
+  `## Notes-<code>` / `## Category-<code>` for every translation with a client locale;
 - `package.json` version == newest `CHANGELOG.md` entry;
-- every slash command in the player manual `OneKeyFishing/README.md`;
-- no Cyrillic in the Markdown files (except the language name).
+- every slash command (`ns.COMMANDS`, except a declaration marked `VERIFY`) is in the player manual
+  `OneKeyFishing/README.md`;
+- no Cyrillic in Markdown files, except the language name in the language setting.
 
 It also lists the open `VERIFY` markers.
 
@@ -43,13 +47,15 @@ Runs the Lua tests in `tests/` and the Node tests `tests/*_test.mjs` (they expor
 release. The run time grows with the square of the size (every client hears every announcement), so 120 clients take
 about 45 s and 500 about 25 minutes.
 
-- `tests/run.mjs` runs every `tests/*_test.lua` in a fresh fengari state after `tests/wow.lua`.
+- `tests/run.mjs` runs every `tests/*_test.lua` in a fresh fengari state (`tests/lua.mjs` is the fengari wrapper)
+  after `tests/wow.lua`, and every `tests/*_test.mjs`.
 - `tests/wow.lua` holds the WoW API stubs: frames, events, a controllable clock and timers, configurable bag item
-  counts, cooldowns, prices, loot. Unknown globals are permissive stubs.
-- Helpers: `test`, `eq`, `near`, `fire`, `advance`, `tick`, `click`, `load_addon` (with an optional step before
-  the login), `load_files`, `fish_cast`, `catch_cell`.
-- Run it after every change. Add or extend a test when changing logic that can run without the game: Core, Bags,
-  Catch, Stats, Prices, CatchDB, Comm, Share, the statistics window and "What can be caught here".
+  counts, cooldowns, prices, loot, maps and positions, chat and addon messages. Unknown globals are permissive
+  stubs. The game data a test can set and the helpers (`test`, `eq`, `fire`, `advance`, `tick`, `click`,
+  `load_addon`, `fish_cast`, `receive_addon`, ...) are listed in the file's header comment.
+- Run it after every change. Add or extend a test when changing logic that can run without the game: every
+  module but the pure frame code has tests (Core, Bags, Catch, Stats, Prices, CatchDB, Comm, Channel, Share,
+  Catalog, the statistics window and its tabs, settings, tooltips, locales).
 - fengari is Lua 5.3, the game is 5.1: keep the addon free of 5.1/5.3 differences, and fix a test that fails only
   because of 5.3 in the test or the stub.
 
@@ -83,14 +89,16 @@ arguments; they are parsed, never executed) into `OneKeyFishing/SeedData.lua`, t
 - Accepted contributions are kept in `seed/contributions.json` (repository only) by `<id>@<epoch>`, so the same
   input never counts twice, and a run without new sums leaves the seed and its epoch alone.
 - `-- --reset <mapID>` counts a map only from the newest game version on (after a patch that changed its catch).
+- `-- --block <id> "why"` leaves a contribution ID out of the seed and tells every client to drop it (the seed's
+  `blocked`); `-- --unblock <id>` takes it back. The outlier report of a run says which IDs to look at.
 - `-- --synthetic 3000` writes a random seed for a load test (never commit it).
 - Format and rules: `specs/002-local-catch-db/contracts/`.
 
 ## Packaging
 
-- The package contains only the TOC, the files it lists, `Bindings.xml` and the manual `README.md` from
-  `OneKeyFishing/`, plus `LICENSE` and `CHANGELOG.md` from the root (`tools/addon.mjs`); the root `README.md` is
-  the developer page and stays out.
+- The package contains only the TOC, the files it lists, `Bindings.xml` and the player manual `README.md` from
+  `OneKeyFishing/`, plus `LICENSE` and `CHANGELOG.md` from the root (`tools/addon.mjs`); the root `README.md`
+  stays out (`.pkgmeta` `ignore`).
 - `## Version: @project-version@` is filled in at build time; `package.json` holds the version. An unbuilt addon
   is recognised by the version starting with `@` and shows `dev`.
 - The release packager replaces such keywords (and strips `--@debug@`-style blocks) in **every** packaged file,
@@ -99,9 +107,22 @@ arguments; they are parsed, never executed) into `OneKeyFishing/SeedData.lua`, t
   the package; the root files land in the same folder, so `ignore` leaves out everything but `LICENSE` and
   `CHANGELOG.md`. The release stops while `CHANGELOG.md` has a `## [Unreleased]` heading.
 
+## Definition of done
+
+A change is done when:
+
+- `npm run check` and `npm test` pass, and logic that runs without the game has a test;
+- a change a player can see or use is in `CHANGELOG.md` under `[Unreleased]` and in the player manual
+  `OneKeyFishing/README.md`, in the same commit (fixes of an unreleased feature need no changelog line);
+- a new message, module, saved field or cross-module rule is in `CLAUDE.md` and in the area document of
+  `docs/architecture/`;
+- an assumption only the game can confirm carries a `VERIFY` marker, a row in the feature's `verification.md` and
+  a step in its checklist (`docs/checklists/`);
+- a finished feature leaves `docs/ROADMAP.md`; a fixed item leaves `docs/tech-debt.md`.
+
 ## In game
 
 - `/okf` lists commands; `/okf debug` shows the state report used in bug reports; `/okf share` shows the state of
   the catch exchange.
 - Claude cannot run the game, so in-game testing is always handed to the user with a checklist
-  (`docs/checklists/`, template in its `README.md`).
+  (`docs/checklists/`, template and order in its `README.md`).

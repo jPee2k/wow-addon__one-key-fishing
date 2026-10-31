@@ -122,7 +122,7 @@ test("the map pins and areas section asks its five parts and sets no pin", funct
         ["1415:3:47"] = catch_cell(4, 0, { [6303] = { 1, 1 }, [6291] = { 3, 3 }, [6289] = { 1, 1 },
             [6308] = { 1, 1 } }) } }
     local text = report()
-    assert(text:find("-- Map pins and areas (V30-V36) --", 1, true), "section")
+    assert(text:find("-- Map pins and areas (V30-V37) --", 1, true), "section")
     for _, part in ipairs({ "pins:", "areas:", "items:", "folding:", "templates:" }) do
         assert(text:find("  " .. part, 1, true), part)
     end
@@ -169,7 +169,7 @@ test("the map pins and areas section survives every new call failing", function(
         api[1][api[2]] = saved[i]
     end
     CreateVector2D, CaseAccentInsensitiveParse, strcmputf8i = vector, nil, nil
-    assert(text:find("-- Map pins and areas (V30-V36) --", 1, true), "section")
+    assert(text:find("-- Map pins and areas (V30-V37) --", 1, true), "section")
     assert(text:find("CanSetUserWaypointOnMap: map failed: ", 1, true), "a failure line")
     assert(text:find("GetExploredAreaIDsAtPosition failed: ", 1, true), "areas")
     assert(text:find("strcmputf8i(b, A): failed: ", 1, true), "order")

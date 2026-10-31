@@ -7,9 +7,9 @@ rules that always apply and maps to the details; read the linked document before
 
 OneKeyFishing is a World of Warcraft addon for **WoW Forever** (Interface `16001`, build 1.60.1,
 `WOW_PROJECT_ID = 18`), published under the MIT license. The Forever client runs the modern (Mainline) API, not
-the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `Interface/AddOns`); `tools/`,
-`tests/`, `docs/`, `specs/` and project files stay in the repository root. Paths such as `Core.lua` or
-`Locales/enUS.lua` are inside `OneKeyFishing/`.
+the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `Interface/AddOns`, the player manual
+`README.md` included); `tools/`, `tests/`, `docs/`, `specs/` and project files stay in the repository root. Paths
+such as `Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`.
 
 ## Hard rules
 
@@ -27,20 +27,21 @@ the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `In
   help, the addon name, language names. Details: [docs/architecture/core.md](docs/architecture/core.md),
   [docs/languages.md](docs/languages.md).
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
-  (`docs/checklists/`). Code built on an assumption only the game can confirm carries
-  `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md`; a marker is removed only after the
-  author confirms the behaviour in game.
+  (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
+  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 002 to 005
+  have one); a marker is removed only after the author confirms the behaviour in game.
 
 ## Documents
 
 | Area | Documents |
 |---|---|
 | Players | `OneKeyFishing/README.md` (the player manual, shipped in the package), `CHANGELOG.md` |
-| Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues; remove an item once it is fixed with a test) |
+| Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
+| Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (what the next releases wait for), [docs/ROADMAP.md](docs/ROADMAP.md) (what is not built yet), [docs/shared-db-plan.md](docs/shared-db-plan.md) (the shared catch database in four parts, released together as 1.2.0) |
-| Features | `specs/<nnn>-<name>/` (spec, plan, data model, contracts, tasks, `verification.md`), `docs/checklists/` (in-game checklists, one per feature; `README.md` there has the template and the order) |
-| History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the checks left after 1.1.0 and what 1.2.0 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
+| Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
+| History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database) |
 
 ## Workflow
 
@@ -57,43 +58,44 @@ the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `In
 - A new file or a TOC change needs a game restart, not just `/reload`.
 - Addon Lua and XML must not contain packager keywords (`@project-version@`, `--@debug@` blocks).
 - Branches: a feature is built on its own branch (`NNN-<feature>`) off `develop` and merged back when its release
-  is due (`docs/release-plan.md`); `main` holds released code and changes only by merging `develop`. Never push
-  directly to `main`. Releases: [docs/publishing.md](docs/publishing.md).
+  is due ([docs/release-plan.md](docs/release-plan.md)); `main` holds released code and changes only by merging
+  `develop`. Never push directly to `main`. Releases: [docs/publishing.md](docs/publishing.md).
 - In game: `/okf` lists commands; `/okf debug` shows the state report used in bug reports; `/okf share` shows the
   state of the catch exchange.
 
 ## Architecture
 
-All files share the addon namespace (`local _, ns = ...`). Load order is the TOC order; a module may only call
-another module at runtime, not at file load time, unless it comes earlier in the TOC.
+All files share the addon namespace (`local _, ns = ...`). Load order is the TOC order (the table below follows
+it); a module may only call another module at runtime, not at file load time, unless it comes earlier in the TOC.
 
 | Module | Job | Details |
 |---|---|---|
 | `Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core.lua` | [core.md](docs/architecture/core.md) |
 | `Core.lua` | events, the message bus `ns.On` / `ns.Fire`, shared widgets, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
-| `Data.lua` | shared data and helpers (bag iterator, base32, rolling counts, game object IDs) | [core.md](docs/architecture/core.md) |
+| `Data.lua` | shared data and helpers (fishing IDs, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
+| `GameData/FishingRanks.lua` | data only: the next rank's spell, skill, level and where it is learned; NPC names | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Gear.lua`, `Bags.lua`, `Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Mode.lua` | enter and exit fishing mode, restore after `/reload`, logout, crash | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Gear.lua`, `Camera.lua` | the fishing gear swap; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Bags.lua` | lures and fished containers | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `GameData/FishingRanks.lua` | data only: the next rank's spell, skill, level and where it is learned; NPC names | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch.lua` | casts and loot become `FISH_CAUGHT` / `FISH_MISSED` | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `Stats.lua`, `Prices.lua`, `Auction.lua` | statistics; item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `Prices.lua`, `Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `SeedData.lua`, `CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
 | `Comm.lua`, `Channel.lua`, `Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
-| `Catalog.lua` (after `Share.lua`) | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catch-db.md](docs/architecture/catch-db.md), [ui.md](docs/architecture/ui.md) |
-| `UI/*.lua` | indicator, settings, statistics window, "What can be caught here", the catch catalog tab (`UI/CatalogTab.lua`, after `UI/CatchHere.lua`), toast, minimap, map pin, item hooks, copy window | [ui.md](docs/architecture/ui.md) |
+| `Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catalog.md](docs/architecture/catalog.md) |
+| `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/MapPin.lua`, `UI/StatsFrame.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua` | copy window, indicator, toast, the map pin, the statistics window and its tabs | [ui.md](docs/architecture/ui.md) |
 | `Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
-| `Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before the release | [ui.md](docs/architecture/ui.md) |
+| `Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before release 1.2.0 | [ui.md](docs/architecture/ui.md), [docs/checklists/spike.md](docs/checklists/spike.md) |
+| `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
 | `Commands.lua` (last) | `ns.COMMANDS`: every slash command, sorted, English descriptions | [core.md](docs/architecture/core.md) |
 
 Cross-module rules:
 
 - Bump `DB_SCHEMA` and add a migration in `Core.lua` whenever a saved field is renamed, moved or reshaped;
   `ApplyDefaults` fills missing keys without overwriting. `OneKeyFishingDB` is account-wide, `OneKeyFishingCharDB`
-  per character.
+  per character; the fields are listed in [core.md](docs/architecture/core.md).
 - Everything fishing mode changes (CVars, gear, camera) is stored in the character DB *before* it is changed;
   what is restored when is in constitution Principle III and [fishing-mode.md](docs/architecture/fishing-mode.md).
 - Slash commands are declared only in `Commands.lua`; modules register none.
@@ -109,9 +111,9 @@ Cross-module rules:
 Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 - `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed)
-- `FISHING_CAST_START` / `FISHING_CAST_STOP`
+- `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
 - `FISH_CAUGHT` (items, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
-- `LURE_READY`, `SETTINGS_CHANGED`, `GEAR_LIST_CHANGED`
+- `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `AUCTION_STATE` (scan progress), `PRICES_CHANGED` (a scan finished or stopped)
 - `SHARED_DATA_CHANGED` (keys, and the store when Share changed one: records under `<id>@<epoch>` came or went:
   other players', or the own one a roll kept; or sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)
@@ -120,27 +122,21 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 ## Forever API
 
-The traps that matter most; all verified facts, and how to check a call against the client's own export and the
-public dumps, are in [docs/forever-api.md](docs/forever-api.md). New facts confirmed in game go there.
+The traps that matter most; every verified fact, the facts read from the client export, how to check a call, and
+the open questions for the spike are in [docs/forever-api.md](docs/forever-api.md). New facts confirmed in game
+go there.
 
-- Missing: `GetSpellInfo`, `GetItemInfo`, `EquipItemByName` and the classic auction API. Use `C_Spell`, `C_Item`,
-  `C_Item.EquipItemByName` and `C_AuctionHouse`.
+- Missing: `GetSpellInfo`, `GetItemInfo`, `EquipItemByName` and the classic auction API; use the `C_*` namespaces.
+  Deprecated globals (`Blizzard_Deprecated*`) are not loaded; use the namespaced functions.
 - `C_Item.EquipItemByName` fails silently while casting or channeling.
-- `INTERACTTARGET` exists; the bobber is unit `softinteract` (name and GUID) but has no nameplate and `UnitExists`
-  is false.
-- The Fishing skill comes from `GetProfessions()` → `GetProfessionInfo` (skillLine 356); `GetSkillLineInfo` does
-  not exist.
-- Deprecated globals (`Blizzard_Deprecated*`) are not loaded; use the namespaced functions
-  (`C_BattleNet.SendGameData`, `ChatFrameUtil.AddMessageEventFilter`).
+- The bobber is unit `softinteract` (name and GUID) with no nameplate; `UnitExists` is false for it.
+- The Fishing skill comes from `GetProfessions()` and `GetProfessionInfo` (skillLine 356).
 - Key bindings on punctuation keys break when the Windows keyboard language is switched.
 - `YES`, `NO` and `CANCEL` are in the client's language, not the addon's: popups use `L["Yes"]` / `L["No"]`.
 - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing); the
   tests do not catch it, so wrap such calls as `tostring((f()))`.
-- `C_Map.OpenWorldMap` is restricted: open the map with the global `OpenWorldMap(mapID)`. A map pin follows
-  Blizzard's `/mappin`: `C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(...))`, then
-  `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`. The subzone of a cast comes from the explored areas at the
-  player's own position (`C_MapExplorationInfo.GetExploredAreaIDsAtPosition`) matched against `GetSubZoneText()`.
-- A player may be in 20 chat channels (`Constants.ChatFrameConstants.MaxChatChannels`). Joining a locked channel
-  opens the game's password popup (`CHAT_CHANNEL_PASSWORD`). A chat window shows only the channels in its own list,
-  so a channel is hidden with the window's `RemoveChannel` (`ChatFrame_RemoveChannel` is deprecated). Chat filters
-  and handlers must skip secret values (`issecretvalue`).
+- `C_Map.OpenWorldMap` is restricted: open the map with the global `OpenWorldMap(mapID)`; a map pin follows
+  Blizzard's `/mappin`. The subzone of a cast comes from the explored areas at the player's position matched
+  against `GetSubZoneText()`.
+- Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
+  window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).

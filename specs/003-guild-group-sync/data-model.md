@@ -57,7 +57,7 @@ records under the same keys (`"<myID>@<epoch>"`) and offers them like other play
   Because `seen` is refreshed whenever a peer confirms the same version, records of players still in the network
   stay, and those of players who stopped playing go first. A version evicted this session is not wanted back
   (only a newer one), so eviction and the next session do not trade the same records while the network holds more. The info-based eviction order of
-  `docs/shared-db-plan.md` (seed-heavy cells first, rare places last) is left for part 3, when strangers bring far
+  `docs/history/shared-db-plan.md` (seed-heavy cells first, rare places last) is left for part 3, when strangers bring far
   more records (research R6).
 
 ## Views (changes to part 1 "Views")

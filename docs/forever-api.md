@@ -2,8 +2,10 @@
 
 What is known about the WoW Forever API (Interface `16001`, build 1.60.1, `WOW_PROJECT_ID = 18`), and how to check
 a call. The Forever client runs the modern (Mainline) API, not the Classic one. Facts confirmed in game go into
-"Verified in game" below (constitution, Principle IV), including the answers to the `VERIFY` items in
-`specs/002-local-catch-db/verification.md` and `specs/003-guild-group-sync/verification.md`.
+"Verified in game" below (constitution, Principle IV), including the answers to the `VERIFY` items of the
+`verification.md` files of `specs/002-local-catch-db`, `specs/003-guild-group-sync`,
+`specs/004-public-channel-sync` and `specs/005-catch-catalog`, which [docs/checklists/spike.md](checklists/spike.md)
+collects in one game session. The questions that still wait for the game are in "Open questions" at the end.
 
 ## Checking a signature without the game
 
@@ -48,6 +50,8 @@ R2-R4, R9). They say what exists and how Blizzard's own code uses it, not how it
 - A chat window drops the lines of channels that are not in its own list (`ChatFrameOverrides.lua`), and
   `ChatFrameMixin:RemoveChannel` takes one out of it (`ChatFrame_RemoveChannel` is deprecated). The Chat Channels
   window and Chat Settings > Channels list every channel the player is in, with no filter.
+- Chat filters and event handlers must skip secret values (`issecretvalue`): under chat lockdown the message
+  arguments can be secret, and reading them errors.
 - `SetChannelPassword(name, password)` is what `/password` and the password popup call. There is no call that turns
   channel moderation off (only `ChannelModerator` / `ChannelUnmoderator` for one player).
 - The `bit` library (`band`, `bor`, `bxor`, `bnot`, `lshift`, `rshift`) is called over 300 times in
@@ -65,7 +69,9 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 - `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapPosFromWorldPos(continentID, pos, overrideMapID)` convert a point
   between maps.
 - `C_MapExplorationInfo.GetExploredAreaIDsAtPosition(uiMapID, vector2)` returns explored areas only;
-  `C_Map.GetAreaInfo(areaID)` names an area; there is no call that names an unexplored position.
+  `C_Map.GetAreaInfo(areaID)` names an area; there is no call that names an unexplored position. The addon takes
+  the subzone of a cast from the explored areas at the player's own position matched against `GetSubZoneText()`
+  (both folded, so letter case never matters).
 - `CaseAccentInsensitiveParse(text)` (`LocalizationDocumentation.lua`) and `strcmputf8i(a, b)` (used by
   `AddonList.lua`) exist.
 - `WowScrollBoxList`, `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`,
@@ -106,3 +112,17 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   language types, so they break when the language is switched; letters, numbers, F-keys and mouse buttons do not.
   There is no API for physical keys; the settings and README tell players to bind such keys once per language
   (two slots per binding).
+
+## Open questions
+
+Answered only by the game; the spike ([docs/checklists/spike.md](checklists/spike.md)) asks them, and the answers
+move to "Verified in game":
+
+- Do `CHANNEL` addon messages and `JoinTemporaryChannel` from an addon work in Forever, and how far does a custom
+  channel reach: the whole game mode, one faction, one layer? (V19, V20; decides whether the public channel ships)
+- Does `GetLootSourceInfo` tell a fishing pool from the bobber, so pool catches can be counted apart? (V3)
+- Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the
+  skill ranges of the place key can go.
+- Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
+  ever be shared between players (`docs/ROADMAP.md`).
+- Is the hidden CVar `showInGameNavigation` on by default, so the navigation arrow points to a map pin? (V31)

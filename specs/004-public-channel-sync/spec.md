@@ -20,7 +20,7 @@ If all channel slots are taken, the addon keeps working through guild and group.
 how many players the data comes from. The author can block bad contributors in the bundled data. Rules: same policy,
 privacy and performance rules as part 2; announcements are rare and jittered so many clients do not hit one player at
 once. Ships only if the in-game spike confirms that addon messages in custom channels work in WoW Forever (and shows
-whether they reach other layers and the other faction). Depends on part 2. Design: docs/shared-db-plan.md (phase 5)."
+whether they reach other layers and the other faction). Depends on part 2. Design: docs/history/shared-db-plan.md (phase 5)."
 
 ## Clarifications
 
