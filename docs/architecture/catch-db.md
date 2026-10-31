@@ -14,6 +14,12 @@ in-game checklist is [catch-database.md](../checklists/catch-database.md).
 - Every catch and miss goes into `OneKeyFishingDB.shared.mine` (lifetime, never reset) and the account's
   contribution record `shared.records[myID]` (split by game version, read by the harvest).
 - `myID` is 8 random base32 characters and never appears in the debug report.
+- The subzone (part 4, `specs/005-catch-catalog` research R4): at `FISHING_CAST_START`, with a position,
+  `CatchDB.GetArea(mapID, x, y)` keeps the explored area at the player's position
+  (`C_MapExplorationInfo.GetExploredAreaIDsAtPosition`) whose `C_Map.GetAreaInfo` name equals `GetSubZoneText()`,
+  both folded with `ns.FoldCase` (Principle II). Settling the cast adds 1 to the cell's `a[areaID]` (at most 8
+  areas; a ninth is not added; never for cell `"x"`). Only the ID is stored; every client names it in its own
+  language.
 
 ## The seed
 
@@ -51,12 +57,36 @@ or before a 501st place:
   (`reporters` and `inSeed` per item). Items the client does not know yet are kept and shown as "Unknown item"
   ([ui.md](ui.md)), which the tab reads when it draws the row.
 
+## Views across maps (part 4)
+
+For the catch catalog (`Catalog.lua`, `specs/005-catch-catalog`):
+
+- `CatchDB.QueryMap(mapID, filter)`: the whole map's view without the spot fallback (scope `"map"` or `"none"`);
+  `CatchDB.QueryCells(mapID, filter)`: one spot view per cell with catches (`cell`, `point` = the average catch
+  position, `area` = the subzone with the most casts, other players' parts scaled by their cast factors, ties to the
+  lower ID); `CatchDB.Maps(filter)`: the map IDs with data under the source. Every view's items carry `ranges`
+  (`{ min, max }`, the skill ranges the item was caught in).
+- Change stamps: `CatchDB.MapStamp(mapID)` is `"<global>:<map>"`. A settled cast moves its map;
+  `SHARED_DATA_CHANGED` with keys moves the maps of the named records' entries before and after the change; without
+  keys (sharing switched, a store rebuilt), a change to an own record, login, and an item new to the own catch move
+  the global part. `CatchDB.GetStampVersion()` grows with any move, so a reader skips the comparison while nothing
+  moved. QueryMap and QueryCells keep their views until their map's stamp moves; Query keeps its version cache.
+- The own-cells index: the keys of `mine`, the own record and the frozen own records by `"<mapID>:<range>"`, built
+  on first use and grown by `Settle`, so a map's sum no longer walks every own cell. Dropped on a roll, at login and
+  on a `SHARED_DATA_CHANGED` without keys or naming an own record (data written past `Settle` needs one).
+- The water filter: `filter.water` (`"all"` by default, `"open"`, `"pool"`) reads each cell through its pool part
+  `p`: pools `p.c` and `p.i`, open water the rest, both without misses, so `missRate` is nil under them; players
+  and the 50-catch rule count the filtered catches. `CatchDB.HasPoolData()` is true once any held cell has a pool
+  part (a false answer is read again after `SHARED_DATA_CHANGED`).
+
 ## Checking a received record
 
 `CatchDB.CheckRecord(record)` checks a received record like the harvest's `checkRecord`, but rejects it whole.
 Plus: an 8-character base32 ID, at most 1,000 places, `seq` not above the record's casts, item IDs up to
-2,147,483,647 (an item the client does not know is accepted, part 3), a `proof` of 16 base32 characters, and at most
-`STEP_SECONDS` (180 s) of casting per step of `seq`. The own ID is refused by Share's `Store.Accept`, not here
+2,147,483,647 (an item the client does not know is accepted, part 3), a `proof` of 16 base32 characters, at most
+`STEP_SECONDS` (180 s) of casting per step of `seq`, and a cell's `a` (part 4) absent or at most 8 area IDs from 1
+to 2,147,483,647 with counts summing to at most `c + m`. Share's `CleanCell` copies `a`; the harvest checks, sums
+(the 8 largest), scales and writes it the same way. The own ID is refused by Share's `Store.Accept`, not here
 ([exchange.md](exchange.md)). `CatchDB.IsBlocked(id)` reads the seed's `blocked`.
 
 ## The version chain (part 3)

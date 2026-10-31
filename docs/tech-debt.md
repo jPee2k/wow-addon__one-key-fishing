@@ -7,7 +7,24 @@ part that takes it on.
 Severity: **high** loses data or cuts off honest players; **medium** wrong state or wasted traffic; **low**
 cleanup, no wrong behaviour.
 
-There are no open items.
+## Open items
+
+Found while building part 4 (the catch catalog, `specs/005-catch-catalog`) on 2026-10-31; all **low**.
+
+1. **The spot cache of the catalog only grows** (`Catalog.lua`, `spots`). Each expanded zone keeps its rows under
+   `<item>|<map>|<filter>` for the session, also after its map's views are replaced. A few hundred entries at most in
+   a session, but nothing frees them. Direction: keep only the entries of the chosen item, or drop the table when
+   the version moves. Test: expand zones of two items, choose the second, and count the cached keys.
+2. **A spot's pin target is computed with its rows** (`Catalog.Spots`). A change of the game rule or of what a map
+   allows (V30) shows only after the map's stamp moves. Direction: compute `pin` when the row is drawn. Test: a spot
+   with a pin, then `game_rules[...] = true`, and the row's button must go on the next draw.
+3. **The pin's toast follows "Show catch notifications"** (`ns.Toast` returns early with toasts off), so with toasts
+   off the pin is set silently. Direction: a toast that ignores the setting for answers to a click. Test: toasts off,
+   press a pin button, a message must still show.
+4. **HasPoolData scans every stored record while there is no pool data** (`CatchDB.HasPoolData`): every
+   `SHARED_DATA_CHANGED` clears the false answer, and the next tab draw walks up to 20,000 places again. Only while
+   pools are not told apart (V3). Direction: check only the records the change names. Test: count the cells walked
+   after a keyed change in `tests/catchdb_water_record_test.lua`.
 
 ## History
 

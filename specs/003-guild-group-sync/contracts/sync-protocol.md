@@ -120,4 +120,5 @@ Character names (the game itself shows the sender to the receiver), guild names,
 `HELLO`, session times, gear (FR-008). A peer that gets a record from its owner sees the sender's name next to the
 record's ID, and a cell's `px`/`py` are the sums of the cast positions (the average spot fished from in that cell):
 the texts of the notice and the "Shared database" page say so. A record carries only its part 1 fields: `id`, `epoch`,
-`seq`, `builds`; `seen` is local and stripped before encoding.
+`seq`, `builds`; `seen` is local and stripped before encoding. A cell may carry the subzone counts `a` of part 4
+(area IDs, never names; `specs/005-catch-catalog`), which a receiver checks and copies like the other counts.

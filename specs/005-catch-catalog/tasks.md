@@ -523,7 +523,7 @@ outside it; the checkbox off (spec US3).
 
 ### Tests for User Story 3
 
-- [ ] T032 [P] [US3] Extend `tests/catalog_test.lua` for `Catalog.TooltipLines(itemID)` and `Catalog.MinimapLines()`
+- [X] T032 [P] [US3] Extend `tests/catalog_test.lua` for `Catalog.TooltipLines(itemID)` and `Catalog.MinimapLines()`
   ([contracts/ui.md](contracts/ui.md) "Item tooltips", "The minimap button tooltip").
   - **`TooltipLines`:**
     - up to three reliable zones by chance;
@@ -540,35 +540,35 @@ outside it; the checkbox off (spec US3).
     - the footer "%d catches from %d players" / "%d catches";
     - "Little data" in place of the percentages under 50 catches on the whole map;
     - "Nothing has been caught here yet." without data.
-- [ ] T033 [P] [US3] Create `tests/tooltips_test.lua`.
+- [X] T033 [P] [US3] Create `tests/tooltips_test.lua`.
   - **The item tooltip.** `show_item_tooltip(GameTooltip, id)` adds "Caught in:" and the zone lines before the
     fishing gear line, and `show_item_tooltip(ItemRefTooltip, id)` adds them to `itemref_lines`. Neither adds them
     with the setting off or for an item without data.
   - **The minimap tooltip.** The minimap button's tooltip (`OnEnter` of the button) and the Addon Compartment
     entry's (`OneKeyFishing_OnAddonCompartmentEnter`) add "Likely catch here:" and the lines in fishing mode only
     (FR-018).
-- [ ] T034 [P] [US3] Extend `tests/settings_test.lua`: the main page has the checkbox "Show catch chances in
+- [X] T034 [P] [US3] Extend `tests/settings_test.lua`: the main page has the checkbox "Show catch chances in
   tooltips", on by default; turning it off sets `settings.tooltipChances = false` and fires `SETTINGS_CHANGED`.
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] In `OneKeyFishing/Catalog.lua`, add `Catalog.TooltipLines(itemID)` and `Catalog.MinimapLines()`
+- [X] T035 [US3] In `OneKeyFishing/Catalog.lua`, add `Catalog.TooltipLines(itemID)` and `Catalog.MinimapLines()`
   ([contracts/api.md](contracts/api.md)). `TooltipLines` reads the default index as every read does (the stamps
   first, T012), answering stale while a step build runs; the fallback zones are ordered like `Places` (little-data
   zones by the item's catches). `MinimapLines` uses `CatchDB.Query` with
   `{ range = own range, source = "all", water = "all" }`. The texts: `L["%s (%d players)"]`, `L["Little data"]`,
   `L["%d catches from %d players"]`, `L["%d catches"]` and `L["Nothing has been caught here yet."]`. Make T032 pass.
-- [ ] T036 [US3] In `OneKeyFishing/UI/ItemHooks.lua`, add the catch lines at the start of `OnItemTooltip`, before the
+- [X] T036 [US3] In `OneKeyFishing/UI/ItemHooks.lua`, add the catch lines at the start of `OnItemTooltip`, before the
   equippable check:
   - for `GameTooltip` and `ItemRefTooltip`, with `ns.db.settings.tooltipChances`, `L["Caught in:"]` in
     `TOOLTIP_COLOR` and one `AddDoubleLine` per pair of `Catalog.TooltipLines`;
   - the gear line keeps its rules.
   Mark `-- VERIFY(V38): the item post call fires for bags, the auction house, chat links and the addon's rows`. Add
   `ItemRefTooltip` to `.luacheckrc`. Make the item part of T033 pass.
-- [ ] T037 [US3] In `OneKeyFishing/UI/Minimap.lua`, after the session line of `ShowTooltip`, add a blank line,
+- [X] T037 [US3] In `OneKeyFishing/UI/Minimap.lua`, after the session line of `ShowTooltip`, add a blank line,
   `L["Likely catch here:"]`, one `AddDoubleLine` per item of `Catalog.MinimapLines()` and the footer line, when it
   returns lines. Make the minimap part of T033 pass.
-- [ ] T038 [US3] In `OneKeyFishing/Core.lua`, add `tooltipChances = true` to `DB_DEFAULTS.settings` with a comment. In
+- [X] T038 [US3] In `OneKeyFishing/Core.lua`, add `tooltipChances = true` to `DB_DEFAULTS.settings` with a comment. In
   `OneKeyFishing/UI/Settings.lua`, add `{ key = "tooltipChances", label = L["Show catch chances in tooltips"] }` to
   the feature toggles. Add the texts of T035-T038 with nine translations. Make T034 pass.
 
@@ -585,7 +585,7 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
 
 ### Tests for User Story 4
 
-- [ ] T039 [P] [US4] Create `tests/catchdb_water_test.lua` (research R5, data-model.md "Views").
+- [X] T039 [P] [US4] Create `tests/catchdb_water_test.lua` (research R5, data-model.md "Views").
   - **Sums under each filter** (`"pool"`, `"open"`, `"all"`, over cells with and without `p`):
     - catches, items and players under `"pool"` and `"open"` add up to `"all"` (SC-007);
     - `missRate` is nil under the two filters;
@@ -596,7 +596,7 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
     - false without any `p`;
     - true from a seed cell, an own pool catch (`FISH_CAUGHT` with `fromPool`) or a received record;
     - re-read after `SHARED_DATA_CHANGED` only while false.
-- [ ] T040 [P] [US4] Extend `tests/catchhere_test.lua` and `tests/catalogtab_test.lua`.
+- [X] T040 [P] [US4] Extend `tests/catchhere_test.lua` and `tests/catalogtab_test.lua`.
   - **The button.** "Water: Everywhere" shows in both tabs once pool data exists, and offers "Everywhere", "Open
     water" and "Pools".
   - **"What can be caught here".** Under "Pools" the page shows the pool numbers without the miss line.
@@ -604,7 +604,7 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
 
 ### Implementation for User Story 4
 
-- [ ] T041 [US4] In `OneKeyFishing/CatchDB.lua`, add `filter.water` ("all" when missing) and `CatchDB.HasPoolData()`
+- [X] T041 [US4] In `OneKeyFishing/CatchDB.lua`, add `filter.water` ("all" when missing) and `CatchDB.HasPoolData()`
   (research R5).
   - **Reading a cell.** `AddCell` reads the cell through the filter before adding it (the table in data-model.md
     "Views").
@@ -614,7 +614,7 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
   - **`HasPoolData`.** It scans the seed once, then the own tables and the stored records while false. `Settle`
     sets it on a pool catch, and the `SHARED_DATA_CHANGED` handler clears a false result.
   Make T039 pass.
-- [ ] T042 [US4] In `OneKeyFishing/UI/CatchHere.lua` and `OneKeyFishing/UI/CatalogTab.lua`, add the Water button.
+- [X] T042 [US4] In `OneKeyFishing/UI/CatchHere.lua` and `OneKeyFishing/UI/CatalogTab.lua`, add the Water button.
   - It shows only while `CatchDB.HasPoolData()`.
   - It uses `ns.OpenRadioMenu` with `L["Water: %s"]`, `L["Everywhere"]`, `L["Open water"]` and `L["Pools"]`.
   - It is in memory only (back to "all" on login).
@@ -630,28 +630,28 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
 
 **Purpose**: documentation, the in-game checklist, the format contracts of part 1, and a last check of the whole.
 
-- [ ] T043 [P] Update `README.md`:
+- [X] T043 [P] Update `README.md`:
   - the catalog tab and its search;
   - the map pin, with "the arrow depends on the game's navigation setting";
   - the "Caught in" tooltip lines and the minimap lines;
   - the "Show catch chances in tooltips" setting;
   - the Water filter (when the game tells pools apart);
   - `/okf catalog`.
-- [ ] T044 [P] Add the part 4 entries to `CHANGELOG.md` under `[Unreleased]`.
-- [ ] T045 [P] Update `CLAUDE.md`:
+- [X] T044 [P] Add the part 4 entries to `CHANGELOG.md` under `[Unreleased]`.
+- [X] T045 [P] Update `CLAUDE.md`:
   - the module map: `Catalog.lua` after `Share.lua`, `UI/CatalogTab.lua`; the `UI/*.lua` row names the catalog
     tab;
   - the cross-module rules: the catalog reads `CatchDB.MapStamp` and sends no message;
   - the Forever API traps: `C_Map.OpenWorldMap` is restricted, so use the global `OpenWorldMap`; the waypoint
     sequence of `/mappin`; the subzone found through the explored areas at the player's own position;
   - and nothing else: no message was added.
-- [ ] T046 [P] Update the architecture docs:
+- [X] T046 [P] Update the architecture docs:
   - `docs/architecture/catch-db.md`: the area of a cast and `a`, the water filter, `QueryMap`/`QueryCells`/`Maps`,
     the stamps, the own-cells index.
   - `docs/architecture/ui.md`: the catalog tab, the pin, the tooltips, the minimap lines, the Water button, the
     CatchHere click.
   - `docs/architecture/core.md`: `ns.FoldCase`, `SearchKey`, `CompareText`, and the `catalog` command.
-- [ ] T047 [P] Update `docs/forever-api.md` "From the client export" with the facts of research R4, R6 and R7:
+- [X] T047 [P] Update `docs/forever-api.md` "From the client export" with the facts of research R4, R6 and R7:
   - the waypoint functions and their flags;
   - `UiMapPoint`;
   - the game rule;
@@ -660,19 +660,19 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
   - `GetExploredAreaIDsAtPosition` (explored areas only);
   - `CaseAccentInsensitiveParse`, `strcmputf8i`;
   - the scroll and search templates.
-- [ ] T048 [P] Create `docs/checklists/catch-catalog.md` from [quickstart.md](quickstart.md) "In game: the feature".
+- [X] T048 [P] Create `docs/checklists/catch-catalog.md` from [quickstart.md](quickstart.md) "In game: the feature".
   It has numbered steps with the expected result of each, and the V-number each step closes. The pin step also
   checks SC-002: from typing a name to the pin takes at most five actions. It notes that a fresh install needs a
   game restart, not `/reload`, and that steps 1 and 6 need a second client language.
-- [ ] T049 [P] Update the format documents of part 1 for `a`:
+- [X] T049 [P] Update the format documents of part 1 for `a`:
   - `specs/002-local-catch-db/data-model.md` "Cell";
   - `specs/002-local-catch-db/contracts/seed-data.md` (the cell shape and its rules);
   - `specs/003-guild-group-sync/contracts/sync-protocol.md`, if it lists cell fields.
-- [ ] T050 Run `npm run check` and `npm test`. Check every `L[...]` key of part 4 against
+- [X] T050 Run `npm run check` and `npm test`. Check every `L[...]` key of part 4 against
   [contracts/ui.md](contracts/ui.md), and every `VERIFY(V30..V40)` marker against
   [verification.md](verification.md) (each ID has at least one marker; V39 and V40 may live in the checklist only).
   Re-check the constitution table of [plan.md](plan.md) against the code, and add a dated line there, as part 3 did.
-- [ ] T051 Note any open low-severity issue found while building in `docs/tech-debt.md`, each with the test that will
+- [X] T051 Note any open low-severity issue found while building in `docs/tech-debt.md`, each with the test that will
   close it (CLAUDE.md: remove an item once it is fixed with a test).
 
 ---

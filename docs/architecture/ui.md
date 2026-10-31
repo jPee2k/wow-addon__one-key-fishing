@@ -20,8 +20,9 @@ bobber is still flying, up to 3 s after the channel start, no warning.
 
 ## StatsFrame
 
-- Two tabs below the window: the game's `PanelTabButtonTemplate` or plain buttons, the last one saved in
-  `OneKeyFishingDB.statsTab`.
+- Three tabs below the window (statistics, "What can be caught here", the catch catalog): the game's
+  `PanelTabButtonTemplate` or plain buttons, the last one saved in `OneKeyFishingDB.statsTab`.
+  `StatsFrame.OpenCatalog(arg)` shows the window on the catalog.
 - The statistics page has rows in `ROWS`, cells keyed by row key.
 - A 1 s tick does a full refresh when `Stats.GetVersion()` changed or the window is marked dirty by
   `PRICES_CHANGED`, `SETTINGS_CHANGED`, a skill change or item info of a caught item, and otherwise only redraws
@@ -41,14 +42,37 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
   a question mark icon (134400), no price, and one `C_Item.RequestLoadItemDataByID`; its tooltip says how many
   players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
   `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (part 3, FR-017a);
-- the miss line uses the view's `missRate` (weighted, part 3).
+- the miss line uses the view's `missRate` (weighted, part 3), and is left out under a water filter;
+- the Water button (part 4) shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
+- a click on a known item row opens the catalog on it (`StatsFrame.OpenCatalog(itemID)`).
+
+## CatalogTab
+
+The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn from `Catalog.lua`:
+
+- the list: a `SearchBoxTemplate` box (its `OnTextChanged` hooked, not set), the Skill, Source and Water buttons
+  (CatchHere's labels and menus), and a `WowScrollBoxList` of `Catalog.Items`; a status line for the index being
+  counted and the empty states;
+- the item page: `Catalog.Places` as zone rows, each expanding into `Catalog.Spots` rows (indented), with the skill
+  span, the chance or "Little data", the catches, and the players on hover;
+- without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37);
+- state in memory only; `Tick` reads the catalog every second and redraws, keeping the scroll, when
+  `Catalog.GetVersion()` moved;
+- the pin (research R6): a spot row with `spot.pin` gets a button (the atlas `Waypoint-MapPin-Untracked`, or a text
+  button); `CatalogTab.Pin` asks before replacing a waypoint that is not `OneKeyFishingCharDB.pin` (within 0.0005),
+  then `C_Map.SetUserWaypoint`, `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`, saves the pin, toasts, and opens
+  the map with the global `OpenWorldMap` out of combat (`C_Map.OpenWorldMap` is restricted). The navigation CVar is
+  never touched.
 
 ## Other frames
 
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`) and Skill.lua's warnings.
-- Minimap: the button and the Addon Compartment entry from the TOC.
-- ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line.
+- Minimap: the button and the Addon Compartment entry from the TOC; in fishing mode with
+  `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`.
+- ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line; the item post call adds
+  "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
+  `settings.tooltipChances` (V38).
 - CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug` and
   `/okf spike` reports.
 
@@ -56,6 +80,7 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 
 Carries `VERIFY(spike)`. `/okf spike` shows, in the copy window, the game facts the catch database and the exchange
 were built on (build, map and position, fishing loot sources, auction results, `PanelTabButtonTemplate`, network
-APIs) for the checks in `specs/002-local-catch-db/verification.md` and `specs/003-guild-group-sync/verification.md`.
+APIs, and part 4's "Map pins and areas": pins, areas, item names, folding, templates) for the checks in the
+`verification.md` of each part.
 The file, its TOC line, its Commands.lua entry and `tests/spike_test.lua` go before the release, since
 `npm run build` refuses `VERIFY` markers.

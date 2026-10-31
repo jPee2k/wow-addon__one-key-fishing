@@ -46,7 +46,8 @@ message list are in `CLAUDE.md`; languages and translation file rules are in [la
 
 `ns.COMMANDS`: every slash command in one place, sorted by name, with its English description and a `run`
 function that calls the module at runtime (constitution, Principles II and VI). Modules register no commands; the
-names, descriptions and `/okf` help are English on every client.
+names, descriptions and `/okf` help are English on every client. `catalog` (part 4) passes the rest of the line
+through `Catalog.CommandArg` (an item link becomes its ID) to `StatsFrame.OpenCatalog`.
 
 ## Data.lua
 
@@ -63,7 +64,12 @@ Shared data and helpers:
   tests swap a fast stand-in for `ns.ProofStep` unless `real_proof` is set.
 - `ns.GameObjectID(guid)`: the object ID of a game object GUID (Forever scrambles the spawn part), and
   `ns.BOBBER_OBJECT_ID`.
+- `ns.FoldCase(text)`: lower case for ASCII, Latin-1 Supplement (U+00C0-U+00DE but U+00D7) and Cyrillic
+  (U+0400-U+042F) by UTF-8 byte patterns, the same in 5.1 and 5.3 (`string.lower` handles ASCII only);
+  `ns.SearchKey(text)` folds after the game's `CaseAccentInsensitiveParse` when present; `ns.CompareText(a, b)` uses
+  `strcmputf8i` when present, else the search keys. The catalog's search and order, and the subzone match.
 
 ## Debug.lua
 
-Builds the `/okf debug` report (English, not localized).
+Builds the `/okf debug` report (English, not localized). The "Catch catalog" section lists `Catalog.Describe()`:
+the state of each index, its maps and items, the build times and the name queue, never an item name.
