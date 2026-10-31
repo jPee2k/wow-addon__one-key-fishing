@@ -483,6 +483,14 @@ function CreateFrame(_, name, parent, template)
     frame.template = template
     if template == "SearchBoxTemplate" then
         frame.Instructions = NewFrame(frame)
+        -- the clear button: SetText(""), so OnTextChanged with userInput false
+        frame.clearButton = NewFrame(frame)
+        frame.clearButton.scripts.OnClick = function()
+            frame:SetText("")
+            if frame.scripts.OnTextChanged then
+                frame.scripts.OnTextChanged(frame, false)
+            end
+        end
     end
     if name then
         _G[name] = frame

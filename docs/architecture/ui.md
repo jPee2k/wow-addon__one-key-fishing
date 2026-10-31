@@ -59,10 +59,13 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   span, the chance or "Little data", the catches, and the players on hover;
 - without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37);
 - state in memory only; `Tick` reads the catalog every second and redraws, keeping the scroll, when
-  `Catalog.GetVersion()` moved;
+  `Catalog.GetVersion()` moved; a `Show(arg)` while the index of the filter is still building keeps `arg` pending
+  (a text already fills the search) and `Tick` passes it on once the index is ready; the player's typing, the search's clear button and
+  hiding the page (a closed window, another tab) drop it;
 - the pin (research R6): a spot row with `spot.pin` gets a button (the atlas `Waypoint-MapPin-Untracked`, or a text
   button); `CatalogTab.Pin` asks before replacing a waypoint that is not `OneKeyFishingCharDB.pin` (within 0.0005),
-  then `C_Map.SetUserWaypoint`, `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`, saves the pin, toasts, and opens
+  then `C_Map.SetUserWaypoint`, `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`, saves the pin, toasts (also with
+  catch notifications off: an answer to a click), and opens
   the map with the global `OpenWorldMap` out of combat (`C_Map.OpenWorldMap` is restricted). The navigation CVar is
   never touched.
 

@@ -149,7 +149,7 @@ and, with the shared catch database on, what other players reported.
   data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
   named after its subzone in your language (or shows its coordinates), with its own chance and catches.
 - **Map pin**: the pin button of a spot sets the game's own map pin there, turns on the game's navigation to it,
-  says so in a short message and opens the world map at that zone (not in combat). If you already have a pin that
+  says so in a short message (even with catch notifications off) and opens the world map at that zone (not in combat). If you already have a pin that
   the addon did not set, it asks before replacing it. The arrow on screen depends on the game's navigation
   setting. Instances and spots without a position have no pin button.
 - The tab follows new catches and new data from other players while it is open, keeping your search, the chosen

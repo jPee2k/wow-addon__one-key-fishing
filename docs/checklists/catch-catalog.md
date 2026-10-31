@@ -30,7 +30,8 @@ exchange on for step 8.
    map pin on the world map and the minimap at that place, the navigation arrow on screen pointing to it, the toast
    "Map pin: <zone> - <spot>", and the world map opens at that zone. Count the actions from typing the name to the
    pin: at most five (type, click the item, "+", the pin button). In combat, press another pin button: the pin and
-   the toast come, the map stays closed. Note whether the arrow shows; if not, note the CVar line of the spike.
+   the toast come, the map stays closed. Turn off "Show catch notifications" in the settings and press a pin button:
+   the toast still comes. Note whether the arrow shows; if not, note the CVar line of the spike.
 4. [ ] **The player's own pin** (FR-012): set a pin by hand on the world map, then press a pin button in the
    catalog. Expected: "Replace your map pin with this place?". "Cancel": your pin stays. Press again and "Replace":
    the catalog's pin. Press another pin button: no question (the addon's own pin is replaced).
@@ -51,7 +52,9 @@ exchange on for step 8.
    "Water: Everywhere"; the catches under "Open water" and "Pools" add up to those under "Everywhere", and the line
    "Nothing caught" is gone under the two. Without pool data the button does not show.
 10. [ ] **The ways in** (FR-024, FR-025): on "What can be caught here" click a known item: the catalog on that item.
-    `/okf catalog trout` fills the search; `/okf catalog` with a shift-clicked item link opens that item.
+    `/okf catalog trout` fills the search; `/okf catalog` with a shift-clicked item link opens that item. Right after
+    a login, while the catalog still says "Counting the catch...", click a known item on "What can be caught here":
+    the catalog opens on that item once the counting ends.
 11. [ ] **The whole** (V40): every step above passes on both client languages.
 
 ## Results
