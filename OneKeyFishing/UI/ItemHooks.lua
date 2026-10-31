@@ -3,10 +3,6 @@
 local _, ns = ...
 local L = ns.L
 
-local function ItemIDFromLink(link)
-    return type(link) == "string" and tonumber(link:match("|Hitem:(%d+)"))
-end
-
 local function IsOnlyAltDown()
     return IsAltKeyDown() and not IsShiftKeyDown() and not IsControlKeyDown()
 end
@@ -16,7 +12,7 @@ local function OnModifiedItemClick(link)
     if not IsOnlyAltDown() then
         return
     end
-    local itemID = ItemIDFromLink(link)
+    local itemID = ns.ItemIDFromLink(link)
     if not itemID then
         return
     end

@@ -28,7 +28,7 @@ local COLUMNS = {
     { key = "catches", x = 435, width = 60, justify = "RIGHT" },
 }
 
-local CreateText = ns.CreateText -- Core.lua
+local CreateText = ns.CreateText -- UI/Widgets.lua
 
 local page
 local search = ""
@@ -37,10 +37,6 @@ local chosen -- the item ID of the item page, or nil for the list
 local expanded = {} -- map ID -> true: zones of the chosen item that show their spots
 local drawn -- what the page shows now: { version, state }
 local dirty = false
-
-local function Percent(value)
-    return ("%d%%"):format(math.floor(value * 100 + 0.5))
-end
 
 -- The span of skill an item was caught with ({ min, max } ranges): "0-74", "75-224", "300+", "75+".
 local function SpanLabel(ranges)
@@ -55,14 +51,6 @@ local function SpanLabel(ranges)
         return from .. "+"
     end
     return from .. "-" .. ((ranges.max + 1) * ns.CatchDB.RANGE_STEP - 1)
-end
-
--- "N catches from K players" from 2 players on (part 3, FR-025), else "N catches".
-local function CatchesLine(catches, players)
-    if players >= 2 then
-        return (L["%d catches from %d players"]):format(catches, players)
-    end
-    return (L["%d catches"]):format(catches)
 end
 
 local function MarkDirty()
@@ -162,11 +150,10 @@ local function ShowPlaceTooltip(self)
         local area = spot.area and C_Map.GetAreaInfo(spot.area)
         GameTooltip:AddLine(type(area) == "string" and area ~= "" and area or element.zone)
         if spot.point then
-            GameTooltip:AddLine(("%d, %d"):format(math.floor(spot.point.x * 100 + 0.5),
-                math.floor(spot.point.y * 100 + 0.5)), 1, 1, 1)
+            GameTooltip:AddLine(ns.Catalog.Coordinates(spot.point), 1, 1, 1)
         end
     end
-    GameTooltip:AddLine(CatchesLine(element.place.catches, element.place.players), 1, 1, 1)
+    GameTooltip:AddLine(ns.Catalog.CatchesText(element.place.catches, element.place.players), 1, 1, 1)
     GameTooltip:Show()
 end
 
@@ -226,7 +213,7 @@ local function InitPlaceRow(row, element)
     row.name:SetWidth(COLUMNS[1].width - (zone and 0 or INDENT))
     row.name:SetText(place.name)
     row.skill:SetText(SpanLabel(place.ranges))
-    row.chance:SetText(place.littleData and L["Little data"] or Percent(place.chance))
+    row.chance:SetText(place.littleData and L["Little data"] or ns.Percent(place.chance))
     row.catches:SetText(tostring(place.catches))
     row.pinButton:SetShown(not zone and place.pin ~= nil)
 end
@@ -234,21 +221,6 @@ end
 ---------------------------------------------------------------------------
 -- The page
 ---------------------------------------------------------------------------
-local function OpenSkillMenu(owner)
-    local choices = {}
-    for _, range in ipairs(ns.CatchDB.RANGES) do
-        table.insert(choices, { value = range, text = ns.CatchHere.RangeLabel(range) })
-    end
-    table.insert(choices, { value = "all", text = ns.CatchHere.RangeLabel("all") })
-    ns.OpenRadioMenu(owner, choices, function(value) return filter.range == value end, CatalogTab.SetRange)
-end
-
-local function OpenSourceMenu(owner)
-    local choices = { { value = "all", text = ns.CatchHere.SourceLabel("all") },
-        { value = "mine", text = ns.CatchHere.SourceLabel("mine") } }
-    ns.OpenRadioMenu(owner, choices, function(value) return filter.source == value end, CatalogTab.SetSource)
-end
-
 function CatalogTab.SetRange(range)
     filter.range = range
     CatalogTab.Refresh()
@@ -292,9 +264,13 @@ function CatalogTab.Create(parent)
     page.listView:SetAllPoints()
     page.search = CreateSearchBox(page.listView)
     page.search:SetPoint("TOPLEFT", LABEL_X + 6, TOP)
-    page.skillButton = ns.CreateButton(page.listView, "", 150, function(self) OpenSkillMenu(self) end)
+    page.skillButton = ns.CreateButton(page.listView, "", 150, function(self)
+        ns.CatchHere.OpenSkillMenu(self, function() return filter.range end, CatalogTab.SetRange)
+    end)
     page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, TOP - 28)
-    page.sourceButton = ns.CreateButton(page.listView, "", 150, function(self) OpenSourceMenu(self) end)
+    page.sourceButton = ns.CreateButton(page.listView, "", 150, function(self)
+        ns.CatchHere.OpenSourceMenu(self, function() return filter.source end, CatalogTab.SetSource)
+    end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
     page.waterButton = ns.CreateButton(page.listView, "", 150, function(self)
         ns.CatchHere.OpenWaterMenu(self, function() return filter.water end, CatalogTab.SetWater)

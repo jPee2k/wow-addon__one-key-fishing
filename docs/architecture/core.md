@@ -113,7 +113,8 @@ Shared data and helpers:
   interact target is the bobber).
 - Bags: `ns.ForEachBagItem`, the shared bag iterator.
 - Names: `ns.WithRealm(name)` and `ns.SameCharacter(a, b)` (character names with their realm, as the exchange
-  addresses them); `ns.CountKeys(tbl)`.
+  addresses them); `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as whole percent); `ns.ItemIDFromLink(text)`
+  (the item ID in an item link).
 - Text: `ns.FoldCase(text)` (lower case for ASCII, Latin-1 Supplement and Cyrillic by UTF-8 byte patterns, the same
   in 5.1 and 5.3), `ns.SearchKey(text)` (folds after the game's `CaseAccentInsensitiveParse` when present) and
   `ns.CompareText(a, b)` (`strcmputf8i` when present, else the search keys): the catalog's search and order, and

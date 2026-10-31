@@ -25,13 +25,8 @@ local function OpenMenu(owner)
             scan:SetEnabled(false)
         end
         root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)
-        root:CreateButton(L["Debug report"], ns.ShowReport)
+        root:CreateButton(L["Debug report"], ns.ShowDebugReport)
     end)
-end
-
-local function KeyText(binding)
-    local key = GetBindingKey(binding)
-    return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
 end
 
 local function ShowTooltip(owner)
@@ -60,8 +55,8 @@ local function ShowTooltip(owner)
         GameTooltip:AddLine("  " .. chances.footer, 0.8, 0.8, 0.8)
     end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddDoubleLine(L["Fishing key:"], KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
-    GameTooltip:AddDoubleLine(L["Toggle mode key:"], KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Fishing key:"], ns.KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Toggle mode key:"], ns.KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine(L["How to use: press the toggle key, then the fishing key to cast,"], 0.8, 0.8, 0.8)
     GameTooltip:AddLine(L["and the same key again when the bobber splashes."], 0.8, 0.8, 0.8)

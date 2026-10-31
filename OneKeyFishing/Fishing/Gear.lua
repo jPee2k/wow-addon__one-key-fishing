@@ -172,6 +172,16 @@ end
 ---------------------------------------------------------------------------
 -- Gear list (used by the settings panel)
 ---------------------------------------------------------------------------
+-- True when the item is in the list of extra fishing gear.
+local function HasItem(itemID)
+    for _, existing in ipairs(ns.charDB.gear.items) do
+        if existing == itemID then
+            return true
+        end
+    end
+    return false
+end
+
 function Gear.GetItems()
     return ns.charDB.gear.items
 end
@@ -195,10 +205,8 @@ function Gear.AddItem(itemID)
     if not SLOTS_BY_EQUIP_LOC[GetEquipLoc(itemID) or ""] then
         return false, L["This item cannot be used as fishing gear."]
     end
-    for _, existing in ipairs(ns.charDB.gear.items) do
-        if existing == itemID then
-            return false, L["Already in the list."]
-        end
+    if HasItem(itemID) then
+        return false, L["Already in the list."]
     end
     table.insert(ns.charDB.gear.items, itemID)
     ns.Fire("GEAR_LIST_CHANGED")
@@ -216,15 +224,7 @@ function Gear.RemoveItem(itemID)
 end
 
 function Gear.IsFishingGear(itemID)
-    if itemID == ns.charDB.gear.pole then
-        return true
-    end
-    for _, existing in ipairs(ns.charDB.gear.items) do
-        if existing == itemID then
-            return true
-        end
-    end
-    return false
+    return itemID == ns.charDB.gear.pole or HasItem(itemID)
 end
 
 -- Alt+Click: add the item, or remove it if it is already fishing gear. Returns ok, message.
@@ -233,11 +233,9 @@ function Gear.ToggleItem(itemID)
         Gear.ClearPole()
         return true, L["Fishing pole: automatic (best in bags)."]
     end
-    for _, existing in ipairs(ns.charDB.gear.items) do
-        if existing == itemID then
-            Gear.RemoveItem(itemID)
-            return true, L["Removed from fishing gear."]
-        end
+    if HasItem(itemID) then
+        Gear.RemoveItem(itemID)
+        return true, L["Removed from fishing gear."]
     end
     return Gear.AddItem(itemID)
 end
@@ -474,10 +472,10 @@ function ns.ParseItem(text)
     if text == "" then
         return nil
     end
-    local itemID = tonumber(text:match("|Hitem:(%d+)") or text:match("^(%d+)$"))
+    local itemID = ns.ItemIDFromLink(text) or tonumber(text:match("^(%d+)$"))
     if itemID then
         return itemID
     end
     local _, link = C_Item.GetItemInfo((text:gsub("^%[(.*)%]$", "%1")))
-    return link and tonumber(link:match("|Hitem:(%d+)"))
+    return ns.ItemIDFromLink(link)
 end

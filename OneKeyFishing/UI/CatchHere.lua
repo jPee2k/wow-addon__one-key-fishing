@@ -21,7 +21,7 @@ local COLUMNS = {
 }
 local ROWS_TOP = TOP - 116 -- the column headers; the rows follow
 
-local CreateText = ns.CreateText -- Core.lua
+local CreateText = ns.CreateText -- UI/Widgets.lua
 
 local page
 local pickedRange -- a range (0..4 or "all") picked by hand since login; nil follows the own range
@@ -32,10 +32,6 @@ local dirty = false
 -- The map and the skill range change only with these events (zone changes, loading screens, skill-ups); between
 -- them the page follows the player's cell with one position lookup per second.
 local placeChanged = true
-
-local function Percent(value)
-    return ("%d%%"):format(math.floor(value * 100 + 0.5))
-end
 
 -- "0-74", ..., "300+" from CatchDB's ranges; "All skill levels" for "all".
 local function RangeLabel(range)
@@ -88,18 +84,19 @@ function CatchHere.SetSource(value)
     CatchHere.Refresh()
 end
 
-local function OpenSkillMenu(owner)
+-- The skill and source menus, like the Water menu above (also the catalog's): current() is the chosen value.
+function CatchHere.OpenSkillMenu(owner, current, choose)
     local choices = {}
     for _, range in ipairs(ns.CatchDB.RANGES) do
         table.insert(choices, { value = range, text = RangeLabel(range) })
     end
     table.insert(choices, { value = "all", text = RangeLabel("all") })
-    ns.OpenRadioMenu(owner, choices, function(value) return shown and shown.range == value end, CatchHere.SetRange)
+    ns.OpenRadioMenu(owner, choices, function(value) return current() == value end, choose)
 end
 
-local function OpenSourceMenu(owner)
+function CatchHere.OpenSourceMenu(owner, current, choose)
     local choices = { { value = "all", text = SourceLabel("all") }, { value = "mine", text = SourceLabel("mine") } }
-    ns.OpenRadioMenu(owner, choices, function(value) return source == value end, CatchHere.SetSource)
+    ns.OpenRadioMenu(owner, choices, function(value) return current() == value end, choose)
 end
 
 local function CreateRow(parent, index)
@@ -156,9 +153,13 @@ function CatchHere.Create(parent)
     page.counts:SetPoint("TOPLEFT", LABEL_X, TOP - 40)
     page.counts:SetWidth(540)
 
-    page.skillButton = ns.CreateButton(page, "", 150, function(self) OpenSkillMenu(self) end)
+    page.skillButton = ns.CreateButton(page, "", 150, function(self)
+        CatchHere.OpenSkillMenu(self, function() return shown and shown.range end, CatchHere.SetRange)
+    end)
     page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, TOP - 62)
-    page.sourceButton = ns.CreateButton(page, "", 150, function(self) OpenSourceMenu(self) end)
+    page.sourceButton = ns.CreateButton(page, "", 150, function(self)
+        CatchHere.OpenSourceMenu(self, function() return source end, CatchHere.SetSource)
+    end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
     page.waterButton = ns.CreateButton(page, "", 150, function(self)
         CatchHere.OpenWaterMenu(self, function() return water end, CatchHere.SetWater)
@@ -218,7 +219,7 @@ local function FillRow(row, item, littleData)
             C_Item.RequestLoadItemDataByID(item.itemID)
         end
     end
-    row.chance:SetText(littleData and L["Little data"] or Percent(item.chance))
+    row.chance:SetText(littleData and L["Little data"] or ns.Percent(item.chance))
     row.pieces:SetText(("%.1f"):format(item.pieces))
     row:Show()
 end
@@ -263,13 +264,11 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         page.counts:SetText("")
         page.message:SetText(L["Nothing has been caught here yet."])
     else
-        -- "from K players" once other players are behind the numbers; one player is just "N catches".
-        local catches = (source == "all" and view.players >= 2)
-            and (L["%d catches from %d players"]):format(view.catches, view.players)
-            or (L["%d catches"]):format(view.catches)
+        -- "from K players" once other players are behind the numbers (none under "Only mine").
+        local catches = ns.Catalog.CatchesText(view.catches, view.players)
         -- The miss rate is weighted (part 3, research R7), and nil under a water filter: a miss has no source.
         page.counts:SetText(view.missRate and (catches .. "    " ..
-            (L["Nothing caught: %s"]):format(Percent(view.missRate))) or catches)
+            (L["Nothing caught: %s"]):format(ns.Percent(view.missRate))) or catches)
         for i, item in ipairs(view.items) do
             if i > MAX_ROWS then
                 page.more:SetText((L["and %d more"]):format(#view.items - MAX_ROWS))

@@ -74,3 +74,9 @@ function ns.OpenRadioMenu(owner, choices, isSelected, choose)
         end
     end)
 end
+
+-- The text of the key bound to an action, or a red "not bound".
+function ns.KeyText(binding)
+    local key = GetBindingKey(binding)
+    return key and GetBindingText(key) or ("|cffff5555" .. ns.L["not bound"] .. "|r")
+end

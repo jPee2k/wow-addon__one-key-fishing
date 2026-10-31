@@ -20,7 +20,7 @@ end
 local function NewSession()
     local session = NewBucket()
     session.started = time()
-    session.skillStart = ns.Skill and ns.Skill.Get() or nil
+    session.skillStart = ns.Skill.Get()
     return session
 end
 

@@ -254,8 +254,6 @@ function CatchDB.IsBuild(build)
     return type(build) == "string" and build:find("^%d+%.%d+%.%d+$") ~= nil
 end
 
-local CountKeys = ns.CountKeys -- Data.lua
-
 -- True when game version `build` ("1.60.1") is older than `than`; "unknown" (the game gave no version) is older
 -- than any version, so a reset of a map leaves it out as the harvest does; false for anything else.
 local function OlderBuild(build, than)

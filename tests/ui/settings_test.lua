@@ -112,3 +112,14 @@ test("the main page has Show catch chances in tooltips, on by default; off fires
     eq(ns.db.settings.tooltipChances, false, "off")
     eq(changed, "tooltipChances", "SETTINGS_CHANGED")
 end)
+
+---------------------------------------------------------------------------
+-- The Debug report button
+---------------------------------------------------------------------------
+test("the main page's Debug report button shows the report in the copy window", function()
+    click(L["Debug report"])
+    local window = assert(rawget(_G, "OneKeyFishingCopyWindow"), "the copy window")
+    assert(window:IsShown(), "shown")
+    eq(window.title.text, L["OneKeyFishing - debug report"], "its title")
+    assert(window.edit.text:find("== OneKeyFishing", 1, true), "the report")
+end)

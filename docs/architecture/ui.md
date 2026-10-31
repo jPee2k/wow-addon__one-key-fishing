@@ -69,7 +69,9 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 
 - Widgets: the frame helpers of every window and page: `ns.CreateButton` (the panel button, which grows to its
   text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`
-  (item tooltip with the few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices).
+  (item tooltip with the few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
+  (the key bound to an action, or a red "not bound"). The skill, source and water menus of the two catch pages are
+  `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`) and the skill warnings (`SKILL_WARNING`).
 - AuctionButton: the "Scan fish prices" button above the auction house window, made when it first opens; it
@@ -83,7 +85,8 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
   `settings.tooltipChances` (V38).
 - CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug` and
-  `/okf spike` reports.
+  `/okf spike` reports; `ns.ShowDebugReport` shows the debug report (the command, the minimap menu and the
+  settings page).
 
 ## Core/Spike.lua (temporary)
 

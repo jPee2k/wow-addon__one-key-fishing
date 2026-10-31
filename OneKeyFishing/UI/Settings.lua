@@ -64,14 +64,9 @@ local function CreateCheckbox(parent, label, getValue, setValue)
     return checkbox
 end
 
-local CreateButton = ns.CreateButton -- Core.lua
+local CreateButton = ns.CreateButton -- UI/Widgets.lua
 
-local function KeyText(binding)
-    local key = GetBindingKey(binding)
-    return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
-end
-
-local ItemDisplay = ns.ItemDisplay -- Core.lua
+local ItemDisplay = ns.ItemDisplay -- UI/Widgets.lua
 
 ---------------------------------------------------------------------------
 -- Language
@@ -227,7 +222,7 @@ local function CreateMainPage()
     actionsHeader:SetPoint("TOPLEFT", cameraLabel, "BOTTOMLEFT", 0, -18)
     local toggleButton = CreateButton(page, L["Toggle fishing mode"], 180, function() ns.Mode.Toggle() end)
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
-    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowReport() end)
+    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowDebugReport() end)
     reportButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
     local statsButton = CreateButton(page, L["Open statistics"], 140, function() ns.StatsFrame.Toggle() end)
     statsButton:SetPoint("LEFT", reportButton, "RIGHT", 8, 0)
@@ -254,7 +249,7 @@ local function CreateMainPage()
         UpdateLanguage()
         cameraValue:SetText(ns.db.settings.cameraDistance)
         keys:SetText((L["Fishing action: %s      Toggle fishing mode: %s"]):format(
-            KeyText("ONEKEYFISHING_ACTION"), KeyText("ONEKEYFISHING_TOGGLE")))
+            ns.KeyText("ONEKEYFISHING_ACTION"), ns.KeyText("ONEKEYFISHING_TOGGLE")))
     end)
     return page
 end

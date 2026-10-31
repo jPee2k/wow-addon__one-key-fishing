@@ -551,9 +551,11 @@ local function Ranges(filter)
     return filter.range == "all" and CatchDB.RANGES or { filter.range }
 end
 
-local function FilterKey(filter)
+-- "<range>|<source>|<water>": a filter as the view caches (and the catalog, Catalog.lua) key it.
+function CatchDB.FilterKey(filter)
     return tostring(filter.range) .. "|" .. filter.source .. "|" .. (filter.water or "all")
 end
+local FilterKey = CatchDB.FilterKey
 
 local cache, cacheVersion = {}, nil
 local reportersCache = {} -- "<mapID>|<source>" -> Reporters(...): the map's, whatever the spot or range
