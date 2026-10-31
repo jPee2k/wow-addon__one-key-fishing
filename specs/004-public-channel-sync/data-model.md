@@ -126,7 +126,8 @@ author's note (FR-019).
   weighted total (seed block and own counts unscaled). The view's `catches` and `misses` stay the raw sums;
   `chance` and `pieces` come from the scaled sums. The new `missRate` is weighted the same way by casts (`c + m`
   instead of `c`; a weighted seed cell gives its catches weighted by casts as `x`), so a contribution of few catches
-  and many misses holds at most a fifth of it. `littleData` uses the raw catches.
+  and many misses holds at most a fifth of it. `littleData` uses the raw catches (a seed cell the harvest weighted
+  gives them as `r`).
 - **Items shown** (FR-014): an item is listed when the seed has it anywhere, or the own catch (`mine`, or a record
   of the own ID) has it anywhere, or at least 3 distinct other IDs report it on the map (any range). The catches of an
   item left out still count in the totals.
@@ -154,6 +155,7 @@ channel = {
   joinAt = 4100,             -- GetTime() of the delayed join after the login
   joining = false,           -- the addon's own join is under way (a limit refusal now is not the player's)
   leftAt = nil,              -- GetTime() of the addon's own last leave (a YOU_LEFT within 5 s is not "left by hand")
+  joins = 0,                 -- joins started this session (CHANNEL_STATE's third value)
   sawPassword = false,       -- a password set by a player not heard announcing on this channel (the owner clears it;
                              -- moderation has no undo, so it only starts the wait)
   lockTimer = nil,           -- the 10-20 s wait before moving on after such a lock

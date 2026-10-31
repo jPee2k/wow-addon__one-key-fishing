@@ -251,3 +251,37 @@ test("cleanup deletes other records without a valid proof, and copies that do no
     eq(shared.records["pppppppp@0"].seq, 6, "the real one stays")
     ns.SeedData = nil
 end)
+
+test("until the walk reaches it, a copy the seed holds in part is not sent, nor what a newer version continues",
+    function()
+    shared.records["oooooooo@0"] = other(6, 30, "a forger")
+    local absorbed = { oooooooo = { [0] = 3 } }
+    ns.SeedData = { epoch = 1, absorbed = absorbed, resets = {}, cells = {},
+        proofs = { oooooooo = { [0] = other(3, 15).proof } } }
+    local sent = {}
+    local node = ns.Share.NewNode(shared, { now = GetTime, time = GetTime, after = C_Timer.After,
+        send = function(_, text) table.insert(sent, text) end, broadcast = function() end,
+        forEachFriend = function() end, canSend = function() return true end, absorbed = function() return absorbed end,
+        seedEpoch = function() return 1 end, encode = ns.Share.Encode, decode = ns.Share.Decode })
+    local work = Store.SeedChainWork(shared)
+    eq(#work, 1, "one copy to walk")
+    advance(200) -- the next session may start
+    node:Receive("w:Y", "group", sum_text("yy"))
+    node:Receive("w:Y", "group", "Dyy " .. ns.BASE32)
+    node:Receive("w:Y", "group", "Wyy oooooooo@0")
+    local records = 0
+    for _, text in ipairs(sent) do
+        if text:find("^Ryy") then
+            records = records + 1
+        end
+    end
+    assert(#sent > 0, "the session ran")
+    eq(records, 0, "the unchecked copy is not sent")
+    eq(Store.Accept(shared, other(8, 40, "a forger"), 200), "refused", "a newer made-up version meets the seed's proof")
+    eq(shared.records["oooooooo@0"].seq, 6, "the copy is still there until the walk")
+    eq(Store.CheckSeedChains(shared, work), true, "done")
+    eq(shared.records["oooooooo@0"], nil, "the made-up copy went")
+    eq(Store.Accept(shared, other(8, 40), 201), "new", "the owner's version continues the seed's proof")
+    shared.records["oooooooo@0"] = nil
+    ns.SeedData = nil
+end)

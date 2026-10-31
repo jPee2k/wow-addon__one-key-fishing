@@ -263,12 +263,17 @@ holds the contribution and check that it is dropped, refused from the network an
 - The player hits the channel limit a second time in the same session after the addon already gave its slot up: the
   game's own refusal stands; the addon is not in the way, so it says nothing.
 - The player or another addon uses a channel of the same name for something else: its text stays hidden, as any
-  text typed into the channel by hand.
+  text typed into the channel by hand. A copy of one of the addon's names joined outside the addon's own join (by
+  hand, or kept by the game from an older session) is left at once: the names belong to the addon, and one copy is
+  enough. After the player left the channel by hand, a channel they join again by hand is theirs until the next
+  login.
 - `/reload`: the addon is still in the channel and it stays hidden; nothing about it appears in chat.
 - Combat, an instance, a loading screen or a restricted game state: nothing is sent to the channel and what arrives
   is ignored, as for the rest of the exchange; the addon may stay in the channel.
 - Hundreds of announcements per hour arrive in a busy channel: they cost no noticeable frame time, and the memory for
   players heard stays bounded (the strangers heard longest ago are forgotten first, never guild, group or friends).
+  Strangers who only whispered (a session they started) are not counted in that bound: each one is a real character
+  that heard this client, so their number grows with the session's length, not with the channel's size.
 - A stranger floods the channel or a whisper with messages or message parts: they are dropped cheaply and the sender
   is ignored until logout.
 - A stranger runs an incompatible exchange version: no exchange with them, no error, as in part 2.

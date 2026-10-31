@@ -43,7 +43,10 @@ Rules:
 - `proofs` and `blocked` come with part 3 (`specs/004-public-channel-sync/data-model.md` "Seed"): a newer version of
   an absorbed unit must continue its proof, and a blocked ID is refused by every client. Both may be missing (an
   older seed); `npm run check` checks their shape when present. The cells apply the weight limit per cell from five
-  contributors on (research R7 of part 3); `k` stays the number of contributors. A weighted cell scales each
-  contribution's catches and items by its catch factor and its misses by its cast factor; when the catches weighted by
-  casts differ from `c`, the cell carries them as `x` (optional), and a view takes the cell's miss rate from
-  `m / (x + m)` and its chances from `c`.
+  contributors on (research R7 of part 3); `k` is the number of contributors who caught something there (as the
+  views count players; a cell of misses only has `k = 0`). A weighted cell scales each contribution's catches and
+  items by its catch factor (rounded: a capped contributor's rare item may round to 0, which keeps its chance from
+  growing many times over) and its misses by its cast factor; when the catches weighted by casts differ from `c`, the
+  cell carries them as `x` (optional), and a view takes the cell's miss rate from `m / (x + m)` and its chances from
+  `c`. When the weights changed the catches, the cell carries the raw ones as `r` (optional): the views' little-data
+  threshold and catch count, and the eviction classes, read it.

@@ -63,7 +63,8 @@ local receivers, offlineHandlers, activityHandlers, floodHandlers = {}, {}, {}, 
 local partFilter -- fn(address): true when parts of long messages are taken from it (Share: its session's peer)
 local dropped = {} -- address -> per-minute counts of the parts dropped by the part filter
 local flooded = {} -- addresses reported through OnFlood: every message from them is dropped until logout
-local channelRefusals = 0
+local channelRefusals = 0 -- in a row, on the current join of the channel
+local channelJoins -- the join of the channel those refusals were counted on (CHANNEL_STATE)
 local paths = {
     guild = { failures = 0, disabled = false },
     group = { failures = 0, disabled = false },
@@ -446,15 +447,10 @@ end
 -- fn(address) for every online character friend and every Battle.net game account playing Forever.
 function Comm.ForEachFriend(fn)
     -- VERIFY(V11): a friend on the own realm is listed without the realm, while addon messages come as Name-Realm
-    local realm = GetNormalizedRealmName and GetNormalizedRealmName()
     for i = 1, C_FriendList.GetNumFriends() or 0 do
         local info = C_FriendList.GetFriendInfoByIndex(i)
         if info and info.connected and type(info.name) == "string" then
-            local name = info.name
-            if realm and not name:find("-", 1, true) then
-                name = name .. "-" .. realm -- the address the friend's own messages arrive from
-            end
-            fn("w:" .. name)
+            fn("w:" .. ns.WithRealm(info.name)) -- the address the friend's own messages arrive from
         end
     end
     -- VERIFY(V13): Battle.net friends playing Forever have clientProgram BNET_CLIENT_WOW and our WOW_PROJECT_ID
@@ -496,9 +492,20 @@ function Comm.OnFlood(fn)
 end
 
 -- A part nobody asked for: dropped before any buffering; a sender who keeps sending them is reported once.
+local lastSweep -- GetTime() of the last sweep of `dropped`
+
 local function DropPart(address)
+    local now = GetTime()
+    if not lastSweep or now - lastSweep >= 60 then
+        lastSweep = now
+        for sender, counts in pairs(dropped) do
+            if ns.CountRecent(counts, now, 0, PART_FLOOD_MINUTES) == 0 then
+                dropped[sender] = nil -- nothing dropped from it for a while: its counts go
+            end
+        end
+    end
     dropped[address] = dropped[address] or {}
-    if ns.CountRecent(dropped[address], GetTime(), 1, PART_FLOOD_MINUTES) > PART_FLOOD_LIMIT then
+    if ns.CountRecent(dropped[address], now, 1, PART_FLOOD_MINUTES) > PART_FLOOD_LIMIT then
         flooded[address], dropped[address] = true, nil
         for _, fn in ipairs(floodHandlers) do
             fn(address)
@@ -731,5 +738,13 @@ end)
 for _, event in ipairs({ "ZONE_CHANGED_NEW_AREA", "PLAYER_ENTERING_WORLD" }) do
     ns.RegisterEvent(event, UpdatePause)
 end
+
+-- Every join of the channel (the same one again too) gets its own two tries (research R4, R6): a refusal counted
+-- before a move that a notice caused does not count on the next channel.
+ns.On("CHANNEL_STATE", function(_, _, joins)
+    if joins ~= channelJoins then
+        channelJoins, channelRefusals = joins, 0
+    end
+end)
 
 C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)

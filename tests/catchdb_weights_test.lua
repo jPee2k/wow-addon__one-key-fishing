@@ -77,6 +77,19 @@ test("a weighted seed cell's miss rate comes from its catches weighted by casts 
     ns.Fire("SHARED_DATA_CHANGED")
 end)
 
+test("a seed cell the harvest weighted counts its raw catches (r): no little data at a busy spot", function()
+    -- 1020 real catches, one player capped: the weighted cell holds 25.
+    ns.SeedData.cells["3190:3:11"] = { c = 25, m = 0, r = 1020, t = 10200, k = 5, i = { [FISH] = { 25, 25 } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    local view = CatchDB.Query(3190, "11", SPOT)
+    eq(view.scope, "spot", "the spot, not the map")
+    eq(view.littleData, false, "enough data")
+    eq(view.catches, 1020, "the real number of catches")
+    near(chance(view, FISH), 1, "the chance from c")
+    ns.SeedData.cells["3190:3:11"] = nil
+    ns.Fire("SHARED_DATA_CHANGED")
+end)
+
 test("under five contributions nothing is weighted", function()
     for i = 1, 3 do
         contribution(("c%07d"):format(i), 3110, 100, 5)

@@ -27,8 +27,9 @@ locked channel meet again in the next one without any coordination (FR-005a).
   a slot given up) is saved at `PLAYER_LOGOUT`, which a `/reload` fires too, and read back on the `/reload`.
 - `JoinTemporaryChannel(name)` with no password and no window: left at logout, never saved with the window settings,
   never rejoined by the client, so the next login places the player's channels first (research R2).
-- On the game's confirmation (the join notice for our name, or `GetChannelName(name) > 0`): the channel is removed
-  from every chat window that lists it; the filters below are active from the file load on.
+- On the game's confirmation (the join notice for our name, or `GetChannelName(name) > 0` at one of three checks 5 s
+  apart): the channel is removed from every chat window that lists it; the filters below are active from the file
+  load on. A join with neither by the third check counts as locked (a password or a ban without a notice).
 
 ## Hiding (FR-003, FR-004)
 
@@ -54,12 +55,12 @@ The addon's own `OKF1` addon messages never reach a chat window (part 2, V10).
 | `OWNER_CHANGED` naming this client after it saw a lock there | clears the password (the self-heal, V24) |
 | `PLAYER_KICKED` naming this player | joins the same channel again after 60 s; the third kick in a session counts as a ban |
 | `PLAYER_BANNED` naming this player, or `MUTED` | leaves, marks the index locked, joins the next index |
-| two refusals in a row on the channel path (`InvalidChannel`, `GeneralError`, or any other result but a success, a throttle or a lockdown) after a join | marks the index locked, joins the next index; the count starts again. The channel path never counts toward the part 2 rule "every path left out": it carries `HELLO` only, and sessions go by whisper |
+| two refusals in a row on the channel path (`InvalidChannel`, `GeneralError`, or any other result but a success, a throttle or a lockdown) after a join | marks the index locked, joins the next index; the count starts again, and at every join (a move, a rejoin). The channel path never counts toward the part 2 rule "every path left out": it carries `HELLO` only, and sessions go by whisper |
 | every index locked | state `locked` until logout; guild, group and friends go on |
 
-"Heard announcing" is a channel peer of this session (`Share.HeardInChannel(name)`), matched by the name with or
-without the realm: a name without one is a player of the own realm, as the game names them (the same holds for this
-client's own name in the notices).
+"Heard announcing" is a player whose channel HELLO came this session (`Share.HeardInChannel(name)`, kept apart from
+the peer bound), matched by the name with or without the realm: a name without one is a player of the own realm, as
+the game names them (the same holds for this client's own name in the notices).
 
 ## Slots and the player (FR-005)
 

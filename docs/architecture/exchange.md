@@ -61,15 +61,18 @@ The hidden public channel (part 3); it knows nothing about records.
   our names is closed in the same frame.
 - The player's channel limit: the game's limit text while in (not during its own join) makes it leave at once, print
   one line per session and wait until two slots are free (`CHANNEL_UI_UPDATE` or the next channel round).
-- Locks: a refused join (`WRONG_PASSWORD`, the password request, `BANNED`, `WRONG_FACTION`, no confirmation within
-  5 s) locks that name for the session and joins the next. A password or moderation set by a player not heard
+- Locks: a refused join (`WRONG_PASSWORD`, the password request, `BANNED`, `WRONG_FACTION`, no confirmation by
+  three checks 5 s apart) locks that name for the session and joins the next. A password or moderation set by a player not heard
   announcing (`Share.HeardInChannel`): the owner clears a password at once (it learns ownership from
   `OWNER_CHANGED` or the `CHANNEL_OWNER` answer to `DisplayChannelOwner`, asked only after a lock); otherwise, and
   for moderation, which has no undo call, it moves on after a random 10-20 s unless a heard player undoes it. Kicks
   rejoin after 60 s, the third counts as a ban; a ban or a mute moves on. `TRIAL_RESTRICTED`, `INVALID_NAME` or a
-  nil join result: locked, no fallback. A `YOU_LEFT` the addon did not cause: out until the next login.
+  nil join result: locked, no fallback. A `YOU_LEFT` the addon did not cause (also before the join is confirmed):
+  out until the next login. After a `/reload` a channel found locked that the client is still in is left, and one the
+  player joined again by hand after a leave is left alone. Ticking the setting counts as reading the notice.
 - `Channel.GetState()` (unavailable, off, notice, paused, left, noslot, locked, waiting, in) fires `CHANNEL_STATE`
-  on each change; `Channel.Describe()` for `/okf debug`.
+  (state, index, joins) on each change; a new `joins` is a new join (Share's first channel round, Comm's refusal
+  count), the same one after a pause is not. `Channel.Describe()` for `/okf debug`.
 
 ## Share.lua: the store
 

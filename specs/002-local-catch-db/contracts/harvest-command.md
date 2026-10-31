@@ -40,8 +40,10 @@ the report; the record's other builds are used.
 - Key `id@epoch`; an incoming record replaces the stored one only when its `seq` is higher.
 - `--reset <mapID>` stores `resets[mapID] = newest build`; from then on cells of that map from older builds are left
   out of the sums.
-- Sums: every stored contribution, every build except reset ones, cell by cell; `k` counts the contributor IDs in
-  a cell (records of several epochs of one ID count once). `absorbed[id][epoch]` = the stored seq of every unit
+- Sums: every stored contribution, every build except reset ones, cell by cell; `k` counts the contributor IDs
+  that caught something in a cell (records of several epochs of one ID count once). A stored cell keeps only the
+  fields the client reads (`c`, `m`, `t`, `px`, `py`, `i`, `p`); the casting limit counts the seconds of game
+  versions only. `absorbed[id][epoch]` = the stored seq of every unit
   `id@epoch`: a client keeps a newer seq of a unit (a copy the author's client got before the owner's newest one)
   and passes it on, so the rest reaches the next harvest instead of being deleted.
 

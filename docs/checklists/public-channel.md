@@ -73,7 +73,14 @@ Ctrl+C). Run it twice a few seconds apart: echoes show in the second report.
 - [ ] **6. Setting**: "Use the public channel" off leaves the channel at once, the guild exchange goes on, data from
   B stays counted; on joins at once. With "Use the shared catch database" off the channel setting is greyed out.
 - [ ] **7. Left by hand**: `/leave` the channel: the addon stays out until the next login (`/okf share`: "you left
-  it, back at the next login").
+  it, back at the next login"). The same when the `/leave` comes within a few seconds of the addon's join (right
+  after the login delay, or 60 s after a kick). `/join OneKeyFishingShare` by hand after that, then `/reload`: the
+  channel stays in the chat window and the addon does not leave it (also with "Use the public channel" turned off).
+  The setting's checkbox ticked while the notice popup is open closes the popup.
+- [ ] **7a. Slow join** (V24): `/okf debug` after a login on a busy realm: the channel is the main one (index 1), not
+  a fallback, also when the join took a few seconds. A kick in combat (C kicks A while A fights): A is back in the
+  channel within about a minute of the combat's end, and B (who has not heard A this hour) counts A among the
+  players heard in the channel (`/okf share`) within about 2 minutes of A's return.
 - [ ] **8. Notice**: on a fresh install the popup names the public channel; nothing joins before it is closed. A
   player who closed the part 2 notice sees it once more after the update.
 - [ ] **9. Unknown items** (V27): if an item of the bundled data is unknown to the client, the tab shows an

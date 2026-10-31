@@ -41,8 +41,8 @@ test("WRONG_PASSWORD, BANNED and WRONG_FACTION each move to the next name", func
     eq(lastJoin(), NAMES[5], "after WRONG_FACTION")
 end)
 
-test("a join with no notice that does not land within 5 s counts as locked", function()
-    advance(4)
+test("a join with no notice that does not land within three checks (15 s) counts as locked", function()
+    advance(14)
     eq(lastJoin(), NAMES[5], "still waiting")
     advance(2)
     eq(lastJoin(), NAMES[6], "the last fallback")

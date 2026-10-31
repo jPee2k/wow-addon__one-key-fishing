@@ -694,7 +694,7 @@ local NEW_ITEM_REPORTERS = 3 -- other contributions that must report an item nei
 -- weighted before the parts are added.
 -- x: the catches weighted by casts, for the miss rate (a seed cell's own x, else its catches).
 local function NewSum()
-    return { c = 0, m = 0, x = 0, i = {}, ids = {}, seedK = 0, parts = {} }
+    return { c = 0, m = 0, x = 0, i = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {} }
 end
 
 -- factor: the weight of the cell's counts (research.md R7 of part 3), 1 when nil.
@@ -735,8 +735,12 @@ local function AddCell(sum, cell, source)
         end
     end
     AddCounts(target, cell)
-    -- A seed cell weighted by the harvest carries its catches weighted by casts (x); records never do (CleanCell).
+    -- A seed cell weighted by the harvest carries its catches weighted by casts (x) and its raw catches (r); records
+    -- never do (CleanCell).
     target.x = target.x + ((source.seed and tonumber(cell.x)) or tonumber(cell.c) or 0)
+    if source.seed and tonumber(cell.r) then
+        sum.seedUnweighted = sum.seedUnweighted + math.max(0, tonumber(cell.r) - (tonumber(cell.c) or 0))
+    end
 end
 
 -- The seed's keys per "<mapID>:<range>", built once per seed (the seed is large and never changes in place).
@@ -798,10 +802,18 @@ local function IndexRecord(key)
     others.byRecord[key] = entries
 end
 
+local function RemoveFromSet(sets, name, entry)
+    local set = sets[name]
+    set[entry] = nil
+    if next(set) == nil then
+        sets[name] = nil
+    end
+end
+
 local function UnindexRecord(key)
     for _, entry in ipairs(others.byRecord[key] or {}) do
-        others.byKey[entry.place][entry] = nil
-        others.byPrefix[entry.prefix][entry] = nil
+        RemoveFromSet(others.byKey, entry.place, entry)
+        RemoveFromSet(others.byPrefix, entry.prefix, entry)
     end
     others.byRecord[key] = nil
 end
@@ -921,8 +933,9 @@ local function SumMap(sources, mapID, ranges)
 end
 
 -- Catches of a sum with every other player's part, unweighted.
+-- The real catches: what the harvest's weights took off the seed's cells is added back (the little-data threshold).
 local function RawCatches(sum)
-    local catches = sum.c
+    local catches = sum.c + sum.seedUnweighted
     for _, part in pairs(sum.parts) do
         catches = catches + part.c
     end
@@ -941,7 +954,7 @@ end
 
 -- The weight factor of each other player's contribution (research.md R7 of part 3): from WEIGHT_FROM contributions
 -- on, the largest ones by `amount` are capped one by one at T, where T is WEIGHT_SHARE of the weighted total; the
--- seed block and the own catch are not capped. Five capped ones share the weight equally.
+-- seed block and the own catch are not capped. At most four are capped: the fifth is never above the rest.
 local function WeightFactors(sum, players, amount)
     local factors = {}
     if players < WEIGHT_FROM then
@@ -968,10 +981,6 @@ local function WeightFactors(sum, players, amount)
             break
         end
         capped, rest = capped + 1, rest - entry.c
-        if capped >= shares then
-            cap = entry.c
-            break
-        end
         cap = (base + rest) / (shares - capped)
     end
     for _, entry in ipairs(list) do
@@ -1079,7 +1088,8 @@ local function BuildView(scope, sum, rules)
         end
         return a.itemID < b.itemID
     end)
-    return { scope = scope, littleData = raw.c < LITTLE_DATA, catches = raw.c, misses = raw.m,
+    local catches = RawCatches(sum)
+    return { scope = scope, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
         missRate = casts > 0 and misses / casts or 0, items = items, players = players }
 end
 
@@ -1089,8 +1099,10 @@ local reportersCache = {} -- "<mapID>|<source>" -> Reporters(...): the map's, wh
 -- What a place gives (contracts/catchdb-api.md): the spot, or the whole map when the spot has fewer than
 -- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }. A view is
 -- { scope = "spot" | "map" | "none", littleData, catches, misses, missRate, players,
--- items = { { itemID, catches, chance, pieces, reporters, inSeed } } }: catches and misses are the real sums;
--- chance, pieces and missRate come from the sums weighted by research.md R7 of part 3; an item neither the seed nor
+-- items = { { itemID, catches, chance, pieces, reporters, inSeed } } }: catches is the real sum (a seed cell the
+-- harvest weighted gives its raw catches, r); misses and the items' catches are summed unweighted, but a weighted
+-- seed cell holds them weighted; chance, pieces and missRate come from the sums weighted by research.md R7 of part 3;
+-- an item neither the seed nor
 -- the own catch has needs NEW_ITEM_REPORTERS other contributions on the map (FR-014); players is a lower bound where
 -- the seed cannot tell (specs/003-guild-group-sync/research.md R9).
 function CatchDB.Query(mapID, cell, filter)
