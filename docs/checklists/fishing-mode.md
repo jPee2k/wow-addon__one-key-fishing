@@ -13,6 +13,20 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 2. Restart the game completely when a file was added to the TOC; otherwise `/reload` is enough.
 3. Bind both keys: Options -> Keybindings -> AddOns -> OneKeyFishing.
 
+## 0. The folder layout (once, after the files moved into one folder per area)
+
+- [ ] **Clean install.** Delete `Interface/AddOns/OneKeyFishing` and install the build (or link), then restart the
+  game completely (the TOC changed). Expected: the addon is in the AddOn list, no error on login, `/okf` lists the
+  commands, both keys are still bound (`Bindings.xml` stayed at the root).
+- [ ] **Reports.** `/okf debug` and `/okf spike` open the copy window with the report (now built by `Core/Debug.lua`
+  and shown by `Core/Commands.lua`).
+- [ ] **The views that moved.** Open the auction house: the "Scan fish prices" button is there and counts while
+  scanning (`UI/AuctionButton.lua`). Enter fishing mode at a capped rank: the warning shows as a toast too
+  (`SKILL_WARNING`). On a fresh account the one-time popup about the exchange shows and its Settings button opens
+  the "Shared database" page (`UI/ShareNotice.lua`).
+- [ ] **Update over an old install.** Copy the build over the 1.0.0 folder without deleting it. Expected: the old
+  root `*.lua` files stay but are not loaded (the TOC no longer lists them); everything above still works.
+
 ## 1. Fishing mode
 
 - [x] **On.** Press the toggle key at the water. Expected: the pole is equipped, the camera zooms to the set
