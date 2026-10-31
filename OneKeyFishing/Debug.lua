@@ -125,6 +125,13 @@ local function BuildReport()
             tostring(coverage and coverage.total))
     end)
 
+    -- Counts and times only, never an item name (specs/005-catch-catalog, V39).
+    Section(lines, "Catch catalog", function()
+        for _, line in ipairs(ns.Catalog.Describe()) do
+            add("%s", line)
+        end
+    end)
+
     -- No anonymous ID and no names: the exchange state in numbers only.
     Section(lines, "Shared database", function()
         for _, line in ipairs(ns.Share.Describe()) do

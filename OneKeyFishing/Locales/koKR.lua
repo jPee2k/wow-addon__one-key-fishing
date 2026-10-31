@@ -339,4 +339,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Public channel: waiting"] = "공개 채널: 대기 중"
     L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
         "지난 1시간 동안 확인된 플레이어: 길드 %d, 파티 %d, 친구 %d, Battle.net %d, 채널 %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "알 수 없는 지역 (%d)"
 end)

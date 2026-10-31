@@ -356,4 +356,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Public channel: waiting"] = "Публічний канал: очікування"
     L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
         "Гравці за останню годину: гільдія %d, група %d, друзі %d, Battle.net %d, канал %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "Невідома зона (%d)"
 end)

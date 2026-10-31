@@ -242,6 +242,8 @@ recordCells["2000:1:22"] = cellOf(5, 1, { [FISH] = { 5, 5 } })
 recordCells["2001:3:22"] = cellOf(20, 2, { [FISH] = { 20, 20 } })
 recordCells["2001:3:33"] = cellOf(10, 0, { [FISH] = { 10, 10 } })
 shared().mine["2000:3:11"] = cellOf(4, 1, { [FISH] = { 4, 4 } })
+-- Written past Settle: the views learn of it as of any change to the stored data.
+ns.Fire("SHARED_DATA_CHANGED")
 
 local ALL = { range = 3, source = "all" }
 

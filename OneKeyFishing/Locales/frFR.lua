@@ -370,4 +370,7 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Public channel: waiting"] = "Canal public : en attente"
     L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
         "Joueurs entendus dans la dernière heure : guilde %d, groupe %d, amis %d, Battle.net %d, canal %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "Zone inconnue (%d)"
 end)

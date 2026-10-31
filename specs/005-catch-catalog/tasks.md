@@ -140,7 +140,7 @@ builds on them.
 
 ### Tests for the foundation
 
-- [ ] T005 [P] Create `tests/fold_test.lua` for `ns.FoldCase`, `ns.SearchKey` and `ns.CompareText`
+- [X] T005 [P] Create `tests/fold_test.lua` for `ns.FoldCase`, `ns.SearchKey` and `ns.CompareText`
   ([contracts/api.md](contracts/api.md) "Data.lua").
   - ASCII capitals are lowered; Latin-1 capitals U+00C0-U+00DE are lowered by +0x20, except U+00D7 (the
     multiplication sign).
@@ -149,7 +149,7 @@ builds on them.
     5.1 rules of the stub (no `utf8`).
   - With `game_fold = true`, `SearchKey("Truite \195\137")` uses `CaseAccentInsensitiveParse` ("truite e").
     `CompareText` uses `strcmputf8i` when present, else the folded byte order.
-- [ ] T006 [P] Create `tests/catchdb_views_test.lua` for `CatchDB.QueryMap`, `QueryCells`, `Maps` and `MapStamp`
+- [X] T006 [P] Create `tests/catchdb_views_test.lua` for `CatchDB.QueryMap`, `QueryCells`, `Maps` and `MapStamp`
   (data-model.md "Views", "Change stamps").
   - `QueryMap` equals the map view `Query` gives for a spot with few catches. Its scope is `"map"` with catches,
     `"none"` without.
@@ -166,7 +166,7 @@ builds on them.
     - Without keys it changes every stamp, and so does `Share.SetEnabled`.
   - **Cache:** a second `QueryMap` without a change returns the same table; a stamp change returns a new one.
   - **Own-cells index:** the sums with it equal the sums of a full walk, after catches on new and old keys.
-- [ ] T007 [P] Create `tests/catalog_test.lua` (the core; US1-US3 extend it).
+- [X] T007 [P] Create `tests/catalog_test.lua` (the core; US1-US3 extend it).
   - **The index.**
     - Built 10 s after the first `PLAYER_ENTERING_WORLD` of the Lua session: a login (`enter_world(true, false)`,
       then `advance(10)`) or a `/reload` (`enter_world(false, true)` in a fresh state). A later loading screen
@@ -196,7 +196,7 @@ builds on them.
       "Unknown zone (%d)" without map info.
     - `Catalog.Find` and `Catalog.CommandArg`: an item link gives its ID, empty text nil, other text itself.
   - **The report.** `Catalog.Describe()` lists state, maps, items, stale, the build times and the name queue.
-- [ ] T008 [P] Create `tests/catalog_load_test.lua` (research R11, SC-003). It fills the largest database: 3,000 seed
+- [X] T008 [P] Create `tests/catalog_load_test.lua` (research R11, SC-003). It fills the largest database: 3,000 seed
   cells on 150 maps with 3 items each, 1,000 other records of 20 places (20,000 places), and 2,000 own cells in
   `mine` and the own record. Then:
   - the default index builds in steps of at most `MAPS_PER_STEP` maps;
@@ -207,7 +207,7 @@ builds on them.
 
 ### Implementation for the foundation
 
-- [ ] T009 In `OneKeyFishing/Data.lua`, add `ns.FoldCase`, `ns.SearchKey` and `ns.CompareText`
+- [X] T009 In `OneKeyFishing/Data.lua`, add `ns.FoldCase`, `ns.SearchKey` and `ns.CompareText`
   ([contracts/api.md](contracts/api.md)). `FoldCase` lowers ASCII with `string.lower`, then folds by `gsub`:
   - Latin-1: `"\195[\128-\158]"`, skipping `"\195\151"`, by adding 32 to the second byte;
   - Cyrillic `"\208[\144-\159]"` to `"\208[\176-\191]"`;
@@ -216,7 +216,7 @@ builds on them.
   The comment says why: `string.lower` handles ASCII only. `SearchKey` uses `CaseAccentInsensitiveParse` when it
   is a function (`-- VERIFY(V36): CaseAccentInsensitiveParse folds case and accents of the client's language`).
   `CompareText` uses `strcmputf8i` the same way. Add both globals to `.luacheckrc`. Make T005 pass.
-- [ ] T010 In `OneKeyFishing/CatchDB.lua`, add the change stamps and the own-cells index (research R3).
+- [X] T010 In `OneKeyFishing/CatchDB.lua`, add the change stamps and the own-cells index (research R3).
   - **The stamps.**
     - `local stamps, globalStamp = {}, 0`.
     - `Settle` bumps `stamps[mapID]` of the cast's key.
@@ -230,7 +230,7 @@ builds on them.
     - It is dropped where `frozen` is dropped and on a roll.
     - `SumMap` uses it instead of walking every own cell.
   Make the stamp and index parts of T006 pass.
-- [ ] T011 In `OneKeyFishing/CatchDB.lua`, add the views without the fallback (data-model.md "Views",
+- [X] T011 In `OneKeyFishing/CatchDB.lua`, add the views without the fallback (data-model.md "Views",
   [contracts/api.md](contracts/api.md)).
   - **New fields in the sums.** `NewSum` gains `px`, `py`, `n` and `ranges` (item ID -> `{ min, max }`).
     - `AddCell` takes the place key's range (the key is known in `SumSpot` and `SumMap`; an other player's entry
@@ -248,7 +248,7 @@ builds on them.
     Each of the first two caches its result per map and filter key, with `MapStamp(mapID)`.
   - **Unchanged:** `Query` keeps its version-based cache.
   Make T006 pass.
-- [ ] T012 Create `OneKeyFishing/Catalog.lua` and add it to `OneKeyFishing/OneKeyFishing.toc` after `Share.lua`
+- [X] T012 Create `OneKeyFishing/Catalog.lua` and add it to `OneKeyFishing/OneKeyFishing.toc` after `Share.lua`
   ([contracts/api.md](contracts/api.md) "ns.Catalog", data-model.md "Catalog").
   - **Indexes.**
     - `indexes[filterKey]` holds at most two entries: the default filter `all|all|all` and the latest other one.
@@ -278,7 +278,7 @@ builds on them.
   - Add `C_Item.GetItemNameByID`, `C_Item.GetItemQualityByID` and `debugprofilestop` uses to `.luacheckrc` if not
     there.
   Make T007 and T008 pass.
-- [ ] T013 In `OneKeyFishing/Debug.lua`, add a "Catch catalog" section with the lines of `Catalog.Describe()`
+- [X] T013 In `OneKeyFishing/Debug.lua`, add a "Catch catalog" section with the lines of `Catalog.Describe()`
   (English, like the other sections). In `tests/catalog_test.lua`, check through `ns.ShowReport()` (as
   `tests/catchdb_test.lua` does) that the report holds the section and no item name.
 

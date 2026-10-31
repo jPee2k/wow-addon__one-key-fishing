@@ -59,6 +59,7 @@ CatchDB.lua
 Comm.lua
 Channel.lua
 Share.lua
+Catalog.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
