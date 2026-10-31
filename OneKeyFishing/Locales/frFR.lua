@@ -396,4 +396,16 @@ ns.AddTranslation("frFR", "Français", function(L)
 
     -- UI/CatalogTab.lua: the map pin (part 4)
     L["Set a map pin here"] = "Placer un repère sur la carte ici"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (%d joueurs)"
+    L["Caught in:"] = "Pêché à :"
+    L["Likely catch here:"] = "Prise probable ici :"
+    L["Show catch chances in tooltips"] = "Afficher les chances de prise dans les infobulles"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "Eau : %s"
+    L["Everywhere"] = "Partout"
+    L["Open water"] = "Eaux libres"
+    L["Pools"] = "Bancs"
 end)

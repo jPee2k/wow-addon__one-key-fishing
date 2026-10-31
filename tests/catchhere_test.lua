@@ -256,3 +256,28 @@ test("a click on a known item opens the catalog on it; an Unknown item row does 
     ns.SeedData = nil
     ns.Fire("SHARED_DATA_CHANGED")
 end)
+
+---------------------------------------------------------------------------
+-- The Water filter (specs/005-catch-catalog, US4)
+---------------------------------------------------------------------------
+test("with pool data the Water button shows; under Pools the pool numbers without the miss line", function()
+    click(L["What can be caught here"], window)
+    ns.CatchHere.SetRange(3)
+    assert(not here.waterButton:IsShown(), "no pool data yet")
+    local cell = catch_cell(80, 20, { [FISH] = { 80, 80 } })
+    cell.k, cell.p = 2, { c = 60, i = { [FISH] = { 60, 60 } } }
+    ns.SeedData = { epoch = 1, absorbed = {}, resets = {}, cells = { ["1415:3:47"] = cell } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    assert(here.waterButton:IsShown(), "shown")
+    eq(here.waterButton.text, (L["Water: %s"]):format(L["Everywhere"]), "the default")
+    assert(here.counts.text:find((L["Nothing caught: %s"]):format(""), 1, true), "the miss line everywhere")
+    ns.CatchHere.SetWater("pool")
+    eq(here.waterButton.text, (L["Water: %s"]):format(L["Pools"]), "pools")
+    eq(here.counts.text, (L["%d catches from %d players"]):format(60, 2), "the seed's pool catches only, no miss line")
+    ns.CatchHere.SetWater("open")
+    eq(here.waterButton.text, (L["Water: %s"]):format(L["Open water"]), "open water")
+    ns.CatchHere.SetWater("all")
+    ns.SeedData = nil
+    ns.Fire("SHARED_DATA_CHANGED")
+end)

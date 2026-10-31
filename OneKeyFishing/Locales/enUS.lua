@@ -333,3 +333,15 @@ L["Click an item to see where else it is caught."] = true
 
 -- UI/CatalogTab.lua: the map pin (part 4)
 L["Set a map pin here"] = true
+
+-- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+L["%s (%d players)"] = true
+L["Caught in:"] = true
+L["Likely catch here:"] = true
+L["Show catch chances in tooltips"] = true
+
+-- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+L["Water: %s"] = true
+L["Everywhere"] = true
+L["Open water"] = true
+L["Pools"] = true

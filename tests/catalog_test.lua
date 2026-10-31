@@ -359,3 +359,75 @@ test("SpotName", function()
     eq(Catalog.SpotName({ point = { x = 0.5, y = 0.1 }, area = 999 }), "50, 10", "an area without a name")
     eq(Catalog.SpotName({}), ns.L["No exact spot"], "no point")
 end)
+
+---------------------------------------------------------------------------
+-- Tooltip lines (US3)
+---------------------------------------------------------------------------
+test("TooltipLines: up to three reliable zones by chance, with the players from 2 on", function()
+    local lines = Catalog.TooltipLines(FISH)
+    eq(#lines, 2, "the two reliable zones of the item")
+    eq(lines[1].zone, "Test Zone", "the zone")
+    local places = Catalog.Places(FISH, ALL)
+    eq(lines[1].right, (ns.L["%s (%d players)"]):format("67%", 2), "40 of 60, two players")
+    eq(lines[2].right, (ns.L["%s (%d players)"]):format(("%d%%"):format(math.floor(places[2].chance * 100 + 0.5)),
+        places[2].players), "the next, with the own catch there")
+    local trout = Catalog.TooltipLines(TROUT)
+    eq(#trout, 1, "one zone")
+end)
+
+test("TooltipLines: without a reliable zone, the little-data ones by the item's catches; nil outside", function()
+    local lines = Catalog.TooltipLines(KOREAN)
+    eq(#lines, 1, "one zone")
+    eq(lines[1].right, ns.L["Little data"], "little data, one player")
+    eq(Catalog.TooltipLines(424242), nil, "an item outside the database")
+    eq(#Catalog.TooltipLines(BOOT), 1, "a grey item still has lines")
+end)
+
+test("a new catch of the item is in the next TooltipLines without the catalog being opened (FR-028)", function()
+    fish_cast({ { TROUT, 1 } }) -- the first own trout moves every map
+    settle()
+    player_map_id = 8100
+    for _ = 1, 50 do
+        fish_cast({ { TROUT, 1 } })
+    end
+    player_map_id = 1415
+    local lines = Catalog.TooltipLines(TROUT)
+    eq(#lines, 2, "the new map at once")
+    eq(lines[1].right, "100%", "50 of 50, first")
+end)
+
+test("MinimapLines: nil outside fishing mode and with the setting off", function()
+    eq(Catalog.MinimapLines(), nil, "not fishing")
+    local active = ns.Mode.IsActive
+    ns.Mode.IsActive = function() return true end
+    ns.db.settings.tooltipChances = false
+    eq(Catalog.MinimapLines(), nil, "setting off")
+    ns.db.settings.tooltipChances = true
+    ns.Mode.IsActive = active
+end)
+
+test("MinimapLines: the top three of the place, no grey or unknown items, and the footer", function()
+    local active = ns.Mode.IsActive
+    ns.Mode.IsActive = function() return true end
+    player_map_id = 1419 -- 10 catches: FISH, the grey boot, the unknown item
+    local lines = Catalog.MinimapLines()
+    for _, item in ipairs(lines.items) do
+        assert(item.name ~= "Rusty Boot", "no grey item")
+    end
+    eq(lines.items[1].name, "Deviate Fish", "the fish")
+    eq(lines.items[1].right, ns.L["Little data"], "little data on the whole map")
+    eq(lines.footer, (ns.L["%d catches"]):format(10), "the footer")
+    player_map_id = 1415
+    lines = Catalog.MinimapLines()
+    local view = CatchDB.Query(1415, "47", { range = 3, source = "all", water = "all" })
+    eq(view.scope, "spot", "the spot's own numbers")
+    eq(lines.items[1].right, ("%d%%"):format(math.floor(view.items[1].chance * 100 + 0.5)), "chances at the spot")
+    eq(#lines.items, 3, "the top three")
+    eq(lines.footer, (ns.L["%d catches from %d players"]):format(view.catches, view.players), "the footer")
+    player_map_id = 9999
+    lines = Catalog.MinimapLines()
+    eq(#lines.items, 0, "nothing")
+    eq(lines.footer, ns.L["Nothing has been caught here yet."], "said so")
+    player_map_id = 1415
+    ns.Mode.IsActive = active
+end)

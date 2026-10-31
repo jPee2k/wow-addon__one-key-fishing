@@ -174,3 +174,21 @@ test("Only mine without own catches of the filter says so", function()
     advance(0)
     tick(window)
 end)
+
+test("with pool data the Water button shows, and Open water builds its own index", function()
+    local pooled = cell(60, { [FISH] = { 30, 30 }, [TROUT] = { 30, 30 } }, 0.45, 0.72, nil, 3)
+    pooled.p = { c = 30, i = { [TROUT] = { 30, 30 } } }
+    ns.SeedData = { epoch = 1, absorbed = {}, resets = {}, cells = { ["1415:3:47"] = pooled } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    assert(tab.waterButton:IsShown(), "shown")
+    eq(tab.waterButton.text, (L["Water: %s"]):format(L["Everywhere"]), "the default")
+    ns.CatalogTab.SetWater("open")
+    advance(0)
+    tick(window)
+    assert(table.concat(ns.Catalog.Describe(), "\n"):find("index all|all|open: ready", 1, true), "its own index")
+    for _, row in ipairs(rows(tab.list)) do
+        assert(row.itemID ~= TROUT, "the trout only came from the pool")
+    end
+    ns.CatalogTab.SetWater("all")
+end)

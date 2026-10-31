@@ -26,6 +26,7 @@ local CreateText = ns.CreateText -- Core.lua
 local page
 local pickedRange -- a range (0..4 or "all") picked by hand since login; nil follows the own range
 local source = "all"
+local water = "all" -- "all" | "open" | "pool": the Water filter, offered once pool data exists (part 4, FR-021)
 local shown -- what the page shows now: { version, mapID, ownRange, cell, range }
 local dirty = false
 -- The map and the skill range change only with these events (zone changes, loading screens, skill-ups); between
@@ -48,7 +49,27 @@ end
 local function SourceLabel(value)
     return value == "mine" and L["Only mine"] or L["All"]
 end
-CatchHere.RangeLabel, CatchHere.SourceLabel = RangeLabel, SourceLabel -- the catalog's buttons read the same
+
+local function WaterLabel(value)
+    return value == "pool" and L["Pools"] or (value == "open" and L["Open water"] or L["Everywhere"])
+end
+-- The catalog's buttons read the same.
+CatchHere.RangeLabel, CatchHere.SourceLabel, CatchHere.WaterLabel = RangeLabel, SourceLabel, WaterLabel
+
+-- The Water filter's menu: choose(value) runs on a click (also the catalog's).
+function CatchHere.OpenWaterMenu(owner, current, choose)
+    local choices = {}
+    for _, value in ipairs({ "all", "open", "pool" }) do
+        table.insert(choices, { value = value, text = WaterLabel(value) })
+    end
+    ns.OpenRadioMenu(owner, choices, function(value) return current() == value end, choose)
+end
+
+function CatchHere.SetWater(value)
+    water = value
+    dirty = true
+    CatchHere.Refresh()
+end
 
 -- The skill filter: the one picked by hand, else the own range.
 local function EffectiveRange(ownRange)
@@ -139,6 +160,11 @@ function CatchHere.Create(parent)
     page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, TOP - 62)
     page.sourceButton = ns.CreateButton(page, "", 150, function(self) OpenSourceMenu(self) end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
+    page.waterButton = ns.CreateButton(page, "", 150, function(self)
+        CatchHere.OpenWaterMenu(self, function() return water end, CatchHere.SetWater)
+    end)
+    page.waterButton:SetPoint("LEFT", page.sourceButton, "RIGHT", 8, 0)
+    page.waterButton:Hide()
 
     local headers = { name = L["Item"], chance = L["Chance"], pieces = L["Per catch"], price = L["Price"] }
     for _, column in ipairs(COLUMNS) do
@@ -207,11 +233,14 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     end
     dirty = false
     page.status:SetText(ns.Share.StatusLine())
-    local filter = { range = EffectiveRange(ownRange), source = source }
+    local pools = ns.CatchDB.HasPoolData()
+    local filter = { range = EffectiveRange(ownRange), source = source, water = pools and water or "all" }
     shown = { version = ns.CatchDB.GetVersion(), mapID = mapID, ownRange = ownRange, cell = cell,
         range = filter.range }
     page.skillButton:SetText((L["Skill: %s"]):format(RangeLabel(filter.range)))
     page.sourceButton:SetText((L["Source: %s"]):format(SourceLabel(source)))
+    page.waterButton:SetText((L["Water: %s"]):format(WaterLabel(filter.water)))
+    page.waterButton:SetShown(pools)
     page.more:SetText("")
     page.message:SetText("")
     for _, row in ipairs(page.rows) do
@@ -238,8 +267,9 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         local catches = (source == "all" and view.players >= 2)
             and (L["%d catches from %d players"]):format(view.catches, view.players)
             or (L["%d catches"]):format(view.catches)
-        page.counts:SetText(catches .. "    " ..
-            (L["Nothing caught: %s"]):format(Percent(view.missRate))) -- weighted (part 3, research R7)
+        -- The miss rate is weighted (part 3, research R7), and nil under a water filter: a miss has no source.
+        page.counts:SetText(view.missRate and (catches .. "    " ..
+            (L["Nothing caught: %s"]):format(Percent(view.missRate))) or catches)
         for i, item in ipairs(view.items) do
             if i > MAX_ROWS then
                 page.more:SetText((L["and %d more"]):format(#view.items - MAX_ROWS))

@@ -359,4 +359,16 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
 
     -- UI/CatalogTab.lua: the map pin (part 4)
     L["Set a map pin here"] = "在此設置地圖標記"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s（%d 名玩家）"
+    L["Caught in:"] = "釣獲地點："
+    L["Likely catch here:"] = "此處可能釣到："
+    L["Show catch chances in tooltips"] = "在滑鼠提示中顯示釣獲機率"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "水域：%s"
+    L["Everywhere"] = "所有地方"
+    L["Open water"] = "開放水域"
+    L["Pools"] = "魚群"
 end)

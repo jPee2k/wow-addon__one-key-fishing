@@ -32,7 +32,7 @@ read_globals = {
     "AddonCompartmentFrame", "AuctionHouseFrame", "RaidWarningFrame", "Settings", "MenuUtil", "Enum",
     "StaticPopupDialogs", "StaticPopup_Show", "StaticPopup_Hide", "ReloadUI", "RaidNotice_AddMessage",
     "ChatTypeInfo", "ChatFrameUtil",
-    "TooltipDataProcessor", "ItemLocation",
+    "TooltipDataProcessor", "ItemLocation", "ItemRefTooltip",
     "PanelTemplates_SetTab", "PanelTemplates_SetNumTabs", "PanelTemplates_TabResize",
     "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "CreateVector2D",
 

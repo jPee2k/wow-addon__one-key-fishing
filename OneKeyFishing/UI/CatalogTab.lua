@@ -259,6 +259,11 @@ function CatalogTab.SetSource(value)
     CatalogTab.Refresh()
 end
 
+function CatalogTab.SetWater(value)
+    filter.water = value
+    CatalogTab.Refresh()
+end
+
 -- A search box: the game's SearchBoxTemplate, or a plain input box without it.
 local function CreateSearchBox(parent)
     local ok, box = pcall(CreateFrame, "EditBox", nil, parent, "SearchBoxTemplate")
@@ -291,6 +296,11 @@ function CatalogTab.Create(parent)
     page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, TOP - 28)
     page.sourceButton = ns.CreateButton(page.listView, "", 150, function(self) OpenSourceMenu(self) end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
+    page.waterButton = ns.CreateButton(page.listView, "", 150, function(self)
+        ns.CatchHere.OpenWaterMenu(self, function() return filter.water end, CatalogTab.SetWater)
+    end)
+    page.waterButton:SetPoint("LEFT", page.sourceButton, "RIGHT", 8, 0)
+    page.waterButton:Hide()
     page.list = CreateList(page.listView, LIST_TOP, InitItemRow)
 
     page.itemView = CreateFrame("Frame", nil, page)
@@ -367,6 +377,12 @@ function CatalogTab.Refresh(retain)
     dirty = false
     page.skillButton:SetText((L["Skill: %s"]):format(ns.CatchHere.RangeLabel(filter.range)))
     page.sourceButton:SetText((L["Source: %s"]):format(ns.CatchHere.SourceLabel(filter.source)))
+    local pools = ns.CatchDB.HasPoolData()
+    if not pools then
+        filter.water = "all" -- no Water button, no filter
+    end
+    page.waterButton:SetText((L["Water: %s"]):format(ns.CatchHere.WaterLabel(filter.water)))
+    page.waterButton:SetShown(pools)
     page.listView:SetShown(chosen == nil)
     page.itemView:SetShown(chosen ~= nil)
     local state

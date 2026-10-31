@@ -364,4 +364,16 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- UI/CatalogTab.lua: the map pin (part 4)
     L["Set a map pin here"] = "여기에 지도 핀 꽂기"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (플레이어 %d명)"
+    L["Caught in:"] = "잡히는 곳:"
+    L["Likely catch here:"] = "이곳에서 잡힐 만한 것:"
+    L["Show catch chances in tooltips"] = "툴팁에 낚시 확률 표시"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "물: %s"
+    L["Everywhere"] = "모든 곳"
+    L["Open water"] = "탁 트인 물"
+    L["Pools"] = "물고기 떼"
 end)
