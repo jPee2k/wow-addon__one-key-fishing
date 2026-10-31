@@ -440,6 +440,54 @@ test("above 300 channel peers the one heard longest ago is forgotten with its ta
         c.node.session = nil
     end)
 
+test("a remembered peer's new tag replaces its old one in byTag (FR-009)", function()
+    NewNet()
+    local c = NewNode("C", "caaaaaa2", { channel = true })
+    local same = c.node:HashText()
+    local tag
+    for _ = 1, 50 do
+        advance(61)
+        local text = StrangerHello(same)
+        tag = text:match("^H (%w+)")
+        c.node:Receive("w:R", "channel", text)
+    end
+    local count = 0
+    for _ in pairs(c.node.byTag) do
+        count = count + 1
+    end
+    eq(count, 1, "one tag per address")
+    eq(c.node.byTag[tag], "w:R", "the current one")
+end)
+
+test("a new tag from the other path of a client keeps the tag that names its first address", function()
+    NewNet()
+    local c = NewNode("C", "caaaaaa2", { channel = true })
+    local same = c.node:HashText()
+    local text = StrangerHello(same)
+    local tag = text:match("^H (%w+)")
+    c.node:Receive("w:A", "whisper", text)
+    c.node:Receive("b:7", "bnet", text)
+    eq(c.node.peers["b:7"].node, tag, "the same client by Battle.net")
+    advance(61)
+    c.node:Receive("b:7", "bnet", StrangerHello(same))
+    eq(c.node.byTag[tag], "w:A", "still names the whisper address")
+end)
+
+test("a relog heard first by Battle.net drops the old tag of the client's guild address", function()
+    NewNet()
+    local c = NewNode("C", "caaaaaa2", { channel = true, group = "g" })
+    local same = c.node:HashText()
+    local text = StrangerHello(same)
+    local old = text:match("^H (%w+)")
+    c.node:Receive("w:G", "group", text)
+    advance(61)
+    text = StrangerHello(same)
+    c.node:Receive("b:7", "bnet", text)
+    c.node:Receive("w:G", "group", text)
+    eq(c.node.peers["w:G"].node, text:match("^H (%w+)"), "the guild address takes the new tag")
+    eq(c.node.byTag[old], nil, "its old tag is gone")
+end)
+
 test("a channel HELLO marks its sender heard in the channel even when it goes no further", function()
     NewNet()
     local c = NewNode("C", "caaaaaa2", { channel = true, group = "g" })

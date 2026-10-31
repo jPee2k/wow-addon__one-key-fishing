@@ -38,7 +38,7 @@ and it sends no message: the tab polls `Catalog.GetVersion()` on the window's ti
   littleData, ranges }`.
 - `Catalog.Spots(itemID, mapID, filter)`: the spots of an item on one map from `CatchDB.QueryCells`, `{ cell, name,
   point, area, chance, catches, itemCatches, players, littleData, ranges, pin }`; summed when a zone is expanded
-  and kept until the map's stamp moves (`docs/tech-debt.md` items 1 and 2).
+  and kept for the session, until the map's stamp moves.
 - `Catalog.PinTarget(mapID, spot)`: where the game's map pin goes, `{ mapID, x, y }` on the spot's own map, or for
   a Micro map (a cave, a building) on its zone's map through `C_Map.GetWorldPosFromMapPos` and
   `GetMapPosFromWorldPos`; nil without a point (cell `"x"`), without the waypoint API, under the game rule

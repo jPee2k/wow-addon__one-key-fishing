@@ -18,6 +18,14 @@ local function Recent(counts, now, weight)
     return ns.CountRecent(counts, now, weight, HOUR / 60)
 end
 
+-- A peer announcing a new tag: its previous one went with its old session (a relog draws a new one), so it leaves
+-- byTag, unless it names another address (the same client by another path).
+local function DropOldTag(self, address, peer, tag)
+    if peer.node and peer.node ~= tag and self.byTag[peer.node] == address then
+        self.byTag[peer.node] = nil
+    end
+end
+
 local Handlers = {}
 
 function Handlers.H(self, address, peer, via, text)
@@ -38,6 +46,7 @@ function Handlers.H(self, address, peer, via, text)
         -- told from a stranger's; only for the other kind of address (a client has one whisper and at most one
         -- Battle.net address), so a tag heard in the guild cannot be used from another name to take over a session.
         if address:sub(1, 1) ~= first:sub(1, 1) then
+            DropOldTag(self, address, peer, tag)
             peer.node = tag
         end
         return
@@ -48,6 +57,7 @@ function Handlers.H(self, address, peer, via, text)
         end
         return
     end
+    DropOldTag(self, address, peer, tag)
     self.byTag[tag] = address
     local heard -- channel HELLOs in the last CHANNEL_WINDOW minutes, this one included
     if via == "channel" then
