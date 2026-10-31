@@ -70,6 +70,9 @@ CatchDB\Events.lua
 Exchange\Comm.lua
 Exchange\Channel.lua
 Exchange\Share.lua
+Exchange\ShareNode.lua
+Exchange\ShareProtocol.lua
+Exchange\ShareGame.lua
 # Catch catalog
 Catalog\Catalog.lua
 # UI
