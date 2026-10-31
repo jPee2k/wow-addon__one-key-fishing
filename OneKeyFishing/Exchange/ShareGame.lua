@@ -173,7 +173,7 @@ ns.RegisterEvent("GROUP_ROSTER_UPDATE", function()
 end)
 
 ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
-    if loadedName ~= "OneKeyFishing" or not ns.db then
+    if loadedName ~= ns.name or not ns.db then
         return
     end
     Store.CleanUp(ns.db.shared)

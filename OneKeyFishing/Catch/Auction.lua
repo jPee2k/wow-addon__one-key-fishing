@@ -39,7 +39,7 @@ local function ItemsToScan()
     for itemID in pairs(ns.db.fishedItems) do
         set[itemID] = true
     end
-    for itemID in pairs(ns.charDB.stats.total.items) do
+    for itemID in pairs(ns.Stats.GetTotal().items) do
         set[itemID] = true
     end
     for itemID in pairs(set) do
@@ -68,12 +68,12 @@ function Auction.GetCoverage()
 end
 
 -- lots: the auctions the price was taken from; then the results of RobustPrice.
-local function Finish(itemID, lots, price, total, loaded)
+local function Finish(itemID, lots, price, listed, loaded)
     if itemID ~= current then
         return
     end
     if loaded then
-        coverage = { loaded = loaded, total = total }
+        coverage = { loaded = loaded, total = listed }
     end
     if price and price > 0 then
         -- quantity: the pieces the price could see (listed, but not more than were loaded)
@@ -170,10 +170,7 @@ function Auction.Scan()
     if current then
         return
     end
-    wipe(queue)
-    for _, itemID in ipairs(ItemsToScan()) do
-        table.insert(queue, itemID)
-    end
+    queue = ItemsToScan()
     total, scanned = #queue, 0
     if total == 0 then
         ns.Print(L["Nothing to scan yet: catch some fish first."])

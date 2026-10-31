@@ -147,8 +147,7 @@ local function ShowPlaceTooltip(self)
         GameTooltip:AddLine(element.place.name)
     else
         local spot = element.place
-        local area = spot.area and C_Map.GetAreaInfo(spot.area)
-        GameTooltip:AddLine(type(area) == "string" and area ~= "" and area or element.zone)
+        GameTooltip:AddLine(ns.Catalog.AreaName(spot) or element.zone)
         if spot.point then
             GameTooltip:AddLine(ns.Catalog.Coordinates(spot.point), 1, 1, 1)
         end
@@ -213,7 +212,7 @@ local function InitPlaceRow(row, element)
     row.name:SetWidth(COLUMNS[1].width - (zone and 0 or INDENT))
     row.name:SetText(place.name)
     row.skill:SetText(SpanLabel(place.ranges))
-    row.chance:SetText(place.littleData and L["Little data"] or ns.Percent(place.chance))
+    row.chance:SetText(ns.Catalog.ChanceText(place.chance, place.littleData))
     row.catches:SetText(tostring(place.catches))
     row.pinButton:SetShown(not zone and place.pin ~= nil)
 end
@@ -375,7 +374,7 @@ function CatalogTab.Tick()
     if not (page and page:IsShown()) then
         return
     end
-    local _, state = ns.Catalog.Items(filter, search)
+    local state = ns.Catalog.State(filter)
     if dirty or not drawn or drawn.version ~= ns.Catalog.GetVersion() or (not chosen and drawn.state ~= state) then
         CatalogTab.Refresh(true)
     end

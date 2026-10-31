@@ -273,6 +273,14 @@ end
 ---------------------------------------------------------------------------
 -- Reads
 ---------------------------------------------------------------------------
+-- The state of the filter's index ("building" or "ready") after bringing it up to date: what Items returns as its
+-- second value, without building the list (the tab's tick only needs this).
+function Catalog.State(filter)
+    local index = IndexFor(filter)
+    Freshen(index)
+    return index.state == "ready" and "ready" or "building"
+end
+
 -- items, state: the items of the filter as { itemID, name, zones }, sorted by name (FR-002 to FR-005): known items
 -- only, grey ones only with search text, and with search text only those whose name contains it. state is
 -- "building" while no complete index exists, else "ready" (maybe stale).
@@ -381,14 +389,20 @@ function Catalog.Coordinates(point)
     return ("%d, %d"):format(math.floor(point.x * 100 + 0.5), math.floor(point.y * 100 + 0.5))
 end
 
+-- The localized name of a spot's subzone, or nil without a known one.
+function Catalog.AreaName(spot)
+    local area = spot.area and C_Map.GetAreaInfo(spot.area)
+    return type(area) == "string" and area ~= "" and area or nil
+end
+
 -- A spot's name (FR-015): "Subzone (45, 72)" in the client's language, the coordinates alone without a known
 -- subzone, "No exact spot" for the cell without a position.
 function Catalog.SpotName(spot)
     if not spot.point then
         return L["No exact spot"]
     end
-    local area = spot.area and C_Map.GetAreaInfo(spot.area)
-    if type(area) == "string" and area ~= "" then
+    local area = Catalog.AreaName(spot)
+    if area then
         return L["%s (%s)"]:format(area, Catalog.Coordinates(spot.point))
     end
     return Catalog.Coordinates(spot.point)
@@ -428,9 +442,9 @@ function Catalog.CatchesText(catches, players)
 end
 
 -- A chance (or "Little data") with the players behind it from 2 on (part 3, FR-025).
-local function ChanceText(chance, littleData, players)
+function Catalog.ChanceText(chance, littleData, players)
     local text = littleData and L["Little data"] or ns.Percent(chance)
-    return players >= 2 and (L["%s (%d players)"]):format(text, players) or text
+    return (players or 0) >= 2 and (L["%s (%d players)"]):format(text, players) or text
 end
 
 -- The "Caught in" lines of an item tooltip (FR-017): up to three { zone, right } pairs from the default index, stale
@@ -450,7 +464,7 @@ function Catalog.TooltipLines(itemID)
             break
         end
         table.insert(lines, { zone = Catalog.ZoneName(place.mapID),
-            right = ChanceText(place.chance, place.littleData, place.view.players) })
+            right = Catalog.ChanceText(place.chance, place.littleData, place.view.players) })
     end
     return lines
 end
@@ -474,8 +488,7 @@ function Catalog.MinimapLines()
         end
         local entry = NameOf(item.itemID)
         if entry.known and not IsPoor(entry) then
-            table.insert(items, { name = entry.name, right = view.littleData and L["Little data"]
-                or ns.Percent(item.chance) })
+            table.insert(items, { name = entry.name, right = Catalog.ChanceText(item.chance, view.littleData) })
         end
     end
     return { items = items, footer = Catalog.CatchesText(view.catches, view.players) }
