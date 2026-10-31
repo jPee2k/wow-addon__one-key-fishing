@@ -23,7 +23,8 @@ How a release is built and published, and what it is checked against.
    gives, add `-- --reset <mapID>` for that map.
 3. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`. No
    `VERIFY` marker may be left (`npm run check` lists them; `npm run build` refuses them): each is an assumption
-   that still waits for an in-game check.
+   that still waits for an in-game check. The two releases that wait for the game launch have their own order of
+   steps in [release-plan.md](release-plan.md).
 4. Open a pull request `develop` -> `main` and merge it once the `check` job is green.
 5. On the updated `main`, tag the merge commit with the bare version (`git tag 1.0.0`, no `v`) and push the
    tag (`git push origin 1.0.0`). GitHub Actions (`.github/workflows/release.yml`) runs the checks and tests,
@@ -62,7 +63,7 @@ How a release is built and published, and what it is checked against.
 | Free of charge, no paid features | Yes, MIT licensed, nothing is locked |
 | Code is not obfuscated | Plain, readable Lua |
 | No in-game advertising or donation requests | None |
-| No collection of personal data, no traffic outside the game | None; saved variables stay on the player's computer. The catch data holds only counts and a grid-cell average position under a random account ID. It travels only inside the game, as addon messages to addon users in the guild, the group and the friends list (one setting turns it off), and reaches the bundled database through `npm run harvest`: from the author's own client, which holds what the exchange brought in, or from a saved file a player sends the author outside the game |
+| No collection of personal data, no traffic outside the game | None; saved variables stay on the player's computer. The catch data holds only counts and a grid-cell average position under a random account ID. It travels only inside the game, as addon messages between addon users: guild, group and friends, and strangers met through a hidden chat channel (two settings turn these off); it reaches the bundled database through `npm run harvest`: from the author's own client, which holds what the exchange brought in, or from a saved file a player sends the author outside the game |
 | No automation: every action needs a hardware event | Cast, hook, lure and open happen only on a key press, through a secure action button and override bindings. Nothing reacts to the bobber splash by itself, no sounds are monitored |
 | Must not hurt realm performance | Auction searches run one at a time, wait for the throttle and time out. The catch exchange sends through one queue: guild and group messages 2 s apart, whispers and Battle.net messages 0.5 s apart, at most 50 KB per hour (`Comm.BUDGET`); a throttled send backs off 2-8 s, a lockdown pauses it 60 s to 15 min, and nothing is sent in combat, instances, loading screens or while the game restricts addon messages |
 

@@ -1,6 +1,19 @@
-# OneKeyFishing: a database shared between players
+# OneKeyFishing: a database shared between players (historical)
 
 Oct 23, 2026 · Serhii Pylypenko
+
+This is the design the shared catch database was built from (release 1.2.0, `specs/002-local-catch-db` to
+`specs/005-catch-catalog`), kept as a record together with the decisions of each part. The code and
+`docs/architecture/` are the source of truth. Things that changed after it was written:
+
+- The release order: 1.1.0 (the interface languages) ships first, on its own; the four parts of this plan ship
+  together as 1.2.0 afterwards. The live procedure is `docs/release-plan.md`, not the "Release 1.2.0" section below.
+- The open questions moved to `docs/forever-api.md` "Open questions"; the ideas that were not built (the harvest
+  patch-diff report, `/okf share collect`) to `docs/ROADMAP.md`.
+- The seed's block list is `blocked`, not `banned`; shared auction prices were dropped from phase 6 (part 4
+  decisions) and wait in `docs/ROADMAP.md`.
+- `docs/ROADMAP.md` no longer describes a manual export; item 1 there was replaced by this feature.
+- The in-game checks are run from `docs/checklists/` (`spike.md` first, then one checklist per part).
 
 ## Goal and rules
 
@@ -82,7 +95,7 @@ is always read: `AddonMessageThrottle`, `ChannelThrottle`, `AddOnMessageLockdown
 
 Nothing: addon messages do not reach the chat window, only addons with the same prefix receive them (the
 `CHAT_MSG_ADDON` event). Only the wrapping around them can become visible (the channel rows are part 3,
-[specs/004-public-channel-sync](../specs/004-public-channel-sync/spec.md)):
+[specs/004-public-channel-sync](../../specs/004-public-channel-sync/spec.md)):
 
 | What can slip through | How we hide it |
 | --- | --- |
@@ -593,7 +606,7 @@ whether they reach other layers and the other faction). Depends on part 2. Desig
 docs/shared-db-plan.md (phase 5).
 ```
 
-Decisions ([specs/004-public-channel-sync](../specs/004-public-channel-sync/spec.md), with research.md R1-R14): the
+Decisions ([specs/004-public-channel-sync](../../specs/004-public-channel-sync/spec.md), with research.md R1-R14): the
 channel `OneKeyFishingShare` and five fixed fallbacks walked in order after a lock; joined 30-60 s after login with
 two of the 20 chat channel slots free, given up with one line when the player hits the limit; hidden from every chat
 window and filtered, but listed in the Chat Channels window; a channel `HELLO` every 30-50 min, and a hearer starts

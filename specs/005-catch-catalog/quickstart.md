@@ -1,6 +1,6 @@
 # Quickstart: validating the catch catalog
 
-How to check part 4 without the game (every change), on launch day with the spike, and in game. Shapes and
+How to check part 4 without the game (every change), and where the in-game steps are. Shapes and
 functions: [data-model.md](data-model.md), [contracts/api.md](contracts/api.md), [contracts/ui.md](contracts/ui.md).
 
 ## Without the game (every change)
@@ -24,38 +24,8 @@ npm test          # fengari tests and harvest_test.mjs
 | `tests/catchhere_test.lua`, `settings_test.lua`, `commands_test.lua`, `share_store_test.lua`, `spike_test.lua`, `locale_test.lua` (extended) | the Water button, the setting, the command list, `CleanCell` keeps `a`, the spike section, the new keys in all languages |
 | `tests/harvest_test.mjs` (extended) | `a` checked, summed (8 largest), scaled by the cast factor, written and read back by `seedProblems`; a 500-place record with areas encodes under 28 KB with the test's minimal CBOR encoder, `zlib.deflateRawSync` and Base64 (V18) |
 
-## The spike (launch day, research R13)
+## In game
 
-`/okf spike`, section "Map pins and areas (V30-V36)"; copy the report from the copy window.
-
-1. Stand in an open-world zone, then inside a cave with its own map, then inside an instance: `CanSetUserWaypointOnMap`
-   for the map and its parent, the map type, the game rule, `showInGameNavigation`, the current waypoint (V30, V31,
-   V33).
-2. Fish at three waters (a zone without a subzone, a named subzone, a city): the area IDs at the position with their
-   names, `GetSubZoneText()` and the area the addon keeps (V34).
-3. The load state of three catalog items before and after opening the catalog (V35).
-4. `CaseAccentInsensitiveParse` of the sample and the `strcmputf8i` order, on the client's language (V36).
-5. Whether the scroll and search templates and the pin atlas exist (V37).
-
-The answers go into `docs/forever-api.md`.
-
-## In game: the feature (after the spike, V40)
-
-The checklist is `docs/checklists/catch-catalog.md` (written with the code). In short:
-
-1. Open the catalog on a fresh client folder: "Counting the catch..." at most a moment, then every item of the seed;
-   type part of a name in lower case on a deDE or ruRU client; no grey items until a search (V35-V37).
-2. Choose an item: zones sorted, little data last; expand a zone: subzone names and coordinates.
-3. Press a spot's pin button: the pin on the map and the minimap, the arrow points to it, the toast, the map opens;
-   in combat the map stays closed (V30-V32). From typing a name to the pin takes at most five actions (SC-002).
-4. Set a pin by hand, press another pin button: the question; Cancel keeps the hand pin.
-5. A spot in a cave and one in an instance: the cave's pin lands on the zone map at the cave entrance's water or the
-   button is missing; the instance has none (V33).
-6. A second client in another language: the same zones, chances and catches, names in its own language (SC-005,
-   V34).
-7. Hover a fish in the bags, the auction house and a chat link: "Caught in"; the minimap tooltip in fishing mode;
-   the setting off removes both (V38).
-8. `/okf debug` after an hour of fishing with the exchange on: the catalog's longest step under 5 ms, no stutter
-   (V39).
-9. With pool data (V3 passed): the Water filter in both tabs; "Open water" plus "Pools" catches add up to
-   "Everywhere".
+The in-game steps live in `docs/checklists/`: [spike.md](../../docs/checklists/spike.md) prints the game facts
+(V30-V37) with `/okf spike`, then [catch-catalog.md](../../docs/checklists/catch-catalog.md) checks the feature; the order of everything is
+`docs/release-plan.md`.

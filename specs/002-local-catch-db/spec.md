@@ -4,7 +4,10 @@
 
 **Created**: 2026-10-29
 
-**Status**: Draft
+**Status**: Built; waiting for the in-game checks (`docs/checklists/catch-database.md`)
+
+**Clarifications**: this spec has no Clarifications section; the decisions agreed before it was written are the
+"Part 1 (spec 002)" table of `docs/history/shared-db-plan.md`.
 
 **Release**: 1.2.0, together with parts 2 to 4 of the shared catch database (decided on
 2026-10-29; 1.1.0 is the interface-language release). The release numbers in the input below are from the
@@ -14,7 +17,7 @@ earlier plan of one release per part.
 network. Players want to know what a fishing spot gives, and in what proportions, before spending time there. A
 'What can be caught here' tab in the statistics window; data from the first login through a catch database bundled
 with every release; places identified by numbers only; robust auction prices; one command for the author before a
-release. Design and agreed decisions: docs/shared-db-plan.md (section 'Releases and specs' -> 'Part 1 (spec 002): local
+release. Design and agreed decisions: docs/history/shared-db-plan.md (section 'Releases and specs' -> 'Part 1 (spec 002): local
 catch data and bundled data')."
 
 ## User Scenarios & Testing *(mandatory)*
@@ -285,4 +288,4 @@ a few pieces on sale; compare the shown prices and catch values with the expecte
 - The skill range may turn out not to affect the catch; the data is recorded with it so this can be checked later.
 - Item names come from the game client, so items unknown to the client show once the game provides their data.
 - Network exchange, the catch catalog, map pins and tooltips are out of scope (parts 2 to 4 in
-  `docs/shared-db-plan.md`).
+  `docs/history/shared-db-plan.md`).

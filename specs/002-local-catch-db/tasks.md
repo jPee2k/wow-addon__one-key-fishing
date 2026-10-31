@@ -342,7 +342,7 @@ prices and values (quickstart.md "In game: the feature" step 8).
   Commands; keep `npm run check` rule list current (VERIFY markers, seed check).
 - [X] T037 [P] Update `README.md` (the new tab, what the bundled data is, the price rule, privacy: what is stored),
   `CHANGELOG.md` (`## [Unreleased]` entry), `docs/publishing.md` (run `npm run harvest` and commit the seed before a
-  release; no open VERIFY markers), `docs/ROADMAP.md` (items 1 and 2 link to `docs/shared-db-plan.md` and
+  release; no open VERIFY markers), `docs/ROADMAP.md` (items 1 and 2 link to `docs/history/shared-db-plan.md` and
   this spec).
 - [X] T038 [P] Create `docs/checklists/catch-database.md` from quickstart.md "In game: spike" and "In game: the
   feature", with a checkbox per step and the V-IDs each step closes, ready for launch day.
@@ -357,7 +357,7 @@ prices and values (quickstart.md "In game: the feature" step 8).
 
 **Blocked until the game opens.** Each task is the author's in-game step plus the follow-up in code, on
 `002-shared-db`. Part 1 is not released on its own: release 1.2.0 ships all four parts of the shared catch database
-together (`docs/shared-db-plan.md` "Release 1.2.0"). T040 runs in the same game session as the spike steps of the
+together (`docs/release-plan.md`). T040 runs in the same game session as the spike steps of the
 later parts.
 
 - [ ] T040 Author: run `docs/checklists/catch-database.md` "Spike" steps and paste the `/okf spike` reports.
@@ -366,14 +366,14 @@ later parts.
   in `specs/002-local-catch-db/verification.md`.
 - [ ] T042 Only when the spike steps of every part have run (the later parts add their own sections to
   `/okf spike`): remove `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua`,
-  and `tests/spike_test.lua` (`docs/shared-db-plan.md` "Release 1.2.0", step 3).
+  and `tests/spike_test.lua` (`docs/release-plan.md`, step 3).
 - [ ] T043 Author: run the "Feature" steps of `docs/checklists/catch-database.md` (closes V6, V8, V9; for V8 first
   `npm run harvest -- --synthetic 3000` and `npm run install-addon`, then `git checkout OneKeyFishing/SeedData.lua`);
   fix what fails and repeat.
 - [ ] T044 Author: fish, then run `npm run harvest` (plus friends' files) for the first real seed; commit
   `OneKeyFishing/SeedData.lua` and `seed/contributions.json`.
 - [ ] T045 Release 1.2.0 with the other parts (the one release task for all four parts; the last task of each
-  later part points here), per `docs/shared-db-plan.md` "Release 1.2.0" and
+  later part points here), per `docs/release-plan.md` and
   `docs/publishing.md` (`npm run build` must pass with no VERIFY markers).
 
 ---
@@ -388,7 +388,7 @@ later parts.
 - **US3** (T026-T029): after T013 (seed format); independent of US1/US2 code; T029 after T027.
 - **US4** (T030-T034): after Phase 1 only (T030 extends T005); T034 needs T020/T021 for the panel mark.
 - **Phase 7**: after the stories it documents. **Phase 8**: after 2026-11-04 and Phase 7; T042 and T045 after
-  the other parts (`docs/shared-db-plan.md` "Release 1.2.0").
+  the other parts (`docs/release-plan.md`).
 
 ## Parallel Example: User Story 1
 

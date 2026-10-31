@@ -3,10 +3,11 @@
 The game cannot be played before its launch on 2026-11-04, so part 2 is built on the assumptions below and verified
 afterwards, as part 1 is (`specs/002-local-catch-db/verification.md`, V1-V9; the IDs continue from there because the
 markers share the code). The code that depends on an item carries a `-- VERIFY(Vn): ...` comment; `npm run check`
-lists the open markers and `npm run build` (release) refuses to package while any is left.
+lists the open markers and `npm run build` (release) refuses to package while any is left. V17 has no marker: it is
+the whole checklist and is not enforced by the build.
 
-Closing an item: run the step in game (`/okf spike` prints the facts; the exchange steps need a second player or a
-second account), record the answer in `docs/forever-api.md`, adjust the code if the answer differs from the
+Closing an item: run the step in game (`docs/checklists/spike.md` part 2 prints the facts; the feature steps are
+`docs/checklists/catch-exchange.md` and need a second player or a second account), record the answer in `docs/forever-api.md`, adjust the code if the answer differs from the
 assumption, remove its markers, and tick it here.
 
 | ID | Assumption we build on | Evidence before launch | If it turns out wrong | How to verify | Status |
@@ -17,8 +18,8 @@ assumption, remove its markers, and tick it here.
 | V13 | Battle.net friends playing Forever have `clientProgram == BNET_CLIENT_WOW` and `wowProjectID == WOW_PROJECT_ID`; `C_BattleNet.SendGameData` and `BN_CHAT_MSG_ADDON` carry `OKF1` messages between Forever clients | Functions, fields and event in the dump; the Forever friends frame uses the same test | Battle.net friends are left out; character friends, guild and group keep working | Spike steps N3, N6; feature step 3 | Built, waiting for launch |
 | V14 | The open world out of combat has no active add-on restriction (`Chat`, `Encounter`, `ChallengeMode`, `PvPMatch`, `Map`), `InChatMessagingLockdown()` is false there, and they turn true where Midnight blocks addon chat (`AreOutgoingAddonChatMessagesRestricted()` is not used: by its API doc it is about chat messages sent by addons, true on a normal realm) | All in the dump; when they apply is known only from community reports for Midnight | If one is always true in the open world, the exchange cannot run: it says so in the status, and the release waits for a way around it | Spike step N4 | Built, waiting for launch |
 | V15 | `C_EncodingUtil.SerializeCBOR` / `DeserializeCBOR` round-trip a record (string keys, integer item IDs, nested `{ catches, pieces }` pairs), and `CompressString` (Deflate) + `EncodeBase64` give text of Base64 characters only | All ten functions in the Forever dump (`EncodingUtilDocumentation.lua`) | Switch to an own text format for records (research R4 fallback) | Spike step N5 | Built, waiting for launch |
-| V16 | Receiving a full session, holding 20,000 places of other records and opening the tab stay smooth; login takes no noticeable extra time (SC-006) | None | Lower the place limit; spread the merge over more frames | Feature step 9 with records from a synthetic load | Built, waiting for launch |
-| V17 | The whole in-game checklist of the feature passes, with a second player | None | Fix and re-run | quickstart.md "In game: the feature" | Built, waiting for launch |
+| V16 | Receiving a full session, holding 20,000 places of other records and opening the tab stay smooth; login takes no noticeable extra time (SC-006) | None | Lower the place limit; spread the merge over more frames | Checklist step 10 with records from a synthetic load | Built, waiting for launch |
+| V17 | The whole in-game checklist of the feature passes, with a second player | None | Fix and re-run | `docs/checklists/catch-exchange.md` | Built, waiting for launch |
 | V18 | `C_EncodingUtil` encodes an own record at about 34-47 bytes per place, so an own record rolls at 500 places (`ROLL_PLACES`, CatchDB.lua) while it is under 24 KB and always fits a peer's 32 KB | The same chain (CBOR, raw Deflate, Base64) measured in Node on synthetic records of 100-1,000 places with 1-320 catches per cell (fix of `docs/tech-debt.md` item 13, 2026-10-29) | Lower `ROLL_PLACES` to what fits 24 KB | `/okf debug`, "own record offered: yes, N bytes encoded for P places" after fishing at several places: N / P x 500 stays under 24 KB | Built, waiting for launch |
 
 Evidence found before launch (research.md) lowers the risk but does not close an item: only the game does.

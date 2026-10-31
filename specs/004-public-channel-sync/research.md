@@ -2,7 +2,7 @@
 
 Decisions taken for the plan, each with the reason and the alternatives that were rejected. The product decisions
 were settled with the author in the spec's "Clarifications" and "Quiz on the gameplay" (2026-10-30). The channel
-idea comes from `docs/shared-db-plan.md` (phase 5). API facts were read from the author's own client export (build
+idea comes from `docs/history/shared-db-plan.md` (phase 5). API facts were read from the author's own client export (build
 1.60.1.70685, `_forever_/BlizzardInterfaceCode`) and the public Forever dumps on 2026-10-30. They prove that a
 function exists, not how it behaves, so behaviour is an assumption in [verification.md](verification.md) (V19-V29).
 

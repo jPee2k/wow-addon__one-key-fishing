@@ -170,7 +170,7 @@ tests/
 
 .luacheckrc                    # new WoW API globals
 README.md CHANGELOG.md CLAUDE.md docs/architecture/exchange.md docs/architecture/catch-db.md docs/architecture/ui.md
-docs/architecture/core.md docs/development.md docs/forever-api.md docs/shared-db-plan.md docs/tech-debt.md
+docs/architecture/core.md docs/development.md docs/forever-api.md docs/history/shared-db-plan.md docs/tech-debt.md
 docs/checklists/public-channel.md
 ```
 
@@ -210,7 +210,7 @@ in only if V19 holds (FR-026).
    - CHANGELOG `[Unreleased]`.
    - CLAUDE.md: the module, the message, the traps.
    - `docs/architecture/exchange.md`, `catch-db.md`.
-   - `docs/shared-db-plan.md`: part 3 decisions, the plan's "10 channel slots" corrected to 20.
+   - `docs/history/shared-db-plan.md`: part 3 decisions, the plan's "10 channel slots" corrected to 20.
    - `docs/tech-debt.md`: the flood-of-parts item closed by FR-010.
    - `docs/checklists/public-channel.md`.
    - The spike and the checklists ready for launch day.

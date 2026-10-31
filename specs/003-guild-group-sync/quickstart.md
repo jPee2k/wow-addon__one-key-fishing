@@ -30,48 +30,8 @@ Expected: both pass. The tests cover:
   reopening (FR-015 to FR-018).
 - **Harvest**: an author file that holds other players' records puts each into the seed once (FR-025).
 
-## In game: spike (after the game launch on 2026-11-04)
+## In game
 
-Needs a guild, or a second player or a second account for steps N1 and N3. With `/okf spike` after
-`npm run install-addon` (or `npm run link`) and a game restart:
-
-- **N1. Guild and group.** In the open world, run `/okf spike` in a guild and again in a group. Note the send
-  results, whether each echo arrived, and the sender pattern. (V10, V11)
-- **N2. Offline whisper.** Note the result for the made-up name, and whether a "No player named ..." line appears in
-  chat. (V12)
-- **N3. Battle.net.** With a Battle.net friend online in Forever, note the friend counts and the send result. (V13)
-- **N4. Restrictions.** Note the restriction state lines in the open world. If possible, note them again in a
-  dungeon and during a boss fight. (V14)
-- **N5. Encoding.** Note the round-trip line and the encoded length. (V15)
-- **N6. Client constants.** Note the `BNET_CLIENT_WOW` and `WOW_PROJECT_ID` values. (V13)
-- **N7. Report back.** Paste the report back. The facts go into `docs/forever-api.md`, the code is adjusted
-  where needed and the `VERIFY` markers are removed.
-
-## In game: the feature (two players, A and B, both with the addon)
-
-1. **Popup.** A logs in after the update and sees the popup once. "Settings" opens "Shared database" with the
-   setting on. After `/reload` the popup does not come back. (FR-021)
-2. **Group.** A and B fish at different places, then form a group. Within 5 minutes each one's "What can be caught
-   here" at the other's place shows the other's catches, "from 2 players". The chat shows nothing. (SC-001, FR-004)
-3. **Guild, friends, Battle.net.** Repeat without a group:
-   - A and B in one guild: within 30 minutes. (SC-002)
-   - Only on each other's character friends list.
-   - Only Battle.net friends.
-4. **Status.** The status line in the tab and on the settings page shows the exchange. `/okf share` shows peers,
-   the last exchange and the traffic. (FR-017, FR-022)
-5. **Pauses.** Enter combat, then a dungeon: `/okf share` says paused and why. Outside, the exchange resumes.
-   (FR-002)
-6. **Setting off.** B turns the setting off: A's data disappears from B's tab, and `/okf share` says off. With
-   `/okf share` on A, no new exchange with B appears. Turning it on brings the data back at once. (FR-020, SC-007)
-7. **Relay.** A third player C exchanges only with A. After A meets B, B sees C's catches. (FR-003)
-8. **Offline peer.** B logs out in the middle of an exchange (right after a group join): no line about it appears
-   in A's chat. (FR-004, V12)
-9. **Debug.** `/okf debug` has the "Shared database" section with no names and no IDs. After fishing at several
-   places, its line "own record offered: yes, N bytes encoded for P places" gives N / P x 500 under 24 KB.
-   (FR-023, V18)
-10. **Performance.** Watch the frame rate while a session runs and while the tab is open with many records. Login
-    takes no noticeable extra time, and the longest step in `/okf debug` stays under 5 ms. (SC-006, V16)
-11. **Harvest.** Before the release, `npm run harvest` on the author's PC lists other players' contributions, and a
-    client that updates to that release shows the same counts as before. (US4, SC-008)
-12. **Refused account.** With a Trial or Veteran account in a guild, after an hour of HELLO rounds the status line
-    says "Exchange unavailable: the game refuses addon messages", not "Nobody to exchange with". (V10)
+The in-game steps live in `docs/checklists/`: [spike.md](../../docs/checklists/spike.md) prints the game facts
+(V10-V15) with `/okf spike`, then [catch-exchange.md](../../docs/checklists/catch-exchange.md) checks the feature; the order of everything is
+`docs/release-plan.md`.

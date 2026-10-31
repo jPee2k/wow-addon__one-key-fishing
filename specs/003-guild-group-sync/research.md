@@ -2,7 +2,7 @@
 
 Decisions taken for the plan, each with the reason and the alternatives that were rejected. The product decisions
 (who, when, one setting, the popup, the tab) were settled with the author in the spec's "Clarifications" and are
-recorded in `docs/shared-db-plan.md` ("Part 2 (spec 003): exchange in the guild and the group"). The protocol idea (HELLO, then
+recorded in `docs/history/shared-db-plan.md` ("Part 2 (spec 003): exchange in the guild and the group"). The protocol idea (HELLO, then
 bucket hashes, then only the missing records) comes from the plan's "Sync protocol"; this file fixes how it is built
 in WoW Forever. API facts below were read from the Forever 1.60.1.70532 dumps (Gethe `wow-ui-source@forever`,
 Ketho `BlizzardInterfaceResources@forever`) on 2026-10-29; they prove that a function exists, not how it behaves,

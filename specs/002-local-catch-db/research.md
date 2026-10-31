@@ -2,7 +2,7 @@
 
 Decisions taken for the plan, each with the reason and the alternatives that were rejected. The product decisions
 (grid, skill range, filters, prices) were settled with the author before the spec and are recorded in
-`docs/shared-db-plan.md` ("Releases and specs" -> "Part 1 (spec 002)"); this file covers how they are built.
+`docs/history/shared-db-plan.md` ("Releases and specs" -> "Part 1 (spec 002)"); this file covers how they are built.
 
 ## R1. In-game spike, built now, run after launch
 

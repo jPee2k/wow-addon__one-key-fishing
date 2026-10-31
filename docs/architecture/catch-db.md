@@ -1,9 +1,11 @@
 # Architecture: catch database
 
-SeedData.lua and CatchDB.lua: recording catches by place, the bundled seed and the views. The plan is in
-[shared-db-plan.md](../shared-db-plan.md); the full model and contracts are in `specs/002-local-catch-db/`
-(`data-model.md`, `contracts/catchdb-api.md`, `contracts/seed-data.md`, `contracts/harvest-command.md`); the
-in-game checklist is [catch-database.md](../checklists/catch-database.md).
+SeedData.lua and CatchDB.lua: recording catches by place, the bundled seed and the views. The model and contracts
+are in `specs/002-local-catch-db/` (`data-model.md`, `contracts/catchdb-api.md`, `contracts/seed-data.md`,
+`contracts/harvest-command.md`), the later additions in `specs/004-public-channel-sync/` (weights, the version
+chain) and `specs/005-catch-catalog/` (views across maps, areas, the water filter); the design is recorded in
+[history/shared-db-plan.md](../history/shared-db-plan.md). The in-game checklist is
+[catch-database.md](../checklists/catch-database.md); the catalog built on the views is [catalog.md](catalog.md).
 
 ## Places and recording
 
@@ -14,7 +16,7 @@ in-game checklist is [catch-database.md](../checklists/catch-database.md).
 - Every catch and miss goes into `OneKeyFishingDB.shared.mine` (lifetime, never reset) and the account's
   contribution record `shared.records[myID]` (split by game version, read by the harvest).
 - `myID` is 8 random base32 characters and never appears in the debug report.
-- The subzone (part 4, `specs/005-catch-catalog` research R4): at `FISHING_CAST_START`, with a position,
+- The subzone (`specs/005-catch-catalog` research R4): at `FISHING_CAST_START`, with a position,
   `CatchDB.GetArea(mapID, x, y)` keeps the explored area at the player's position
   (`C_MapExplorationInfo.GetExploredAreaIDsAtPosition`) whose `C_Map.GetAreaInfo` name equals `GetSubZoneText()`,
   both folded with `ns.FoldCase` (Principle II). Settling the cast adds 1 to the cell's `a[areaID]` (at most 8
@@ -49,17 +51,17 @@ or before a 501st place:
   by map (updated in place for the keys `SHARED_DATA_CHANGED` names, rebuilt without keys).
 - Results are cached until `CatchDB.GetVersion()` changes, which `SHARED_DATA_CHANGED` bumps (so
   `Share.SetEnabled`, not a direct write of `settings.shareDB`, switches sharing).
-- Weights (part 3): where five or more other contributions report a cell, none counts for more than a fifth of the
+- Weights: where five or more other contributions report a cell, none counts for more than a fifth of the
   others' part (water-filling over the raw counts); the seed and the own catch are not scaled. Chances and pieces
   are weighted by catches, `missRate` by casts (so many misses with few catches are capped too); `catches` stays raw
   (a seed cell the harvest weighted gives its raw catches as `r`).
-- Items (part 3): an item neither in the seed nor in the own catch shows only once 3 other IDs reported it on the map
+- Items: an item neither in the seed nor in the own catch shows only once 3 other IDs reported it on the map
   (`reporters` and `inSeed` per item). Items the client does not know yet are kept and shown as "Unknown item"
   ([ui.md](ui.md)), which the tab reads when it draws the row.
 
-## Views across maps (part 4)
+## Views across maps
 
-For the catch catalog (`Catalog.lua`, `specs/005-catch-catalog`):
+For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):
 
 - `CatchDB.QueryMap(mapID, filter)`: the whole map's view without the spot fallback (scope `"map"` or `"none"`);
   `CatchDB.QueryCells(mapID, filter)`: one spot view per cell with catches (`cell`, `point` = the average catch
@@ -83,13 +85,13 @@ For the catch catalog (`Catalog.lua`, `specs/005-catch-catalog`):
 
 `CatchDB.CheckRecord(record)` checks a received record like the harvest's `checkRecord`, but rejects it whole.
 Plus: an 8-character base32 ID, at most 1,000 places, `seq` not above the record's casts, item IDs up to
-2,147,483,647 (an item the client does not know is accepted, part 3), a `proof` of 16 base32 characters, at most
-`STEP_SECONDS` (180 s) of casting per step of `seq`, and a cell's `a` (part 4) absent or at most 8 area IDs from 1
+2,147,483,647 (an item the client does not know is accepted), a `proof` of 16 base32 characters, at most
+`STEP_SECONDS` (180 s) of casting per step of `seq`, and a cell's `a` absent or at most 8 area IDs from 1
 to 2,147,483,647 with counts summing to at most `c + m`. Share's `CleanCell` copies `a`; the harvest checks, sums
 (the 8 largest), scales and writes it the same way. The own ID is refused by Share's `Store.Accept`, not here
 ([exchange.md](exchange.md)). `CatchDB.IsBlocked(id)` reads the seed's `blocked`.
 
-## The version chain (part 3)
+## The version chain
 
 Each epoch of the own record has a chain of 4,096 links from a 26-character secret in `shared.chain` (never sent,
 never shown): link 4,096 is `ns.ProofStep(secret)`, each lower link the step of the one above, and the record at seq

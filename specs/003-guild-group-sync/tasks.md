@@ -29,7 +29,7 @@ first in each phase and must fail before the implementation.
 - Phase 8 runs after launch, together with the debt of the other parts.
 
 **Branch and release**: all shared-db work stays on `002-shared-db` (no branch per spec). Release 1.2.0 ships all
-four parts together, once the debt of all of them is closed (`docs/shared-db-plan.md` "Release 1.2.0"). Release
+four parts together, once the debt of all of them is closed (`docs/release-plan.md`). Release
 1.1.0 is the interface-language feature, released from `001-interface-language` on its own.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -594,7 +594,7 @@ change and re-sent copies are refused. In game: quickstart.md, feature step 10.
 - [X] T034 [P] Update `README.md` with a "Shared catch database" section: what is shared, with whom (guild, group,
   friends; part 3 adds the public channel), that no names are sent, where to turn it off, `/okf share`, and that
   Trial and Veteran accounts cannot send addon data. Add an `## [Unreleased]` entry to `CHANGELOG.md`.
-- [X] T035 [P] Re-check `docs/shared-db-plan.md` against the code. Its sections and the "part 2" decisions table
+- [X] T035 [P] Re-check `docs/history/shared-db-plan.md` against the code. Its sections and the "part 2" decisions table
   were already brought in line with this design on 2026-10-29: "Transport", "Libraries", "Traffic budget", "Size
   and eviction" and "Sync protocol". Fix any value the implementation changed: the constants in `Comm.lua` and
   `Share.lua`, the message forms, and the limits. Update `docs/ROADMAP.md` item 1 so it links to this spec.
@@ -633,7 +633,7 @@ player or a second account is needed.
   V17, V18); fix what fails and repeat.
 - [ ] T042 Mark part 2 ready for release 1.2.0: T039-T041 done, V10-V18 ticked in
   `specs/003-guild-group-sync/verification.md`, no `VERIFY(V1x)` marker left. The release itself is one task for
-  all parts, `specs/002-local-catch-db/tasks.md` T045 (`docs/shared-db-plan.md` "Release 1.2.0"); its harvest also
+  all parts, `specs/002-local-catch-db/tasks.md` T045 (`docs/release-plan.md`); its harvest also
   bundles the network records the author's client collected.
 
 ---

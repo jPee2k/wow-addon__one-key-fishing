@@ -29,7 +29,7 @@ of [verification.md](verification.md); every line of code that relies on one of 
 `-- VERIFY(Vn): <what>`. Phase 8 runs after launch, together with the debt of the other parts.
 
 **Branch and release**: all shared-db work stays on `002-shared-db` (no branch per spec). Release 1.2.0 ships all four
-parts together once the debt of all of them is closed (`docs/shared-db-plan.md` "Release 1.2.0"). The channel ships
+parts together once the debt of all of them is closed (`docs/release-plan.md`). The channel ships
 only if V19 holds; otherwise `Channel.AVAILABLE = false` (FR-026). The protections of US2 and US4 ship either way.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -691,7 +691,7 @@ refuses and stops passing on their contributions.
   - `docs/architecture/ui.md`: the "Unknown item" row and tooltip in CatchHere, and the channel setting and its
     state line on the "Shared database" page;
   - `docs/architecture/core.md`: `ns.SHA256` and `ns.ProofStep` in Data.lua, the new defaults in Core.lua.
-- [X] T049 [P] `docs/shared-db-plan.md`:
+- [X] T049 [P] `docs/history/shared-db-plan.md`:
   - part 3 decisions (link this spec);
   - "10 channel slots" corrected to 20;
   - the "Protection against spam and fakes" rows that part 3 closes (forged versions, weights, items, `blocked`);
@@ -726,7 +726,7 @@ critical, high and medium finding is fixed with a test; the low ones are listed 
   channel lines from `README.md` and `CHANGELOG.md`; the protections stay.
 - [ ] T055 The author runs `docs/checklists/public-channel.md` with three accounts, including a week of normal play
   (SC-004, SC-005). Fix and re-run until it passes; tick V19-V29 in verification.md and remove their markers.
-- [ ] T056 Release with the other parts, following `docs/shared-db-plan.md` "Release 1.2.0"; `npm run build` must pass
+- [ ] T056 Release with the other parts, following `docs/release-plan.md`; `npm run build` must pass
   with no `VERIFY` marker left.
 
 ---

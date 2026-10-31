@@ -86,6 +86,6 @@ It sends no message.
 | --- | --- |
 | `cleanCell` / `checkCell` | copy and check `a` (data-model.md rules) |
 | the sums | add `a` per area; keep the 8 largest per cell |
-| `scaledCell` | scale `a` by the cast factor, rounded, the sum capped at `c + m` |
+| `scaleCell` | scale `a` by the cast factor, rounded, the sum capped at `c + m` |
 | `seedText` | write `a = { [id] = n, ... }` sorted by ID |
 | `seedProblems` | check a seed cell's `a` like `checkCell` |

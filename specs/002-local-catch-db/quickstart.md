@@ -23,36 +23,8 @@ rejected; the seed is written with `epoch + 1`; a second run with the same files
 Against real data: `npm run harvest` with `WOW_ADDONS_DIR` set; check the report and `git diff
 OneKeyFishing/SeedData.lua`.
 
-## In game: spike (after the game launch on 2026-11-04)
+## In game
 
-Each step closes items of [verification.md](verification.md). With `/okf spike` after `npm run install-addon` (or
-`npm run link`) and a game restart:
-
-1. Open water: start fishing, run `/okf spike` while the bobber is out. Note the map ID, map type, parent and the
-   position.
-2. A fishing pool: fish it until a catch, then `/okf spike`. Note the loot source GUIDs; compare with open water.
-3. A city with water and a cave with water (if one exists): repeat step 1.
-4. An instance with water (if reachable): repeat step 1.
-5. Auction house: scan prices, then `/okf spike` for one fish (commodity) and one non-stacking item. Note the
-   result counts, the total quantity and whether more results arrive.
-6. Paste the report back; the facts go into `docs/forever-api.md`, the code is adjusted where needed and the
-   `VERIFY` markers are removed.
-
-## In game: the feature
-
-1. Open `/okf stats`: two tabs at the bottom, "Statistics" shows today's numbers unchanged (SC-007).
-2. "What can be caught here" at a spot covered by the seed, on a character with no catches: items, chances, counts
-   appear (SC-001).
-3. Fish 5 times there: the count grows by exactly the catches made (SC-002); the miss line grows with misses.
-4. Walk to another part of the map: the tab follows; at a spot with few catches it says "whole map"; at a new map it
-   says nothing has been caught yet.
-5. Skill filter: own range by default, "All" adds other ranges; source filter "Only mine" shows only own catches.
-6. Close the window on "What can be caught here", `/reload` and log out/in: it opens on that tab, filters at their
-   defaults.
-7. Switch the interface language: names change, numbers do not.
-8. Auction scan: a fish with a normal market shows a price near the common listings; an item with fewer than 5
-   pieces listed shows the "few lots" mark and the value rows use the vendor price.
-9. Fish across a `/reload` mid-cast: the cast is counted once.
-10. Watch the frame rate while opening the window and fishing: no stutter; login takes no noticeable extra time
-    (SC-004).
-11. `/okf debug`: the "Catch database" section shows the seed epoch, places, the current place key, and no ID.
+The in-game steps live in `docs/checklists/`: [spike.md](../../docs/checklists/spike.md) prints the game facts
+(V1-V7) with `/okf spike`, then [catch-database.md](../../docs/checklists/catch-database.md) checks the feature; the order of everything is
+`docs/release-plan.md`.

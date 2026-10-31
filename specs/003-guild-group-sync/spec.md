@@ -18,7 +18,7 @@ from K players'; a 'Shared database' settings page, /okf share and a /okf debug 
 login after the update; the author's client collects others' data so the release command bundles it. Rules: within
 Blizzard's UI Add-On Policy, pauses in combat, instances, restricted states and loading screens, no effect on frame
 rate, anonymous contributions, nothing counted twice, bad data rejected, saved data size-limited. Depends on part 1;
-needs an in-game spike first. Design: docs/shared-db-plan.md (phases 1 and 4)."
+needs an in-game spike first. Design: docs/history/shared-db-plan.md (phases 1 and 4)."
 
 ## Clarifications
 

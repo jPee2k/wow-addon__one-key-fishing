@@ -41,14 +41,15 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - an item the client does not know yet (`GetItemInfoInstant` nil when the row is drawn) gets the "Unknown item" text,
   a question mark icon (134400), no price, and one `C_Item.RequestLoadItemDataByID`; its tooltip says how many
   players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
-  `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (part 3, FR-017a);
-- the miss line uses the view's `missRate` (weighted, part 3), and is left out under a water filter;
-- the Water button (part 4) shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
+  `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (FR-017a of `specs/004-public-channel-sync`);
+- the miss line uses the view's `missRate` (weighted), and is left out under a water filter;
+- the Water button shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
 - a click on a known item row opens the catalog on it (`StatsFrame.OpenCatalog(itemID)`).
 
 ## CatalogTab
 
-The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn from `Catalog.lua`:
+The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn from the reads of
+[catalog.md](catalog.md):
 
 - the list: a `SearchBoxTemplate` box (its `OnTextChanged` hooked, not set), the Skill, Source and Water buttons
   (CatchHere's labels and menus), and a `WowScrollBoxList` of `Catalog.Items`; a status line for the index being
@@ -80,7 +81,7 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 
 Carries `VERIFY(spike)`. `/okf spike` shows, in the copy window, the game facts the catch database and the exchange
 were built on (build, map and position, fishing loot sources, auction results, `PanelTabButtonTemplate`, network
-APIs, and part 4's "Map pins and areas": pins, areas, item names, folding, templates) for the checks in the
-`verification.md` of each part.
+APIs, and "Map pins and areas": pins, areas, item names, folding, templates) for the checks of
+[docs/checklists/spike.md](../checklists/spike.md) and the `verification.md` of each part.
 The file, its TOC line, its Commands.lua entry and `tests/spike_test.lua` go before the release, since
 `npm run build` refuses `VERIFY` markers.

@@ -172,7 +172,7 @@ tests/
 
 .luacheckrc                    # new WoW API globals
 README.md CHANGELOG.md CLAUDE.md docs/architecture/catch-db.md docs/architecture/ui.md docs/architecture/core.md
-docs/forever-api.md docs/shared-db-plan.md docs/checklists/catch-catalog.md
+docs/forever-api.md docs/history/shared-db-plan.md docs/checklists/catch-catalog.md
 specs/002-local-catch-db/data-model.md specs/002-local-catch-db/contracts/seed-data.md   # the cell field a
 ```
 
