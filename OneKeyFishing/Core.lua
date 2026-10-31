@@ -241,6 +241,9 @@ local CHAR_DB_DEFAULTS = {
         pole = nil, -- itemID chosen in settings; nil = best pole in bags
         items = {}, -- extra fishing item IDs
     },
+    -- pin: { mapID, x, y } of the map pin as the addon last set it (UI/MapPin.lua, UI/CatalogTab.lua), nil until it
+    -- sets one; tells it apart from a pin the player set. The game's navigation setting (showInGameNavigation) is
+    -- never touched.
 }
 
 -- Fills missing keys from defaults without touching values the user already has.

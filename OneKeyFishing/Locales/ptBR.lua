@@ -382,4 +382,7 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["No item matches the search."] = "Nenhum item corresponde à busca."
     L["No data for this item under these filters."] = "Sem dados deste item com estes filtros."
     L["Click an item to see where else it is caught."] = "Clique em um item para ver onde mais ele é pescado."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "Colocar um marcador no mapa aqui"
 end)

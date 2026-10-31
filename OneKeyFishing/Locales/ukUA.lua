@@ -378,4 +378,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["No item matches the search."] = "Жоден предмет не відповідає пошуку."
     L["No data for this item under these filters."] = "Немає даних про цей предмет за цими фільтрами."
     L["Click an item to see where else it is caught."] = "Клацніть предмет, щоб побачити, де ще його ловлять."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "Поставити тут мітку на мапі"
 end)

@@ -390,4 +390,7 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["No data for this item under these filters."] = "Keine Daten zu diesem Gegenstand mit diesen Filtern."
     L["Click an item to see where else it is caught."] =
         "Klicke auf einen Gegenstand, um zu sehen, wo er sonst gefangen wird."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "Hier einen Kartenpin setzen"
 end)

@@ -356,4 +356,7 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["No item matches the search."] = "沒有符合搜尋的物品。"
     L["No data for this item under these filters."] = "在這些篩選條件下沒有此物品的資料。"
     L["Click an item to see where else it is caught."] = "點擊物品以查看還能在哪裡釣到。"
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "在此設置地圖標記"
 end)
