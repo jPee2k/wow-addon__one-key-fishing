@@ -101,7 +101,7 @@ node = {                   -- one per Share.NewNode; the game makes one at login
       messages = {}, records = {},   -- per-minute counts of the last hour, for the flood limits
     },
   },
-  byTag = {},              -- node tag -> the address it was first heard from
+  byTag = {},              -- node tag -> the address it was first heard from (one current tag per address)
   session = {              -- at most one at a time
     sid = "a7", peer = "w:Fisher-Forever", role = "initiator" | "responder",
     started = GetTime(), lastHeard = GetTime(),   -- 15 s timeout, 5 min in all
