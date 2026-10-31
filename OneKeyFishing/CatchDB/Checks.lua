@@ -44,7 +44,8 @@ end
 
 local MAX_ITEM_ID = 2147483647 -- item IDs are 32-bit; an item the client does not know yet is no fault (FR-017a)
 
-local function CheckItems(items, catches)
+-- minus (optional): checked items to take off each entry first, as a pool part off its cell (open water).
+local function CheckItems(items, catches, minus)
     if items == nil then
         return true
     end
@@ -56,6 +57,10 @@ local function CheckItems(items, catches)
             return false, "item ID " .. tostring(itemID) .. " is not a positive 32-bit number"
         end
         local withItem, pieces = type(entry) == "table" and entry[1], type(entry) == "table" and entry[2]
+        local taken = minus and minus[itemID]
+        if taken and IsCount(withItem) and IsCount(pieces) then
+            withItem, pieces = withItem - taken[1], pieces - taken[2]
+        end
         if not (IsCount(withItem) and IsCount(pieces)) or withItem > catches or pieces < withItem
             or pieces > MAX_PIECES * withItem then
             return false, "item " .. itemID .. " has impossible counts"
@@ -130,13 +135,16 @@ local function CheckCell(cell)
         if not ok then
             return false, reason
         end
-        -- The pool part is counted in the cell too, so open water (i - p.i) never goes below 0.
-        local whole = type(cell.i) == "table" and cell.i or {}
-        for itemID, entry in pairs(cell.p.i or {}) do
-            local all = whole[itemID]
-            if not all or entry[1] > all[1] or entry[2] > all[2] then
-                return false, "pool item " .. itemID .. " is more than the cell has"
+        -- The pool part is counted in the cell too: open water, the rest (i - p.i out of c - p.c), must hold the
+        -- same rules, so no count of it goes below 0 and no chance above 1.
+        for itemID in pairs(cell.p.i or {}) do
+            if not (cell.i and cell.i[itemID]) then
+                return false, "open water: item " .. itemID .. " has impossible counts"
             end
+        end
+        ok, reason = CheckItems(cell.i, cell.c - cell.p.c, cell.p.i)
+        if not ok then
+            return false, "open water: " .. reason
         end
     end
     return true

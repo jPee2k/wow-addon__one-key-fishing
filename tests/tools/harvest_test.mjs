@@ -187,12 +187,57 @@ export const tests = [
         } }),
       }));
       const report = run(env).report.join("\n");
-      assert.match(report, /skipped {3}pppppppp cell 1415:3:47: pool item 6291 is more than the cell has/);
-      assert.match(report, /skipped {3}pppppppp cell 1415:3:11: pool item 6303 is more than the cell has/);
+      assert.match(report, /skipped {3}pppppppp cell 1415:3:47 \(open water\): item 6291 has impossible counts/);
+      assert.match(report, /skipped {3}pppppppp cell 1415:3:11 \(open water\): item \d+ has impossible counts/);
       const cells = seedCells(readSeed(env.outDir).text);
       assert.equal(cells["1415:3:47"].c, 15, "only the two accounts' catches");
       assert.equal(cells["1415:3:11"], undefined, "the cell with a pool item it never counted is gone");
       assert.equal(cells["1416:2:x"].c, 4, "a pool part equal to the cell is kept");
+    },
+  },
+  {
+    name: "a cell whose open water claims more catches of an item than it has is skipped",
+    fn() {
+      const env = setup();
+      const P = "pppppppp";
+      fs.writeFileSync(env.friend, savedFile({
+        [P]: record(P, 0, 2, { "1.60.1": {
+          "1415:3:47": cell(10, 0, { 6291: [10, 10] }, { p: { c: 9, i: { 6291: [1, 1] } } }),
+          "1416:2:x": cell(2, 0, { 6358: [2, 40] }, { p: { c: 1, i: { 6358: [1, 1] } } }),
+        } }),
+      }));
+      const report = run(env).report.join("\n");
+      assert.match(report, /skipped {3}pppppppp cell 1415:3:47 \(open water\): item 6291 has impossible counts/);
+      assert.match(report, /skipped {3}pppppppp cell 1416:2:x \(open water\): item 6358 has impossible counts/);
+    },
+  },
+  {
+    name: "a weighted contributor's pool part and open water are scaled apart: open water keeps the cell rules",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-pool-weights-"));
+      const file = path.join(root, "author.lua");
+      const records = {};
+      for (const [id, catches] of [["caaaaaa2", 10], ["daaaaaa2", 10], ["eaaaaaa2", 10], ["faaaaaa2", 10],
+        ["haaaaaa2", 1]]) {
+        records[id] = oneCell(id, 0, 1, "1415:3:47", cell(catches, 0, { 6291: [catches, catches] },
+          { p: { c: catches, i: { 6291: [catches, catches] } } }));
+      }
+      // The others fished only in pools, so the open water of the sum is the big one's alone.
+      // Capped at 10.25 catches: on their own p.c rounds up to 2 and 6303 to 9, while c rounds down to 10.
+      records.gaaaaaa2 = oneCell("gaaaaaa2", 0, 50, "1415:3:47",
+        cell(900, 0, { 6303: [755, 755], 6358: [136, 136] }, { p: { c: 136, i: { 6358: [136, 136] } } }));
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(file, savedFile(records));
+      harvest({ files: [file], outDir, now: NOW });
+      const c = seedCells(readSeed(outDir).text)["1415:3:47"];
+      const open = c.c - c.p.c;
+      for (const [itemID, [withItem, pieces]] of Object.entries(c.i)) {
+        const [poolWith, poolPieces] = c.p.i[itemID] || [0, 0];
+        assert.ok(withItem - poolWith >= 0 && withItem - poolWith <= open, `${itemID}: open catches within ${open}`);
+        assert.ok(pieces - poolPieces >= withItem - poolWith, `${itemID}: open pieces at least its catches`);
+        assert.ok(pieces - poolPieces <= 20 * (withItem - poolWith), `${itemID}: at most 20 open pieces per catch`);
+      }
+      assert.ok(c.i["6303"], "the open item is kept");
     },
   },
   {

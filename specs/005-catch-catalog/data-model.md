@@ -48,8 +48,10 @@ A sum reads each cell through the water filter (research R5):
 | `"pool"` | `p.c` (0 without `p`) | `p.i` | 0 | contributions with `p.c > 0` |
 | `"open"` | `c - p.c` | `i - p.i` (per item: catches and pieces) | 0 | contributions with open catches |
 
-The pool part is counted in `c` and `i` too, so `CatchDB.CheckRecord` and the harvest refuse a cell whose `p.i` has an
-item missing from `i` or with more catches or pieces than `i` gives it: open water never goes below 0.
+The pool part is counted in `c` and `i` too, so open water (`i - p.i` out of `c - p.c`) must hold the same item rules
+as a cell: `CatchDB.CheckRecord` and the harvest refuse a cell whose open water has a count below 0, more catches of
+an item than open catches, or pieces out of range. The harvest scales a weighted cell's pool part and open water
+apart and sums them, so its rounding keeps the rule too.
 
 A view (part 1 shape) gains:
 
