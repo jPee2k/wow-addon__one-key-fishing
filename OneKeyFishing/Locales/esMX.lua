@@ -367,4 +367,13 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["No item matches the search."] = "Ningún objeto coincide con la búsqueda."
     L["No data for this item under these filters."] = "No hay datos de este objeto con estos filtros."
     L["Click an item to see where else it is caught."] = "Haz clic en un objeto para ver dónde más se pesca."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Pin"] = "Marca"
+    L["Set a map pin here"] = "Poner una marca en el mapa aquí"
+    L["Replace your map pin with this place?"] = "¿Reemplazar tu marca del mapa por este lugar?"
+    L["Replace"] = "Reemplazar"
+    L["Cancel"] = "Cancelar"
+    L["Map pin: %s"] = "Marca del mapa: %s"
+    L["The game did not accept the map pin."] = "El juego no aceptó la marca del mapa."
 end)

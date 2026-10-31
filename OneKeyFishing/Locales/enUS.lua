@@ -313,3 +313,12 @@ L["You have not caught anything yet."] = true
 L["No item matches the search."] = true
 L["No data for this item under these filters."] = true
 L["Click an item to see where else it is caught."] = true
+
+-- UI/CatalogTab.lua: the map pin (part 4)
+L["Pin"] = true
+L["Set a map pin here"] = true
+L["Replace your map pin with this place?"] = true
+L["Replace"] = true
+L["Cancel"] = true
+L["Map pin: %s"] = true
+L["The game did not accept the map pin."] = true

@@ -451,7 +451,7 @@ an instance (spec US2).
 
 ### Tests for User Story 2
 
-- [ ] T029 [P] [US2] Create `tests/catalog_pin_test.lua` (research R6, data-model.md "Pin target").
+- [X] T029 [P] [US2] Create `tests/catalog_pin_test.lua` (research R6, data-model.md "Pin target").
   - **`Catalog.PinTarget`:**
     - an allowed map gives `{ mapID, x, y }` at the spot's point;
     - a Micro map that refuses, with an allowed parent and a `map_world` entry for both, gives the parent and the
@@ -480,7 +480,7 @@ an instance (spec US2).
 
 ### Implementation for User Story 2
 
-- [ ] T030 [US2] In `OneKeyFishing/Catalog.lua`, add `Catalog.PinTarget(mapID, spot)` (research R6) and fill
+- [X] T030 [US2] In `OneKeyFishing/Catalog.lua`, add `Catalog.PinTarget(mapID, spot)` (research R6) and fill
   `spot.pin` in `Catalog.Spots`.
   - Mark the reads:
     - `-- VERIFY(V30): CanSetUserWaypointOnMap answers per map, open world true, instances false, and the game rule
@@ -489,7 +489,7 @@ an instance (spec US2).
   - The rule check runs only when `C_GameRules.IsGameRuleActive` and `Enum.GameRule.WorldMapTrackingPinDisabled`
     both exist; a missing value skips it and is not a refusal.
   - Add `C_GameRules` and the map functions to `.luacheckrc`.
-- [ ] T031 [US2] In `OneKeyFishing/UI/CatalogTab.lua`, add the pin button to spot rows with a target. It uses the
+- [X] T031 [US2] In `OneKeyFishing/UI/CatalogTab.lua`, add the pin button to spot rows with a target. It uses the
   atlas `Waypoint-MapPin-Untracked`, or a text button `L["Pin"]` when `C_Texture.GetAtlasInfo` lacks it, with the
   hover text `L["Set a map pin here"]`. Add `CatalogTab.Pin(target, placeName)`:
   - **Asking first.** When `C_Map.HasUserWaypoint()` and the waypoint differs from `ns.charDB.pin` (another map, or

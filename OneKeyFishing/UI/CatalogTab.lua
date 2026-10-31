@@ -18,6 +18,8 @@ local BOTTOM = 40 -- the lists end above the status line
 local WINDOW_HEIGHT = 660 -- the statistics window (UI/StatsFrame.lua)
 local MAX_ROWS = 26 -- rows of the fixed list when the scroll templates are missing
 local INDENT = 16 -- spot rows under their zone
+local PIN_EPSILON = 0.0005 -- a waypoint this close to the addon's last pin is that pin
+local PIN_ATLAS = "Waypoint-MapPin-Untracked"
 -- The zone and spot rows: x and width inside a row, and the text alignment.
 local COLUMNS = {
     { key = "name", x = 16, width = 270, justify = "LEFT" },
@@ -168,6 +170,32 @@ local function ShowPlaceTooltip(self)
     GameTooltip:Show()
 end
 
+-- The pin button of a spot row: the game's pin icon, or a text button when the client lacks the atlas.
+local function CreatePinButton(row)
+    local button
+    if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(PIN_ATLAS) then
+        button = CreateFrame("Button", nil, row)
+        button:SetSize(16, 16)
+        button:SetNormalAtlas(PIN_ATLAS)
+        button:SetHighlightAtlas(PIN_ATLAS, "ADD")
+    else
+        button = ns.CreateButton(row, L["Pin"], 30, nil)
+        button:SetHeight(16)
+    end
+    button:SetPoint("RIGHT", -2, 0)
+    button:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L["Set a map pin here"])
+        GameTooltip:Show()
+    end)
+    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    button:SetScript("OnClick", function()
+        local element = row.element
+        CatalogTab.Pin(element.place.pin, element.zone .. " - " .. element.place.name)
+    end)
+    return button
+end
+
 local function InitPlaceRow(row, element)
     if not row.name then
         row:SetSize(ROW_WIDTH, LINE_HEIGHT)
@@ -180,6 +208,7 @@ local function InitPlaceRow(row, element)
             text:SetWordWrap(false)
             row[column.key] = text
         end
+        row.pinButton = CreatePinButton(row)
         row:SetScript("OnEnter", ShowPlaceTooltip)
         row:SetScript("OnLeave", function() GameTooltip:Hide() end)
         row:SetScript("OnClick", function(self)
@@ -199,6 +228,7 @@ local function InitPlaceRow(row, element)
     row.skill:SetText(SpanLabel(place.ranges))
     row.chance:SetText(place.littleData and L["Little data"] or Percent(place.chance))
     row.catches:SetText(tostring(place.catches))
+    row.pinButton:SetShown(not zone and place.pin ~= nil)
 end
 
 ---------------------------------------------------------------------------
@@ -386,6 +416,43 @@ function CatalogTab.Show(arg)
         chosen = nil
     end
     CatalogTab.Refresh()
+end
+
+-- True when the waypoint on the map is the one the addon set last (same map, positions within PIN_EPSILON).
+local function IsOwnPin(point)
+    local pin = ns.charDB.pin
+    local position = point and point.position
+    if not (pin and position) then
+        return false
+    end
+    return point.uiMapID == pin.mapID and math.abs(position.x - pin.x) <= PIN_EPSILON
+        and math.abs(position.y - pin.y) <= PIN_EPSILON
+end
+
+-- Sets the game's own map pin at target ({ mapID, x, y }) as Blizzard's /mappin does (research R6): the navigation
+-- to it, a toast and, out of combat, the world map at that map. A pin the player set is replaced only after a
+-- question (FR-012). Only on the player's click: nothing else acts (Principle I).
+function CatalogTab.Pin(target, placeName)
+    local function Apply()
+        if not C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)) then
+            ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4)
+            return
+        end
+        -- VERIFY(V31): super tracking the user waypoint shows the navigation arrow
+        C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+        ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
+        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1)
+        if not InCombatLockdown() then
+            -- VERIFY(V32): OpenWorldMap from addon code opens the map without taint
+            OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted
+        end
+    end
+    if C_Map.HasUserWaypoint() and not IsOwnPin(C_Map.GetUserWaypoint()) then
+        ns.ShowPopup("ONEKEYFISHING_REPLACE_PIN", L["Replace your map pin with this place?"], Apply, L["Replace"],
+            L["Cancel"])
+    else
+        Apply()
+    end
 end
 
 function CatalogTab.SetSearch(text)

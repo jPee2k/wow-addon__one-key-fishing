@@ -344,4 +344,13 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["No item matches the search."] = "검색과 일치하는 아이템이 없습니다."
     L["No data for this item under these filters."] = "이 필터로는 이 아이템의 데이터가 없습니다."
     L["Click an item to see where else it is caught."] = "아이템을 클릭하면 다른 어디에서 잡히는지 볼 수 있습니다."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Pin"] = "핀"
+    L["Set a map pin here"] = "여기에 지도 핀 꽂기"
+    L["Replace your map pin with this place?"] = "지도 핀을 이 장소로 바꿀까요?"
+    L["Replace"] = "바꾸기"
+    L["Cancel"] = "취소"
+    L["Map pin: %s"] = "지도 핀: %s"
+    L["The game did not accept the map pin."] = "게임이 지도 핀을 받아들이지 않았습니다."
 end)

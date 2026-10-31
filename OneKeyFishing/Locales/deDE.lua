@@ -371,4 +371,13 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["No data for this item under these filters."] = "Keine Daten zu diesem Gegenstand mit diesen Filtern."
     L["Click an item to see where else it is caught."] =
         "Klicke auf einen Gegenstand, um zu sehen, wo er sonst gefangen wird."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Pin"] = "Pin"
+    L["Set a map pin here"] = "Hier einen Kartenpin setzen"
+    L["Replace your map pin with this place?"] = "Deinen Kartenpin durch diesen Ort ersetzen?"
+    L["Replace"] = "Ersetzen"
+    L["Cancel"] = "Abbrechen"
+    L["Map pin: %s"] = "Kartenpin: %s"
+    L["The game did not accept the map pin."] = "Das Spiel hat den Kartenpin nicht angenommen."
 end)
