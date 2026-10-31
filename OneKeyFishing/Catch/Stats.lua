@@ -208,7 +208,7 @@ end)
 ns.On("FISH_CAUGHT", function(items)
     Add("catches", 1)
     for _, item in ipairs(items) do
-        local itemID = C_Item.GetItemInfoInstant(item.link)
+        local itemID = item.itemID
         if itemID then
             ForEachLiveBucket(function(bucket)
                 bucket.items[itemID] = (bucket.items[itemID] or 0) + item.quantity

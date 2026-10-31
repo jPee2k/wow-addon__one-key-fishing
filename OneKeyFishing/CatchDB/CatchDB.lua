@@ -529,7 +529,7 @@ end
 local function CatchItems(items)
     local pieces = {}
     for _, item in ipairs(items) do
-        local itemID = C_Item.GetItemInfoInstant(item.link)
+        local itemID = item.itemID
         if itemID then
             pieces[itemID] = math.min(MAX_PIECES, (pieces[itemID] or 0) + math.max(1, item.quantity or 1))
         end

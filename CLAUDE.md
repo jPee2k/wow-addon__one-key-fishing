@@ -136,7 +136,7 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 - `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed)
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
-- `FISH_CAUGHT` (items, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
+- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `SKILL_WARNING` (text, loud: a next-rank notice of `Fishing/Skill.lua`, loud at the cap; the toast shows it even
   with catch notifications off), `MAP_PIN_SET` (placeName, or nil when the game refused the pin: `Core/MapPin.lua`
