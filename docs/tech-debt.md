@@ -10,21 +10,8 @@ cleanup, no wrong behaviour.
 ## Open items
 
 Grouped into fix batches: the items of one batch touch the same code and are fixed and tested in one commit. The
-batches are ordered by severity. Batches B to D and items 6 to 9 come from a review of the whole `002-shared-db`
+batches are ordered by severity. Batches C and D and items 6 to 9 come from a review of the whole `002-shared-db`
 branch against `develop` on 2026-10-31; every one was confirmed by a test or a traced path.
-
-### Batch B: the pool part of a cell must fit the cell (medium)
-
-3. **A record can claim more pool catches of an item than the whole cell has** (`CatchDB/Checks.lua:125-130`,
-   `CheckCell`; read by `CatchDB/Views.lua:81-89`, `ThroughWater`; the same gap in `tools/harvest.mjs:309-315`). The
-   pool items `p.i` are checked only against `p.c`, never against the cell's `i`, while "open" water is `i - p.i`
-   (`specs/005-catch-catalog/data-model.md`). Confirmed with a test: a stored record with
-   `i[6291] = {1,1}, p.i[6291] = {15,300}` gives 6291 an open count of -14, which hides an honest player's 10
-   catches, and another item a chance of 150% under the "open" filter; the "pools" filter shows items the cell never
-   counted. Direction: in `CheckCell` (and the harvest's `checkCell`) every pool item must be in the cell with both
-   numbers no larger; optionally clamp at 0 in `ThroughWater` for seed cells. Test: in
-   `tests/catchdb/water_record_test.lua`, `CheckRecord` refuses that cell, and `QueryMap(..., water = "open")` with
-   it plus an honest record still lists 6291 with no chance above 1.
 
 ### Batch C: the echo of the channel leave (medium)
 
@@ -100,4 +87,4 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
   as accepted limits in `specs/004-public-channel-sync` (spec edge cases, data-model.md) or left as style.
 - 2026-10-31, a review of the whole branch against `develop` (five areas): one high, two medium and six low items,
   recorded as batches A to E. SHA-256, the codec, the merges and the session states held up. Batch A (item IDs
-  from the loot link) was fixed the same day.
+  from the loot link) and batch B (the pool part of a cell must fit the cell) were fixed the same day.

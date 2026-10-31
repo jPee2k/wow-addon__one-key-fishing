@@ -175,6 +175,27 @@ export const tests = [
     },
   },
   {
+    name: "a cell whose pool part claims more of an item than the cell has is skipped",
+    fn() {
+      const env = setup();
+      const P = "pppppppp";
+      fs.writeFileSync(env.friend, savedFile({
+        [P]: record(P, 0, 2, { "1.60.1": {
+          "1415:3:47": cell(15, 0, { 6291: [1, 1] }, { p: { c: 15, i: { 6291: [15, 300] } } }),
+          "1415:3:11": cell(3, 0, { 6291: [3, 3] }, { p: { c: 2, i: { 6303: [2, 2] } } }),
+          "1416:2:x": cell(1, 0, { 6358: [1, 1] }, { p: { c: 1, i: { 6358: [1, 1] } } }),
+        } }),
+      }));
+      const report = run(env).report.join("\n");
+      assert.match(report, /skipped {3}pppppppp cell 1415:3:47: pool item 6291 is more than the cell has/);
+      assert.match(report, /skipped {3}pppppppp cell 1415:3:11: pool item 6303 is more than the cell has/);
+      const cells = seedCells(readSeed(env.outDir).text);
+      assert.equal(cells["1415:3:47"].c, 15, "only the two accounts' catches");
+      assert.equal(cells["1415:3:11"], undefined, "the cell with a pool item it never counted is gone");
+      assert.equal(cells["1416:2:x"].c, 4, "a pool part equal to the cell is kept");
+    },
+  },
+  {
     name: "the epoch grows by one and absorbed names every contribution unit with the seq summed",
     fn() {
       const env = setup();
