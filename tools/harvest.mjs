@@ -312,6 +312,13 @@ function checkCell(cell, key) {
       throw new Error(`${where}: the pool part does not fit the totals`);
     }
     checkItems(pool.i, pool.c, `${where} (pool)`);
+    // The pool part is counted in the cell too, so open water (i - p.i) never goes below 0.
+    for (const [itemID, entry] of Object.entries(pool.i || {})) {
+      const all = cell.i && cell.i[itemID];
+      if (!all || entry["1"] > all["1"] || entry["2"] > all["2"]) {
+        throw new Error(`${where}: pool item ${itemID} is more than the cell has`);
+      }
+    }
   }
   checkAreas(cell.a, casts, where);
 }

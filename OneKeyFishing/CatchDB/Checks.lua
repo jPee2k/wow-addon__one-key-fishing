@@ -126,7 +126,18 @@ local function CheckCell(cell)
         if type(cell.p) ~= "table" or not IsCount(cell.p.c) or cell.p.c > cell.c then
             return false, "the pool part does not fit the totals"
         end
-        return CheckItems(cell.p.i, cell.p.c)
+        ok, reason = CheckItems(cell.p.i, cell.p.c)
+        if not ok then
+            return false, reason
+        end
+        -- The pool part is counted in the cell too, so open water (i - p.i) never goes below 0.
+        local whole = type(cell.i) == "table" and cell.i or {}
+        for itemID, entry in pairs(cell.p.i or {}) do
+            local all = whole[itemID]
+            if not all or entry[1] > all[1] or entry[2] > all[2] then
+                return false, "pool item " .. itemID .. " is more than the cell has"
+            end
+        end
     end
     return true
 end
