@@ -6,6 +6,15 @@ and the state). The spec, model and contracts are in `specs/003-guild-group-sync
 protections against strangers, in `specs/004-public-channel-sync/`; the in-game checklists are
 [catch-exchange.md](../checklists/catch-exchange.md) and [public-channel.md](../checklists/public-channel.md).
 
+The exchange is one module, `ns.Share`, in four files (TOC order, after `Comm.lua` and `Channel.lua`):
+`Share.lua` (the module table, the limits and timings, the store of other players' records, the bucket hashes, the
+Base64/CBOR codec), `ShareNode.lua` (the protocol node: its summary, peers and sessions), `ShareProtocol.lua` (the
+messages HELLO, SUM, DIFF, WANT, BYE, REC, the records sent and merged, the hello rounds, a node's activity and
+status) and `ShareGame.lua` (the one node bound to Comm, its pauses and rounds, the setting, the state). The files
+share their internals through `Share.private` (not an API); none of those names is ever reassigned, the one
+reassigned counter (`dataVersion`) lives with its only reader in `ShareNode.lua`. The one-time popup is the view's
+(`UI/ShareNotice.lua`).
+
 ## Exchange/Comm.lua
 
 The transport of the catch exchange; it knows nothing about records.
@@ -93,7 +102,7 @@ The hidden public channel; it knows nothing about records.
   days, the rest, mostly rare places), then by `seen`. The seed's chain proofs of units it holds in part are checked
   in the background after login.
 
-## Exchange/Share.lua: the protocol
+## Exchange/ShareNode.lua and ShareProtocol.lua: the protocol
 
 - `Share.NewNode(store, env)` is a protocol node with its clock, scheduler and transport injected. The tests run
   several over a fake network; the game makes one bound to Comm on `PLAYER_LOGIN`, once the one-time popup was
@@ -137,7 +146,7 @@ The hidden public channel; it knows nothing about records.
 - `tests/exchange/channel/sim_test.lua` runs many nodes through one fake channel (`OKF_SIM_NODES`); measured numbers in
   research R5 of `specs/004-public-channel-sync/`.
 
-## Exchange/Share.lua: setting and state
+## Exchange/ShareGame.lua: setting and state
 
 `Share.SetEnabled` (the setting), `Share.GetStatus()` / `StatusLine()` / `PrintStatus()` / `Describe()` (states
 off, notice, unavailable, paused, alone, active); `Share.ChannelLine()` is the channel's line for `/okf share`
