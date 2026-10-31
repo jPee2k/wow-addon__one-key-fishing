@@ -138,6 +138,11 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [ ] `/okf debug` opens the copy window with the versions, the locale, the mode state and keys, the Fishing spell
   and skill, gear, lure, pending restore, fished items and settings; Ctrl+A, Ctrl+C copies it. No Lua errors
   during the whole run.
+- [ ] **Debug report from the menu and the settings.** The minimap right-click menu and the "Debug report" button on
+  the settings page open the same copy window as `/okf debug` (a dangling call there was fixed in the simplify pass).
+- [ ] **Catch pages after the shared-menu change.** On "What can be caught here" and on the catalog tab the "Skill" and
+  "Source" menus open, mark the chosen entry and change the list; the chance column and the spot tooltip read as
+  before; the catalog list does not flicker while a fishing session adds catches.
 
 ## Results
 
