@@ -45,6 +45,7 @@ Locales\zhCN.lua
 # Core: events, the message bus, saved variables, shared data
 Core\Core.lua
 Core\Data.lua
+Core\MapPin.lua
 # Game data (data only)
 GameData\FishingRanks.lua
 # Fishing mode
@@ -69,13 +70,15 @@ Exchange\Share.lua
 # Catch catalog
 Catalog\Catalog.lua
 # UI
+UI\Widgets.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
-UI\MapPin.lua
 UI\CatchHere.lua
 UI\CatalogTab.lua
 UI\StatsFrame.lua
+UI\AuctionButton.lua
+UI\ShareNotice.lua
 Core\Debug.lua
 Core\Spike.lua
 UI\Settings.lua

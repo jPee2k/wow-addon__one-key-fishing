@@ -3,6 +3,36 @@
 Localization, the core services, saved variables, slash commands and the shared helpers. The module map and the
 message list are in `CLAUDE.md`; languages and translation file rules are in [languages.md](../languages.md).
 
+## Layers
+
+WoW addons follow the pattern Ace3 formalized and the large addons use: a core plus feature modules over a message
+bus. Here it is layered, one folder per area, so that MVC maps onto it: the model is the data and its rules
+(`CatchDB/`, `Catalog/`, the statistics and prices of `Catch/`, the exchange's records and protocol); the
+controller is what turns game events and key presses into model changes and game actions (`Fishing/`, catch
+detection and auction scans, the transport and the channel, `Core/Commands.lua`); the view is `UI/`; the message
+bus `ns.On` / `ns.Fire` is the observer: model and controller announce, the view listens, nothing below knows a
+frame.
+
+| Layer | Folders | May use the module tables (`ns.<Name>`) of |
+|---|---|---|
+| 0 Core | `Core/` (Localization, Core, Data), `Locales/` | nothing above |
+| 1 Game | `Fishing/`, `Catch/`: the game's state and actions | layers 0-1 |
+| 2 Data | `CatchDB/`, `Exchange/`, `Catalog/`: the catch data, its exchange and index | layers 0-2 |
+| 3 View | `UI/`: every frame | everything |
+
+- Entries: `Core/Commands.lua` is the one place a command opens a window (it sees everything); `Core/Debug.lua`
+  and `Core/Spike.lua` read every module but the UI and return text that `Commands.lua` shows.
+- Chat output (`ns.Print`) and the game's popup (`ns.ShowPopup`) stay in Core as infrastructure any layer may use:
+  they are not addon frames.
+- `npm run check` enforces the rule: what a file defines at the start of a line (`ns.Name = ...`,
+  `function ns.Name(`) belongs to its folder's layer, and a file may name only what its layer and the layers below
+  define. `CreateFrame` outside `UI/` is allowed only where `tools/addon.mjs` (`FRAMES_OUTSIDE_UI`) lists it: the
+  event frame, the secure button and its state handler, the scanning tooltip, the spike's probes.
+- Lifecycle: a module registers its own `ADDON_LOADED` / `PLAYER_LOGIN` handlers with `ns.RegisterEvent` (no
+  `OnInitialize` / `OnEnable` framework); handlers of one event run in TOC order.
+- A new feature goes into the module of its area (layer 1 or 2) and `UI/`, joined by messages and module
+  functions; a new area adds a folder, its document here and its folder in `tests/`.
+
 ## Core/Localization.lua (loaded first)
 
 - `ns.L` is keyed by the English text: the effective translation, then English, then the key.
@@ -31,17 +61,28 @@ message list are in `CLAUDE.md`; languages and translation file rules are in [la
 
 - `ns.RegisterEvent` (several handlers per event) and the internal message bus `ns.On` / `ns.Fire` (messages in
   `CLAUDE.md`).
-- Widgets and helpers: `ns.CreateButton` (the shared panel button, which grows to its text on every `SetText`),
-  `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip` (item tooltip with the
-  few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.ShowPopup` (two-button popups;
-  the default buttons are the addon's `L["Yes"]` / `L["No"]`, never the client's `YES` / `NO`), `ns.Print` (a chat
-  line with the addon prefix), `ns.ReportSection` (a titled block of the debug report).
+- Helpers: `ns.ShowPopup` (two-button popups; the default buttons are the addon's `L["Yes"]` / `L["No"]`, never
+  the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix), `ns.ReportSection` (a titled block
+  of the debug report). The frame helpers (`ns.CreateButton`, `ns.CreateText`, `ns.ItemDisplay`,
+  `ns.ShowItemTooltip`, `ns.OpenRadioMenu`) are the view's, in `UI/Widgets.lua` ([ui.md](ui.md)).
 - `ns.FormatDecimal(value, digits)`: the client's `DECIMAL_SEPERATOR`, the same as gold amounts.
 - `ns.KeyText(binding, short, unbound, separator)`: every key bound to a binding, in the game's order, joined
   with " / "; the minimap tooltip, the settings key line and the indicator use it.
 - `ns.TallGlyphs()`: the addon is in Korean or Chinese on a client in another language. The minimap and Language
   tooltips then do not wrap and end with a blank line, because the game measures the lines with the client's
   shorter font; the other tooltips do not use it yet (spec 007 research R9).
+
+## Core/MapPin.lua
+
+The game's own map pin (user waypoint) with the navigation arrow, set on the player's click. In Core because
+`Fishing/Skill.lua` (the next rank) and the catch catalog use it; it makes no frame, and its toasts are the UI's
+(`MAP_PIN_SET`, `UI/Toast.lua`).
+
+- `MapPin.Target(maps, x, y)`: the first candidate map the client knows and allows pins on, none under the game
+  rule that turns pins off.
+- `MapPin.Set(target, placeName)`: the game's pin, the navigation arrow, `charDB.pin`, a popup before replacing a
+  pin the player set; out of combat the world map opens at that map.
+- `MapPin.Link(target, text)`: a chat map link (`worldmap:`), which the game handles itself.
 - The slash command dispatcher and help (`/okf` and `/onekeyfishing`; the commands themselves are in
   Commands.lua), `ns.version` from the TOC, and binding labels.
 
@@ -71,7 +112,7 @@ new field only needs a default.
 | `gearSwap`, the CVar and camera snapshots, `resumeMode` | what fishing mode changed, stored *before* the change so that exit, logout, `/reload` and crashes restore it ([fishing-mode.md](fishing-mode.md)) | Mode.lua, Gear.lua, Camera.lua |
 | `savedCameraZoom` | the zoom before fishing mode; survives a `/reload`, dropped on a real login | Camera.lua |
 | `stats`, `countedCast` | the statistics buckets and the cast running across a `/reload` | Stats.lua |
-| `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | UI/MapPin.lua, UI/CatalogTab.lua |
+| `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | Core/MapPin.lua, UI/CatalogTab.lua |
 | `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks) | Channel.lua |
 
 ## Core/Commands.lua (loaded last)
@@ -112,4 +153,5 @@ Builds the `/okf debug` report (English, not localized): versions and locale, th
 and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database
 (`CatchDB.Describe()`, never the anonymous ID), the shared database (`Share.Describe()`, `Channel.Describe()`, no
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
-and the name queue, never an item name).
+and the name queue, never an item name). `Debug.Report()` returns the window title and the text; `/okf debug`
+(`Commands.lua`) shows them in the copy window.

@@ -1,6 +1,8 @@
 -- MapPin: the game's own map pin (user waypoint) with the navigation arrow, set on the player's click
 -- (spec 001, User Story 3, FR-022; research R14). Taken over from the catch catalog of 002-shared-db
 -- (Catalog.PinTarget, CatalogTab.Pin) with the same saved field and texts, so the catalog can use this module.
+-- In Core: Fishing/Skill.lua and the catalog use it; it makes no frame, and its toasts are the UI's
+-- (MAP_PIN_SET, UI/Toast.lua).
 local _, ns = ...
 local L = ns.L
 
@@ -53,7 +55,7 @@ end
 function MapPin.Set(target, placeName)
     local function Apply()
         if not C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)) then
-            ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4, true)
+            ns.Fire("MAP_PIN_SET", nil)
             return
         end
         -- VERIFY(R14): super tracking the user waypoint shows the navigation arrow
@@ -61,7 +63,7 @@ function MapPin.Set(target, placeName)
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
         ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
-        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1, true)
+        ns.Fire("MAP_PIN_SET", placeName)
         -- VERIFY(R14): OpenWorldMap from addon code opens the map without taint (no blocked action later in combat)
         if not InCombatLockdown() and type(OpenWorldMap) == "function" then
             OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted

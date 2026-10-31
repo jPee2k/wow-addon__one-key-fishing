@@ -96,6 +96,12 @@ player sees the code.
 - All slash commands MUST be declared in one place, `OneKeyFishing/Core/Commands.lua`, which lists
   every command with its English description and the module function it calls at runtime;
   modules MUST NOT register commands themselves.
+- The code is layered (Core, Game, Data, View; `CLAUDE.md` Architecture, `docs/architecture/core.md`
+  "Layers"): a file MAY use the module tables of its own layer and the ones below, every frame
+  lives in `UI/`, and a lower layer MUST NOT name a frame module; `npm run check` enforces it.
+- Every new feature MUST be built inside this architecture: its data and rules in a module of its
+  area, its frames in `UI/`, the two joined by messages and documented functions; a new area adds
+  its folder, its `docs/architecture/` document and its `tests/` folder.
 - Prefer the smallest change that solves the problem; new settings, frames or abstractions need
   a concrete player need, not a hypothetical one.
 

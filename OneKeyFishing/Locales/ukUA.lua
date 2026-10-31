@@ -93,7 +93,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Caught: %s"] = "Упіймано: %s"
     L["Nothing caught"] = "Нічого не впіймано"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "Гра не прийняла мітку на карті."
     L["Map pin: %s"] = "Мітка на карті: %s"
     L["Replace your map pin with this place?"] = "Замінити вашу мітку на карті цим місцем?"

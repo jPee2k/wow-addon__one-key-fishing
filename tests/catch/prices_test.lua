@@ -21,6 +21,23 @@ local function scan(itemID, kind)
     return ns.db.prices[itemID]
 end
 
+test("the scan's progress is told through AUCTION_STATE for the scan button", function()
+    ns.db.fishedItems = { [FISH] = true, [PEARL] = true }
+    local seen = {}
+    ns.On("AUCTION_STATE", function()
+        local scanning, done, total = ns.Auction.GetProgress()
+        table.insert(seen, (scanning and "scanning " or "idle ") .. done .. "/" .. total)
+    end)
+    fire("AUCTION_HOUSE_SHOW")
+    ns.Auction.Scan()
+    fire("COMMODITY_SEARCH_RESULTS_UPDATED", FISH)
+    fire("COMMODITY_SEARCH_RESULTS_UPDATED", PEARL)
+    local states = table.concat(seen, ", ")
+    assert(states:find("scanning 1/2, scanning 2/2, idle 2/2", 1, true), "progress while scanning: " .. states)
+    local scanning = ns.Auction.GetProgress()
+    eq(scanning, false, "idle after the scan")
+end)
+
 local function within(actual, expected, share, what)
     assert(math.abs(actual - expected) <= expected * share,
         ("%s: %s is not within %d%% of %s"):format(what, tostring(actual), share * 100, tostring(expected)))

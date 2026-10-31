@@ -88,7 +88,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Caught: %s"] = "낚음: %s"
     L["Nothing caught"] = "아무것도 낚지 못함"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "게임이 지도 핀을 받아들이지 않았습니다."
     L["Map pin: %s"] = "지도 핀: %s"
     L["Replace your map pin with this place?"] = "지도 핀을 이 장소로 바꾸시겠습니까?"

@@ -85,6 +85,7 @@ bobber IDs) move there in 1.2.0 (`docs/release-plan.md`).
   (kept once the client gave it), then `ns.NpcNames`, then English.
 - Notices: "can learn" once per session per rank (chat and toast, waits for the character level), the cap with a
   raid warning the first time per session and a chat line on later fishing mode entries; the chat line carries a
-  `worldmap:` link when a pin is possible. It checks on skill events, a level-up, after login and on entering
-  fishing mode.
+  `worldmap:` link when a pin is possible (`Core/MapPin.lua`). Chat and the raid warning are here; the toast goes
+  through `SKILL_WARNING`, shown by `UI/Toast.lua`. It checks on skill events, a level-up, after login and on
+  entering fishing mode.
 - `Skill.DescribeNextRank` is the line of the statistics window and the minimap tooltip.

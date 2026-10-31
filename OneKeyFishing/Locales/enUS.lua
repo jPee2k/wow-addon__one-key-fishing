@@ -86,7 +86,7 @@ L["Drag to move. Lock it in the settings."] = true
 L["Caught: %s"] = true
 L["Nothing caught"] = true
 
--- UI/MapPin.lua
+-- Core/MapPin.lua and its toasts in UI/Toast.lua
 L["The game did not accept the map pin."] = true
 L["Map pin: %s"] = true
 L["Replace your map pin with this place?"] = true

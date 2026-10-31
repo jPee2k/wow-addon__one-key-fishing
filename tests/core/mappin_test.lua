@@ -1,4 +1,4 @@
--- UI/MapPin.lua: where the game's map pin can go and setting it (spec 001, User Story 3, FR-022).
+-- Core/MapPin.lua: where the game's map pin can go and setting it (spec 001, User Story 3, FR-022).
 
 load_addon()
 

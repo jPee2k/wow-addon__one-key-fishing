@@ -68,14 +68,20 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 
 ## Other frames
 
+- Widgets: the frame helpers of every window and page: `ns.CreateButton` (the panel button, which grows to its
+  text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`
+  (item tooltip with the few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices).
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
-  `FISH_MISSED`) and Skill.lua's notices. `ns.Toast(text, r, g, b, always)`: `always` shows it with catch
-  notifications off, for an answer to the player's click and the rank reminders, which have their own setting.
+  `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`) and the map pin answers (`MAP_PIN_SET`).
+  `ns.Toast(text, r, g, b, always)`: `always` shows it with catch notifications off, for an answer to the player's
+  click and the rank reminders, which have their own setting.
+- AuctionButton: the "Scan fish prices" button above the auction house window, made when it first opens; it
+  follows `AUCTION_STATE` through `Auction.GetProgress()` and clicks run `Auction.Scan`.
+- ShareNotice: the one-time popup about the catch exchange, shown when `Share.NoticeOwed()` says one is owed
+  (after entering the world, after combat, retried when the game had no free dialog frame); closing it calls
+  `Share.NoticeRead()`, the Settings button opens the "Shared database" page.
 - Minimap: the button and the Addon Compartment entry from the TOC; in fishing mode with
   `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`.
-- MapPin: `MapPin.Target(maps, x, y)` (the first candidate map the client knows and allows pins on, none under the
-  game rule that turns pins off); `MapPin.Set(target, placeName)` (the game's pin, the navigation arrow,
-  `charDB.pin`, a popup before replacing a pin the player set); `MapPin.Link` (a chat map link).
 - ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line; the item post call adds
   "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
   `settings.tooltipChances` (V38).
@@ -84,7 +90,8 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 
 ## Core/Spike.lua (temporary)
 
-Carries `VERIFY(spike)`. `/okf spike` shows, in the copy window, the game facts the catch database and the exchange
+Carries `VERIFY(spike)`. `Spike.Report()` returns the window title and the text that `/okf spike` shows in the
+copy window: the game facts the catch database and the exchange
 were built on (build, map and position, fishing loot sources, auction results, `PanelTabButtonTemplate`, network
 APIs, and "Map pins and areas": pins, areas, item names, folding, templates) for the checks of
 [docs/checklists/spike.md](../checklists/spike.md) and the `verification.md` of each part.

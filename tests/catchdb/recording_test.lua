@@ -310,11 +310,7 @@ test("Describe gives lines for the debug report, without the anonymous ID", func
 end)
 
 test("the debug report has a catch database section without the anonymous ID", function()
-    local report
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, text) report = text end
-    ns.ShowReport()
-    ns.ShowCopyWindow = show
+    local _, report = ns.Debug.Report()
     assert(report:find("-- Catch database --", 1, true), "section")
     assert(report:find("current place 1415:3:47", 1, true), "current place")
     assert(report:find("last price scan:", 1, true), "price coverage")

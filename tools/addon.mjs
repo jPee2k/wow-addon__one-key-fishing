@@ -18,7 +18,19 @@ export const ADDON_EXTRAS = ["Bindings.xml", "README.md"];
 export const ROOT_EXTRAS = ["LICENSE", "CHANGELOG.md"];
 
 // The addon's folders, one per area of docs/architecture/ (and of tests/); every TOC file is under one of them.
-export const ADDON_FOLDERS = ["Core", "Locales", "GameData", "Fishing", "Catch", "CatchDB", "Exchange", "Catalog", "UI"];
+export const ADDON_FOLDERS = [
+  "Core", "Locales", "GameData", "Fishing", "Catch", "CatchDB", "Exchange", "Catalog", "UI",
+];
+// The layers (docs/architecture/core.md, "Layers"): a file may use the module tables (`ns.<Name>`) of its own
+// layer and the ones below. Core/Commands.lua is the entry that may open a window, so it sees everything;
+// Core/Debug.lua and Core/Spike.lua report on every module but the UI. What a file defines counts with its folder.
+export const LAYERS = {
+  Core: 0, Locales: 0, GameData: 0, Fishing: 1, Catch: 1, CatchDB: 2, Exchange: 2, Catalog: 2, UI: 3,
+};
+export const ENTRY_LAYERS = { "Core/Commands.lua": 3, "Core/Debug.lua": 2, "Core/Spike.lua": 2 };
+// Frames are the UI's; outside UI/ only these make one: the event frame, the secure button and its state handler
+// (the controller must own them), the scanning tooltip, and the spike's template probes.
+export const FRAMES_OUTSIDE_UI = ["Core/Core.lua", "Fishing/Action.lua", "Fishing/Gear.lua", "Core/Spike.lua"];
 // Files the tools name on their own (paths inside the addon folder, forward slashes).
 export const LOCALES_DIR = "Locales";
 export const BASE_LOCALE = "Locales/enUS.lua";

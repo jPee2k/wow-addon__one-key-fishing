@@ -94,7 +94,7 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Caught: %s"] = "Capturado: %s"
     L["Nothing caught"] = "Nada capturado"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "El juego no aceptó el marcador de mapa."
     L["Map pin: %s"] = "Marcador de mapa: %s"
     L["Replace your map pin with this place?"] = "¿Reemplazar tu marcador de mapa por este lugar?"

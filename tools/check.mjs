@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
 import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
-  COMMANDS_FILE, MAX_LINE_LENGTH, findMarkers, parseToc } from "./addon.mjs";
+  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, parseToc } from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
 // --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
@@ -257,6 +257,46 @@ for (const entry of fs.readdirSync(ROOT)) {
 for (const entry of packagedRoot) {
   if (ignored.has(entry)) {
     problem(".pkgmeta", `"${entry}" is packaged, it must not be ignored`);
+  }
+}
+
+// The layers (tools/addon.mjs LAYERS): `ns.<Name>` defined at the start of a line (`ns.Name = ...`,
+// `function ns.Name(`) belongs to the layer of its file's folder; a file may name only what its own layer and the
+// layers below define. So no module outside UI/ (and Core/Commands.lua) names a frame module, Core names no module
+// of an area, and the game layer (Fishing/, Catch/) knows nothing of the catch database or the exchange.
+const DEFINITION = /^(?:function\s+ns\.([A-Za-z_]\w*)\s*\(|ns\.([A-Za-z_]\w*)\s*=[^=])/gm;
+const REFERENCE = /\bns\.([A-Za-z_]\w*)/g;
+const folderLayer = (file) => LAYERS[relAddon(file).split("/")[0]];
+const readerLayer = (file) => ENTRY_LAYERS[relAddon(file)] ?? folderLayer(file);
+const sources = new Map(luaFiles.map((file) => [file, fs.readFileSync(file, "utf8")]));
+const definedIn = new Map(); // name -> { file, layer } (the highest layer when several files define it)
+for (const [file, source] of sources) {
+  for (const match of source.matchAll(DEFINITION)) {
+    const name = match[1] || match[2];
+    const layer = folderLayer(file);
+    if (layer === undefined) {
+      continue; // not in an area folder: reported with the TOC
+    }
+    if (!definedIn.has(name) || definedIn.get(name).layer < layer) {
+      definedIn.set(name, { file, layer });
+    }
+  }
+}
+for (const [file, source] of sources) {
+  const layer = readerLayer(file);
+  if (layer === undefined) {
+    continue;
+  }
+  const reported = new Set();
+  for (const match of source.matchAll(REFERENCE)) {
+    const owner = definedIn.get(match[1]);
+    if (owner && owner.file !== file && owner.layer > layer && !reported.has(match[1])) {
+      reported.add(match[1]);
+      problem(rel(file), `uses ns.${match[1]} of ${rel(owner.file)}, a higher layer (docs/architecture/core.md, Layers)`);
+    }
+  }
+  if (!relAddon(file).startsWith("UI/") && !FRAMES_OUTSIDE_UI.includes(relAddon(file)) && /\bCreateFrame\s*\(/.test(source)) {
+    problem(rel(file), "CreateFrame outside UI/ (frames are the view's; tools/addon.mjs FRAMES_OUTSIDE_UI lists the exceptions)");
   }
 }
 

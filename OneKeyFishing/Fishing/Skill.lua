@@ -237,7 +237,8 @@ local function Check(modeEntry)
         ns.Print(ChatLine(first, advice))
         if not done.cap then
             done.cap = true
-            ns.Toast(first, 1, 0.55, 0.1, true) -- shown even with catch notifications off
+            -- the toast (UI/Toast.lua), shown even with catch notifications off
+            ns.Fire("SKILL_WARNING", first, true)
             if RaidNotice_AddMessage and RaidWarningFrame and ChatTypeInfo then
                 RaidNotice_AddMessage(RaidWarningFrame, first, ChatTypeInfo.RAID_WARNING)
             end
@@ -247,7 +248,7 @@ local function Check(modeEntry)
         done.now = true
         local first = L["You can learn %s Fishing now."]:format(advice.rank)
         ns.Print(ChatLine(first, advice))
-        ns.Toast(first, 1, 0.82, 0, true)
+        ns.Fire("SKILL_WARNING", first, false)
     end
 end
 

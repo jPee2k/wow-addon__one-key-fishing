@@ -6,11 +6,7 @@ fishing_rank = 230
 load_addon()
 
 local function report()
-    local text
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, body) text = body end
-    ns.ShowSpikeReport()
-    ns.ShowCopyWindow = show
+    local _, text = ns.Spike.Report()
     return text
 end
 

@@ -6,6 +6,9 @@
 -- English like the debug report; counts and patterns only, never names.
 local _, ns = ...
 
+local Spike = {}
+ns.Spike = Spike
+
 local lastLoot -- lines about the last fishing loot window
 
 local lastSearch -- lines about the last auction search result
@@ -626,6 +629,7 @@ local function BuildReport()
     return table.concat(lines, "\n")
 end
 
-function ns.ShowSpikeReport()
-    ns.ShowCopyWindow("OneKeyFishing - spike report", BuildReport())
+-- The window title and the report; Commands.lua shows them in the copy window.
+function Spike.Report()
+    return "OneKeyFishing - spike report", BuildReport()
 end

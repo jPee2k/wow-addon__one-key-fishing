@@ -3,14 +3,8 @@
 
 load_addon()
 
-local report
-ns.ShowCopyWindow = function(_, text)
-    report = text
-end
-
 local function made()
-    report = nil
-    ns.ShowReport()
+    local _, report = ns.Debug.Report()
     return assert(report, "the report was made")
 end
 

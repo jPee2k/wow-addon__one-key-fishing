@@ -87,7 +87,7 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Caught: %s"] = "釣到：%s"
     L["Nothing caught"] = "什麼都沒釣到"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "遊戲未接受地圖標記。"
     L["Map pin: %s"] = "地圖標記：%s"
     L["Replace your map pin with this place?"] = "用此地點替換你的地圖標記？"

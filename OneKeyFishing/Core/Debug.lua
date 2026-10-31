@@ -4,6 +4,9 @@
 local _, ns = ...
 local L = ns.L
 
+local Debug = {}
+ns.Debug = Debug
+
 local REPORT_CVARS = { "autoLootDefault", "SoftTargetInteract", "SoftTargetIconGameObject", "SoftTargetIconInteract" }
 
 local function Section(lines, title, fn)
@@ -167,8 +170,9 @@ local function BuildReport()
     return table.concat(lines, "\n")
 end
 
--- Available in combat too: the report and its window are plain (non-secure) frames, and the combat
--- fields above are only meaningful when the report can be taken during combat.
-function ns.ShowReport()
-    ns.ShowCopyWindow(L["OneKeyFishing - debug report"], BuildReport())
+-- The window title and the report; Commands.lua shows them in the copy window. Available in combat too: the
+-- report and its window are plain (non-secure) frames, and the combat fields above are only meaningful when the
+-- report can be taken during combat.
+function Debug.Report()
+    return L["OneKeyFishing - debug report"], BuildReport()
 end

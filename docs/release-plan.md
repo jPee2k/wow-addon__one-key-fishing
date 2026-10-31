@@ -30,7 +30,7 @@ Technical debt from `001-interface-language` to settle before 1.2.0 (spec 001 re
 - Move the older game data into `GameData/` (data only, like `GameData/FishingRanks.lua`): the lures and the
   fished containers (`Fishing/Bags.lua`), the pole bonuses (`Fishing/Gear.lua`), the Fishing spell IDs and the
   bobber ID (`Core/Data.lua`).
-- Switch the catch catalog's pin (`Catalog.PinTarget`, `CatalogTab.Pin`) to `ns.MapPin` (`UI/MapPin.lua`), which
+- Switch the catch catalog's pin (`Catalog.PinTarget`, `CatalogTab.Pin`) to `ns.MapPin` (`Core/MapPin.lua`), which
   took that code over with the same saved field (`charDB.pin`) and texts; `ns.Toast` already has the `always`
   argument on both branches.
 
