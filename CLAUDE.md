@@ -104,7 +104,7 @@ commands in `Core/Commands.lua`.
 | `Catch/Prices.lua`, `Catch/Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
+| `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
 | `Exchange/Comm.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catalog.md](docs/architecture/catalog.md) |
 | `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/StatsFrame.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers, copy window, indicator, toast, the map pin, the statistics window and its tabs, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |

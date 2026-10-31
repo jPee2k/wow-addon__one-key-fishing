@@ -1,11 +1,19 @@
 # Architecture: catch database
 
-`CatchDB/SeedData.lua` and `CatchDB/CatchDB.lua`: recording catches by place, the bundled seed and the views. The model and contracts
+The `CatchDB/` folder: recording catches by place, the bundled seed and the views. The model and contracts
 are in `specs/002-local-catch-db/` (`data-model.md`, `contracts/catchdb-api.md`, `contracts/seed-data.md`,
 `contracts/harvest-command.md`), the later additions in `specs/004-public-channel-sync/` (weights, the version
 chain) and `specs/005-catch-catalog/` (views across maps, areas, the water filter); the design is recorded in
 [history/shared-db-plan.md](../history/shared-db-plan.md). The in-game checklist is
 [catch-database.md](../checklists/catch-database.md); the catalog built on the views is [catalog.md](catalog.md).
+
+One module, `ns.CatchDB`, in five files (TOC order): `SeedData.lua` (the seed, generated), `CatchDB.lua` (the
+module table, constants and change stamps, place keys, the seed accessors, the own record, its version chain, roll
+and settle), `Checks.lua` (the checks of other players' records, pure functions), `Views.lua` (sums, weights, the
+index of others' records, the queries, `Describe`) and `Events.lua` (the game's events: `ADDON_LOADED`, casts and
+catches, the index upkeep on `SHARED_DATA_CHANGED`, logout). The files share their internals through
+`CatchDB.private` (not an API): a name a later file re-binds into a local is never reassigned; the reassigned state
+(`version`, `ownItems`, `ownIndex`, `poolData`, `others`, `frozen`, `lastPool`) lives on that table as `P.<name>`.
 
 ## Places and recording
 
