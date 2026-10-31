@@ -34,6 +34,7 @@ local page
 local search = ""
 local filter = { range = "all", source = "all", water = "all" }
 local chosen -- the item ID of the item page, or nil for the list
+local pending -- what Show was asked for while the index was still building; Tick passes it on once it is ready
 local expanded = {} -- map ID -> true: zones of the chosen item that show their spots
 local drawn -- what the page shows now: { version, state }
 local dirty = false
@@ -247,10 +248,17 @@ local function CreateSearchBox(parent)
         box.Instructions:SetText(L["Search by item name"])
     end
     -- Hooked, not set: the template's own handler shows and hides the hint and the clear button.
-    box:HookScript("OnTextChanged", function(self)
+    box:HookScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            pending = nil -- the player's typing wins over an older request
+        end
         search = self:GetText() or ""
         CatalogTab.Refresh()
     end)
+    if box.clearButton then
+        -- its SetText("") is no userInput, but the click is the player's
+        box.clearButton:HookScript("OnClick", function() pending = nil end)
+    end
     return box
 end
 
@@ -258,6 +266,7 @@ end
 function CatalogTab.Create(parent)
     page = CreateFrame("Frame", nil, parent)
     page:SetAllPoints()
+    page:SetScript("OnHide", function() pending = nil end) -- a closed window or another tab ends the request
 
     page.listView = CreateFrame("Frame", nil, page)
     page.listView:SetAllPoints()
@@ -375,6 +384,10 @@ function CatalogTab.Tick()
         return
     end
     local state = ns.Catalog.State(filter)
+    if pending and state == "ready" then
+        CatalogTab.Show(pending)
+        return
+    end
     if dirty or not drawn or drawn.version ~= ns.Catalog.GetVersion() or (not chosen and drawn.state ~= state) then
         CatalogTab.Refresh(true)
     end
@@ -387,8 +400,18 @@ function CatalogTab.Toggle(mapID)
 end
 
 -- arg: an item ID chooses that item (or, outside the catalog, puts its name into the search); a text fills the
--- search and chooses the item when exactly one matches; nil shows the list (FR-024, FR-025).
+-- search and chooses the item when exactly one matches; nil shows the list (FR-024, FR-025). Asked while the index is
+-- still building, the list waits and Tick makes the choice once the index is ready.
 function CatalogTab.Show(arg)
+    pending = nil
+    if arg ~= nil and ns.Catalog.State(filter) ~= "ready" then
+        chosen, pending = nil, arg
+        if type(arg) == "string" then
+            CatalogTab.SetSearch(arg)
+        end
+        CatalogTab.Refresh()
+        return
+    end
     if type(arg) == "number" then
         if #ns.Catalog.Places(arg, filter) > 0 then
             chosen, expanded = arg, {}
@@ -426,13 +449,13 @@ end
 function CatalogTab.Pin(target, placeName)
     local function Apply()
         if not C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)) then
-            ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4)
+            ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4, true)
             return
         end
         -- VERIFY(V31): super tracking the user waypoint shows the navigation arrow
         C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
-        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1)
+        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1, true)
         if not InCombatLockdown() then
             -- VERIFY(V32): OpenWorldMap from addon code opens the map without taint
             OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted

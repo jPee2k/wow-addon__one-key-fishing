@@ -9,26 +9,7 @@ cleanup, no wrong behaviour.
 
 ## Open items
 
-Grouped into fix batches: the items of one batch touch the same code and are fixed and tested in one commit. The
-batches are ordered by severity. Every item was confirmed by a test or a traced path; the review findings that rest
-on a case that does not happen in play were dropped on 2026-10-31 (History).
-
-### Batch E: the catalog (low)
-
-Found while building the catch catalog (`specs/005-catch-catalog`) on 2026-10-31.
-
-1. **A click on an item before the index is built opens the search, not the item** (`UI/CatalogTab.lua:392-398`,
-   `CatalogTab.Show`; reached from `UI/CatchHere.lua:134-137`). `Show(itemID)` chooses by
-   `#Catalog.Places(arg, filter) > 0`, and `Places` returns `{}` while the index is still building (up to 10 s after
-   the first loading screen), so the item's name goes into the search and nothing chooses the item later, against
-   FR-024. Confirmed with a test: a row click before the first build shows the list with the search "Deviate Fish",
-   still the list after the build. Direction: while `Catalog.State(filter)` is not `"ready"`, keep the item as
-   pending and let `Tick` resolve it. Test: in `tests/ui/catalogtab_test.lua`, `StatsFrame.OpenCatalog(FISH)` before
-   the first `advance(0)`, then `advance(0)` and a tick: the item view shows FISH.
-2. **The pin button answers nothing with catch notifications off** (`UI/CatalogTab.lua:429-435`: both the pin's
-   name and "The game did not accept the map pin." go through `ns.Toast`, which returns early when
-   `settings.toasts` is off). A refused pin then looks like a dead button. Direction: a toast that ignores the
-   setting for answers to a click. Test: toasts off, press a pin button, a message still shows.
+None.
 
 ## History
 
@@ -52,3 +33,5 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
   spot cache (a few hundred entries) and the pin rule changing mid-session; the pool-data scan (unmeasured; the
   step time is checked in game by V28 and V39); and the channel's notice-order cases of the batch C reviews (the
   order is V41, the delays are milliseconds, and nobody joins a fallback name or gets `YOU_CHANGED` by hand).
+- 2026-11-01, batch E (the catalog): a `CatalogTab.Show` while the index is still building waits for it and
+  `Tick` makes the choice once it is ready; the map pin's answers show with catch notifications off.
