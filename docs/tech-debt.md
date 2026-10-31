@@ -10,23 +10,8 @@ cleanup, no wrong behaviour.
 ## Open items
 
 Grouped into fix batches: the items of one batch touch the same code and are fixed and tested in one commit. The
-batches are ordered by severity. Batches A to D and items 6 to 9 come from a review of the whole `002-shared-db`
+batches are ordered by severity. Batches B to D and items 6 to 9 come from a review of the whole `002-shared-db`
 branch against `develop` on 2026-10-31; every one was confirmed by a test or a traced path.
-
-### Batch A: item IDs come from the loot link (high)
-
-1. **A caught item the client does not know yet is dropped** (`Catch/Catch.lua:53`). `FISH_CAUGHT` takes `itemID`
-   from `C_Item.GetItemInfoInstant(link)`, which is nil for an item the client has not seen (V27). `Catch/Stats.lua`
-   and `CatchDB` (`CatchItems`) skip such an item, so a hidden Forever item never reaches the statistics, the own
-   record or the exchange, against spec 004 FR-017a and Principle II ("items by ID, also those the client does not
-   know yet"). The item ID is always in the link; `tests/catch/caught_test.lua` currently asserts the drop.
-   Direction: `itemID = ns.ItemIDFromLink(link)`. Test: a loot link of an item `GetItemInfoInstant` does not know
-   gives `FISH_CAUGHT` its ID and one count in the own record.
-2. **Fished containers repeat the loot walk and drop unknown items** (`Fishing/Bags.lua:297`). Bags walks the loot
-   slots again on its own `LOOT_READY` and calls `GetItemInfoInstant` again, so a hidden container never enters
-   `ns.db.fishedItems`: it is not opened as a fished container and the auction scan leaves it out. Direction: take
-   the fishing branch from `FISH_CAUGHT`'s items (one walk), or at least `ns.ItemIDFromLink`. Test: a fished
-   container unknown to the client lands in `fishedItems`.
 
 ### Batch B: the pool part of a cell must fit the cell (medium)
 
@@ -114,5 +99,5 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
 - 2026-10-31, the low items of all reviews: the real ones fixed (channel, exchange and harvest), the rest recorded
   as accepted limits in `specs/004-public-channel-sync` (spec edge cases, data-model.md) or left as style.
 - 2026-10-31, a review of the whole branch against `develop` (five areas): one high, two medium and six low items,
-  recorded above as batches A to E. Core, Catch and Fishing had nothing new; SHA-256, the codec, the merges and the
-  session states held up.
+  recorded as batches A to E. SHA-256, the codec, the merges and the session states held up. Batch A (item IDs
+  from the loot link) was fixed the same day.

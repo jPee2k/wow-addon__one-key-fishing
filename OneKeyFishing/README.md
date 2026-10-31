@@ -93,7 +93,8 @@ bottom, **Statistics**, **What can be caught here** and **Catch catalog**; it op
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
   **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
   name to see how it is counted.
-- **Top catches** and **zones** of all time.
+- **Top catches** and **zones** of all time. Items your game client does not know yet are counted too and show by
+  their number until the game knows them.
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a
   catch, a miss, a zone change, an auction scan); only the time rows tick while you fish. The session shows
   `H:MM:SS`, the zone and all-time columns `1h 23m`.

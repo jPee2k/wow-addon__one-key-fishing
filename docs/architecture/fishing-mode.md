@@ -65,6 +65,10 @@ Lures and fished containers.
 - A container's loot window is matched to the open attempt by the item GUID (`GetLootSourceInfo`); nothing is
   opened over an open loot window; a container whose loot did not fit waits for free bag space, a locked one is
   skipped for the session.
+- Everything looted from fishing goes into `fishedItems`, by the ID of its loot link (also an item the client does
+  not know yet), so new Forever containers are opened without a list update. Bags reads the loot on its own
+  `LOOT_READY`, where it also tracks the open loot window, not from `FISH_CAUGHT`, which comes only for the first
+  loot of a counted cast.
 - The bag iterator `ns.ForEachBagItem` is in Data.lua ([core.md](core.md)).
 
 ## Fishing/Skill.lua

@@ -293,8 +293,9 @@ ns.RegisterEvent("LOOT_READY", function()
         return
     end
     for i = 1, GetNumLootItems() do
-        local link = GetLootSlotLink(i)
-        local itemID = link and C_Item.GetItemInfoInstant(link)
+        -- From the link, also for an item the client does not know yet.
+        -- VERIFY(V27): the loot link of an item the client does not know yet carries its item ID
+        local itemID = ns.ItemIDFromLink(GetLootSlotLink(i))
         if itemID then
             ns.db.fishedItems[itemID] = true
         end

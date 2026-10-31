@@ -63,6 +63,11 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - Slash commands and the `/okf` help are always in English, whatever the interface language.
 - The player manual ships inside the addon folder as `README.md`, next to `CHANGELOG.md`.
 
+### Fixed
+
+- Items your game client does not know yet are counted in the statistics and in your catch data, and fished
+  containers of that kind are remembered like the others, so the key opens them and the auction scan includes them.
+
 ## [1.0.0] - 2026-10-23
 
 First public release, for WoW Forever.

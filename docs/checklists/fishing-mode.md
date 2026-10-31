@@ -80,6 +80,8 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [ ] **Lure too high.** With only a lure above your skill, press the key. Expected: "Cannot apply ..." once; the
   lure is skipped until the mode is entered again.
 - [ ] **Clam.** Catch or carry a clam. Expected: the indicator shows `Open`, the key opens it, the loot is taken.
+- [ ] **Unknown container** (V27). If you fish up a container the game showed nothing about before (a new Forever item).
+  Expected: the key opens it like a clam, and the auction scan includes it.
 - [ ] **Locked container.** With a locked box in the bags. Expected: "Cannot open ..." once, then it is skipped.
 - [ ] **No bag space.** With full bags and a clam. Expected: "Not enough bag space to loot ..."; after freeing a slot
   the key opens it again.
@@ -100,6 +102,8 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [ ] **Time.** Expected: "Time fishing" counts while the mode is on, "Time casting" only while the bobber is out.
 - [ ] **Survives `/reload` and relog.** Expected: Session is kept across `/reload`, All time across a relog; a cast
   running across a `/reload` is counted once.
+- [ ] **Unknown item** (V27). If you fish up an item the game did not know before (a new Forever item). Expected: it is
+  counted in Top catches (by its number until the game knows it) and in "What can be caught here" under "Only mine".
 - [ ] **Zones.** Fish in two zones. Expected: both in the zones list, with the current zone marked.
 - [ ] **Row tooltips and Refresh.** Hover the row names and press Refresh. Expected: an explanation per row; the
   numbers do not change on Refresh unless something happened.
