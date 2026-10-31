@@ -116,10 +116,14 @@ The second tab of the statistics window lists what the spot you stand at gives:
 - **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
   you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from 3
   players");
+- **Water**: once the database holds catches from fish pools, a third button splits them into **Everywhere**,
+  **Open water** and **Pools**. Under the last two the share of casts that catch nothing is not shown, since a
+  cast that catches nothing comes from no pool;
 - an item your game client does not know yet (some items in WoW Forever stay unknown until you find one) shows as
   **Unknown item** with a question mark icon; its tooltip says how many players reported it on this map, whether the
   bundled data has it, and its item ID. Once the game knows the item, its name and icon appear;
-- a quiet line at the bottom shows the state of the [shared catch database](#shared-catch-database).
+- a quiet line at the bottom shows the state of the [shared catch database](#shared-catch-database);
+- click an item to see where else it is caught, in the [catch catalog](#catch-catalog).
 
 The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far,
 so the tab has numbers from your first login; your own catches are added to them, nothing is counted twice.
@@ -128,6 +132,32 @@ What is stored: per place only counts (catches, misses, casting time, items) and
 inside the grid cell, under a random ID of your account. No character names, guild, times or gear. With the [shared
 catch database](#shared-catch-database) on, the same counts go to the addon users you play with; they also reach the
 bundled database through the author's own client.
+
+## Catch catalog
+
+The third tab of the statistics window lists every item of the catch database: your own catches, the bundled data
+and, with the shared catch database on, what other players reported.
+
+- **Search**: type part of an item name, in your game client's language and in any letter case; the list narrows
+  with every letter. Grey items only show when you search for them. An item your game client does not know yet
+  stays out of the list until the game loads it.
+- **Filters**: **Skill** (all ranges by default), **Source** (**All** or **Only mine**) and, when there is pool
+  data, **Water**, as on the "What can be caught here" tab.
+- **An item**: click it to see the zones it was caught in, with its chance there, the zone's catches and the span
+  of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
+  data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
+  named after its subzone in your language (or shows its coordinates), with its own chance and catches.
+- **Map pin**: the pin button of a spot sets the game's own map pin there, turns on the game's navigation to it,
+  says so in a short message and opens the world map at that zone (not in combat). If you already have a pin that
+  the addon did not set, it asks before replacing it. The arrow on screen depends on the game's navigation
+  setting. Instances and spots without a position have no pin button.
+- The tab follows new catches and new data from other players while it is open, keeping your search, the chosen
+  item and the open zones. `/okf catalog` opens it; `/okf catalog <name>` searches, and an item link (shift-click an
+  item into the line) opens that item.
+
+**Catch chances in tooltips**: the tooltip of any item in the database adds **Caught in:** with its three best
+zones and its chance there, also for chat links. In fishing mode, the minimap button's tooltip adds the three most
+likely catches of the place you stand at. **Show catch chances in tooltips** in the settings turns both off.
 
 ## Shared catch database
 
@@ -212,7 +242,8 @@ scanned auction prices for catch value**.
   Fishing rank when it has a place, reset indicator position, debug report).
 - **Drag**: move the button around the minimap.
 - The tooltip shows the mode, your Fishing skill and the next rank, the session time, your key bindings and short
-  instructions. The button is grey while fishing mode is off.
+  instructions; in fishing mode also the most likely catches of the place you stand at. The button is grey while
+  fishing mode is off.
 
 The same entry is in the Addon Compartment (the addons button next to the minimap).
 
@@ -237,6 +268,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Use scanned auction prices for catch value
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button
+  - Show catch chances in tooltips (the zones in item tooltips, the likely catches in the minimap tooltip)
 - **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position, Scan auction prices
   (with the auction house open).
 - **Language** (top right): **Game client language** follows your client and uses English when there is no

@@ -107,6 +107,16 @@ Re-checked after `/speckit-analyze` on 2026-10-31: the subzone match first compa
 Principle II's rule that matching against localized text tolerates case changes in non-ASCII text; it now compares
 the folded names (research R4, T021). All pass.
 
+Re-checked against the code after `/speckit-implement` on 2026-10-31: I. the pin is set only in `CatalogTab.Pin`, from
+the pin button; item names are asked 20 per frame step, once a session. II. areas, items and maps are stored and
+sent as numbers; the subzone match folds both names with `ns.FoldCase`; every new text is an `ns.L` key with nine
+translations; the command and the debug section are English. III. no CVar is touched; the only new saved fields are
+`settings.tooltipChances`, `charDB.pin` and the cell field `a`; a player's pin is replaced only after the question.
+IV. markers V30-V38 sit in the code (V39 and V40 in the checklist), templates are created under `pcall`, the spike
+has its section, and the new globals are in `.luacheckrc`. V. every part above runs in the tests (`npm test`).
+VI. `Catalog.lua` and `UI/CatalogTab.lua` are the two new modules, no message was added, the command is declared in
+`Commands.lua`. All pass.
+
 ## Project Structure
 
 ### Documentation (this feature)

@@ -50,3 +50,8 @@ Rules:
   cell carries them as `x` (optional), and a view takes the cell's miss rate from `m / (x + m)` and its chances from
   `c`. When the weights changed the catches, the cell carries the raw ones as `r` (optional): the views' little-data
   threshold and catch count, and the eviction classes, read it.
+- `a` (part 4, `specs/005-catch-catalog`): a cell may carry `a = { [areaID] = casts, ... }`, the subzone counts summed
+  over its contributions, the 8 largest kept (ties to the lower ID), each contribution's scaled by its cast factor
+  where the cell is weighted (rounded, the sum capped at `c + m`), written on a line of its own sorted by ID.
+  `npm run check` fails on more than 8 entries, a key that is not a whole number from 1 to 2,147,483,647, a count
+  that is not a count, or a sum above `c + m`.

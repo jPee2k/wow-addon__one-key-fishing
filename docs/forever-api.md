@@ -53,6 +53,25 @@ R2-R4, R9). They say what exists and how Blizzard's own code uses it, not how it
 - The `bit` library (`band`, `bor`, `bxor`, `bnot`, `lshift`, `rshift`) is called over 300 times in
   Blizzard's code; whether its results are signed is not documented.
 
+Facts read from the same export for the catch catalog (`specs/005-catch-catalog`, research R4, R6-R8):
+
+- Map pins: `C_Map.CanSetUserWaypointOnMap`, `SetUserWaypoint(UiMapPoint)`, `HasUserWaypoint`, `GetUserWaypoint`,
+  `ClearUserWaypoint`, `C_SuperTrack.SetSuperTrackedUserWaypoint` and `UiMapPoint.CreateFromCoordinates` carry no
+  restriction flag beyond the default; Blizzard's `/mappin` uses this sequence (`WaypointLocationDataProvider.lua`).
+  `Enum.GameRule.WorldMapTrackingPinDisabled` gates the pin UI through `C_GameRules.IsGameRuleActive`.
+- `C_Map.OpenWorldMap` is `HasRestrictions`; the global `OpenWorldMap(mapID)` is plain FrameXML
+  (`Blizzard_WorldMap.lua`), gated only by `Enum.GameRule.WorldMapDisabled`.
+- Forever hides the "Show In-Game Navigation" checkbox (CVar `showInGameNavigation`, `Camelot/InterfaceOverrides.lua`).
+- `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapPosFromWorldPos(continentID, pos, overrideMapID)` convert a point
+  between maps.
+- `C_MapExplorationInfo.GetExploredAreaIDsAtPosition(uiMapID, vector2)` returns explored areas only;
+  `C_Map.GetAreaInfo(areaID)` names an area; there is no call that names an unexplored position.
+- `CaseAccentInsensitiveParse(text)` (`LocalizationDocumentation.lua`) and `strcmputf8i(a, b)` (used by
+  `AddonList.lua`) exist.
+- `WowScrollBoxList`, `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`,
+  `MinimalScrollBar`, `CreateDataProvider` and `SearchBoxTemplate` load in Forever (`Blizzard_SharedXML.toc`, no
+  game-type limit); Forever's friends list uses the scroll list.
+
 ## Verified in game
 
 - The addon list (character screen -> AddOns) reads `## Notes-<code>` and `## Category-<code>` from the TOC in the

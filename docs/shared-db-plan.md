@@ -64,12 +64,12 @@ enUS player get different keys for the same lake. The shared database needs a ke
 ## Transport
 
 Announcements ("I am here, I have this data") go to the guild, the group and friends (part 2), and to a public
-channel in part 3 (planned); the data itself goes by whisper or Battle.net between two players. Whispers outside
+channel in part 3; the data itself goes by whisper or Battle.net between two players. Whispers outside
 instances are not subject to the per-prefix limit, and no channel is flooded.
 
 | Type | Who hears it | Limits | Role |
 | --- | --- | --- | --- |
-| `CHANNEL` (a hidden channel, for example `OKFishData`; part 3, planned) | Every player with the addon in the mode (to check: all layers or only your own, both factions or one) | 10 messages of headroom, +1 per second; allowed on Retail, disabled on Classic | Only `HELLO`: who is online and with what data |
+| `CHANNEL` (the hidden channel `OneKeyFishingShare`, part 3) | Every player with the addon in the mode (to check: all layers or only your own, both factions or one) | 10 messages of headroom, +1 per second; allowed on Retail, disabled on Classic | Only `HELLO`: who is online and with what data |
 | `WHISPER` | One player | No per-prefix limit outside instances (the server may change this) | Main data transfer; `HELLO` to character friends |
 | `GUILD` | The guild | Per-prefix limit | `HELLO` (part 2); the fallback path if `CHANNEL` does not work |
 | `PARTY` / `RAID` | The group | Per-prefix limit | The same, for friends who fish together |
@@ -188,7 +188,7 @@ seq they hold it up to.
   new epoch at 500 places, so it always fits and keeps reaching the network.
 - Part 2, among guild, group and friends: other records hold at most 20,000 places (~2 MB). Above the limit, the
   record with the oldest `seen` is evicted first, and no record of your own ID ever is.
-- Part 3, with strangers (planned, not built): the order below replaces it. Above the limit, the records that add the
+- Part 3, with strangers: the order below replaces it. Above the limit, the records that add the
   least new information are evicted: first those whose cells already have thousands of catches in the seed, then those
   not seen for over 60 days. Contributions for rare places (low-level zones, little data) are evicted last. Your own
   record is never evicted.
@@ -228,7 +228,7 @@ reach it. The exact message forms, the part format and the limits on what is rec
 
 | Message | Where | Content | Size |
 | --- | --- | --- | --- |
-| `HELLO` | GUILD / PARTY / RAID (CHANNEL in part 3, planned), whisper or Battle.net to friends | node tag of this login, `seedEpoch`, number of units (record versions) held, hash of the whole database (never the anonymous ID) | 1 message |
+| `HELLO` | GUILD / PARTY / RAID (CHANNEL in part 3), whisper or Battle.net to friends | node tag of this login, `seedEpoch`, number of units (record versions) held, hash of the whole database (never the anonymous ID) | 1 message |
 | `SUM` | WHISPER | 32 bucket hashes (bucket = the first character of the ID in base32) | 1 |
 | `DIFF` | WHISPER | `id.epoch.seq` for the buckets that differ | 1-10 |
 | `WANT` | WHISPER | the `id@epoch` units needed | 1-3 |
@@ -296,7 +296,7 @@ the database grows without manual filling.
      for `link`), plus friends' files given as arguments;
    - parses the Lua table with `luaparse` and never executes the file;
    - applies the same checks as the addon (an odd cell or build is skipped with a note, a bad record is rejected
-     whole); outlier detection is planned for part 3;
+     whole); prints the outlier report of part 3;
    - keeps every accepted contribution in `seed/contributions.json` (by `<id>@<epoch>`, the newest `seq`),
      recomputes the sums from all of them and writes `SeedData.lua`: the epoch one above the last, sums per cell,
      `absorbed`, `resets`; a run without new sums leaves the seed and its epoch alone;
@@ -359,17 +359,17 @@ data for other places goes into tooltips.
 
 | Where | What it shows |
 | --- | --- |
-| StatsFrame, "What can be caught here" tab | Items of the current cell (or the whole map, when there is little data) for the chosen skill range and source: icon, name, chance %, pieces per catch, price; "1,840 catches from 14 players" (from 2 players on), the miss rate and the exchange status line. Planned (part 4): a "Water" filter when there is pool data; a click on an item opens it in the catalog. |
-| Item tooltip (ItemHooks) | Planned (part 4): "Caught in: Zone A 12%, Zone B 8%", top 3 zones. |
-| Minimap button tooltip | Planned (part 4): top 3 items of the current place. |
-| StatsFrame, "Catch catalog" tab | Planned (part 4): every item in the database (seed, your own catch, network) with a search by name in the client's language. Choosing an item lists its zones, each expanding into its cells (subzone, coordinates, chance, catches, skill span). A cell's pin button sets a map pin there. |
-| Settings, a "Shared database" page | "Use the shared catch database" (part 2), a short text and a status line; "Use the public channel" (part 3, planned; off = guild, group and friends only). |
+| StatsFrame, "What can be caught here" tab | Items of the current cell (or the whole map, when there is little data) for the chosen skill range and source: icon, name, chance %, pieces per catch, price; "1,840 catches from 14 players" (from 2 players on), the miss rate and the exchange status line. Part 4: a "Water" filter (Everywhere / Open water / Pools) once there is pool data, without the miss rate under the last two; a click on a known item opens it in the catalog. |
+| Item tooltip (ItemHooks) | Part 4: "Caught in:" with the top 3 zones and the item's chance there, "(N players)" from 2 on; little-data zones only without a reliable one; also for chat links (`ItemRefTooltip`). |
+| Minimap button tooltip | Part 4, in fishing mode only: "Likely catch here:" with the top 3 items of the current place (the tab's defaults, no grey or unknown items) and the catches line; the Addon Compartment entry too. |
+| StatsFrame, "Catch catalog" tab | Part 4: every item in the database (seed, your own catch, network) with a search by name in the client's language and the Skill, Source and Water filters. Choosing an item lists its zones, each expanding into its cells (subzone, coordinates, chance, catches, skill span). A cell's pin button sets the game's map pin there, with a question before replacing a pin the player set. `/okf catalog [name or item link]` opens it. |
+| Settings, a "Shared database" page | "Use the shared catch database" (part 2), a short text and a status line; "Use the public channel" (part 3; off = guild, group and friends only) with the channel's state. The main page has "Show catch chances in tooltips" (part 4), for both tooltips above. |
 | `/okf share` | State: the bundled data's version and places, the records and places held, players heard in the last hour (guild, group, friends, Battle.net), players exchanged with in the last hour, the last exchange, traffic in the last hour, and the status line (with the pause reason). |
-| `/okf debug` | A section with the same state in English for bug reports, plus rejected senders, the running session, queued merges, the longest merge step and whether the own record is offered. |
+| `/okf debug` | A section with the same state in English for bug reports, plus rejected senders, the running session, queued merges, the longest merge step and whether the own record is offered; a "Catch catalog" section (part 4) with the index state, build times and the name queue. |
 | First login after the update | A one-time popup: what is shared (no names) and where to turn it off. |
 
-The chance in the tab = catches with the item / all catches in the cell (misses left out); contribution weights
-are planned for part 3. Under 50 catches at the spot the whole map is used; under 50 there too, "little data" is
+The chance in the tab = catches with the item / all catches in the cell (misses left out), with part 3's
+contribution weights. Under 50 catches at the spot the whole map is used; under 50 there too, "little data" is
 shown instead of a percentage. This covers ROADMAP item 2, "Catch chances".
 
 ## Implementation phases
@@ -662,7 +662,7 @@ phases 2-4 do not depend on the channel.
 | `CHANNEL` is not available in Forever | GUILD / PARTY / WHISPER + seed; phase 5 is postponed. |
 | Blizzard changes the limits or adds Chat restrictions | Result codes are always read, the backoff is exponential. The budget is constants in one place. |
 | Few users at launch | The seed and your own data bring the value; the network only speeds things up. |
-| Data poisoning | The "Protection" section + the checks in `harvest` (+ `banned` in the seed, planned for part 3). |
+| Data poisoning | The "Protection" section + the checks in `harvest` (+ `blocked` in the seed, part 3). |
 | A bloated SavedVariables, a long login | The ~2 MB limit and eviction; the seed absorbs old records with every release. |
 | Other mapIDs in Classic / Anniversary / SoD (a ROADMAP plan) | If that ever comes: `HELLO` and the seed would carry `WOW_PROJECT_ID` (they do not now), with a separate seed for each game version. In Classic `CHANNEL` is definitely disabled. |
 

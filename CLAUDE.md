@@ -83,7 +83,8 @@ another module at runtime, not at file load time, unless it comes earlier in the
 | `Stats.lua`, `Prices.lua`, `Auction.lua` | statistics; item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `SeedData.lua`, `CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
 | `Comm.lua`, `Channel.lua`, `Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
-| `UI/*.lua` | indicator, settings, statistics window, "What can be caught here", toast, minimap, map pin, item hooks, copy window | [ui.md](docs/architecture/ui.md) |
+| `Catalog.lua` (after `Share.lua`) | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catch-db.md](docs/architecture/catch-db.md), [ui.md](docs/architecture/ui.md) |
+| `UI/*.lua` | indicator, settings, statistics window, "What can be caught here", the catch catalog tab (`UI/CatalogTab.lua`, after `UI/CatchHere.lua`), toast, minimap, map pin, item hooks, copy window | [ui.md](docs/architecture/ui.md) |
 | `Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
 | `Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before the release | [ui.md](docs/architecture/ui.md) |
 | `Commands.lua` (last) | `ns.COMMANDS`: every slash command, sorted, English descriptions | [core.md](docs/architecture/core.md) |
@@ -101,6 +102,9 @@ Cross-module rules:
   write of `settings.shareChannel` (it joins or leaves at once).
 - Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data
   tables that are plain data belong in `GameData/` (no logic, no `L`).
+- The catalog follows the data through `CatchDB.MapStamp` (and `GetStampVersion`), not through a message; it sends
+  none, and the tab polls `Catalog.GetVersion()` on the window's tick. Data written past `CatchDB`'s `Settle` needs a
+  `SHARED_DATA_CHANGED` before the views see it.
 
 Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
@@ -132,6 +136,10 @@ public dumps, are in [docs/forever-api.md](docs/forever-api.md). New facts confi
 - `YES`, `NO` and `CANCEL` are in the client's language, not the addon's: popups use `L["Yes"]` / `L["No"]`.
 - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing); the
   tests do not catch it, so wrap such calls as `tostring((f()))`.
+- `C_Map.OpenWorldMap` is restricted: open the map with the global `OpenWorldMap(mapID)`. A map pin follows
+  Blizzard's `/mappin`: `C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(...))`, then
+  `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`. The subzone of a cast comes from the explored areas at the
+  player's own position (`C_MapExplorationInfo.GetExploredAreaIDsAtPosition`) matched against `GetSubZoneText()`.
 - A player may be in 20 chat channels (`Constants.ChatFrameConstants.MaxChatChannels`). Joining a locked channel
   opens the game's password popup (`CHAT_CHANNEL_PASSWORD`). A chat window shows only the channels in its own list,
   so a channel is hidden with the window's `RemoveChannel` (`ChatFrame_RemoveChannel` is deprecated). Chat filters

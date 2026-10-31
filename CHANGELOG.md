@@ -17,11 +17,10 @@ All notable changes to OneKeyFishing are listed here. The format follows
   spot you fished from).
 - Shared catch database: catch counts travel under a random ID and in the background between addon users in your
   guild, group and friends list (Battle.net friends playing WoW Forever included), and what they got from others
-  reaches you too. No character names are sent or saved (the players you exchange with directly can tell which
-  ID is yours); it pauses in combat, in instances and on loading
-  screens, stays within 50 KB per hour and never shows anything in chat. "What can be caught here" counts it
-  under "All" and says how many players the numbers come from ("60 catches from 3 players"), with a quiet status
-  line at the bottom.
+  reaches you too. No character names are sent or saved (the players you exchange with directly can tell which ID is
+  yours); it pauses in combat, in instances and on loading screens, stays within 50 KB per hour and never shows
+  anything in chat. "What can be caught here" counts it under "All" and says how many players the numbers come from
+  ("60 catches from 3 players"), with a quiet status line at the bottom.
 - "Shared database" settings page: one setting turns the exchange off (nothing sent or received; data received
   earlier is kept but not counted), with a short text on what is shared and the state. A popup at the first
   login says what is shared and where to turn it off.
@@ -38,10 +37,19 @@ All notable changes to OneKeyFishing are listed here. The format follows
   of it; a version holds at most as much fishing as its steps allow; the bundled data can block a contributor.
 - Items your game client does not know yet show as "Unknown item" with their item ID in the tooltip, and get their
   name once the game knows them.
+- "Catch catalog", a third tab in the statistics window: every item of the catch database with a search by its name
+  in your client's language, the zones it is caught in with the chance there, and each zone's spots named after their
+  subzone. A spot's pin button sets the game's own map pin there with the game's navigation, and asks first when you
+  already have a pin of your own. `/okf catalog [name or item link]` opens it, and a click on an item of "What can be
+  caught here" opens that item.
+- Item tooltips show "Caught in:" with the item's three best zones and its chance; in fishing mode the minimap
+  tooltip shows the three most likely catches of the place. "Show catch chances in tooltips" turns both off.
+- Casts record the game's number of their subzone, so spots get a name in every client language.
+- A "Water" filter (Everywhere, Open water, Pools) on both tabs once the database holds catches from fish pools.
 
 ### Changed
 
-- `/okf debug` has a catch database section.
+- `/okf debug` has a catch database section and a catch catalog section.
 - Auction prices: the average of the cheapest fifth of the pieces on sale instead of the cheapest lot, so one
   lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 different
   offers (prices) on sale the price is marked "(few lots)" and the catch value uses the vendor price.

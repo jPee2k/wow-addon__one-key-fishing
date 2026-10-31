@@ -32,6 +32,8 @@ The same shape in `mine`, in a contribution and (with `k`) in the seed.
   },
   p = { c = 30, i = { [6291] = { 20, 22 } } }, -- pool catches, already included above; only when pools can
                                                 -- be told apart (spike); no misses (a miss has no loot source)
+  a = { [1519] = 52, [1617] = 15 }, -- part 4: game area ID of the subzone -> settled casts made there (at most 8
+                                     -- areas; absent for cell "x"; specs/005-catch-catalog research R4)
   k = 14,                   -- seed only: number of contributions summed into the cell
 }
 ```
@@ -45,7 +47,8 @@ Derived values (not stored):
 
 Validation (addon on write, `harvest` on read): all counts are non-negative integers; `i[id][1] <= c`;
 `i[id][1] <= i[id][2] <= 20 * i[id][1]`; `c + m <= t` (a cast lasts at least a second); `px`, `py` within
-`0..1000 * (c + m)`; `p` counts not above the totals; item IDs positive integers.
+`0..1000 * (c + m)`; `p` counts not above the totals; item IDs positive integers; `a` (part 4) absent or a table of
+at most 8 entries, keys whole numbers from 1 to 2,147,483,647, counts summing to at most `c + m`.
 
 ## Saved data
 
