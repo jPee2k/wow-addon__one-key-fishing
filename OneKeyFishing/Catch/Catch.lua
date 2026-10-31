@@ -48,8 +48,9 @@ ns.RegisterEvent("LOOT_READY", function()
     for i = 1, GetNumLootItems() do
         local link = GetLootSlotLink(i)
         if link then
-            local icon, _, quantity = GetLootSlotInfo(i)
-            table.insert(items, { link = link, quantity = quantity or 1, icon = icon })
+            local _, _, quantity = GetLootSlotInfo(i)
+            -- itemID is nil for an item the client does not know yet; the consumers leave such an item out.
+            table.insert(items, { link = link, itemID = C_Item.GetItemInfoInstant(link), quantity = quantity or 1 })
         end
     end
     ns.Fire("FISH_CAUGHT", items, ns.IsPoolLoot(), castID)

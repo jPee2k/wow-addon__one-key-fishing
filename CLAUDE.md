@@ -132,7 +132,7 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 - `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed)
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
-- `FISH_CAUGHT` (items, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
+- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `SKILL_WARNING` (text, loud: a cap warning of `Fishing/Skill.lua`; the toast shows it)
 - `AUCTION_STATE` (scan progress), `PRICES_CHANGED` (a scan finished or stopped)

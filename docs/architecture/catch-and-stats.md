@@ -5,6 +5,8 @@ How casts become catch messages, how they are counted, and how items are valued.
 ## Catch/Catch.lua
 
 - Turns casts and loot into `FISH_CAUGHT` / `FISH_MISSED` messages.
+- The items of `FISH_CAUGHT` are `{ link, itemID, quantity }`; `itemID` is read once here (nil for an item the client
+  does not know yet), so Stats and CatchDB do not look it up again.
 - `FISH_CAUGHT` also says whether the loot came from a fishing pool: `ns.IsPoolLoot()`, a loot source GUID of a
   game object other than the bobber 35591.
 - A cast without loot is settled as a miss 1 s after it ends, also when the next cast already started.
