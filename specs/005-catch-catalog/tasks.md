@@ -55,7 +55,7 @@ parts together once the debt of all of them is closed (`docs/shared-db-plan.md` 
 
 **Purpose**: test fakes for every new API, and the launch-day spike questions.
 
-- [ ] T001 In `tests/wow.lua`, add the map, area and item fakes. Each is driven by globals the tests set; document
+- [X] T001 In `tests/wow.lua`, add the map, area and item fakes. Each is driven by globals the tests set; document
   each global in the header comment and reset all of them in the existing per-test reset.
   - **Maps**: `map_types[mapID]` and `map_parents[mapID]` fill `mapType` (default 3, Zone) and `parentMapID`
     (default 0) of `C_Map.GetMapInfo`; `map_info_missing[mapID] = true` makes it return nil.
@@ -88,7 +88,7 @@ parts together once the debt of all of them is closed (`docs/shared-db-plan.md` 
     both `"\195\137"` (capital E acute) and `"\195\169"` (e acute) replaced by `"e"`, folding case and accent as
     the game's function does. `strcmputf8i(a, b)` compares the two parsed strings and returns -1, 0
     or 1.
-- [ ] T002 In `tests/wow.lua`, add the UI fakes (same rules as T001).
+- [X] T002 In `tests/wow.lua`, add the UI fakes (same rules as T001).
   - **Scroll list**: `CreateFrame` with the templates `"WowScrollBoxList"`, `"MinimalScrollBar"` and
     `"SearchBoxTemplate"` returns a normal fake frame marked with `frame.template`. `CreateDataProvider(list)`
     returns an object with `Insert`, `Flush`, `GetSize`, `Enumerate` and the list in `provider.elements`.
@@ -107,7 +107,7 @@ parts together once the debt of all of them is closed (`docs/shared-db-plan.md` 
   - **Clock**: `debugprofilestop` stays undefined by default. `profile_ms` (a number the test sets) makes it
     return that value, so a step budget can be tested; `profile_step` (when set) is added to `profile_ms` on each
     call.
-- [ ] T003 [P] In `OneKeyFishing/Spike.lua`, add a "Map pins and areas (V30-V36)" section to `BuildReport()`
+- [X] T003 [P] In `OneKeyFishing/Spike.lua`, add a "Map pins and areas (V30-V36)" section to `BuildReport()`
   (research R13). It reads only and changes nothing in the game. Every call is guarded with `pcall` and a nil check.
   1. Pins: the current map (`C_Map.GetBestMapForUnit("player")`), its `mapType` and `parentMapID`;
      `CanSetUserWaypointOnMap` for the map and for its parent; `C_GameRules.IsGameRuleActive(
@@ -123,7 +123,7 @@ parts together once the debt of all of them is closed (`docs/shared-db-plan.md` 
   5. UI: whether `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`, `CreateDataProvider`
      exist, whether `CreateFrame` succeeds with `WowScrollBoxList`, `MinimalScrollBar` and `SearchBoxTemplate`, and
      `C_Texture.GetAtlasInfo("Waypoint-MapPin-Untracked") ~= nil`.
-- [ ] T004 Extend `tests/spike_test.lua` for T003: the section is present with its five parts, sets no waypoint
+- [X] T004 Extend `tests/spike_test.lua` for T003: the section is present with its five parts, sets no waypoint
   (`waypoint_sets` empty, `world_maps_opened` empty), and survives every new API call failing (each stub raising an
   error).
 

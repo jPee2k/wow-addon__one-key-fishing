@@ -105,3 +105,74 @@ test("the chat channel section hides a password popup for the test channel and s
     assert(text:find("JoinTemporaryChannel: failed: ", 1, true), "failure line")
     assert(not text:find("!! failed", 1, true), text:match("!! failed[^\n]*") or "")
 end)
+
+---------------------------------------------------------------------------
+-- Map pins and areas (specs/005-catch-catalog, research R13)
+---------------------------------------------------------------------------
+test("the map pins and areas section asks its five parts and sets no pin", function()
+    explored_areas = { 10, 20 }
+    area_names = { [10] = "Elwynn Forest", [20] = "Crystal Lake" }
+    sub_zone = "Crystal Lake"
+    map_types[1415] = Enum.UIMapType.Micro
+    map_parents[1415] = 1429
+    waypoint_maps[1429] = true
+    map_world[1415] = { 0, 100, 200, 10, 10 }
+    map_world[1429] = { 0, 0, 0, 1000, 1000 }
+    ns.SeedData = { epoch = 1, absorbed = {}, cells = {
+        ["1415:3:47"] = catch_cell(4, 0, { [6303] = { 1, 1 }, [6291] = { 3, 3 }, [6289] = { 1, 1 },
+            [6308] = { 1, 1 } }) } }
+    local text = report()
+    assert(text:find("-- Map pins and areas (V30-V36) --", 1, true), "section")
+    for _, part in ipairs({ "pins:", "areas:", "items:", "folding:", "templates:" }) do
+        assert(text:find("  " .. part, 1, true), part)
+    end
+    assert(text:find("map 1415, type 5, parent 1429", 1, true), "the map")
+    assert(text:find("CanSetUserWaypointOnMap: map false, parent true", 1, true), "pins per map")
+    assert(text:find("game rule WorldMapTrackingPinDisabled active: false", 1, true), "the rule")
+    assert(text:find("HasUserWaypoint: false", 1, true), "no waypoint")
+    assert(text:find("on the parent 1429 at 0.1043, 0.2078", 1, true), "the Micro map's point on its parent")
+    assert(text:find("area 20: Crystal Lake", 1, true), "an area with its name")
+    assert(text:find("GetSubZoneText: Crystal Lake", 1, true), "the subzone")
+    assert(text:find("the area the addon keeps: ", 1, true), "the kept area")
+    assert(text:find("item 6289 before a request: name Item 6289, quality 1", 1, true), "the lowest item first")
+    assert(not text:find("item 6308", 1, true), "three items only")
+    eq(item_load_requests[#item_load_requests], 6303, "each asked once")
+    assert(text:find("CaseAccentInsensitiveParse false: -", 1, true), "no game fold here")
+    assert(text:find("strcmputf8i(b, A): missing", 1, true), "no order function here")
+    assert(text:find("WowScrollBoxList created, MinimalScrollBar created, SearchBoxTemplate created", 1, true),
+        "templates")
+    assert(text:find("atlas Waypoint-MapPin-Untracked: true", 1, true), "the atlas")
+    text = report()
+    assert(text:find("item 6289 after a request", 1, true), "the second report after the requests")
+    eq(#waypoint_sets, 0, "no waypoint set")
+    eq(#world_maps_opened, 0, "no map opened")
+    eq(super_tracked, false, "nothing super tracked")
+end)
+
+test("the map pins and areas section survives every new call failing", function()
+    local function boom()
+        error("boom")
+    end
+    local saved = {}
+    local apis = { { C_Map, "CanSetUserWaypointOnMap" }, { C_Map, "HasUserWaypoint" }, { C_Map, "GetUserWaypoint" },
+        { C_Map, "GetAreaInfo" }, { C_Map, "GetWorldPosFromMapPos" }, { C_Map, "GetMapPosFromWorldPos" },
+        { C_GameRules, "IsGameRuleActive" }, { C_MapExplorationInfo, "GetExploredAreaIDsAtPosition" },
+        { C_Item, "GetItemNameByID" }, { C_Item, "GetItemQualityByID" }, { C_Texture, "GetAtlasInfo" } }
+    for i, api in ipairs(apis) do
+        saved[i] = api[1][api[2]]
+        api[1][api[2]] = boom
+    end
+    local vector = CreateVector2D
+    CreateVector2D, CaseAccentInsensitiveParse, strcmputf8i = boom, boom, boom
+    local text = report()
+    for i, api in ipairs(apis) do
+        api[1][api[2]] = saved[i]
+    end
+    CreateVector2D, CaseAccentInsensitiveParse, strcmputf8i = vector, nil, nil
+    assert(text:find("-- Map pins and areas (V30-V36) --", 1, true), "section")
+    assert(text:find("CanSetUserWaypointOnMap: map failed: ", 1, true), "a failure line")
+    assert(text:find("GetExploredAreaIDsAtPosition failed: ", 1, true), "areas")
+    assert(text:find("strcmputf8i(b, A): failed: ", 1, true), "order")
+    assert(not text:find("!! failed", 1, true), text:match("!! failed[^\n]*") or "")
+    eq(#waypoint_sets, 0, "no waypoint set")
+end)

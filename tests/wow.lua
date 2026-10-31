@@ -64,6 +64,34 @@
 -- Helpers: chat_window_add(i, name), channel_notice(event, token, channelName, player, actor),
 -- channel_text(channelName, text, sender), enter_world(isInitialLogin, isReloadingUi), item_loaded(itemID, ok),
 -- proof_for(secret, seq, top), prove(record, secret, top).
+-- The catch catalog (specs/005-catch-catalog). Every test file runs in a fresh Lua state, so these start at their
+-- defaults in each file:
+--   map_types[mapID] = Enum.UIMapType.X  mapType of C_Map.GetMapInfo (default 3, Zone)
+--   map_parents[mapID] = parentID       parentMapID of C_Map.GetMapInfo (default 0)
+--   map_info_missing[mapID] = true      C_Map.GetMapInfo returns nil
+--   waypoint_maps[mapID] = true         C_Map.CanSetUserWaypointOnMap is true (default false)
+--   user_waypoint                       the user waypoint (C_Map.Get/Has/Clear/SetUserWaypoint; nil: none)
+--   waypoint_sets                       every point passed to C_Map.SetUserWaypoint (read)
+--   waypoint_result = false             C_Map.SetUserWaypoint refuses and stores nothing (default true)
+--   map_world[mapID] = { continent, left, top, width, height }   the map in world space
+--                                       (C_Map.GetWorldPosFromMapPos / GetMapPosFromWorldPos)
+--   super_tracked                       C_SuperTrack.SetSuperTrackedUserWaypoint (read; default false)
+--   game_rules[Enum.GameRule.X] = true  C_GameRules.IsGameRuleActive
+--   world_maps_opened                   map IDs passed to OpenWorldMap (read)
+--   sub_zone = "Crystal Lake"           GetSubZoneText (default "")
+--   area_names[areaID] = "Crystal Lake" C_Map.GetAreaInfo
+--   explored_areas = { 10, 20 }         C_MapExplorationInfo.GetExploredAreaIDsAtPosition (nil: none)
+--   area_lookups                        { mapID, x, y } of each GetExploredAreaIDsAtPosition call (read)
+--   item_names[itemID] = "Trout"        C_Item.GetItemNameByID (default "Item <id>"; nil for unknown_items)
+--   item_qualities[itemID] = n          C_Item.GetItemQualityByID (default 1; nil for unknown_items)
+--   missing_atlases[name] = true        C_Texture.GetAtlasInfo returns nil for that atlas (default: every atlas)
+--   game_fold = true                    (before loading) defines CaseAccentInsensitiveParse and strcmputf8i
+--   no_scroll_templates = true          (before loading) CreateFrame with the scroll and search templates fails
+--   tooltip_post_calls[dataType]        functions given to TooltipDataProcessor.AddTooltipPostCall (read)
+--   itemref_lines                       lines of ItemRefTooltip (read), like tooltip_lines of GameTooltip
+--   profile_ms = n, profile_step = n    debugprofilestop returns profile_ms, then adds profile_step to it (nil:
+--                                       debugprofilestop is undefined, as a clock missing)
+-- Helpers: scroll_rows(box), type_text(box, text), show_item_tooltip(tooltip, itemID).
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -416,12 +444,95 @@ NewFrame = function(parent)
     return frame
 end
 
-function CreateFrame(_, name, parent)
+-- The scroll list and search box templates (UI/CatalogTab.lua); no_scroll_templates makes them fail, as a client
+-- without them would.
+local SCROLL_TEMPLATES = { WowScrollBoxList = true, MinimalScrollBar = true, SearchBoxTemplate = true }
+
+function CreateFrame(_, name, parent, template)
+    if SCROLL_TEMPLATES[template] and rawget(_G, "no_scroll_templates") then
+        error("unknown template " .. template, 2)
+    end
     local frame = NewFrame(parent)
+    frame.template = template
+    if template == "SearchBoxTemplate" then
+        frame.Instructions = NewFrame(frame)
+    end
     if name then
         _G[name] = frame
     end
     return frame
+end
+
+-- A scroll box: the data provider it shows (SetDataProvider) and the view ScrollUtil gave it.
+function Frame:SetDataProvider(provider, retainScroll)
+    self.provider, self.retainScroll = provider, retainScroll
+end
+
+function Frame:GetDataProvider()
+    return self.provider
+end
+
+function CreateDataProvider(list)
+    local provider = { elements = {} }
+    for _, element in ipairs(list or {}) do
+        table.insert(provider.elements, element)
+    end
+    function provider:Insert(...)
+        for i = 1, select("#", ...) do
+            table.insert(self.elements, (select(i, ...)))
+        end
+    end
+    function provider:Flush()
+        self.elements = {}
+    end
+    function provider:GetSize()
+        return #self.elements
+    end
+    function provider:Enumerate()
+        local i = 0
+        return function()
+            i = i + 1
+            if self.elements[i] ~= nil then
+                return i, self.elements[i]
+            end
+        end
+    end
+    return provider
+end
+
+function CreateScrollBoxListLinearView()
+    local view = {}
+    function view:SetElementInitializer(template, fn)
+        self.template, self.initializer = template, fn
+    end
+    function view:SetElementExtent(extent)
+        self.extent = extent
+    end
+    return view
+end
+
+ScrollUtil = {
+    InitScrollBoxListWithScrollBar = function(box, bar, view)
+        box.view, box.scrollBar = view, bar
+    end,
+}
+
+-- One row frame per element of the box's data provider, each set up by the view's initializer, as the game does
+-- for the rows in sight.
+function scroll_rows(box)
+    local rows = {}
+    for _, element in box.provider:Enumerate() do
+        local row = NewFrame(box)
+        box.view.initializer(row, element)
+        table.insert(rows, row)
+    end
+    return rows
+end
+
+-- Types into a search box: its text, then OnTextChanged with userInput true.
+function type_text(box, text)
+    box:SetText(text)
+    box.scripts.OnTextChanged(box, true)
 end
 
 -- Sends a game event to every frame registered for it.
@@ -474,14 +585,44 @@ end
 
 -- The game tooltip: SetOwner starts over, AddLine and SetItemByID are recorded (tooltip_lines, tooltip_item), Show
 -- and Hide set tooltip_shown; any other method does nothing.
+-- AddDoubleLine records "left | right".
+local function DoubleLine(left, right)
+    return tostring(left) .. " | " .. tostring(right)
+end
 tooltip_lines, tooltip_item, tooltip_shown = {}, nil, false
 GameTooltip = setmetatable({
     SetOwner = function() tooltip_lines, tooltip_item = {}, nil end,
     AddLine = function(_, text) table.insert(tooltip_lines, text) end,
+    AddDoubleLine = function(_, left, right) table.insert(tooltip_lines, DoubleLine(left, right)) end,
     SetItemByID = function(_, itemID) tooltip_item = itemID end,
     Show = function() tooltip_shown = true end,
     Hide = function() tooltip_shown = false end,
 }, { __index = function() return function() end end })
+
+-- The tooltip of chat item links, with its own lines.
+itemref_lines = {}
+ItemRefTooltip = setmetatable({
+    SetOwner = function() itemref_lines = {} end,
+    AddLine = function(_, text) table.insert(itemref_lines, text) end,
+    AddDoubleLine = function(_, left, right) table.insert(itemref_lines, DoubleLine(left, right)) end,
+}, { __index = function() return function() end end })
+
+-- TooltipDataProcessor keeps the post calls; show_item_tooltip runs the item ones as the game does when a tooltip
+-- shows an item.
+tooltip_post_calls = {}
+TooltipDataProcessor = {
+    AddTooltipPostCall = function(dataType, fn)
+        tooltip_post_calls[dataType] = tooltip_post_calls[dataType] or {}
+        table.insert(tooltip_post_calls[dataType], fn)
+    end,
+}
+
+function show_item_tooltip(tooltip, itemID)
+    tooltip:SetOwner(UIParent, "ANCHOR_NONE")
+    for _, fn in ipairs(tooltip_post_calls[Enum.TooltipDataType.Item] or {}) do
+        fn(tooltip, { id = itemID })
+    end
+end
 
 UIParent = CreateFrame("Frame", "UIParent")
 Minimap = CreateFrame("Frame", "Minimap")
@@ -610,6 +751,20 @@ C_CVar = {
 player_map_id = 1
 map_names = {}
 player_map_position = nil
+map_types, map_parents, map_info_missing = {}, {}, {}
+waypoint_maps, waypoint_sets, map_world, area_names, area_lookups = {}, {}, {}, {}, {}
+user_waypoint, waypoint_result, explored_areas = nil, nil, nil
+
+function CreateVector2D(x, y)
+    return { x = x, y = y, GetXY = function(self) return self.x, self.y end }
+end
+
+UiMapPoint = {
+    CreateFromCoordinates = function(mapID, x, y, z)
+        return { uiMapID = mapID, position = CreateVector2D(x, y), z = z }
+    end,
+}
+
 C_Map = {
     GetBestMapForUnit = function(unit)
         if unit == "player" then
@@ -617,7 +772,46 @@ C_Map = {
         end
     end,
     GetMapInfo = function(mapID)
-        return { mapID = mapID, name = map_names[mapID] or "Test Zone", mapType = 3, parentMapID = 0 }
+        if map_info_missing[mapID] then
+            return nil
+        end
+        return { mapID = mapID, name = map_names[mapID] or "Test Zone", mapType = map_types[mapID] or 3,
+            parentMapID = map_parents[mapID] or 0 }
+    end,
+    GetAreaInfo = function(areaID)
+        return area_names[areaID]
+    end,
+    CanSetUserWaypointOnMap = function(mapID)
+        return waypoint_maps[mapID] == true
+    end,
+    SetUserWaypoint = function(point)
+        table.insert(waypoint_sets, point)
+        if rawget(_G, "waypoint_result") == false then
+            return false
+        end
+        user_waypoint = point
+        return true
+    end,
+    HasUserWaypoint = function()
+        return rawget(_G, "user_waypoint") ~= nil
+    end,
+    GetUserWaypoint = function()
+        return rawget(_G, "user_waypoint")
+    end,
+    ClearUserWaypoint = function()
+        user_waypoint = nil
+    end,
+    GetWorldPosFromMapPos = function(mapID, pos)
+        local world = map_world[mapID]
+        if world then
+            return world[1], CreateVector2D(world[2] + pos.x * world[4], world[3] + pos.y * world[5])
+        end
+    end,
+    GetMapPosFromWorldPos = function(continent, worldPos, overrideMapID)
+        local world = map_world[overrideMapID]
+        if world and world[1] == continent then
+            return overrideMapID, CreateVector2D((worldPos.x - world[2]) / world[4], (worldPos.y - world[3]) / world[5])
+        end
     end,
     GetPlayerMapPosition = function(_, unit)
         local position = player_map_position
@@ -656,7 +850,80 @@ C_Item = {
     RequestLoadItemDataByID = function(item)
         table.insert(item_load_requests, tonumber(item))
     end,
+    GetItemNameByID = function(item)
+        local itemID = tonumber(item)
+        if unknown_items[itemID] then
+            return nil
+        end
+        return item_names[itemID] or ("Item " .. itemID)
+    end,
+    GetItemQualityByID = function(item)
+        local itemID = tonumber(item)
+        if unknown_items[itemID] then
+            return nil
+        end
+        return item_qualities[itemID] or 1
+    end,
 }
+item_names, item_qualities = {}, {}
+
+-- The map pin, the navigation arrow, the game rules and the world map (specs/005-catch-catalog, research R6).
+super_tracked, game_rules, world_maps_opened = false, {}, {}
+C_SuperTrack = {
+    SetSuperTrackedUserWaypoint = function(on)
+        super_tracked = on
+    end,
+    IsSuperTrackingUserWaypoint = function()
+        return super_tracked
+    end,
+}
+C_GameRules = {
+    IsGameRuleActive = function(rule)
+        return game_rules[rule] == true
+    end,
+}
+function OpenWorldMap(mapID)
+    table.insert(world_maps_opened, mapID)
+end
+
+-- Atlases: every name exists unless missing_atlases[name] is true.
+missing_atlases = {}
+C_Texture = {
+    GetAtlasInfo = function(atlas)
+        if not missing_atlases[atlas] then
+            return { file = 0, width = 16, height = 16 }
+        end
+    end,
+}
+
+-- The explored areas at a position (research R4).
+C_MapExplorationInfo = {
+    GetExploredAreaIDsAtPosition = function(mapID, pos)
+        table.insert(area_lookups, { mapID, pos.x, pos.y })
+        return rawget(_G, "explored_areas")
+    end,
+}
+
+-- The game's folding of case and accents, with game_fold: lower case, and the capital and small e acute to "e".
+local function GameFold(text)
+    return (text:lower():gsub("\195\137", "e"):gsub("\195\169", "e"))
+end
+local GAME_FOLD = {
+    CaseAccentInsensitiveParse = GameFold,
+    strcmputf8i = function(a, b)
+        a, b = GameFold(a), GameFold(b)
+        return a < b and -1 or (a > b and 1 or 0)
+    end,
+}
+
+-- The frame clock, with profile_ms.
+local function ProfileClock()
+    local value = profile_ms
+    if rawget(_G, "profile_step") then
+        profile_ms = profile_ms + profile_step
+    end
+    return value
+end
 
 -- Items the game client does not know yet (WoW Forever reveals some only when found): GetItemInfoInstant returns
 -- nil and DoesItemExistByID false for them. item_load_requests: the IDs passed to RequestLoadItemDataByID.
@@ -724,6 +991,9 @@ Enum = {
     ItemClass = { Weapon = 2 },
     ItemWeaponSubclass = { Fishingpole = 20 },
     TooltipDataType = { Item = 0 },
+    UIMapType = { Cosmic = 0, World = 1, Continent = 2, Zone = 3, Dungeon = 4, Micro = 5, Orphan = 6 },
+    GameRule = { WorldMapTrackingPinDisabled = 1 }, -- a stand-in value
+    ItemQuality = { Poor = 0, Common = 1, Uncommon = 2, Rare = 3, Epic = 4 },
     -- These three as in the 1.60.1 export: the values matter for the results the addon reads.
     AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 },
     SendAddonMessageResult = { Success = 0, InvalidPrefix = 1, InvalidMessage = 2, AddonMessageThrottle = 3,
@@ -1192,7 +1462,8 @@ local function WithStubFallback(name, api)
 end
 for _, name in ipairs({ "C_AddOns", "C_CVar", "C_Map", "C_Item", "C_Container", "C_AuctionHouse", "C_Timer",
     "Settings", "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_RestrictedActions", "ChatFrameUtil",
-    "C_EncodingUtil" }) do
+    "C_EncodingUtil", "C_SuperTrack", "C_GameRules", "C_MapExplorationInfo", "ScrollUtil", "TooltipDataProcessor",
+    "UiMapPoint", "C_Texture" }) do
     WithStubFallback(name, _G[name])
 end
 
@@ -1229,8 +1500,9 @@ function GetZoneText()
     return "Test Zone"
 end
 
+sub_zone = ""
 function GetSubZoneText()
-    return ""
+    return sub_zone
 end
 
 CLIENT_LOCALE = "enUS"
@@ -1438,11 +1710,19 @@ end
 local stubs = {}
 -- Game data the tests set that may be nil on purpose (see the top of this file): nil, not a stub.
 local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
-    group_type = true, group_members = true, bn_send_result = true }
+    group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
+    explored_areas = true, profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true }
 setmetatable(_G, {
     __index = function(_, key)
         if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then
             return nil -- utf8: Lua 5.3 only, see the top of this file
+        end
+        -- Game functions a test switches on (see the top of this file); undefined otherwise, as in an older client.
+        if GAME_FOLD[key] then
+            return rawget(_G, "game_fold") and GAME_FOLD[key] or nil
+        end
+        if key == "debugprofilestop" then
+            return rawget(_G, "profile_ms") and ProfileClock or nil
         end
         if MISSING_51[key] then
             error("'" .. key .. "' exists in the game (Lua 5.1) but not in the test runtime; add a stub", 2)

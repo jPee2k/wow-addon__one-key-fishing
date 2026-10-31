@@ -1,7 +1,8 @@
 -- VERIFY(spike): temporary; remove this file, its TOC line, its Commands.lua entry and tests/spike_test.lua
 -- Spike: /okf spike prints the game facts the catch database was built on before the game could be played
 -- (specs/002-local-catch-db/verification.md, V1-V7), the catch exchange (specs/003-guild-group-sync/
--- verification.md, V10-V15) and the public channel (specs/004-public-channel-sync/verification.md, V19-V27).
+-- verification.md, V10-V15), the public channel (specs/004-public-channel-sync/verification.md, V19-V27) and the
+-- catch catalog (specs/005-catch-catalog/verification.md, V30-V36).
 -- English like the debug report; counts and patterns only, never names.
 local _, ns = ...
 
@@ -403,6 +404,168 @@ local function ChatChannelSection(out)
     ItemLines(out)
 end
 
+---------------------------------------------------------------------------
+-- Map pins and areas (specs/005-catch-catalog/research.md R13): reads only; no pin is set and no map is opened.
+-- Each part runs on its own, so one failing call leaves the others.
+---------------------------------------------------------------------------
+-- The result of api[name](...) as text: "missing" without the function, or the error it raised.
+local function TryApi(api, name, ...)
+    local fn = type(api) == "table" and api[name] or nil
+    if fn == nil then
+        return "missing"
+    end
+    return Try(fn, ...)
+end
+
+local function PointText(point)
+    if type(point) ~= "table" then
+        return tostring(point)
+    end
+    return ("%s, %s"):format(tostring(point.x), tostring(point.y))
+end
+
+-- The player's map and position (x, y in 0..1), or nil.
+local function PlayerPosition()
+    local mapID = C_Map.GetBestMapForUnit("player")
+    local position = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
+    if position then
+        local x, y = position:GetXY()
+        return mapID, x, y
+    end
+    return mapID
+end
+
+local function PinLines(out)
+    local mapID, x, y = PlayerPosition()
+    local ok, info = pcall(C_Map.GetMapInfo, mapID)
+    info = ok and type(info) == "table" and info or nil
+    local parent = info and info.parentMapID
+    table.insert(out, ("  map %s, type %s, parent %s"):format(tostring(mapID), tostring(info and info.mapType),
+        tostring(parent)))
+    table.insert(out, ("  CanSetUserWaypointOnMap: map %s, parent %s"):format(
+        TryApi(C_Map, "CanSetUserWaypointOnMap", mapID), TryApi(C_Map, "CanSetUserWaypointOnMap", parent)))
+    local rule = Enum.GameRule and Enum.GameRule.WorldMapTrackingPinDisabled
+    table.insert(out, "  game rule WorldMapTrackingPinDisabled active: "
+        .. (rule and TryApi(C_GameRules, "IsGameRuleActive", rule) or "no such rule"))
+    table.insert(out, "  showInGameNavigation: " .. TryApi(C_CVar, "GetCVar", "showInGameNavigation"))
+    table.insert(out, "  HasUserWaypoint: " .. TryApi(C_Map, "HasUserWaypoint"))
+    local okPoint, point = pcall(C_Map.GetUserWaypoint)
+    table.insert(out, "  GetUserWaypoint: " .. (not okPoint and ("failed: " .. tostring(point))
+        or (type(point) == "table" and ("map %s at %s"):format(tostring(point.uiMapID), PointText(point.position)))
+        or tostring(point)))
+    if info and Enum.UIMapType and info.mapType == Enum.UIMapType.Micro and x then
+        local okWorld, continent, world = pcall(C_Map.GetWorldPosFromMapPos, mapID, CreateVector2D(x, y))
+        local okBack, backMap, back = pcall(C_Map.GetMapPosFromWorldPos, continent, world, parent)
+        table.insert(out, ("  a Micro map: world position %s (continent %s), on the parent %s at %s"):format(
+            okWorld and PointText(world) or ("failed: " .. tostring(continent)), tostring(continent),
+            okBack and tostring(backMap) or "failed", okBack and PointText(back) or tostring(backMap)))
+    end
+end
+
+local function AreaLines(out)
+    local mapID, x, y = PlayerPosition()
+    if not x then
+        table.insert(out, "  no position")
+        return
+    end
+    local ok, ids = pcall(function()
+        return C_MapExplorationInfo.GetExploredAreaIDsAtPosition(mapID, CreateVector2D(x, y))
+    end)
+    if not ok then
+        table.insert(out, "  GetExploredAreaIDsAtPosition failed: " .. tostring(ids))
+    elseif type(ids) ~= "table" or #ids == 0 then
+        table.insert(out, "  GetExploredAreaIDsAtPosition: none")
+    else
+        for _, areaID in ipairs(ids) do
+            table.insert(out, ("  area %s: %s"):format(tostring(areaID), TryApi(C_Map, "GetAreaInfo", areaID)))
+        end
+    end
+    table.insert(out, "  GetSubZoneText: " .. Try(GetSubZoneText))
+    table.insert(out, "  the area the addon keeps: "
+        .. (ns.CatchDB.GetArea and Try(ns.CatchDB.GetArea, mapID, x, y) or "not built yet"))
+end
+
+local itemsAsked -- the seed's items were asked for on an earlier report
+
+-- The lowest `count` item IDs of the bundled seed.
+local function SeedItemIDs(count)
+    local set, ids = {}, {}
+    for _, cell in pairs(ns.SeedData and ns.SeedData.cells or {}) do
+        for itemID in pairs(type(cell) == "table" and type(cell.i) == "table" and cell.i or {}) do
+            set[itemID] = true
+        end
+    end
+    for itemID in pairs(set) do
+        table.insert(ids, itemID)
+    end
+    table.sort(ids)
+    return { unpack(ids, 1, math.min(count, #ids)) }
+end
+
+local function ItemNameLines(out)
+    local ids = SeedItemIDs(3)
+    if #ids == 0 then
+        table.insert(out, "  no bundled items")
+        return
+    end
+    for _, itemID in ipairs(ids) do
+        table.insert(out, ("  item %d %s: name %s, quality %s, GetItemInfoInstant %s"):format(itemID,
+            itemsAsked and "after a request" or "before a request", TryApi(C_Item, "GetItemNameByID", itemID),
+            TryApi(C_Item, "GetItemQualityByID", itemID), TryApi(C_Item, "GetItemInfoInstant", itemID)))
+    end
+    if not itemsAsked then
+        itemsAsked = true
+        for _, itemID in ipairs(ids) do
+            TryApi(C_Item, "RequestLoadItemDataByID", itemID)
+        end
+        table.insert(out, "  asked the game for each once: run the report again in a few seconds")
+    end
+end
+
+local FOLD_SAMPLE = "Ab\195\137 \208\169" -- A, b, E acute, a space, Cyrillic Shcha
+
+local function FoldLines(out)
+    local parse = CaseAccentInsensitiveParse
+    table.insert(out, ("  CaseAccentInsensitiveParse %s: %s"):format(tostring(parse ~= nil),
+        parse and Try(parse, FOLD_SAMPLE) or "-"))
+    table.insert(out, "  strcmputf8i(b, A): " .. (strcmputf8i and Try(strcmputf8i, "b", "A") or "missing"))
+end
+
+local templateProbes -- template -> what CreateFrame did, made on the first report
+
+local function TemplateLines(out)
+    table.insert(out, ("  CreateScrollBoxListLinearView %s, ScrollUtil.InitScrollBoxListWithScrollBar %s, "
+        .. "CreateDataProvider %s"):format(tostring(CreateScrollBoxListLinearView ~= nil),
+        tostring(ScrollUtil ~= nil and ScrollUtil.InitScrollBoxListWithScrollBar ~= nil),
+        tostring(CreateDataProvider ~= nil)))
+    if not templateProbes then
+        templateProbes = {}
+        for _, probe in ipairs({ { "Frame", "WowScrollBoxList" }, { "EventFrame", "MinimalScrollBar" },
+            { "EditBox", "SearchBoxTemplate" } }) do
+            local ok, made = pcall(CreateFrame, probe[1], nil, UIParent, probe[2])
+            if ok and made then
+                made:Hide()
+            end
+            table.insert(templateProbes, ("%s %s"):format(probe[2], ok and "created" or ("failed: " .. tostring(made))))
+        end
+    end
+    table.insert(out, "  " .. table.concat(templateProbes, ", "))
+    local ok, atlas = pcall(function() return C_Texture.GetAtlasInfo("Waypoint-MapPin-Untracked") end)
+    table.insert(out, "  atlas Waypoint-MapPin-Untracked: " .. (ok and tostring(atlas ~= nil)
+        or ("failed: " .. tostring(atlas))))
+end
+
+local function MapPinSection(out)
+    for _, part in ipairs({ { "pins", PinLines }, { "areas", AreaLines }, { "items", ItemNameLines },
+        { "folding", FoldLines }, { "templates", TemplateLines } }) do
+        table.insert(out, "  " .. part[1] .. ":")
+        local ok, err = pcall(part[2], out)
+        if not ok then
+            table.insert(out, "  " .. part[1] .. " failed: " .. tostring(err))
+        end
+    end
+end
+
 local function BuildReport()
     local lines = { "OneKeyFishing spike report " .. tostring(ns.version) }
     Section(lines, "Build (V7)", function(out)
@@ -459,6 +622,7 @@ local function BuildReport()
     end)
     Section(lines, "Network (V10-V15)", NetworkSection)
     Section(lines, "Chat channel (V19-V27)", ChatChannelSection)
+    Section(lines, "Map pins and areas (V30-V36)", MapPinSection)
     return table.concat(lines, "\n")
 end
 
