@@ -9,7 +9,8 @@ OneKeyFishing is a World of Warcraft addon for **WoW Forever** (Interface `16001
 `WOW_PROJECT_ID = 18`), published under the MIT license. The Forever client runs the modern (Mainline) API, not
 the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `Interface/AddOns`, the player manual
 `README.md` included); `tools/`, `tests/`, `docs/`, `specs/` and project files stay in the repository root. Paths
-such as `Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`.
+such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which holds one folder per area
+(layout in [docs/development.md](docs/development.md)).
 
 ## Hard rules
 
@@ -66,39 +67,39 @@ such as `Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`.
 
 ## Architecture
 
-All files share the addon namespace (`local _, ns = ...`). Load order is the TOC order (the table below follows
-it); a module may only call another module at runtime, not at file load time, unless it comes earlier in the TOC.
+All files share the addon namespace (`local _, ns = ...`). The addon folder has one subfolder per area, the same
+areas as `docs/architecture/` and `tests/`. Load order is the TOC order (the table below follows it); a module may only call another module at runtime, not at file load time, unless it comes earlier in the TOC.
 
 | Module | Job | Details |
 |---|---|---|
-| `Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
-| `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core.lua` | [core.md](docs/architecture/core.md) |
-| `Core.lua` | events, the message bus `ns.On` / `ns.Fire`, shared widgets, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
-| `Data.lua` | shared data and helpers (fishing IDs, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
-| `Gear.lua`, `Bags.lua`, `Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Mode.lua` | enter and exit fishing mode, restore after `/reload`, logout, crash | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Catch.lua` | casts and loot become `FISH_CAUGHT` / `FISH_MISSED` | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `Prices.lua`, `Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `Skill.lua` | the Fishing rank and cap warnings | [fishing-mode.md](docs/architecture/fishing-mode.md) |
-| `Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `SeedData.lua`, `CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
-| `Comm.lua`, `Channel.lua`, `Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
-| `Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catalog.md](docs/architecture/catalog.md) |
+| `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
+| `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
+| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, shared widgets, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
+| `Core/Data.lua` | shared data and helpers (fishing IDs, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
+| `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Fishing/Mode.lua` | enter and exit fishing mode, restore after `/reload`, logout, crash | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Catch/Catch.lua` | casts and loot become `FISH_CAUGHT` / `FISH_MISSED` | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `Catch/Prices.lua`, `Catch/Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `Fishing/Skill.lua` | the Fishing rank and cap warnings | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
+| `Exchange/Comm.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
+| `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catalog.md](docs/architecture/catalog.md) |
 | `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/StatsFrame.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua` | copy window, indicator, toast, the statistics window and its tabs | [ui.md](docs/architecture/ui.md) |
-| `Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
-| `Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before release 1.2.0 | [ui.md](docs/architecture/ui.md), [docs/checklists/spike.md](docs/checklists/spike.md) |
+| `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
+| `Core/Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before release 1.2.0 | [ui.md](docs/architecture/ui.md), [docs/checklists/spike.md](docs/checklists/spike.md) |
 | `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
-| `Commands.lua` (last) | `ns.COMMANDS`: every slash command, sorted, English descriptions | [core.md](docs/architecture/core.md) |
+| `Core/Commands.lua` (last) | `ns.COMMANDS`: every slash command, sorted, English descriptions | [core.md](docs/architecture/core.md) |
 
 Cross-module rules:
 
-- Bump `DB_SCHEMA` and add a migration in `Core.lua` whenever a saved field is renamed, moved or reshaped;
+- Bump `DB_SCHEMA` and add a migration in `Core/Core.lua` whenever a saved field is renamed, moved or reshaped;
   `ApplyDefaults` fills missing keys without overwriting. `OneKeyFishingDB` is account-wide, `OneKeyFishingCharDB`
   per character; the fields are listed in [core.md](docs/architecture/core.md).
 - Everything fishing mode changes (CVars, gear, camera) is stored in the character DB *before* it is changed;
   what is restored when is in constitution Principle III and [fishing-mode.md](docs/architecture/fishing-mode.md).
-- Slash commands are declared only in `Commands.lua`; modules register none.
+- Slash commands are declared only in `Core/Commands.lua`; modules register none.
 - Sharing is switched by `Share.SetEnabled`, never by a direct write of `settings.shareDB` (it fires
   `SHARED_DATA_CHANGED`, which drops cached views). The public channel likewise by `Channel.SetEnabled`, never by a
   write of `settings.shareChannel` (it joins or leaves at once).

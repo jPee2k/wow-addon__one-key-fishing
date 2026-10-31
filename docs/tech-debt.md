@@ -11,7 +11,7 @@ cleanup, no wrong behaviour.
 
 Found while building the catch catalog (`specs/005-catch-catalog`) on 2026-10-31; all **low**.
 
-1. **The spot cache of the catalog only grows** (`Catalog.lua`, `spots`). Each expanded zone keeps its rows under
+1. **The spot cache of the catalog only grows** (`Catalog/Catalog.lua`, `spots`). Each expanded zone keeps its rows under
    `<item>|<map>|<filter>` for the session, also after its map's views are replaced. A few hundred entries at most in
    a session, but nothing frees them. Direction: keep only the entries of the chosen item, or drop the table when
    the version moves. Test: expand zones of two items, choose the second, and count the cached keys.

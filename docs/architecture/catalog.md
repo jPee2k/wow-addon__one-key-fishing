@@ -1,6 +1,6 @@
 # Architecture: catch catalog
 
-`Catalog.lua`: the catch database across every map, for the "Catch catalog" tab and the tooltips. The spec, model
+`Catalog/Catalog.lua`: the catch database across every map, for the "Catch catalog" tab and the tooltips. The spec, model
 and contracts are in `specs/005-catch-catalog/` (`data-model.md` "Catalog", `contracts/api.md`); the tab itself is
 in [ui.md](ui.md), the per-map views it is built from in [catch-db.md](catch-db.md); the in-game checklist is
 [catch-catalog.md](../checklists/catch-catalog.md). It owns no frames, so the tooltips use it without the window,

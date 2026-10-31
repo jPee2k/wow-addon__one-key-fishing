@@ -93,7 +93,7 @@ player sees the code.
   and a module MAY call a later module only at runtime.
 - Modules communicate through `ns.On` / `ns.Fire` messages and documented functions; a new
   message MUST be listed in `CLAUDE.md`.
-- All slash commands MUST be declared in one place, `OneKeyFishing/Commands.lua`, which lists
+- All slash commands MUST be declared in one place, `OneKeyFishing/Core/Commands.lua`, which lists
   every command with its English description and the module function it calls at runtime;
   modules MUST NOT register commands themselves.
 - Prefer the smallest change that solves the problem; new settings, frames or abstractions need

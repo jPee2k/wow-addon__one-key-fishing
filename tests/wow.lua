@@ -1623,7 +1623,7 @@ function load_files(files)
     for _, file in ipairs(files) do
         local chunk = assert(loadfile(ADDON_DIR .. "/" .. file))
         chunk("OneKeyFishing", ns)
-        if file == "Data.lua" and ns.ProofStep and not rawget(_G, "real_proof") then
+        if file:match("[^/]+$") == "Data.lua" and ns.ProofStep and not rawget(_G, "real_proof") then
             ns.real_ProofStep, ns.ProofStep = ns.ProofStep, FastProofStep
         end
     end

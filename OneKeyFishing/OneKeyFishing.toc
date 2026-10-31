@@ -13,7 +13,8 @@
 ## AddonCompartmentFuncOnEnter: OneKeyFishing_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: OneKeyFishing_OnAddonCompartmentLeave
 
-Localization.lua
+Core\Localization.lua
+# Locales: enUS.lua holds the keys, then one complete translation per language, all before Core.lua
 Locales\enUS.lua
 Locales\deDE.lua
 Locales\esES.lua
@@ -24,33 +25,41 @@ Locales\koKR.lua
 Locales\ptBR.lua
 Locales\zhTW.lua
 Locales\zhCN.lua
-Core.lua
-Data.lua
-Gear.lua
-Bags.lua
-Camera.lua
-Action.lua
-Mode.lua
-Catch.lua
-Prices.lua
-Auction.lua
-Skill.lua
-Stats.lua
-SeedData.lua
-CatchDB.lua
-Comm.lua
-Channel.lua
-Share.lua
-Catalog.lua
+# Core: events, the message bus, saved variables, shared data
+Core\Core.lua
+Core\Data.lua
+# Fishing mode
+Fishing\Gear.lua
+Fishing\Bags.lua
+Fishing\Camera.lua
+Fishing\Action.lua
+Fishing\Mode.lua
+# Catches and statistics
+Catch\Catch.lua
+Catch\Prices.lua
+Catch\Auction.lua
+Fishing\Skill.lua
+Catch\Stats.lua
+# Catch database
+CatchDB\SeedData.lua
+CatchDB\CatchDB.lua
+# Catch exchange
+Exchange\Comm.lua
+Exchange\Channel.lua
+Exchange\Share.lua
+# Catch catalog
+Catalog\Catalog.lua
+# UI
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
 UI\CatchHere.lua
 UI\CatalogTab.lua
 UI\StatsFrame.lua
-Debug.lua
-Spike.lua
+Core\Debug.lua
+Core\Spike.lua
 UI\Settings.lua
 UI\ItemHooks.lua
 UI\Minimap.lua
-Commands.lua
+# Commands: last, every slash command in one place
+Core\Commands.lua

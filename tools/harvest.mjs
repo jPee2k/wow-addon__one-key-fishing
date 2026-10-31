@@ -1,4 +1,4 @@
-// npm run harvest: turns the catch data in saved variables into the bundled seed OneKeyFishing/SeedData.lua
+// npm run harvest: turns the catch data in saved variables into the bundled seed OneKeyFishing/CatchDB/SeedData.lua
 // (specs/002-local-catch-db/contracts/harvest-command.md and seed-data.md).
 //   npm run harvest                               every account under WOW_ADDONS_DIR
 //   npm run harvest -- friend.lua other.lua       plus saved files friends handed over
@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import luaparse from "luaparse";
-import { ADDON, MAX_LINE_LENGTH as MAX_LINE, ROOT, addonsDir } from "./addon.mjs";
+import { ADDON, MAX_LINE_LENGTH as MAX_LINE, ROOT, SEED_FILE, addonsDir } from "./addon.mjs";
 
 export const MAX_SEED_BYTES = 1024 * 1024;
 // Distinct places per record, against garbage only: the whole world is a few thousand places per skill range,
@@ -795,7 +795,7 @@ function loadStore(file) {
 }
 
 // The two files a harvest writes, inside the output folder (the repository by default).
-const outputFiles = (outDir) => ({ seedFile: path.join(outDir, ADDON, "SeedData.lua"),
+const outputFiles = (outDir) => ({ seedFile: path.join(outDir, ADDON, SEED_FILE),
   storeFile: path.join(outDir, "seed", "contributions.json") });
 
 function writeFile(file, text) {
@@ -814,9 +814,9 @@ export function harvest(options = {}) {
     const seed = syntheticSeed(options.synthetic, now);
     const text = seedText(seed);
     writeFile(outputFiles(outDir).seedFile, text);
-    report.push(`Wrote ${ADDON}/SeedData.lua: synthetic seed of ${Object.keys(seed.cells).length} places, `
+    report.push(`Wrote ${ADDON}/${SEED_FILE}: synthetic seed of ${Object.keys(seed.cells).length} places, `
       + `${kb(Buffer.byteLength(text))}`);
-    report.push(`synthetic seed: do not commit, restore with git checkout ${ADDON}/SeedData.lua`);
+    report.push(`synthetic seed: do not commit, restore with git checkout ${ADDON}/${SEED_FILE}`);
     return { ok: true, report, bytes: Buffer.byteLength(text) };
   }
 
@@ -944,13 +944,13 @@ export function harvest(options = {}) {
   }
   if (unchanged) {
     writeFile(storeFile, `${JSON.stringify(store, null, 1)}\n`); // newer seqs with the same sums
-    report.push(`Nothing new: ${ADDON}/SeedData.lua stays at epoch ${previous.epoch}`);
+    report.push(`Nothing new: ${ADDON}/${SEED_FILE} stays at epoch ${previous.epoch}`);
     return { ok: true, report, bytes };
   }
   store.epoch = seed.epoch;
   writeFile(seedFile, text);
   writeFile(storeFile, `${JSON.stringify(store, null, 1)}\n`);
-  report.push(`Wrote ${ADDON}/SeedData.lua: epoch ${seed.epoch}, ${kb(bytes)}`);
+  report.push(`Wrote ${ADDON}/${SEED_FILE}: epoch ${seed.epoch}, ${kb(bytes)}`);
   return { ok: true, report, bytes };
 }
 
