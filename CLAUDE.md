@@ -19,7 +19,7 @@ the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `In
 - **English is the development language.** Code, identifiers, comments, documentation (`README.md`, `docs/`,
   `specs/`, `CHANGELOG.md`, this file), commit messages, branch names and pull requests are in English, whatever
   language the conversation with the author is in. Exceptions: the translations (`Locales/<code>.lua`) and
-  language names written in their own language. No tool enforces this.
+  language names written in their own language. `npm run check` rejects Cyrillic in Markdown files.
 - **Every visible text goes through `ns.L`** with a literal English key listed in `Locales/enUS.lua`; color codes
   stay outside the strings; a new text needs its nine translations in the same change; **no `L[...]` lookup while
   the files load** (it would be stuck in English). Not localized: the debug report, slash commands and their
@@ -34,7 +34,7 @@ the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `In
 
 | Area | Documents |
 |---|---|
-| Players | `README.md`, `CHANGELOG.md` |
+| Players | `OneKeyFishing/README.md` (the manual, shipped in the package), `CHANGELOG.md` |
 | Development | [docs/development.md](docs/development.md) (tools, tests, packaging), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
 | Releases and plans | [docs/publishing.md](docs/publishing.md) (release steps, policy checklist), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/shared-db-plan.md](docs/shared-db-plan.md) (the shared catch database in four parts, released together as 1.2.0) |
@@ -43,6 +43,10 @@ the Classic one. The addon lives in `OneKeyFishing/` (exactly what goes into `In
 
 ## Workflow
 
+- **Definition of done.** A change a player can see or use updates `CHANGELOG.md` under `[Unreleased]` and the
+  manual `OneKeyFishing/README.md` in the same commit (`npm run check` fails when a slash command is missing
+  from the manual; fixes of an unreleased feature need no changelog line). A new message, module or saved field
+  updates this file and the area document in `docs/architecture/`; a finished feature leaves `docs/ROADMAP.md`.
 - `npm run check` and `npm test` after every change (Node.js 18+, `npm install` once). A new WoW API global goes
   into `.luacheckrc` `read_globals`. Add or extend a test when changing logic that can run without the game.
   Tests run in fengari (Lua 5.3), the game is 5.1: keep the addon free of 5.1/5.3 differences.

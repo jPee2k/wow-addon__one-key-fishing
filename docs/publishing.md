@@ -4,7 +4,9 @@ How a release is built and published, and what it is checked against.
 
 ## Branches
 
-- `develop`: all work happens here. Every push is checked and tested by GitHub Actions.
+- `develop`: the integration branch. Every push is checked and tested by GitHub Actions.
+- `NNN-<feature>` (for example `001-interface-language`): a feature is built on its own branch off `develop`
+  and merged back when its release is due ([release-plan.md](release-plan.md)).
 - `main`: released code only. It changes only by merging `develop` (a pull request that needs the green
   `check` job), and release tags go on `main` commits only; the release workflow refuses a tag that is not
   on `main`.
@@ -41,7 +43,7 @@ How a release is built and published, and what it is checked against.
 - [x] Create `main` from `develop`, make it the default branch and protect it (pull requests only, the
       `check` job required, no force pushes or deletion).
 - [x] Create the CurseForge project "OneKeyFishing" (ID 1761796, https://www.curseforge.com/wow/addons/onekeyfishing),
-      category Professions, license MIT, description from `README.md`.
+      category Professions, license MIT, description from the player manual `OneKeyFishing/README.md`.
 - [ ] Add a few screenshots to the CurseForge project (indicator, statistics, settings, minimap menu).
 - [x] Add `## X-Curse-Project-ID: <id>` and `## X-Website: <CurseForge project page URL>` to
       `OneKeyFishing/OneKeyFishing.toc` (the website is the page players install from, not the repository).
@@ -69,7 +71,7 @@ How a release is built and published, and what it is checked against.
 | Requirement | How it is met |
 |---|---|
 | A zip with one top-level folder named like the TOC | `OneKeyFishing/OneKeyFishing.toc` (`tools/build.mjs`, `.pkgmeta`) |
-| No executables or unrelated files | Only the TOC, the files it lists, `Bindings.xml`, `LICENSE`, `README.md`, `CHANGELOG.md` (`tools/addon.mjs`; the `ignore` list in `.pkgmeta`, kept complete by `npm run check`) |
+| No executables or unrelated files | Only the TOC, the files it lists, `Bindings.xml` and the player manual `README.md` from `OneKeyFishing/`, plus `LICENSE` and `CHANGELOG.md` from the root (`tools/addon.mjs`; the `ignore` list in `.pkgmeta`, kept complete by `npm run check`) |
 | TOC metadata | `Interface`, `Title`, `Notes`, `Author`, `Version` (filled in at build time), `X-License`, `IconTexture`, Addon Compartment functions |
 | A license | `LICENSE` (MIT) |
 | A changelog for the file page | `CHANGELOG.md` (packager `manual-changelog`) |

@@ -103,8 +103,9 @@ Rationale: a small addon stays maintainable only while each module has one clear
 
 ## Technical Constraints
 
-- Shipped files live in `OneKeyFishing/` and are exactly the TOC, the files it lists and
-  `Bindings.xml`; the package adds only `LICENSE`, `README.md` and `CHANGELOG.md`.
+- Shipped files live in `OneKeyFishing/` and are exactly the TOC, the files it lists,
+  `Bindings.xml` and the player manual `README.md`; the package adds only `LICENSE` and
+  `CHANGELOG.md` from the repository root.
 - Lua, TOC and XML files are ASCII-only and lines are at most 120 characters. Translation
   files (`Locales/<code>.lua` other than `enUS.lua`) are the exception: UTF-8 text in its own
   language.
@@ -120,10 +121,11 @@ Rationale: a small addon stays maintainable only while each module has one clear
   collected under `## [Unreleased]`, which MUST be removed before a release.
 - A release is a bare version tag (`1.0.0`) on a `main` commit; the release workflow builds and
   publishes it. Steps and the policy checklist live in `docs/publishing.md`.
-- Player-facing changes update `README.md` and `CHANGELOG.md`; architecture changes update
-  `CLAUDE.md` (the module map, the messages, the cross-module rules) and the area document in
-  `docs/architecture/`; planned features go into `docs/ROADMAP.md`, finished plans into
-  `docs/history/`.
+- A change a player can see or use updates `CHANGELOG.md` (`[Unreleased]`) and the manual
+  `OneKeyFishing/README.md` in the same commit (fixes of an unreleased feature need no changelog
+  line); architecture changes update `CLAUDE.md` (the module map, the messages, the cross-module
+  rules) and the area document in `docs/architecture/`; a finished feature leaves
+  `docs/ROADMAP.md`; finished plans go into `docs/history/`.
 
 ## Governance
 
