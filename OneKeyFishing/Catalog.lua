@@ -308,6 +308,54 @@ function Catalog.Places(itemID, filter)
     return list
 end
 
+local spots = {} -- "<itemID>|<mapID>|<filter key>" -> { cells = the QueryCells list they come from, rows }
+
+-- The spots of an item on one map (FR-008), in PlaceBefore order: { cell, name, point, area, chance, catches (the
+-- spot's), itemCatches, players, littleData, ranges, pin }. Summed when a zone is expanded, kept until the map's
+-- stamp moves (CatchDB.QueryCells keeps its views as long).
+function Catalog.Spots(itemID, mapID, filter)
+    Freshen(IndexFor(filter))
+    local key = itemID .. "|" .. mapID .. "|" .. FilterKey(filter)
+    local cells = ns.CatchDB.QueryCells(mapID, IndexFor(filter).filter)
+    local cached = spots[key]
+    if cached and cached.cells == cells then
+        return cached.rows
+    end
+    local rows = {}
+    for _, view in ipairs(cells) do
+        for _, item in ipairs(view.items) do
+            if item.itemID == itemID then
+                local row = { cell = view.cell, point = view.point, area = view.area, chance = item.chance,
+                    catches = view.catches, itemCatches = item.catches, players = view.players,
+                    littleData = view.littleData, ranges = item.ranges, order = view.cell }
+                row.name = Catalog.SpotName(row)
+                table.insert(rows, row)
+            end
+        end
+    end
+    table.sort(rows, PlaceBefore)
+    spots[key] = { cells = cells, rows = rows }
+    return rows
+end
+
+-- "45, 72": a spot's point in whole percent of the map, as the game's map coordinates read.
+local function Coordinates(point)
+    return ("%d, %d"):format(math.floor(point.x * 100 + 0.5), math.floor(point.y * 100 + 0.5))
+end
+
+-- A spot's name (FR-015): "Subzone (45, 72)" in the client's language, the coordinates alone without a known
+-- subzone, "No exact spot" for the cell without a position.
+function Catalog.SpotName(spot)
+    if not spot.point then
+        return L["No exact spot"]
+    end
+    local area = spot.area and C_Map.GetAreaInfo(spot.area)
+    if type(area) == "string" and area ~= "" then
+        return L["%s (%s)"]:format(area, Coordinates(spot.point))
+    end
+    return Coordinates(spot.point)
+end
+
 local zoneNames = {} -- map ID -> its name, for the session
 
 -- The map's name in the client's language (FR-016): "Zone - Inner map" for a cave, a building or a dungeon map

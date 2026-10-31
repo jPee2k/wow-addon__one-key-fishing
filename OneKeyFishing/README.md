@@ -262,6 +262,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf toggle` | enter or leave fishing mode |
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
+| `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
 | `/okf scan` | scan auction prices (the auction house must be open) |
 | `/okf share` | show the state of the shared catch database |
 | `/okf debug` | show a report to copy into a bug report |

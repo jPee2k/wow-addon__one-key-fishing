@@ -259,7 +259,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Pin: next Fishing rank"] = "Мітка: наступний ранг риболовлі"
     L["Leave fishing mode"] = "Вимкнути режим риболовлі"
     L["Enter fishing mode"] = "Увімкнути режим риболовлі"
-    L["Statistics"] = "Статистика"
     L["Settings"] = "Налаштування"
     L["Fishing mode: %s"] = "Режим риболовлі: %s"
     L["Fishing skill: %d/%d %s"] = "Навичка риболовлі: %d/%d %s"
@@ -359,4 +358,24 @@ ns.AddTranslation("ukUA", "Українська", function(L)
 
     -- Catalog.lua: the catch catalog (part 4)
     L["Unknown zone (%d)"] = "Невідома зона (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "Без точного місця"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "Каталог улову"
+    L["Search by item name"] = "Пошук за назвою предмета"
+    L["Zones: %d"] = "Зон: %d"
+    L["Back"] = "Назад"
+    L["Place"] = "Місце"
+    L["Skill"] = "Навичка"
+    L["Counting the catch..."] = "Підрахунок улову..."
+    L["Nothing has been caught yet."] = "Ще нічого не спіймано."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "Каталог наповнюється вашим уловом, вбудованими даними та, з увімкненим обміном, уловом інших гравців."
+    L["You have not caught anything yet."] = "Ви ще нічого не спіймали."
+    L["No item matches the search."] = "Жоден предмет не відповідає пошуку."
+    L["No data for this item under these filters."] = "Немає даних про цей предмет за цими фільтрами."
+    L["Click an item to see where else it is caught."] = "Клацніть предмет, щоб побачити, де ще його ловлять."
 end)

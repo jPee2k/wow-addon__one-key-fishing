@@ -262,7 +262,6 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Pin: next Fishing rank"] = "Marcar: próximo nível de Pesca"
     L["Leave fishing mode"] = "Sair do modo de pesca"
     L["Enter fishing mode"] = "Entrar no modo de pesca"
-    L["Statistics"] = "Estatísticas"
     L["Settings"] = "Configurações"
     L["Fishing mode: %s"] = "Modo de pesca: %s"
     L["Fishing skill: %d/%d %s"] = "Perícia em Pesca: %d/%d %s"
@@ -362,4 +361,25 @@ ns.AddTranslation("ptBR", "Português", function(L)
 
     -- Catalog.lua: the catch catalog (part 4)
     L["Unknown zone (%d)"] = "Zona desconhecida (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "Sem local exato"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "Catálogo de capturas"
+    L["Search by item name"] = "Buscar pelo nome do item"
+    L["Zones: %d"] = "Zonas: %d"
+    L["Back"] = "Voltar"
+    L["Place"] = "Local"
+    L["Skill"] = "Perícia"
+    L["Counting the catch..."] = "Contando as capturas..."
+    L["Nothing has been caught yet."] = "Nada foi pescado ainda."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "O catálogo é preenchido com suas capturas, os dados incluídos e, com o compartilhamento ativado, as capturas "
+        .. "de outros jogadores."
+    L["You have not caught anything yet."] = "Você ainda não pescou nada."
+    L["No item matches the search."] = "Nenhum item corresponde à busca."
+    L["No data for this item under these filters."] = "Sem dados deste item com estes filtros."
+    L["Click an item to see where else it is caught."] = "Clique em um item para ver onde mais ele é pescado."
 end)

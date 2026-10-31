@@ -482,7 +482,7 @@ local function AreaLines(out)
     end
     table.insert(out, "  GetSubZoneText: " .. Try(GetSubZoneText))
     table.insert(out, "  the area the addon keeps: "
-        .. (ns.CatchDB.GetArea and Try(ns.CatchDB.GetArea, mapID, x, y) or "not built yet"))
+        .. Try(ns.CatchDB.GetArea, mapID, x, y))
 end
 
 local itemsAsked -- the seed's items were asked for on an earlier report

@@ -65,6 +65,7 @@ UI\Indicator.lua
 UI\Toast.lua
 UI\MapPin.lua
 UI\CatchHere.lua
+UI\CatalogTab.lua
 UI\StatsFrame.lua
 Debug.lua
 Spike.lua

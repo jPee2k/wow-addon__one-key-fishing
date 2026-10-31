@@ -266,7 +266,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Pin: next Fishing rank"] = "Markieren: nächster Angelrang"
     L["Leave fishing mode"] = "Angelmodus verlassen"
     L["Enter fishing mode"] = "Angelmodus aktivieren"
-    L["Statistics"] = "Statistik"
     L["Settings"] = "Einstellungen"
     L["Fishing mode: %s"] = "Angelmodus: %s"
     L["Fishing skill: %d/%d %s"] = "Angelfertigkeit: %d/%d %s"
@@ -369,4 +368,26 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
 
     -- Catalog.lua: the catch catalog (part 4)
     L["Unknown zone (%d)"] = "Unbekannte Zone (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "Keine genaue Stelle"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "Fangkatalog"
+    L["Search by item name"] = "Nach Gegenstandsnamen suchen"
+    L["Zones: %d"] = "Zonen: %d"
+    L["Back"] = "Zurück"
+    L["Place"] = "Ort"
+    L["Skill"] = "Fertigkeit"
+    L["Counting the catch..."] = "Fänge werden gezählt..."
+    L["Nothing has been caught yet."] = "Noch nichts gefangen."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "Der Katalog füllt sich mit deinen Fängen, den mitgelieferten Daten und, mit aktivem Teilen, den Fängen "
+        .. "anderer Spieler."
+    L["You have not caught anything yet."] = "Du hast noch nichts gefangen."
+    L["No item matches the search."] = "Kein Gegenstand passt zur Suche."
+    L["No data for this item under these filters."] = "Keine Daten zu diesem Gegenstand mit diesen Filtern."
+    L["Click an item to see where else it is caught."] =
+        "Klicke auf einen Gegenstand, um zu sehen, wo er sonst gefangen wird."
 end)

@@ -230,3 +230,29 @@ test("reported by other players, the tooltip counts them; once the game knows th
     ns.SeedData = nil
     ns.Fire("SHARED_DATA_CHANGED")
 end)
+
+---------------------------------------------------------------------------
+-- The way into the catch catalog (specs/005-catch-catalog, FR-024)
+---------------------------------------------------------------------------
+test("a click on a known item opens the catalog on it; an Unknown item row does nothing", function()
+    click(L["What can be caught here"], window)
+    ns.CatchHere.SetRange("all")
+    assert(here.hint.text:find(L["Click an item to see where else it is caught."], 1, true), here.hint.text)
+    unknown_items[88888] = true
+    ns.SeedData = { epoch = 1, absorbed = {}, resets = {},
+        cells = { ["1415:3:47"] = { c = 40, m = 0, t = 400, k = 2, i = { [88888] = { 10, 10 } } } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    local unknown = rowOf(88888)
+    unknown.scripts.OnMouseUp(unknown, "LeftButton")
+    assert(here:IsShown(), "still here")
+    local row = assert(rowOf(FISH), "a known row")
+    row.scripts.OnMouseUp(row, "LeftButton")
+    assert(window.catalogPage:IsShown(), "the catalog")
+    eq(ns.db.statsTab, "catalog", "its tab")
+    assert(window.catalogPage.itemView:IsShown(), "the item page")
+    eq(window.catalogPage.title.text, select(1, ns.ItemDisplay(FISH)), "the item chosen")
+    unknown_items[88888] = nil
+    ns.SeedData = nil
+    ns.Fire("SHARED_DATA_CHANGED")
+end)
