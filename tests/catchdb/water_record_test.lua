@@ -20,33 +20,41 @@ local function pooled(id, c, items, pool)
     return prove({ id = id, epoch = 0, seq = 1, builds = { ["1.60.1"] = { ["1415:3:47"] = cell } } })
 end
 
-test("the pool part of a cell must fit the cell, item by item", function()
-    local ok, reason = ns.CatchDB.CheckRecord(pooled("rrrrrrrr", 15, { [6291] = { 1, 1 } },
-        { c = 15, i = { [6291] = { 15, 300 } } }))
+test("open water, the cell without its pool part, must hold the cell rules", function()
+    local function check(c, items, pool)
+        return ns.CatchDB.CheckRecord(pooled("rrrrrrrr", c, items, pool))
+    end
+    local ok, reason = check(15, { [6291] = { 1, 1 } }, { c = 15, i = { [6291] = { 15, 300 } } })
     eq(ok, false, "more pool catches of an item than the cell has")
-    eq(reason, "1415:3:47: pool item 6291 is more than the cell has", "the reason")
-    eq((ns.CatchDB.CheckRecord(pooled("rrrrrrrr", 5, { [6291] = { 5, 5 } }, { c = 5, i = { [6291] = { 5, 9 } } }))),
-        false, "more pool pieces than the cell has")
-    eq((ns.CatchDB.CheckRecord(pooled("rrrrrrrr", 5, { [6291] = { 5, 5 } }, { c = 2, i = { [6303] = { 2, 2 } } }))),
-        false, "a pool item the cell never counted")
-    eq((ns.CatchDB.CheckRecord(pooled("rrrrrrrr", 5, { [6291] = { 5, 5 } }, { c = 5, i = { [6291] = { 5, 5 } } }))),
-        true, "a pool part equal to the cell")
+    eq(reason, "1415:3:47: open water: item 6291 has impossible counts", "the reason")
+    eq((check(5, { [6291] = { 5, 5 } }, { c = 5, i = { [6291] = { 5, 9 } } })), false, "more pool pieces")
+    eq((check(5, { [6291] = { 5, 5 } }, { c = 2, i = { [6303] = { 2, 2 } } })), false, "a pool item the cell lacks")
+    eq((check(10, { [6291] = { 10, 10 } }, { c = 9, i = { [6291] = { 1, 1 } } })), false,
+        "9 open catches of an item out of 1 open catch")
+    eq((check(2, { [6291] = { 2, 40 } }, { c = 1, i = { [6291] = { 1, 1 } } })), false,
+        "39 open pieces from 1 open catch")
+    eq((check(1, { [6291] = { 1, 5 } }, { c = 1, i = { [6291] = { 1, 1 } } })), false, "open pieces with no catch")
+    eq((check(5, { [6291] = { 5, 5 } }, { c = 5, i = { [6291] = { 5, 5 } } })), true, "a pool part equal to the cell")
+    eq((check(10, { [6291] = { 6, 9 }, [6303] = { 4, 4 } }, { c = 4, i = { [6291] = { 2, 3 }, [6303] = { 4, 4 } } })),
+        true, "an honest split")
 end)
 
-test("a forged pool part is refused, so open water keeps an honest player's catches", function()
-    eq(ns.Share.Store.Accept(ns.db.shared, pooled("ssssssss", 15, { [6291] = { 1, 1 }, [6303] = { 15, 15 } },
-        { c = 15, i = { [6291] = { 15, 300 } } })), "refused", "the forged record")
-    -- With the first test's record, three honest reporters: enough to list an item the seed does not have (FR-014).
-    eq(ns.Share.Store.Accept(ns.db.shared, pooled("tttttttt", 10, { [6291] = { 10, 10 } })), "new", "an honest one")
-    eq(ns.Share.Store.Accept(ns.db.shared, pooled("uuuuuuuu", 10, { [6291] = { 10, 10 } })), "new", "and another")
+test("a forged pool part is refused, so open water keeps the honest players' catches", function()
+    local OIL = 6358
+    eq(ns.Share.Store.Accept(ns.db.shared, pooled("ssssssss", 15, { [OIL] = { 1, 1 }, [6303] = { 15, 15 } },
+        { c = 15, i = { [OIL] = { 15, 300 } } })), "refused", "the forged record")
+    -- Three honest reporters: enough to list an item the seed does not have (FR-014).
+    for _, id in ipairs({ "tttttttt", "uuuuuuuu", "vvvvvvvv" }) do
+        eq(ns.Share.Store.Accept(ns.db.shared, pooled(id, 10, { [OIL] = { 10, 10 } })), "new", id)
+    end
     local view = ns.CatchDB.QueryMap(1415, { range = "all", source = "all", water = "open" })
-    local fish
+    local oil
     for _, item in ipairs(view.items) do
         assert(item.chance <= 1, "chance of " .. item.itemID .. " above 1")
-        if item.itemID == 6291 then
-            fish = item
+        if item.itemID == OIL then
+            oil = item
         end
     end
-    assert(fish, "6291 is listed in open water")
-    eq(fish.catches, 26, "the honest 10 and 10 plus the first record's 6 open catches")
+    assert(oil, "the oil is listed in open water")
+    eq(oil.catches, 30, "the honest players' 30 catches")
 end)

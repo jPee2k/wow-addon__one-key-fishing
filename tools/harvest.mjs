@@ -229,6 +229,19 @@ function checkItems(items, catches, where) {
   }
 }
 
+// The open-water items of a cell: i - p.i, per item catches and pieces (an item only in p.i goes negative).
+function openItems(cell) {
+  const open = {};
+  for (const [itemID, entry] of Object.entries(cell.i || {})) {
+    open[itemID] = { 1: entry["1"], 2: entry["2"] };
+  }
+  for (const [itemID, entry] of Object.entries((cell.p && cell.p.i) || {})) {
+    const rest = open[itemID] || { 1: 0, 2: 0 };
+    open[itemID] = { 1: rest["1"] - entry["1"], 2: rest["2"] - entry["2"] };
+  }
+  return open;
+}
+
 // The subzone counts a of a cell (CatchDB.lua CheckAreas, data-model.md of specs/005-catch-catalog): absent or a
 // table of at most 8 entries; every key is a whole number from 1 to 2,147,483,647; every count is a count, and their
 // sum is at most c + m.
@@ -312,13 +325,9 @@ function checkCell(cell, key) {
       throw new Error(`${where}: the pool part does not fit the totals`);
     }
     checkItems(pool.i, pool.c, `${where} (pool)`);
-    // The pool part is counted in the cell too, so open water (i - p.i) never goes below 0.
-    for (const [itemID, entry] of Object.entries(pool.i || {})) {
-      const all = cell.i && cell.i[itemID];
-      if (!all || entry["1"] > all["1"] || entry["2"] > all["2"]) {
-        throw new Error(`${where}: pool item ${itemID} is more than the cell has`);
-      }
-    }
+    // The pool part is counted in the cell too: open water, the rest (i - p.i out of c - p.c), must hold the same
+    // rules, so no count of it goes below 0 and no chance above 1.
+    checkItems(openItems(cell), cell.c - pool.c, `${where} (open water)`);
   }
   checkAreas(cell.a, casts, where);
 }
@@ -465,17 +474,25 @@ function scaleItems(items, factor, catches) {
 function scaleCell(cell, factor, missFactor = factor) {
   const c = Math.round(cell.c * factor);
   const m = Math.round(cell.m * missFactor);
-  const scaled = { c, m, t: Math.max(Math.round(cell.t * Math.max(factor, missFactor)), c + m),
-    i: scaleItems(cell.i, factor, c) };
+  const scaled = { c, m, t: Math.max(Math.round(cell.t * Math.max(factor, missFactor)), c + m) };
+  if (!cell.p) {
+    scaled.i = scaleItems(cell.i, factor, c);
+  } else {
+    // The pool part and open water are scaled apart and i is their sum, so open water keeps the cell rules after
+    // rounding (checkCell): rounding c, p.c and i on their own can leave more open catches of an item than of all.
+    const poolCatches = Math.min(Math.round(cell.p.c * factor), c);
+    scaled.p = { c: poolCatches, i: scaleItems(cell.p.i, factor, poolCatches) };
+    scaled.i = Object.fromEntries(Object.entries(scaled.p.i).map(([itemID, e]) => [itemID, { 1: e["1"], 2: e["2"] }]));
+    for (const [itemID, entry] of Object.entries(scaleItems(openItems(cell), factor, c - poolCatches))) {
+      const pool = scaled.i[itemID] || { 1: 0, 2: 0 };
+      scaled.i[itemID] = { 1: pool["1"] + entry["1"], 2: pool["2"] + entry["2"] };
+    }
+  }
   if (cell.px !== undefined) {
     const casts = cell.c + cell.m;
     const ratio = missFactor === factor || casts === 0 ? factor : (c + m) / casts;
     scaled.px = Math.min(Math.round(cell.px * ratio), 1000 * (c + m));
     scaled.py = Math.min(Math.round(cell.py * ratio), 1000 * (c + m));
-  }
-  if (cell.p) {
-    const poolCatches = Math.min(Math.round(cell.p.c * factor), c);
-    scaled.p = { c: poolCatches, i: scaleItems(cell.p.i, factor, poolCatches) };
   }
   if (cell.a) {
     // Casts per subzone go with the casts; rounding up must not give more than the scaled casts.

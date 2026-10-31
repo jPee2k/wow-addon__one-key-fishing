@@ -130,7 +130,8 @@ Facts:
 ## R5. Pools apart from open water
 
 Facts: a cell's pool part `p = { c, i }` counts catches from a pool, already included in `c` and `i`. A miss has no
-loot source (part 1). The harvest scales `p` with the cell (`tools/harvest.mjs` scaledCell).
+loot source (part 1). The harvest scales a weighted cell's `p` and its open water apart and sums them into `i`
+(`tools/harvest.mjs` scaleCell), so its rounding leaves open water within the cell rules.
 
 - **Decision**: `filter.water` is `"all"` (default), `"open"` or `"pool"`.
   - **Sums.** `AddCell` reads a cell through the filter:

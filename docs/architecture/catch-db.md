@@ -95,8 +95,8 @@ For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):
 Plus: an 8-character base32 ID, at most 1,000 places, `seq` not above the record's casts, item IDs up to
 2,147,483,647 (an item the client does not know is accepted), a `proof` of 16 base32 characters, at most
 `STEP_SECONDS` (180 s) of casting per step of `seq`, and a cell's `a` absent or at most 8 area IDs from 1
-to 2,147,483,647 with counts summing to at most `c + m`, and every item of the pool part `p.i` in `i` with no
-more catches or pieces. Share's `CleanCell` copies `a`; the harvest checks, sums
+to 2,147,483,647 with counts summing to at most `c + m`, and the open water of a pool part
+(`i - p.i` out of `c - p.c`) holding the same item rules. Share's `CleanCell` copies `a`; the harvest checks, sums
 (the 8 largest), scales and writes it the same way. The own ID is refused by Share's `Store.Accept`, not here
 ([exchange.md](exchange.md)). `CatchDB.IsBlocked(id)` reads the seed's `blocked`.
 
