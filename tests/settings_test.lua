@@ -98,3 +98,17 @@ test("clicking the channel setting calls Channel.SetEnabled; the state line foll
     page.scripts.OnUpdate(page, 1)
     eq(page.channelLine.text ~= L["Public channel: off"], true, "the state line again")
 end)
+
+---------------------------------------------------------------------------
+-- Catch chances in tooltips (specs/005-catch-catalog, FR-019)
+---------------------------------------------------------------------------
+test("the main page has Show catch chances in tooltips, on by default; off fires SETTINGS_CHANGED", function()
+    eq(ns.db.settings.tooltipChances, true, "on by default")
+    local checkbox = assert(find_frame(L["Show catch chances in tooltips"]), "the checkbox").parent
+    local changed
+    ns.On("SETTINGS_CHANGED", function(key) changed = key end)
+    checkbox.GetChecked = function() return false end
+    checkbox.scripts.OnClick(checkbox)
+    eq(ns.db.settings.tooltipChances, false, "off")
+    eq(changed, "tooltipChances", "SETTINGS_CHANGED")
+end)

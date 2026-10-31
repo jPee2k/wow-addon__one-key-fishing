@@ -49,6 +49,16 @@ local function ShowTooltip(owner)
         GameTooltip:AddLine((L["Session: %d catches, %s"]):format(session.catches,
             ns.Stats.FormatTime(ns.Stats.GetSessionTime())), 1, 1, 1)
     end
+    -- In fishing mode: the likely catches of this place (specs/005-catch-catalog, FR-018).
+    local chances = ns.Catalog.MinimapLines()
+    if chances then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(L["Likely catch here:"])
+        for _, item in ipairs(chances.items) do
+            GameTooltip:AddDoubleLine("  " .. item.name, item.right, 1, 1, 1, 1, 1, 1)
+        end
+        GameTooltip:AddLine("  " .. chances.footer, 0.8, 0.8, 0.8)
+    end
     GameTooltip:AddLine(" ")
     GameTooltip:AddDoubleLine(L["Fishing key:"], KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
     GameTooltip:AddDoubleLine(L["Toggle mode key:"], KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)

@@ -418,6 +418,68 @@ function Catalog.ZoneName(mapID)
     return zoneNames[mapID]
 end
 
+local TOOLTIP_PLACES = 3 -- zones in an item tooltip, items in the minimap tooltip
+
+local function Percent(value)
+    return ("%d%%"):format(math.floor(value * 100 + 0.5))
+end
+
+-- A chance (or "Little data") with the players behind it from 2 on (part 3, FR-025).
+local function ChanceText(chance, littleData, players)
+    local text = littleData and L["Little data"] or Percent(chance)
+    return players >= 2 and (L["%s (%d players)"]):format(text, players) or text
+end
+
+-- The "Caught in" lines of an item tooltip (FR-017): up to three { zone, right } pairs from the default index, stale
+-- or not; the zones with 50 catches or more, or only without any, the little-data ones. nil for an item outside
+-- the database and before any index exists.
+function Catalog.TooltipLines(itemID)
+    local index = IndexFor(DEFAULT_FILTER)
+    Freshen(index)
+    local places = index.state == "ready" and index.items[itemID]
+    if not places then
+        return nil
+    end
+    local reliable = not places[1].littleData -- PlaceBefore puts them first
+    local lines = {}
+    for _, place in ipairs(places) do
+        if #lines >= TOOLTIP_PLACES or place.littleData == reliable then
+            break
+        end
+        table.insert(lines, { zone = Catalog.ZoneName(place.mapID),
+            right = ChanceText(place.chance, place.littleData, place.view.players) })
+    end
+    return lines
+end
+
+-- The likely catches of the current place for the minimap tooltip in fishing mode (FR-018), counted like the "What
+-- can be caught here" tab with its defaults: { items = { { name, right } }, footer }; grey items and items the
+-- client does not know are left out. nil outside fishing mode or with the setting off.
+function Catalog.MinimapLines()
+    if not (ns.Mode.IsActive() and ns.db.settings.tooltipChances) then
+        return nil
+    end
+    local mapID, range, cell = ns.CatchDB.GetCurrentPlace()
+    local view = mapID and ns.CatchDB.Query(mapID, cell, { range = range, source = "all", water = "all" })
+    if not view or view.scope == "none" then
+        return { items = {}, footer = L["Nothing has been caught here yet."] }
+    end
+    local items = {}
+    for _, item in ipairs(view.items) do
+        if #items >= TOOLTIP_PLACES then
+            break
+        end
+        local entry = NameOf(item.itemID)
+        if entry.known and not IsPoor(entry) then
+            table.insert(items, { name = entry.name, right = view.littleData and L["Little data"]
+                or Percent(item.chance) })
+        end
+    end
+    local footer = view.players >= 2 and (L["%d catches from %d players"]):format(view.catches, view.players)
+        or (L["%d catches"]):format(view.catches)
+    return { items = items, footer = footer }
+end
+
 -- The item IDs of the default index whose name contains the text (any letter case), sorted by name.
 function Catalog.Find(text)
     local index = IndexFor(DEFAULT_FILTER)

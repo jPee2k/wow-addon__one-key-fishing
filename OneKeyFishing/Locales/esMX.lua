@@ -376,4 +376,16 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Cancel"] = "Cancelar"
     L["Map pin: %s"] = "Marca del mapa: %s"
     L["The game did not accept the map pin."] = "El juego no aceptó la marca del mapa."
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (%d jugadores)"
+    L["Caught in:"] = "Se pesca en:"
+    L["Likely catch here:"] = "Captura probable aquí:"
+    L["Show catch chances in tooltips"] = "Mostrar probabilidades de captura en las descripciones"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "Agua: %s"
+    L["Everywhere"] = "En todas partes"
+    L["Open water"] = "Aguas abiertas"
+    L["Pools"] = "Bancos"
 end)

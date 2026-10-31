@@ -1,5 +1,5 @@
 -- ItemHooks: Alt+Click an item (bags, character panel) to add it to or remove it from the fishing gear,
--- and a line in item tooltips showing its fishing gear status.
+-- a line in item tooltips showing its fishing gear status, and the zones an item is caught in (Catalog.lua).
 local _, ns = ...
 local L = ns.L
 
@@ -30,11 +30,31 @@ end
 
 local TOOLTIP_COLOR = { 0.2, 0.8, 1 }
 
+-- "Caught in:" and up to three zones with the item's chance (specs/005-catch-catalog, FR-017), any item.
+local function AddCatchLines(tooltip, itemID)
+    if not ns.db.settings.tooltipChances then
+        return
+    end
+    local lines = ns.Catalog.TooltipLines(itemID)
+    if not lines then
+        return
+    end
+    tooltip:AddLine(L["Caught in:"], unpack(TOOLTIP_COLOR))
+    for _, line in ipairs(lines) do
+        tooltip:AddDoubleLine("  " .. line.zone, line.right, 1, 1, 1, 1, 1, 1)
+    end
+end
+
+-- VERIFY(V38): the item post call fires for bags, the auction house, chat links and the addon's rows
 local function OnItemTooltip(tooltip, data)
-    if tooltip ~= GameTooltip or not data or not data.id or not ns.charDB then
+    if (tooltip ~= GameTooltip and tooltip ~= ItemRefTooltip) or not data or not data.id or not ns.charDB then
         return
     end
     local itemID = data.id
+    AddCatchLines(tooltip, itemID)
+    if tooltip ~= GameTooltip then
+        return
+    end
     local _, _, _, equipLoc = C_Item.GetItemInfoInstant(itemID)
     if not equipLoc or equipLoc == "" then
         return

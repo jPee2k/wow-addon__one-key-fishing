@@ -36,6 +36,7 @@ local ownItems -- item ID -> true: the items of the own catch, for the views (Ow
 -- "<mapID>:<range>" -> { place key -> true }: the keys of the own tables (mine, the own record and the frozen own
 -- records), so a map's sum does not walk every own cell (OwnIndex below). Built on first use, grown by Settle.
 local ownIndex
+local poolData -- CatchDB.HasPoolData's answer: nil until read, false until a pool part shows up
 
 function CatchDB.GetVersion()
     return version
@@ -561,6 +562,7 @@ local function Settle(cast, caught, fromPool)
             cell.c = cell.c + 1
             AddItems(cell, caught)
             if fromPool then
+                poolData = true
                 cell.p = cell.p or { c = 0, i = {} } -- catches only: a miss has no loot source
                 cell.p.c = cell.p.c + 1
                 AddItems(cell.p, caught)
@@ -850,6 +852,30 @@ local function AddCounts(target, cell, factor)
     end
 end
 
+-- A cell read through the water filter (specs/005-catch-catalog, research R5): "pool" its pool part, "open" the
+-- rest; both without misses, which have no loot source. A cell without a pool part is all open water. The
+-- harvest's x and r give way to the filtered catches.
+local function ThroughWater(cell, water)
+    if water == nil or water == "all" then
+        return cell
+    end
+    local pool = type(cell.p) == "table" and cell.p or nil
+    local poolCatches = pool and tonumber(pool.c) or 0
+    local poolItems = pool and type(pool.i) == "table" and pool.i or {}
+    if water == "pool" then
+        return { c = poolCatches, m = 0, i = poolItems, k = cell.k, a = cell.a }
+    end
+    local items = {}
+    for itemID, entry in pairs(type(cell.i) == "table" and cell.i or {}) do
+        local inPool = poolItems[itemID]
+        if type(entry) == "table" then
+            items[itemID] = { (tonumber(entry[1]) or 0) - (inPool and tonumber(inPool[1]) or 0),
+                (tonumber(entry[2]) or 0) - (inPool and tonumber(inPool[2]) or 0) }
+        end
+    end
+    return { c = (tonumber(cell.c) or 0) - poolCatches, m = 0, i = items, k = cell.k, a = cell.a }
+end
+
 -- range: the skill range of the cell's place key.
 local function AddCell(sum, cell, source, range)
     if type(cell) ~= "table" then
@@ -859,6 +885,7 @@ local function AddCell(sum, cell, source, range)
         sum.px, sum.py = sum.px + cell.px, sum.py + cell.py
         sum.n = sum.n + (tonumber(cell.c) or 0) + (tonumber(cell.m) or 0)
     end
+    cell = ThroughWater(cell, sum.water)
     AddRanges(sum, cell, range)
     -- Who caught something here: a cell of misses only adds no player.
     if (tonumber(cell.c) or 0) > 0 then
@@ -1018,14 +1045,14 @@ end
 -- What a source sums for a map. "all": the seed, the own record and, with sharing on, the other players'
 -- records, each without its cells of game versions older than a reset of the map (after a patch that changed its
 -- catch); "mine": the lifetime counts. A record's cells count for its ID in the player count.
-local function Sources(source, mapID)
+local function Sources(source, mapID, water)
     if source == "mine" then
-        return { tables = { { cells = ns.db.shared.mine } } }
+        return { tables = { { cells = ns.db.shared.mine } }, water = water }
     end
     local reset = SeedField("resets")[mapID]
     local own = OwnRecord()
     local sources = { seed = { cells = Seed().cells, seed = true }, tables = {}, reset = reset,
-        others = ns.Share.IsEnabled() and Others() or nil }
+        others = ns.Share.IsEnabled() and Others() or nil, water = water }
     local records = { own }
     for _, record in ipairs(Frozen()) do
         table.insert(records, record)
@@ -1051,6 +1078,7 @@ end
 -- One cell of a map over the given skill ranges.
 local function SumSpot(sources, mapID, ranges, cell)
     local sum = NewSum()
+    sum.water = sources.water
     for _, range in ipairs(ranges) do
         local key = CatchDB.PlaceKey(mapID, range, cell)
         if sources.seed then
@@ -1083,6 +1111,7 @@ end
 
 local function SumMap(sources, mapID, ranges)
     local sum, own = NewSum(), OwnIndex()
+    sum.water = sources.water
     for _, range in ipairs(ranges) do
         local prefix = MapRange(mapID, range)
         if sources.seed then
@@ -1301,7 +1330,9 @@ local function BuildView(scope, sum, rules)
     end
     local catches = RawCatches(sum)
     return { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
-        missRate = casts > 0 and misses / casts or 0, items = items, players = players,
+        -- No miss rate under a water filter: a miss has no loot source (FR-022).
+        missRate = (sum.water or "all") == "all" and (casts > 0 and misses / casts or 0) or nil, items = items,
+        players = players,
         point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
 end
 
@@ -1310,7 +1341,7 @@ local function Ranges(filter)
 end
 
 local function FilterKey(filter)
-    return tostring(filter.range) .. "|" .. filter.source
+    return tostring(filter.range) .. "|" .. filter.source .. "|" .. (filter.water or "all")
 end
 
 local cache, cacheVersion = {}, nil
@@ -1336,7 +1367,7 @@ function CatchDB.Query(mapID, cell, filter)
         return cache[cacheKey]
     end
     local ranges = Ranges(filter)
-    local sources = Sources(filter.source, mapID)
+    local sources = Sources(filter.source, mapID, filter.water)
     local reportersKey = mapID .. "|" .. filter.source
     reportersCache[reportersKey] = reportersCache[reportersKey] or Reporters(sources, mapID)
     local rules = { mine = filter.source == "mine", reporters = reportersCache[reportersKey] }
@@ -1373,7 +1404,7 @@ end
 -- catalog's zone rows and the tooltips (specs/005-catch-catalog/contracts/api.md).
 function CatchDB.QueryMap(mapID, filter)
     return ByStamp("map", mapID, filter, function()
-        local sources = Sources(filter.source, mapID)
+        local sources = Sources(filter.source, mapID, filter.water)
         local map = SumMap(sources, mapID, Ranges(filter))
         return BuildView(RawCatches(map) > 0 and "map" or "none", map, MapRules(sources, mapID, filter))
     end)
@@ -1383,7 +1414,7 @@ end
 -- carries cell and, with positions, point.
 function CatchDB.QueryCells(mapID, filter)
     return ByStamp("cells", mapID, filter, function()
-        local sources, ranges = Sources(filter.source, mapID), Ranges(filter)
+        local sources, ranges = Sources(filter.source, mapID, filter.water), Ranges(filter)
         local rules, views = MapRules(sources, mapID, filter), {}
         for cell in pairs(MapCells(sources, mapID, ranges)) do
             local sum = SumSpot(sources, mapID, ranges, cell)
@@ -1430,6 +1461,30 @@ function CatchDB.Maps(filter)
     end
     table.sort(list)
     return list
+end
+
+-- True once any held cell has a pool part (research R5): the "Water" filter shows only then. A false answer is kept
+-- until the stored data changes (SHARED_DATA_CHANGED); a pool catch sets it.
+
+local function AnyPool(cells)
+    for _, cell in pairs(type(cells) == "table" and cells or {}) do
+        if type(cell) == "table" and type(cell.p) == "table" and (tonumber(cell.p.c) or 0) > 0 then
+            return true
+        end
+    end
+    return false
+end
+
+function CatchDB.HasPoolData()
+    if poolData == nil then
+        poolData = AnyPool(Seed().cells) or AnyPool(ns.db.shared.mine)
+        for _, record in pairs(ns.db.shared.records) do
+            for _, cells in pairs(type(record) == "table" and type(record.builds) == "table" and record.builds or {}) do
+                poolData = poolData or AnyPool(cells)
+            end
+        end
+    end
+    return poolData
 end
 
 -- The seed's cell of a place key, or nil (the eviction order of Share.lua weighs records by it).
@@ -1499,7 +1554,7 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
         end
     end
     version = version + 1 -- the seed or the record may be new
-    others, frozen, ownItems, ownIndex = nil, nil, nil, nil
+    others, frozen, ownItems, ownIndex, poolData = nil, nil, nil, nil, nil
     BumpAll()
 end)
 
@@ -1563,6 +1618,9 @@ ns.On("SHARED_DATA_CHANGED", function(keys, store)
     end
     version = version + 1
     frozen = nil
+    if poolData == false then
+        poolData = nil
+    end
     local own = keys == nil
     for _, key in ipairs(keys or {}) do
         own = own or IsOwnKey(key)

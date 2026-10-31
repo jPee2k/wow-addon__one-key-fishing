@@ -368,4 +368,16 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Cancel"] = "Скасувати"
     L["Map pin: %s"] = "Мітка на мапі: %s"
     L["The game did not accept the map pin."] = "Гра не прийняла мітку на мапі."
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (гравців: %d)"
+    L["Caught in:"] = "Ловиться в:"
+    L["Likely catch here:"] = "Імовірний улов тут:"
+    L["Show catch chances in tooltips"] = "Показувати шанси улову в підказках"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "Вода: %s"
+    L["Everywhere"] = "Усюди"
+    L["Open water"] = "Відкрита вода"
+    L["Pools"] = "Косяки"
 end)

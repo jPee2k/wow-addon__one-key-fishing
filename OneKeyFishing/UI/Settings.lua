@@ -31,6 +31,7 @@ local function Toggles()
         { key = "auctionPrices", label = L["Use scanned auction prices for catch value"] },
         { key = "camera", label = L["Zoom the camera while fishing"] },
         { key = "minimapButton", label = L["Show the minimap button"] },
+        { key = "tooltipChances", label = L["Show catch chances in tooltips"] },
     }
 end
 

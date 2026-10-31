@@ -177,6 +177,7 @@ local DB_DEFAULTS = {
         camera = true,
         cameraDistance = 10,
         minimapButton = true,
+        tooltipChances = true, -- "Show catch chances in tooltips": item tooltips and the minimap tooltip (Catalog.lua)
         language = "auto", -- "auto" (the game client's language) or a language code, see Localization.lua
         shareDB = true, -- exchange catch data with guild, group and friends (Share.lua); off: nothing sent or received
         shareChannel = true, -- "Use the public channel" (Channel.lua); without effect while shareDB is off
