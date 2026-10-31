@@ -45,7 +45,8 @@ or before a 501st place:
   `Share.SetEnabled`, not a direct write of `settings.shareDB`, switches sharing).
 - Weights (part 3): where five or more other contributions report a cell, none counts for more than a fifth of the
   others' part (water-filling over the raw counts); the seed and the own catch are not scaled. Chances and pieces
-  are weighted by catches, `missRate` by casts (so many misses with few catches are capped too); `catches` stays raw.
+  are weighted by catches, `missRate` by casts (so many misses with few catches are capped too); `catches` stays raw
+  (a seed cell the harvest weighted gives its raw catches as `r`).
 - Items (part 3): an item neither in the seed nor in the own catch shows only once 3 other IDs reported it on the map
   (`reporters` and `inSeed` per item). Items the client does not know yet are kept and shown as "Unknown item"
   ([ui.md](ui.md)), which the tab reads when it draws the row.

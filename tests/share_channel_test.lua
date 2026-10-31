@@ -394,6 +394,21 @@ test("a stranger who whispered first becomes a channel peer when heard in the ch
     eq(c.node.peers["w:X"].via, "channel", "a channel peer")
 end)
 
+test("a flood of other messages from the channel gets its sender ignored, also by whisper (FR-010)", function()
+    NewNet()
+    local c = NewNode("C", "caaaaaa2", { channel = true })
+    local sum = "Sxx " .. ("a"):rep(7 * #ns.BASE32)
+    for _ = 1, 5000 do
+        c.node:Receive("w:J", "channel", sum)
+        if c.node.peers["w:J"].ignored then
+            break
+        end
+    end
+    eq(c.node.peers["w:J"].ignored, true, "ignored")
+    c.node:Receive("w:J", "whisper", "Syy " .. ("a"):rep(7 * #ns.BASE32))
+    eq(c.node.session, nil, "its whispered SUM starts no session")
+end)
+
 ---------------------------------------------------------------------------
 -- The peer bound
 ---------------------------------------------------------------------------
@@ -421,6 +436,7 @@ test("above 300 channel peers the one heard longest ago is forgotten with its ta
         eq(c.node.peers["w:P3"] ~= nil, true, "the next one stays")
         eq(c.node.peers["w:G"] ~= nil and c.node.peers["w:F"] ~= nil, true, "the group peer and the friend stay")
         eq(c.node:Activity().heard.channel, 300, "heard in the channel this hour")
+        eq(c.node.announcers["w:P1"] ~= nil, true, "a forgotten peer is still known to have announced (locks)")
         c.node.session = nil
     end)
 
@@ -432,11 +448,11 @@ test("a channel HELLO marks its sender heard in the channel even when it goes no
     c.node:Receive("w:G", "group", text)
     advance(10)
     c.node:Receive("w:G", "channel", text)
-    eq(c.node.peers["w:G"].inChannel, true, "within 60 s of its group HELLO")
+    eq(c.node.announcers["w:G"] ~= nil, true, "within 60 s of its group HELLO")
     text = StrangerHello(same)
     c.node:Receive("b:7", "bnet", text)
     c.node:Receive("w:F", "channel", text)
-    eq(c.node.peers["w:F"].inChannel, true, "the same client heard by Battle.net first")
+    eq(c.node.announcers["w:F"] ~= nil, true, "the same client heard by Battle.net first")
 end)
 
 test("an ignored channel peer forgotten by the bound is still ignored when it comes back", function()

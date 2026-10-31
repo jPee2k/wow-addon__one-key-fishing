@@ -60,7 +60,13 @@ test("after a move to a fallback channel the next HELLO comes 5-30 s later, to t
     local since = GetTime()
     channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "PASSWORD_CHANGED", "OneKeyFishingShare", "Griefer")
     channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "CHANNEL_OWNER", "OneKeyFishingShare", "Owner")
-    advance(26) -- the 10-20 s wait and the join check
+    for _ = 1, 30 do -- the 10-20 s wait and the join check, a second at a time: the HELLO may come 5 s after
+        advance(1)
+        local state, index = Channel.GetState()
+        if state == "in" and index == 2 then
+            break
+        end
+    end
     local state, index = Channel.GetState()
     eq(state .. index, "in2", "in the first fallback")
     local moved = inAt
@@ -95,6 +101,22 @@ test("back in the same channel after a kick: the next HELLO comes 30-90 s after 
     advance(rejoined + 29 - GetTime())
     eq(#ChannelHellos(since), 0, "not before 30 s")
     advance(rejoined + 91 - GetTime())
+    eq(#ChannelHellos(since), 1, "one by 90 s, not 30-50 min later")
+end)
+
+test("a rejoin after a kick confirmed during a pause: the next HELLO still comes 30-90 s after the pause", function()
+    local since = GetTime()
+    channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "PLAYER_KICKED", "OneKeyFishingShare2", "Me")
+    advance(60) -- the rejoin starts
+    in_combat = true
+    fire("PLAYER_REGEN_DISABLED")
+    advance(6) -- the join check confirms it during the pause
+    eq(Channel.GetState(), "paused", "paused")
+    in_combat = false
+    fire("PLAYER_REGEN_ENABLED")
+    local state, index = Channel.GetState()
+    eq(state .. index, "in2", "in")
+    advance(91)
     eq(#ChannelHellos(since), 1, "one by 90 s, not 30-50 min later")
 end)
 

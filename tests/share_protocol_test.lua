@@ -206,15 +206,15 @@ test("cooldowns: 2 min between session starts, 10 min with a group peer, 30 min 
     local groupPeer = node:Peer("w:G", "group")
     local guildPeer = node:Peer("w:H", "guild")
     local t = GetTime()
-    eq(node:CanStart(groupPeer, t), true, "free")
+    eq(node:CanStart("w:G", groupPeer, t), true, "free")
     node.lastStart = t
-    eq(node:CanStart(guildPeer, t + 119), false, "within 2 min of the last start")
-    eq(node:CanStart(guildPeer, t + 121), true, "after 2 min")
+    eq(node:CanStart("w:H", guildPeer, t + 119), false, "within 2 min of the last start")
+    eq(node:CanStart("w:H", guildPeer, t + 121), true, "after 2 min")
     groupPeer.lastSession, guildPeer.lastSession = t, t
-    eq(node:CanStart(groupPeer, t + 599), false, "group peer within 10 min")
-    eq(node:CanStart(groupPeer, t + 601), true, "group peer after 10 min")
-    eq(node:CanStart(guildPeer, t + 1799), false, "guild peer within 30 min")
-    eq(node:CanStart(guildPeer, t + 1801), true, "guild peer after 30 min")
+    eq(node:CanStart("w:G", groupPeer, t + 599), false, "group peer within 10 min")
+    eq(node:CanStart("w:G", groupPeer, t + 601), true, "group peer after 10 min")
+    eq(node:CanStart("w:H", guildPeer, t + 1799), false, "guild peer within 30 min")
+    eq(node:CanStart("w:H", guildPeer, t + 1801), true, "guild peer after 30 min")
 end)
 
 -- A record of `places` cells, about 85 encoded bytes per cell.
@@ -265,7 +265,7 @@ test("no reply for 15 s drops the session and pauses the peer for 30 min", funct
     eq(b.node.session, nil, "dropped")
     local peer = b.node.peers["w:A"]
     assert(peer.pausedUntil and peer.pausedUntil >= GetTime() + 1700, "paused for 30 min")
-    eq(b.node:CanStart(peer, GetTime()), false, "no new session with A")
+    eq(b.node:CanStart("w:A", peer, GetTime()), false, "no new session with A")
 end)
 
 local function SessionWith(a, from)
@@ -885,4 +885,99 @@ test("a session kept alive by parts alone is dropped after 5 min, and the peer i
     end
     eq(a.node.session, nil, "dropped after 5 min, however busy the peer keeps it")
     assert(a.node.peers["w:Ghost"].pausedUntil, "the ghost is paused")
+end)
+
+test("a SUM from a client's Battle.net address while a start to its guild address is armed: no second session",
+    function()
+    NewNet()
+    local a = NewNode("A", A_ID, { guild = "g", bnet = 1, random = StartAt2 })
+    local b = NewNode("B", B_ID, { guild = "g", bnet = 2, random = StartAt2 })
+    local function hello(info)
+        return ("H %s 0 1 %s"):format(info.node.tag, info.node:HashText())
+    end
+    b.node:Receive("b:1", "bnet", hello(a)) -- B starts towards A's Battle.net address at 2 s
+    advance(1)
+    a.node:Receive("w:B", "guild", hello(b)) -- A arms its start towards B's guild address, due at 3 s
+    a.node:Receive("b:2", "bnet", hello(b)) -- the same client by Battle.net
+    advance(600)
+    eq(Count("S", "B", "A"), 1, "B's SUM")
+    eq(Count("S", "A", "B"), 0, "A started no second session with the same client")
+    eq(UnitsText(a), UnitsText(b), "converged")
+end)
+
+test("a start that comes due during a pause is not lost: it goes once the pause is over", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p", random = StartAt2 })
+    local b = NewNode("B", B_ID, { group = "p" })
+    a.node:Receive("w:B", "group", ("H %s 0 1 %s"):format(b.node.tag, b.node:HashText()))
+    advance(1)
+    a.node:Pause("combat")
+    advance(10)
+    eq(Count("S", "A", "B"), 0, "nothing during the pause")
+    a.node:Resume()
+    advance(30)
+    eq(Count("S", "A", "B"), 1, "the SUM once the pause is over")
+end)
+
+test("a session the budget would leave empty is not repeated until the budget has room for the first record",
+    function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "p" })
+    local b = NewNode("B", B_ID, { group = "p" })
+    -- A's own record grows past what the budget lets out; A already holds B's record, so B has nothing for A.
+    local own = a.store.records[A_ID]
+    for i = 1, 30 do
+        own.builds["1.60.1"][(7000 + i) .. ":0:x"] = catch_cell(1, 0)
+    end
+    own.seq = 3
+    prove(own)
+    eq(Store.Accept(a.store, b.store.records[B_ID], GetTime(), {}), "new", "B's record already at A")
+    a.room = 300
+    assert(#a.node:OwnData(own) + 4 > a.room, "A's record does not fit")
+    Rounds(1)
+    local function SessionTexts()
+        return Count("S", "A", "B") + Count("D", "A", "B") + Count("W", "A", "B")
+    end
+    local after = SessionTexts()
+    assert(after > 0, "one session ran")
+    Rounds(4)
+    eq(SessionTexts(), after, "no SUM, DIFF or WANT from A again while its record cannot go")
+    eq(a.node.peers["w:B"].idle.room ~= nil, true, "waiting for room")
+    eq(b.store.records[A_ID .. "@0"], nil, "A's record waits")
+    a.room = nil
+    Rounds(2)
+    eq(b.store.records[A_ID .. "@0"] ~= nil, true, "sent once the budget has room")
+    eq(UnitsText(a), UnitsText(b), "converged")
+end)
+
+test("the cooldown of one address holds for the same client's other address", function()
+    NewNet()
+    local node = NewNode("A", A_ID).node
+    local guild, bnet = node:Peer("w:B", "guild"), node:Peer("b:2", "bnet")
+    guild.node, bnet.node = "bbbb", "bbbb"
+    local t = GetTime()
+    bnet.lastSession = t
+    eq(node:CanStart("w:B", guild, t + 60), false, "a session by Battle.net a minute ago")
+    eq(node:CanStart("w:B", guild, t + 1801), true, "free after the cooldown")
+    bnet.node = "cccc"
+    eq(node:CanStart("w:B", guild, t + 60), true, "another client")
+end)
+
+test("a peer that only whispered is not held off by the budget: what it holds is not known", function()
+    NewNet()
+    local a = NewNode("A", A_ID)
+    local x = NewNode("X", "xxxxxxxx")
+    local own = a.store.records[A_ID]
+    for i = 1, 30 do
+        own.builds["1.60.1"][(7000 + i) .. ":0:x"] = catch_cell(1, 0)
+    end
+    own.seq = 3
+    prove(own)
+    eq(Store.Accept(a.store, x.store.records["xxxxxxxx"], GetTime(), {}), "new", "X's record already at A")
+    a.room = 300
+    -- X heard A (the channel, say); A never heard X's HELLO.
+    x.node:Receive("w:A", "group", ("H %s 0 1 %s"):format(a.node.tag, a.node:HashText()))
+    advance(60)
+    assert(Count("D", "A", "X") > 0, "a session ran, A answering")
+    eq(a.node.peers["w:X"].idle, nil, "no idle state for a peer without a HELLO")
 end)

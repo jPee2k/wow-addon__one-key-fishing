@@ -29,8 +29,10 @@ through it and Share listens to its state.
 | `Channel.Describe()` | English lines for `/okf debug`: state, index, free slots, locks seen, kicks, owner self-heal tried |
 | `Channel.OnRefused()` | Comm reports two refusals in a row on the channel path: the index is marked locked and the next one is joined (research R4) |
 
-Message (listed in `CLAUDE.md`): `CHANNEL_STATE` (state, index) when the state or the index changes; Share starts or
-stops its channel HELLO rounds on it, the settings page and the tab refresh.
+Message (listed in `CLAUDE.md`): `CHANNEL_STATE` (state, index, joins) when the state or the index changes; joins
+counts the joins started this session, so a new value is a new join (also one confirmed during a pause) and the same
+value after a pause is none. Share starts its channel HELLO rounds on a new join, Comm starts the refusal count again,
+the settings page and the tab refresh.
 
 ## `ns.Comm` additions
 

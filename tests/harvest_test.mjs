@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import luaparse from "luaparse";
-import { harvest, parseSeed, proofStep, seedProblems } from "../tools/harvest.mjs";
+import { harvest, parseArgs, parseSeed, proofStep, seedProblems } from "../tools/harvest.mjs";
 
 // A JS value as Lua source, the way the game writes saved variables (string and number keys in brackets).
 function toLua(value) {
@@ -516,6 +516,7 @@ export const tests = [
       const c = seedCells(readSeed(outDir).text)["1415:3:47"];
       assert.equal(c.k, 5, "five contributors");
       assert.equal(c.c, 40 + 10, "the big one counts as 10 catches (40 / 4)");
+      assert.equal(c.r, 940, "the raw catches, for the views' little-data threshold and catch count");
       assert.deepEqual(c.i["6303"], [10, 10], "its item scaled the same way");
       assert.ok(c.c + c.m <= c.t, "casts within the seconds");
       assert.ok(c.px <= 1000 * (c.c + c.m), "positions within range");
@@ -595,15 +596,77 @@ export const tests = [
       for (const [id, catches] of [["caaaaaa2", 40], ["daaaaaa2", 30], ["eaaaaaa2", 20], ["faaaaaa2", 10]]) {
         records[id] = oneCell(id, 0, 5, "1415:3:47", cell(catches, 0, { 6291: [catches, catches] }));
       }
-      records.gaaaaaa2 = oneCell("gaaaaaa2", 0, 5, "1415:3:47", cell(0, 10, {}));
+      records.gaaaaaa2 = record("gaaaaaa2", 0, 5, { "1.60.1": { "1415:3:47": cell(0, 10, {}),
+        "1415:3:48": cell(0, 5, {}) } });
       const outDir = path.join(root, "out");
       fs.writeFileSync(file, savedFile(records));
       harvest({ files: [file], outDir, now: NOW });
-      const c = seedCells(readSeed(outDir).text)["1415:3:47"];
-      assert.equal(c.k, 5, "five contributors");
+      const cells = seedCells(readSeed(outDir).text);
+      const c = cells["1415:3:47"];
+      assert.equal(c.k, 4, "four players: one who only missed is none, as in the views");
+      assert.equal(c.r, undefined, "nothing weighted: no raw catches apart");
+      assert.equal(cells["1415:3:48"].k, 0, "a cell of misses only has no player");
       assert.equal(c.c, 100, "every catch counts (weighting would have capped each one at 0)");
       assert.equal(c.m, 10, "the misses stay");
       assert.deepEqual(c.i["6291"], [100, 100], "the item unscaled");
+    },
+  },
+  {
+    name: "casting under an unknown build does not count against the version steps: the honest record goes in",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-unknown-build-"));
+      const file = path.join(root, "author.lua");
+      // seq 2 allows 360 s: 120 s under 1.60.1, and 300 s while GetBuildInfo failed (casts that raise no seq).
+      const records = { caaaaaa2: record("caaaaaa2", 0, 2, { "1.60.1": { "1415:3:47": cell(12, 0, { 6291: [12, 12] }) },
+        unknown: { "1415:3:47": cell(30, 0, { 6291: [30, 30] }) } }) };
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(file, savedFile(records));
+      const result = harvest({ files: [file], outDir, now: NOW });
+      assert.equal(result.ok, true, result.report.join("\n"));
+      assert.doesNotMatch(result.report.join("\n"), /version steps/);
+      assert.equal(seedCells(readSeed(outDir).text)["1415:3:47"].c, 12, "its game-version cell counts");
+    },
+  },
+  {
+    name: "a cell's extra fields stay out of the contributions; __proto__ is a plain field, never the prototype",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-fields-"));
+      const file = path.join(root, "author.lua");
+      const extra = { ...cell(2, 0, { 6291: [2, 2] }), junk: 5, ["__proto__"]: { x: 1 } };
+      const inherited = { c: 1, i: {}, ["__proto__"]: { m: 2, t: 9 } }; // m and t only by inheritance
+      const records = { caaaaaa2: record("caaaaaa2", 0, 1, { "1.60.1": { "1415:3:47": extra, "1415:3:48": inherited } }) };
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(file, savedFile(records));
+      harvest({ files: [file], outDir, now: NOW });
+      const first = readSeed(outDir);
+      const cells = first.store.contributions["caaaaaa2@0"].builds["1.60.1"];
+      assert.deepEqual(Object.keys(cells["1415:3:47"]).sort(), ["c", "i", "m", "t"], "only the client's fields");
+      assert.equal(cells["1415:3:48"], undefined, "a cell without its own m and t is skipped");
+      harvest({ files: [], outDir, now: NOW });
+      const second = readSeed(outDir);
+      assert.ok(!second.text.includes("NaN"), "no NaN on the next run");
+      assert.deepEqual(seedCells(second.text)["1415:3:47"], seedCells(first.text)["1415:3:47"], "the same cell");
+      assert.deepEqual(seedProblems(luaparse.parse(second.text, { luaVersion: "5.1" })), [], "npm run check is happy");
+    },
+  },
+  {
+    name: "--block takes a following saved file as a file, whatever its name, and anything else as the note",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-args-"));
+      const saved = path.join(root, "friend.txt");
+      fs.writeFileSync(saved, savedFile({}));
+      let args = parseArgs(["--block", "abcdefgh", saved]);
+      assert.deepEqual(args.block, [{ id: "abcdefgh", note: "" }], "no note");
+      assert.deepEqual(args.files, [path.resolve(saved)], "the file is harvested");
+      args = parseArgs(["--block", "abcdefgh", "Friend.LUA"]);
+      assert.deepEqual(args.files, [path.resolve("Friend.LUA")], "a .LUA name is a file too");
+      args = parseArgs(["--block", "abcdefgh", "made-up catches", saved]);
+      assert.deepEqual(args.block, [{ id: "abcdefgh", note: "made-up catches" }], "the note");
+      assert.deepEqual(args.files, [path.resolve(saved)], "and the file after it");
+      args = parseArgs(["--block", "abcdefgh", root]);
+      assert.deepEqual(args.block, [{ id: "abcdefgh", note: root }], "a folder of that name is a note");
+      assert.deepEqual(args.files, [], "not a saved file");
+      assert.equal(parseArgs(["--synthetic", "x"]).error, "error: --synthetic needs a number of places");
     },
   },
   {

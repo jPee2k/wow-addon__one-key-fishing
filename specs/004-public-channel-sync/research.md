@@ -261,7 +261,8 @@ Facts:
   - `T` is found by capping the largest contributions one by one: with `k` capped, `T = (F + S) / (5 - k)`, where `S`
     is the sum of the uncapped ones, until no uncapped one is above `T`. When five would be capped, they share the
     weight equally.
-  - The scaled counts give `chance` and `pieces`; `catches` and `misses` stay raw, and so does `littleData`.
+  - The scaled counts give `chance` and `pieces`; `catches` and `misses` stay raw, and so does `littleData` (a seed
+    cell the harvest weighted carries its raw catches as `r`; its misses stay weighted).
   - `missRate` is weighted the same way by casts (`c + m`) instead of catches, so a contribution of few catches and
     many misses holds no more than a fifth of it either (FR-013; changed while implementing: the catch factors left
     such misses in full).

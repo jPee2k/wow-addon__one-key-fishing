@@ -103,7 +103,8 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 - `AUCTION_STATE` (scan progress), `PRICES_CHANGED` (a scan finished or stopped)
 - `SHARED_DATA_CHANGED` (keys, and the store when Share changed one: records under `<id>@<epoch>` came or went:
   other players', or the own one a roll kept; or sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)
-- `CHANNEL_STATE` (state, index: the hidden public channel's state changed, Channel.lua)
+- `CHANNEL_STATE` (state, index, joins: the hidden public channel's state changed, Channel.lua; joins counts the
+  joins started this session, so a new one tells a join from the end of a pause)
 
 ## Forever API
 

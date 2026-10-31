@@ -17,9 +17,12 @@ Channel.NAMES = { "OneKeyFishingShare", "OneKeyFishingShare2", "OneKeyFishingSha
     "OneKeyFishingShare5", "OneKeyFishingShare6" }
 
 local JOIN_DELAY_MIN, JOIN_DELAY_MAX = 30, 60 -- seconds after a login: the player's own channels come first
-local JOIN_CHECK = 5 -- seconds until a join without a notice is checked by the channel's number
+local JOIN_CHECK = 5 -- seconds between the checks of a join without a notice by the channel's number
+local JOIN_TRIES = 3 -- checks before such a join counts as locked: a slow server (a login's lag) confirms late
+local LEAVE_ECHO = 5 -- seconds in which a YOU_LEFT is the answer to the addon's own leave
 local LOCK_GRACE_MIN, LOCK_GRACE_MAX = 10, 20 -- seconds an addon owner has to undo a lock before everybody moves
 local KICK_REJOIN = 60 -- seconds before joining again after a kick
+local REJOIN_MARGIN = 0.5 -- a timer may read GetTime() a hair before rejoinAt: that counts as reached
 local MAX_KICKS = 3 -- the third kick in a session counts as a ban
 local FREE_SLOTS = 2 -- chat channel slots that must be free to join: one always stays the player's (FR-005)
 local POPUP = "CHAT_CHANNEL_PASSWORD" -- the game's password prompt for a locked channel
@@ -31,6 +34,7 @@ end
 
 local current -- the index joined or being joined (1 main, 2..6 fallback)
 local joined, joining = false, false
+local joins = 0 -- joins started this session (CHANNEL_STATE passes it: a new one, not a pause's end, means a new join)
 local leftAt -- GetTime() of the addon's own last leave: a YOU_LEFT soon after is its own, not the player's
 local locked = {} -- index -> true: found locked or banned this session
 local refused = false -- the game refuses the channel itself (a Trial account, an invalid name): until logout
@@ -139,7 +143,7 @@ local function Notify()
     local state, index = Channel.GetState()
     if state ~= lastState or index ~= lastIndex then
         lastState, lastIndex = state, index
-        ns.Fire("CHANNEL_STATE", state, index)
+        ns.Fire("CHANNEL_STATE", state, index, joins)
     end
 end
 
@@ -209,7 +213,8 @@ local function Lock(index)
 end
 
 local function Join(index)
-    current, joining = index, true
+    current, joining, joins = index, true, joins + 1
+    local join = joins
     -- VERIFY(V19): an addon can join a custom channel this way, without a key press; a nil first value means the game
     -- refuses the channel itself
     local ok, kind = pcall(JoinTemporaryChannel, Channel.NAMES[index])
@@ -218,15 +223,21 @@ local function Join(index)
         Notify()
         return
     end
-    C_Timer.After(JOIN_CHECK, function()
-        if joining and current == index then
-            if NumberOf(index) then
-                OnJoined()
-            else
-                Lock(index) -- no notice and not in it: the channel cannot be used (a password, a ban)
-            end
+    local tries = 0
+    local function Check()
+        if not joining or joins ~= join then
+            return
         end
-    end)
+        tries = tries + 1
+        if NumberOf(index) then
+            OnJoined()
+        elseif tries < JOIN_TRIES then
+            C_Timer.After(JOIN_CHECK, Check)
+        else
+            Lock(index) -- no notice and not in it: the channel cannot be used (a password, a ban)
+        end
+    end
+    C_Timer.After(JOIN_CHECK, Check)
     Notify()
 end
 
@@ -243,7 +254,8 @@ Update = function()
     if pause == "unavailable" and (joined or joining) then
         Leave() -- the game refuses addon messages: the channel would only take a slot
     end
-    if left or refused or not loginReady or joined or joining or pause or (rejoinAt and GetTime() < rejoinAt) then
+    if left or refused or not loginReady or joined or joining or pause
+        or (rejoinAt and GetTime() < rejoinAt - REJOIN_MARGIN) then
         Notify()
         return
     end
@@ -258,6 +270,7 @@ Channel.Update = Update
 -- The setting "Use the public channel" (FR-021): joins or leaves at once, with no login delay.
 function Channel.SetEnabled(on)
     ns.db.settings.shareChannel = on and true or false
+    ns.Share.CloseNotice() -- set on the page that says what is shared: the notice counts as read
     if on then
         loginReady = true
     end
@@ -358,10 +371,13 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
         if index ~= current then
             return
         end
-        if leftAt and GetTime() - leftAt < JOIN_CHECK then
-            return -- the addon's own leave
-        elseif joined then
-            joined, left = false, true -- the player left it by hand (or another addon did): out until the next login
+        -- The addon's own leave; while a join of the same name waits for the server, as long as that join may wait.
+        if leftAt and GetTime() - leftAt < (joining and JOIN_CHECK * JOIN_TRIES or LEAVE_ECHO) then
+            return
+        elseif joined or joining then
+            -- The player left it by hand (or another addon did), also before the join was confirmed: out until the
+            -- next login.
+            joined, joining, left = false, false, true
             Notify()
         end
     elseif index ~= current then
@@ -473,10 +489,11 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
         if type(saved) == "table" then
             waitLock, password = Restore(saved)
         end
-        -- The client is still in it after a /reload: taken as joined (a second one of our names is left).
+        -- The client is still in it after a /reload: taken as joined (a second one of our names, or one found locked
+        -- whose leave the /reload cut off, is left). Not after a leave by hand: one joined again is the player's.
         for index, name in ipairs(Channel.NAMES) do
-            if NumberOf(index) then
-                if joined then
+            if NumberOf(index) and not left then
+                if joined or locked[index] then
                     pcall(LeaveChannelByName, name)
                 else
                     current, joined = index, true

@@ -167,6 +167,26 @@ test("two channel refusals in a row move to the next channel; five do not leave 
     eq(#sentSince(before, "CHANNEL"), 1, "still sends")
 end)
 
+test("the refusals count per join of the channel: a move starts them again, a pause's end does not", function()
+    channelState, channelNumber = "in", 5
+    ns.Fire("CHANNEL_STATE", "in", 1, 1)
+    local before = refusals
+    addon_send_result.CHANNEL = 7
+    Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
+    advance(10)
+    ns.Fire("CHANNEL_STATE", "waiting", nil, 1) -- moved on by a notice (MUTED): the next channel is joined
+    ns.Fire("CHANNEL_STATE", "in", 2, 2)
+    Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
+    advance(10)
+    eq(refusals, before, "one refusal on the new channel: no move")
+    ns.Fire("CHANNEL_STATE", "paused", 2, 2)
+    ns.Fire("CHANNEL_STATE", "in", 2, 2)
+    Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
+    advance(10)
+    eq(refusals, before + 1, "the end of a pause is no new join: the second in a row moves on")
+    addon_send_result.CHANNEL = nil
+end)
+
 test("the channel alone never keeps the exchange available when the game refuses every other path", function()
     addon_send_result.default, bn_send_result = 9, 9
     group_type = "party"

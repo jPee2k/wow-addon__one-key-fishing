@@ -59,15 +59,20 @@ function luaValue(node) {
   throw new Error(`unsupported value (${node.type})`);
 }
 
+// An own property even for "__proto__", which a plain assignment would take as the object's prototype.
+function setField(target, key, value) {
+  Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
+}
+
 // Lua tables become objects; positional entries get the keys 1, 2, ... (so { 64, 71 } is { 1: 64, 2: 71 }).
 function luaTable(node) {
   const result = {};
   let position = 0;
   for (const field of node.fields) {
     if (field.type === "TableKeyString") {
-      result[field.key.name] = luaValue(field.value);
+      setField(result, field.key.name, luaValue(field.value));
     } else if (field.type === "TableKey") {
-      result[String(luaValue(field.key))] = luaValue(field.value);
+      setField(result, String(luaValue(field.key)), luaValue(field.value));
     } else {
       position += 1;
       result[String(position)] = luaValue(field.value);
@@ -215,6 +220,22 @@ function checkItems(items, catches, where) {
   }
 }
 
+// Only the fields the client reads (as Share.lua's CleanCell rebuilds a received cell), as own properties.
+function cleanCell(cell) {
+  const items = (source) => Object.fromEntries(Object.entries(source || {})
+    .map(([itemID, entry]) => [itemID, { 1: entry["1"], 2: entry["2"] }]));
+  const clean = { c: cell.c, m: cell.m, t: cell.t };
+  if (cell.px !== undefined) {
+    clean.px = cell.px;
+    clean.py = cell.py;
+  }
+  clean.i = items(cell.i);
+  if (cell.p !== undefined) {
+    clean.p = { c: cell.p.c, i: items(cell.p.i) };
+  }
+  return clean;
+}
+
 function checkCell(cell, key) {
   const where = `cell ${key}`;
   if (typeof cell !== "object" || cell === null) {
@@ -247,16 +268,17 @@ function checkCell(cell, key) {
   }
 }
 
-// The casts (catches and misses) and the seconds of casting of every cell of every build whose counts are counts,
-// valid or not otherwise.
+// The casts (catches and misses) of every cell of every build whose counts are counts, valid or not otherwise; the
+// seconds of casting only under game versions: casts under an unknown build ("unknown" when GetBuildInfo failed)
+// never raise the seq (CatchDB.lua), so their seconds would make an honest record cast too long.
 function rawCasts(record) {
   let casts = 0;
   let seconds = 0;
-  for (const cells of Object.values(record.builds || {})) {
+  for (const [build, cells] of Object.entries(record.builds || {})) {
     for (const value of Object.values(cells || {})) {
       if (value && isCount(value.c) && isCount(value.m)) {
         casts += value.c + value.m;
-        seconds += isCount(value.t) ? value.t : 0;
+        seconds += BUILD.test(build) && isCount(value.t) ? value.t : 0;
       }
     }
   }
@@ -307,7 +329,7 @@ function checkRecord(record, notes) {
         notes.push(`  skipped   ${record.id} ${error.message}`);
         continue;
       }
-      builds[build][key] = cell;
+      builds[build][key] = cleanCell(cell);
       places.add(key);
     }
   }
@@ -340,7 +362,8 @@ function addItems(target, items) {
 }
 
 // The weight factor of each contributor at a cell (research R7 of part 3): from WEIGHT_FROM contributors on, the
-// largest are capped one by one at T, WEIGHT_SHARE of the weighted total; five capped ones share it equally.
+// largest are capped one by one at T, WEIGHT_SHARE of the weighted total; at most four are capped (the fifth is never
+// above the rest).
 // totals: contributor ID -> what it is capped by at the cell (catches, or casts for the miss rate). players: the
 // contributors who caught something there; as in the views (CatchDB.lua) only they count toward WEIGHT_FROM.
 function weightFactors(totals, players) {
@@ -360,10 +383,6 @@ function weightFactors(totals, players) {
     }
     capped += 1;
     rest -= c;
-    if (capped >= shares) {
-      cap = c;
-      break;
-    }
     cap = rest / (shares - capped);
   }
   for (const [id, c] of list) {
@@ -443,14 +462,17 @@ function sumContributions(store) {
     const players = [...totals.values()].filter((c) => c > 0).length;
     const factors = weightFactors(totals, players);
     const castFactors = weightFactors(casts, players);
-    const sum = { c: 0, m: 0, t: 0, k: totals.size, i: {} };
+    // k: the contributors who caught something there, as the views count players (CatchDB.lua).
+    const sum = { c: 0, m: 0, t: 0, k: players, i: {} };
     let castCatches = 0; // the catches weighted by casts
+    let rawCatches = 0;
     for (const { id, cell: original } of list) {
       const factor = factors.has(id) ? factors.get(id) : 1;
       const castFactor = castFactors.has(id) ? castFactors.get(id) : 1;
       const cell = factor !== 1 || castFactor !== 1 ? scaleCell(original, factor, castFactor) : original;
       // The same factor for both: the rounded catches, so x appears only where the cast weighting differs.
       castCatches += castFactor === factor ? cell.c : original.c * castFactor;
+      rawCatches += original.c;
       sum.c += cell.c;
       sum.m += cell.m;
       sum.t += cell.t;
@@ -470,6 +492,10 @@ function sumContributions(store) {
     if (Math.round(castCatches) !== sum.c) {
       sum.x = Math.round(castCatches);
       sum.t = Math.max(sum.t, sum.x + sum.m);
+    }
+    // The raw catches, when the weights changed them: the views' little-data threshold and catch count read them.
+    if (rawCatches !== sum.c) {
+      sum.r = rawCatches;
     }
     cells[key] = sum;
   }
@@ -615,6 +641,9 @@ function cellLines(key, cell) {
   const head = [`c = ${cell.c}`, `m = ${cell.m}`, `t = ${cell.t}`];
   if (cell.x !== undefined) {
     head.push(`x = ${cell.x}`);
+  }
+  if (cell.r !== undefined) {
+    head.push(`r = ${cell.r}`);
   }
   if (cell.px !== undefined) {
     head.push(`px = ${cell.px}`, `py = ${cell.py}`);
@@ -877,7 +906,8 @@ function syntheticSeed(places, now) {
 
 // --- Command line ----------------------------------------------------------------------------------------------
 
-function main(argv) {
+// The command line as harvest() options ({ files, reset, block, unblock, synthetic }), or { error }.
+export function parseArgs(argv) {
   const files = [];
   const reset = [];
   const block = [];
@@ -888,22 +918,33 @@ function main(argv) {
       reset.push(argv[++i]);
     } else if (argv[i] === "--block") {
       const id = argv[++i];
-      // The note is the next argument unless it is an option or a saved file.
+      // The note is the next argument unless it is an option or a saved file (one that exists, or a .lua name).
       const next = argv[i + 1];
-      const note = next !== undefined && !next.startsWith("--") && !next.endsWith(".lua") ? argv[++i] : "";
+      const file = next !== undefined && (next.toLowerCase().endsWith(".lua")
+        || (fs.existsSync(next) && fs.statSync(next).isFile()));
+      const note = next !== undefined && !next.startsWith("--") && !file ? argv[++i] : "";
       block.push({ id, note });
     } else if (argv[i] === "--unblock") {
       unblock.push(argv[++i]);
     } else if (argv[i] === "--synthetic") {
       synthetic = Number(argv[++i]);
       if (!Number.isInteger(synthetic) || synthetic <= 0) {
-        console.error("error: --synthetic needs a number of places");
-        return 1;
+        return { error: "error: --synthetic needs a number of places" };
       }
     } else {
       files.push(path.resolve(argv[i]));
     }
   }
+  return { files, reset, block, unblock, synthetic };
+}
+
+function main(argv) {
+  const args = parseArgs(argv);
+  if (args.error) {
+    console.error(args.error);
+    return 1;
+  }
+  const { files, reset, block, unblock, synthetic } = args;
   // The accounts come from WOW_ADDONS_DIR; with friends' files only, it may be left unset.
   const dir = synthetic ? null : addonsDir({ optional: files.length > 0 });
   const result = harvest({ addonsDir: dir, files, reset, block, unblock, synthetic });

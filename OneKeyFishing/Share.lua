@@ -46,6 +46,7 @@ local CHANNEL_WINDOW = 40 -- minutes of channel HELLOs counted: about the number
 local NEAR_WINDOW = 15 * 60 -- a guild, group or friend peer heard this recently comes before channel peers
 local BUSY_RETRY_MIN, BUSY_RETRY_MAX = 120, 180 -- a near peer that answered BYE busy is tried again once
 local MAX_CHANNEL_PEERS = 300 -- peers known only from the channel kept in memory (FR-009)
+local MAX_ANNOUNCERS = 2000 -- addresses heard announcing in the channel, apart from the peers (Channel.lua's locks)
 local CHANNEL_FIRST_MIN, CHANNEL_FIRST_MAX = 30, 90 -- seconds after joining before the first channel HELLO
 local CHANNEL_ROUND_MIN, CHANNEL_ROUND_MAX = 30 * 60, 50 * 60 -- between channel HELLOs
 local CHANNEL_MOVE_MIN, CHANNEL_MOVE_MAX = 5, 30 -- after a move to another channel
@@ -161,6 +162,16 @@ local function CleanRecord(record, seen)
         seen = seen }
 end
 
+-- store -> { unit -> the stored record whose chain the background walk (SeedChainWork) has not reached yet }: not
+-- sent before it is checked (a peer with the seed would blame this client for a made-up copy), and not what a newer
+-- version must continue.
+local pendingChains = setmetatable({}, { __mode = "k" })
+
+local function Pending(store, unit, record)
+    local pending = pendingChains[store]
+    return pending ~= nil and pending[unit] == record
+end
+
 -- The seed's absorbed version of the record's unit ({ seq, proof }: the chain alone), or nil.
 local function SeedHeld(record, absorbed)
     local seq = ns.CatchDB.AbsorbedSeq(record.id, record.epoch, absorbed)
@@ -169,10 +180,12 @@ local function SeedHeld(record, absorbed)
 end
 
 -- The version a newer record of the unit must continue (specs/004-public-channel-sync, research.md R9): the stored
--- record, or the seed's absorbed version of it; nil when there is none.
+-- record (once its walk to the seed's proof is done), or the seed's absorbed version of it; nil when there is none.
 function Store.HeldFor(store, record, absorbed)
-    local stored = store.records[UnitOf(record)]
-    if type(stored) == "table" and IsCount(stored.seq) and IsProof(stored.proof) then
+    local unit = UnitOf(record)
+    local stored = store.records[unit]
+    if type(stored) == "table" and IsCount(stored.seq) and IsProof(stored.proof)
+        and not Pending(store, unit, stored) then
         return stored
     end
     return SeedHeld(record, absorbed or SeedAbsorbed())
@@ -262,6 +275,8 @@ function Store.SeedChainWork(store, absorbed)
             local held = SeedHeld(record, absorbed)
             if held and record.seq > held.seq then
                 table.insert(work, { key = key, held = held, record = record })
+                pendingChains[store] = pendingChains[store] or {}
+                pendingChains[store][key] = record
             end
         end
     end
@@ -279,6 +294,9 @@ function Store.CheckSeedChains(store, work, budget)
             return false
         end
         table.remove(work, 1)
+        if Pending(store, entry.key, entry.record) then
+            pendingChains[store][entry.key] = nil
+        end
         if result ~= "ok" and store.records[entry.key] == entry.record then
             store.records[entry.key] = nil
             Changed(store, { entry.key })
@@ -311,7 +329,7 @@ local function SeedShares(record)
                     seen[key] = true
                     places = places + 1
                     local cell = ns.CatchDB.SeedCell(key)
-                    local catches = cell and tonumber(cell.c) or 0
+                    local catches = cell and (tonumber(cell.r) or tonumber(cell.c)) or 0 -- r: raw, when weighted
                     if catches >= SATURATED_CATCHES then
                         saturated = saturated + 1
                     elseif catches < RARE_CATCHES then
@@ -373,7 +391,9 @@ function Store.Evict(store)
         store.records[pick] = nil
         table.insert(removed, pick)
     end
-    Changed(store, removed)
+    if #removed > 0 then
+        Changed(store, removed)
+    end
     return #removed
 end
 
@@ -511,7 +531,7 @@ function Share.NewNode(store, env)
     -- gone with the copy).
     local node = setmetatable({ store = store, env = env, tag = ns.RandomBase32(4, env.random), peers = {},
         byTag = {}, cursor = 1, merges = {}, rejected = 0, longestStep = 0, cache = {}, ownData = {},
-        channelHeard = {}, skippedNear = {}, channelCount = 0, ignored = {},
+        channelHeard = {}, skippedNear = {}, channelCount = 0, ignored = {}, announcers = {}, announcerCount = 0,
         chainRefused = setmetatable({}, { __mode = "v" }) }, Node)
     return node
 end
@@ -621,9 +641,29 @@ function Node:BoundChannelPeers(keep)
         if peer.node and self.byTag[peer.node] == oldest then
             self.byTag[peer.node] = nil
         end
-        self.peers[oldest], self.skippedNear[oldest] = nil, nil
+        self.peers[oldest] = nil
         self.channelCount = self.channelCount - 1
     end
+end
+
+-- Notes an address heard announcing in the channel. Kept apart from the peers, which the peer bound forgets: an
+-- owner forgotten there would make its undo of a lock read as a lock. Bounded on its own, the one heard longest ago
+-- forgotten first.
+function Node:Announced(address, now)
+    if not self.announcers[address] then
+        self.announcerCount = self.announcerCount + 1
+        if self.announcerCount > MAX_ANNOUNCERS then
+            local oldest, oldestAt
+            for known, at in pairs(self.announcers) do
+                if not oldestAt or at < oldestAt then
+                    oldest, oldestAt = known, at
+                end
+            end
+            self.announcers[oldest] = nil
+            self.announcerCount = self.announcerCount - 1
+        end
+    end
+    self.announcers[address] = now
 end
 
 function Node:Peer(address, via)
@@ -785,6 +825,12 @@ function Node:Finish(session)
         -- session would move nothing again until one side changes.
         local moved = next(session.ourWants) ~= nil or (session.theirWants and #session.theirWants > 0)
         peer.idle = not moved and session.gotDiff and { theirs = peer.hash, ours = self:HashText() } or nil
+        -- Nothing came, and the budget held back every record the peer wanted: the same session would only repeat
+        -- (its SUM, DIFF and WANT) until the budget has room for the first one. Only for a peer whose HELLO says what
+        -- it holds: one that only whispered may have changed unseen.
+        if next(session.ourWants) == nil and session.heldBack and peer.hash then
+            peer.idle = { theirs = peer.hash, ours = self:HashText(), room = session.heldBack }
+        end
     end
     session.finished = self.env.now()
     self.recent = session -- records still on their way are taken for a while
@@ -826,18 +872,66 @@ function Node:ArmTimeout(session, delay)
     end)
 end
 
-function Node:CanStart(peer, now)
+-- True when the addresses are one client: the same address, or the same node tag on its other path (guild and
+-- Battle.net).
+function Node:SameClient(a, b)
+    if a == b then
+        return true
+    end
+    local peerA, peerB = self.peers[a], self.peers[b]
+    return peerA ~= nil and peerB ~= nil and peerA.node ~= nil and peerA.node == peerB.node
+end
+
+-- True when a near (guild, group or friend) peer that cannot start now must be considered again once the pause, or a
+-- session or a recent start with another client, is over (skippedNear, Reconsider). Not for one with the same client
+-- (also by its other address): that exchanges what this start would.
+function Node:WaitsForOther(address, peer, now)
+    if peer.via == "channel" then
+        return false
+    end
+    if self.paused then
+        return true
+    end
+    if self.session then
+        return not self:SameClient(self.session.peer, address)
+    end
+    return self.lastStart ~= nil and now - self.lastStart < SESSION_GAP
+        and not self:SameClient(self.lastStartWith, address)
+end
+
+-- True while a session with the peer would move nothing again: neither side changed since the last one, which moved
+-- nothing, or whose records the budget held back and still would.
+function Node:Idle(peer)
+    local idle = peer.idle
+    return idle ~= nil and idle.theirs == peer.hash and idle.ours == self:HashText()
+        and (not idle.room or not self.env.canSend(idle.room))
+end
+
+function Node:CanStart(address, peer, now)
     if self.paused or self.session or peer.ignored or not self.env.canSend() then
         return false
     end
     if (self.lastStart and now - self.lastStart < SESSION_GAP) or (peer.pausedUntil and now < peer.pausedUntil) then
         return false
     end
-    if peer.idle and peer.idle.theirs == peer.hash and peer.idle.ours == self:HashText() then
+    if self:Idle(peer) then
         return false
     end
     local cooldown = peer.via == "group" and GROUP_COOLDOWN or OTHER_COOLDOWN
-    return not (peer.lastSession and now - peer.lastSession < cooldown)
+    if peer.lastSession and now - peer.lastSession < cooldown then
+        return false
+    end
+    -- The same client by its other address (guild and Battle.net) had a session just now: its cooldown holds too. A
+    -- channel stranger has one address (and its tag may match another stranger's by chance).
+    if peer.node and peer.via ~= "channel" then
+        for other, otherPeer in pairs(self.peers) do
+            if other ~= address and otherPeer.via ~= "channel" and otherPeer.node == peer.node and otherPeer.lastSession
+                and now - otherPeer.lastSession < cooldown then
+                return false
+            end
+        end
+    end
+    return true
 end
 
 function Node:HashText()
@@ -847,10 +941,12 @@ end
 -- Only the hearer of a HELLO starts a session, after a random wait, if it is still needed then.
 function Node:ConsiderSession(address, peer)
     local now = self.env.now()
-    if peer.starting or not self:CanStart(peer, now) then
-        if peer.via ~= "channel" and not peer.starting
-            and (self.session or (self.lastStart and now - self.lastStart < SESSION_GAP)) then
-            self.skippedNear[address] = true -- a near peer met a session or a recent start: again when it is over
+    if peer.starting then
+        return
+    end
+    if not self:CanStart(address, peer, now) then
+        if self:WaitsForOther(address, peer, now) then
+            self.skippedNear[address] = true -- again when it is over
             self:Reconsider()
         end
         return
@@ -865,13 +961,9 @@ function Node:ConsiderSession(address, peer)
         if peer.via == "channel" and self:NearWaiting(now) then
             return -- a near peer heard in the start delay goes first (research R5 of part 3)
         end
-        if not self:CanStart(peer, now) then
-            -- A session or a start with somebody else in the start delay (a channel stranger's SUM): a near peer
-            -- waits for it to be over again. Not one with this peer itself: that exchanges what this start would.
-            local other = (self.session and self.session.peer ~= address)
-                or (not self.session and self.lastStart and now - self.lastStart < SESSION_GAP
-                    and peer.lastSession ~= self.lastStart)
-            if other and peer.via ~= "channel" then
+        if not self:CanStart(address, peer, now) then
+            -- A pause, or a session or a start with another client in the start delay (a channel stranger's SUM).
+            if self:WaitsForOther(address, peer, now) then
                 self.skippedNear[address] = true
                 self:Reconsider()
             end
@@ -886,7 +978,7 @@ function Node:ConsiderSession(address, peer)
         if not self:Send(address, text) then
             return -- a path left out: no session ran, the cooldowns stay free for the next HELLO
         end
-        self.lastStart = now
+        self.lastStart, self.lastStartWith = now, address
         peer.previousSession, peer.lastSession = peer.lastSession, now
         self:ArmTimeout(session)
     end)
@@ -899,12 +991,12 @@ function Handlers.H(self, address, peer, via, text)
     if not tag or tag == self.tag then
         return -- malformed, or our own broadcast echoing back
     end
+    local now = self.env.now()
     if via == "channel" then
         -- Heard announcing in the channel (Channel.lua tells a lock from its undo with it), also when the HELLO goes
         -- no further below (too soon after its guild one, or the same client by another path).
-        peer.inChannel = true
+        self:Announced(address, now)
     end
-    local now = self.env.now()
     local first = self.byTag[tag]
     local other = first and first ~= address and self.peers[first]
     if other and other.heard and now - other.heard < ALONE_AFTER then
@@ -969,9 +1061,7 @@ function Handlers.S(self, address, peer, _, text)
     if session then
         -- The session's peer, also when its SUM came by the client's other address (guild and Battle.net).
         local sessionPeer = self.peers[session.peer]
-        local same = session.peer == address
-            or (peer.node ~= nil and sessionPeer ~= nil and sessionPeer.node == peer.node)
-        if not same or session.role ~= "initiator" or session.gotReply then
+        if not self:SameClient(session.peer, address) or session.role ~= "initiator" or session.gotReply then
             self:Bye(address, sid, "busy")
             return
         end
@@ -993,7 +1083,7 @@ function Handlers.S(self, address, peer, _, text)
         self:Bye(address, sid, "busy")
         return
     end
-    if not self.env.canSend() then
+    if not self.env.canSend() or (self:Idle(peer) and peer.idle.room) then
         self:Bye(address, sid, "limit")
         return
     end
@@ -1145,7 +1235,7 @@ function Node:SendRecords(session)
         local record, data = Store.Get(self.store, unit), nil
         if record and record.id == self.store.myID then
             data = self:OwnData(record)
-        elseif record then
+        elseif record and not Pending(self.store, unit, record) then
             if ns.CatchDB.CheckRecord(record) then
                 data = self.env.encode(Store.ForSending(record))
             else
@@ -1158,8 +1248,14 @@ function Node:SendRecords(session)
             -- as it goes out, so Node:Send never ends the session with BYE limit here; the records just end, and
             -- the rest comes in a later session. A failed send ended the session: nothing more goes.
             local text = "R" .. session.sid .. " " .. data
-            if (sent > 0 and sent + #data > SESSION_BYTES) or not self.env.canSend(#text)
-                or not self:Send(session.peer, text) then
+            if sent > 0 and sent + #data > SESSION_BYTES then
+                break
+            end
+            if not self.env.canSend(#text) then
+                session.heldBack = count == 0 and #text or nil -- the room the first record waits for
+                break
+            end
+            if not self:Send(session.peer, text) then
                 break
             end
             sent, count = sent + #data, count + 1
@@ -1340,9 +1436,6 @@ function Node:Receive(address, via, text)
     if self.paused or type(text) ~= "string" or text == "" then
         return
     end
-    if via == "channel" and text:sub(1, 1) ~= "H" then
-        return -- the channel carries HELLO only; sessions go by whisper
-    end
     local peer = self:Peer(address, via)
     if peer.ignored then
         return
@@ -1350,6 +1443,9 @@ function Node:Receive(address, via, text)
     if Recent(peer.messages, self.env.now(), math.max(1, math.ceil(#text / MESSAGE_UNIT))) > MESSAGE_LIMIT then
         self:Ignore(address, peer)
         return
+    end
+    if via == "channel" and text:sub(1, 1) ~= "H" then
+        return -- the channel carries HELLO only; sessions go by whisper (counted above: a flooder is ignored, FR-010)
     end
     local handler = Handlers[text:sub(1, 1)]
     if handler then
@@ -1581,15 +1677,21 @@ local function NoticeRead()
     ns.Channel.Update()
 end
 
+-- A setting changed on the page that says what is shared (the exchange's or the channel's) counts as reading the
+-- notice: the popup goes and the exchange starts.
+function Share.CloseNotice()
+    if NoticeOwed() then
+        StaticPopup_Hide(NOTICE_POPUP)
+        NoticeRead()
+    end
+end
+
 -- Turns the exchange on or off: off sends and accepts nothing and leaves other players' records out of the
 -- views (they stay saved); on counts them again at once and greets soon. The player set it on the page that says
 -- what is shared, so the one-time popup is not needed any more.
 function Share.SetEnabled(on)
     ns.db.settings.shareDB = on and true or false
-    if NoticeOwed() then
-        StaticPopup_Hide(NOTICE_POPUP)
-        NoticeRead()
-    end
+    Share.CloseNotice()
     SyncPause()
     if on and node then
         HelloSoon()
@@ -1637,7 +1739,7 @@ ns.RegisterEvent("PLAYER_LOGIN", Start)
 -- Channel HELLO rounds (research R5 of part 3): the first 30-90 s after joining (also the same channel again, after a
 -- kick, a slot given back or the setting turned off and on), then every 30-50 min, and 5-30 s after a move to another
 -- channel; a round outside the channel sends nothing, but checks the free slots again.
-local channelRound, channelIndex, channelState
+local channelRound, channelIndex, channelJoins
 
 local function ChannelRound(token)
     if token ~= channelRound then
@@ -1650,15 +1752,14 @@ local function ChannelRound(token)
     C_Timer.After(math.random(CHANNEL_ROUND_MIN, CHANNEL_ROUND_MAX), function() ChannelRound(token) end)
 end
 
-ns.On("CHANNEL_STATE", function(state, index)
-    local previous = channelState
-    channelState = state
-    -- The end of a pause on the same channel is no join: the client stayed in it, and its round goes on.
-    if state ~= "in" or (index == channelIndex and (previous == "in" or previous == "paused")) then
+ns.On("CHANNEL_STATE", function(state, index, joins)
+    -- Only a new join starts a round: the end of a pause on the same join is none (the client stayed in the channel,
+    -- and its round goes on), a join completed during a pause is one.
+    if state ~= "in" or joins == channelJoins then
         return
     end
     local moved = channelIndex ~= nil and index ~= channelIndex
-    channelIndex = index
+    channelIndex, channelJoins = index, joins
     local token = {}
     channelRound = token
     C_Timer.After(moved and math.random(CHANNEL_MOVE_MIN, CHANNEL_MOVE_MAX)
@@ -1670,8 +1771,8 @@ function Share.HeardInChannel(name)
     if not node or type(name) ~= "string" or name == "" then
         return false
     end
-    for address, peer in pairs(node.peers) do
-        local sender = peer.inChannel and address:match("^w:(.+)$")
+    for address in pairs(node.announcers) do
+        local sender = address:match("^w:(.+)$")
         if sender and ns.SameCharacter(sender, name) then
             return true
         end

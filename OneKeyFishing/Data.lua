@@ -183,7 +183,7 @@ function ns.CountKeys(tbl)
 end
 
 -- A character name with its realm: the game names a player of the own realm without one ("Name" -> "Name-Realm").
-local function WithRealm(name)
+function ns.WithRealm(name)
     if name:find("-", 1, true) then
         return name
     end
@@ -194,7 +194,7 @@ end
 -- True when two character names ("Name-Realm", or "Name" for the player's own realm) are the same character: a
 -- player of the same name on another realm is somebody else.
 function ns.SameCharacter(a, b)
-    return a == b or WithRealm(a) == WithRealm(b)
+    return a == b or ns.WithRealm(a) == ns.WithRealm(b)
 end
 
 -- True when the interact key would hit the bobber (not some other object nearby).

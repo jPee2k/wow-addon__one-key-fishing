@@ -189,6 +189,23 @@ test("eviction by new information: well-known places first, then stale, then the
     ns.SeedData = nil
 end)
 
+test("over the limit with records of the own ID alone: nothing goes and no change is fired", function()
+    for key in pairs(shared.records) do
+        if key:find("@", 1, true) then
+            shared.records[key] = nil
+        end
+    end
+    local frozen = { id = shared.myID, epoch = 8, seq = 1, seen = 1, builds = { ["1.60.1"] = {} } }
+    for j = 1, 20001 do
+        frozen.builds["1.60.1"][(30000 + j) .. ":0:x"] = catch_cell(1, 0)
+    end
+    shared.records[shared.myID .. "@8"] = frozen
+    changes = 0
+    eq(Store.Evict(shared), 0, "nothing that may go")
+    eq(changes, 0, "no change fired")
+    shared.records[shared.myID .. "@8"] = nil
+end)
+
 ---------------------------------------------------------------------------
 -- Hashes
 ---------------------------------------------------------------------------
