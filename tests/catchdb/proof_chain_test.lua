@@ -1,6 +1,6 @@
 -- CatchDB.lua and Share.lua: the own record's version chain, checking newer versions, the casting limit
 -- (specs/004-public-channel-sync, research R9, data-model.md "The version chain"). Runs with the fast stand-in for
--- ns.ProofStep (tests/wow.lua); tests/proof_test.lua checks the real SHA-256. The tests share one login, in order.
+-- ns.ProofStep (tests/wow.lua); tests/core/proof_test.lua checks the real SHA-256. The tests share one login, in order.
 
 local FISH = 6291
 player_map_id = 1415

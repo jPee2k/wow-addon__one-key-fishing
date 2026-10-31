@@ -2,7 +2,7 @@
 -- contracts/protocol.md "Announcements in the channel"): only HELLO from the channel, the chance to start, near peers
 -- first, the part 2 timing kept, the busy retry, cooldowns and the peer bound. Test nodes on a fake network; the
 -- addon's own game node does not start (the notice is never closed). The game node's channel rounds and
--- Share.HeardInChannel are in share_channel_game_test.lua.
+-- Share.HeardInChannel are in channel_game_test.lua.
 
 load_addon()
 math.randomseed(11)

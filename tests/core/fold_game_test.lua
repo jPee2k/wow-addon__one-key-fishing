@@ -1,4 +1,4 @@
--- Data.lua with the game's folding functions (CaseAccentInsensitiveParse, strcmputf8i): tests/fold_test.lua runs
+-- Data.lua with the game's folding functions (CaseAccentInsensitiveParse, strcmputf8i): tests/core/fold_test.lua runs
 -- without them.
 
 game_fold = true

@@ -46,7 +46,7 @@ The steps:
    [catch-exchange.md](checklists/catch-exchange.md), [public-channel.md](checklists/public-channel.md) (a week of
    play for its step 10), [catch-catalog.md](checklists/catch-catalog.md). Fix, test, remove the remaining markers.
 4. Remove the spike: `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Commands.lua`,
-   `tests/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and its row in `CLAUDE.md`.
+   `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and its row in `CLAUDE.md`.
 5. Fish, then `npm run harvest` for the first real seed (the author's accounts, the records the exchange collected,
    saved files friends sent); check the report and `git diff OneKeyFishing/SeedData.lua`; commit
    `OneKeyFishing/SeedData.lua` with `seed/contributions.json`.

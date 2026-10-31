@@ -58,6 +58,6 @@ and it sends no message: the tab polls `Catalog.GetVersion()` on the window's ti
 
 ## Tests
 
-`tests/catalog_test.lua` (items, search, order, places, spots, names, tooltips, the name queue),
-`tests/catalog_pin_test.lua` (`PinTarget` and the tab's pin flow), `tests/catalog_load_test.lua` (the largest
-database: every build step within its bound), `tests/fold_test.lua` (the text helpers), `tests/tooltips_test.lua`.
+`tests/catalog/index_test.lua` (items, search, order, places, spots, names, tooltips, the name queue),
+`tests/catalog/pin_test.lua` (`PinTarget` and the tab's pin flow), `tests/catalog/load_test.lua` (the largest
+database: every build step within its bound), `tests/core/fold_test.lua` (the text helpers), `tests/ui/tooltips_test.lua`.

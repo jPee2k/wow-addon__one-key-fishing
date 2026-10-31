@@ -13,7 +13,7 @@ message list are in `CLAUDE.md`; languages and translation file rules are in [la
 - Core resolves the language in `ADDON_LOADED`, the first point where the saved preference (`settings.language`,
   `"auto"` or a code) exists.
 - **No `L[...]` lookup may run while the files load** (at file scope, in a table built at load): it would be stuck
-  in English. Build such texts at runtime instead; `ns.earlyLookups` and `tests/locale_test.lua` catch a
+  in English. Build such texts at runtime instead; `ns.earlyLookups` and `tests/core/locale_test.lua` catch a
   load-time lookup.
 
 ## Locales/

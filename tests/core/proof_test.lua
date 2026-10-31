@@ -1,6 +1,6 @@
 -- Data.lua: SHA-256 and the version chain's link step with the real hash (specs/004-public-channel-sync, research
 -- R9). Real SHA-256 costs milliseconds per call in fengari, so this file only checks the vectors; the chains are
--- tested with the fast stand-in in tests/proof_chain_test.lua.
+-- tested with the fast stand-in in tests/catchdb/proof_chain_test.lua.
 
 real_proof = true
 load_addon()

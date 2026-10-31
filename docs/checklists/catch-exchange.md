@@ -38,7 +38,7 @@ for step 7. Steps marked "B" are done on the second client.
    the line "own record offered: yes, N bytes encoded for P places" after fishing at several places: N / P times
    500 stays under 24 KB (otherwise lower `ROLL_PLACES` in `CatchDB.lua`). Value: ____
 10. [ ] **Performance** (V16): watch the frame rate while a session runs and while the tab is open. For a load
-    test, copy many records into the saved data (or use `tests/share_load_test.lua` as a model); login takes no
+    test, copy many records into the saved data (or use `tests/exchange/share/load_test.lua` as a model); login takes no
     noticeable extra time, and the longest merge step in `/okf debug` stays under 5 ms. Value: ____
 11. [ ] **Harvest** (US4): before the release, `npm run harvest` on the author's PC lists other players'
     contributions ("Contributions: N"), and a client that updates to that release shows the same counts as before.

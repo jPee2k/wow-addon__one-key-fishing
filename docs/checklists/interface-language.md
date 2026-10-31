@@ -93,7 +93,7 @@ On a client in German (or another language with a translation), on the character
 - [x] The tooltip of OneKeyFishing shows the description in the client's language, special letters intact
   (ä, ö, ü, ß in German).
 - [x] In game, no chat line "Your game client has no translation..." appears (the client has a translation). That the
-  line shows once on a client without one (Russian) is covered by `tests/locale_hint_test.lua`. In game
+  line shows once on a client without one (Russian) is covered by `tests/core/locale_hint_test.lua`. In game
   2026-11-05: none on an English client; on a Russian client the line shows once after the hint state was reset,
   and not again after `/reload`.
 - [x] Statistics window, "Catches per hour": the decimal separator is the client's (a comma on a German client),

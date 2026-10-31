@@ -21,7 +21,7 @@ Expected: both pass. The part 3 tests (research R14):
 | `share_channel_test.lua` | only whole `H` messages are taken from the channel; the chance to start a session; near peers first and the busy retry; at most 300 channel peers kept; `heard.channel` |
 | `share_store_test.lua` (extended) | the eviction classes; blocked IDs refused, cleaned up and not offered; records without a proof cleaned up |
 | `comm_test.lua` (extended) | the channel path and its refusals (a fresh count per channel); parts only from the session peer; the 128 KB cap of all part buffers; a sender flooding parts reported and dropped |
-| `channel_sim_test.lua` | many protocol nodes in one fake channel: spread, requests per announcement, budget, a lock and the move to a fallback (SC-001, SC-002, SC-011, scaled) |
+| `tests/exchange/channel/sim_test.lua` | many protocol nodes in one fake channel: spread, requests per announcement, budget, a lock and the move to a fallback (SC-001, SC-002, SC-011, scaled) |
 | `catchhere_test.lua`, `settings_test.lua`, `share_notice_test.lua` (extended) | the "Unknown item" row and tooltip; the channel setting greyed out with the main one off; the notice that names the channel, and shown again when the channel comes later |
 | `harvest_test.mjs` (extended) | chain checks between versions and the casting limit; blocked IDs left out of the sums and `absorbed`; `--block` / `--unblock`; the weight limit in the seed's cells; `proofs` and `blocked` written and checked; the outlier report |
 
@@ -29,7 +29,7 @@ The full-size simulation (500 clients for the spread, 1,000 for the requests per
 before the release:
 
 ```text
-OKF_SIM_NODES=1000 npm test -- channel_sim
+OKF_SIM_NODES=1000 npm test -- sim_test
 ```
 
 Expected: in the cold hour (nobody holds anybody's record) at most 5 requests per announcement on average and no

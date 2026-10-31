@@ -50,7 +50,9 @@ such as `Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`.
   the manual; fixes of an unreleased feature need no changelog line). A new message, module or saved field updates
   this file and its `docs/architecture/` page; a finished feature leaves `docs/ROADMAP.md`.
 - `npm run check` and `npm test` after every change (Node.js 18+, `npm install` once). A new WoW API global goes
-  into `.luacheckrc` `read_globals`. Add or extend a test when changing logic that can run without the game.
+  into `.luacheckrc` `read_globals`. Add or extend a test when changing logic that can run without the game; a new
+  test file goes into the folder of its area under `tests/` (one per architecture document, layout and naming in
+  [docs/development.md](docs/development.md)).
   Tests run in fengari (Lua 5.3), the game is 5.1: keep the addon free of 5.1/5.3 differences.
 - `npm run dev` (package the working folder), `npm run build` (package the last commit; refuses uncommitted
   changes and `VERIFY` markers), `npm run link` / `unlink`, `npm run install-addon`, `npm run harvest` (the

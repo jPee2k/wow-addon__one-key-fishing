@@ -223,8 +223,8 @@ Goal: the feature adds no noticeable lag, neither in game nor on the loading scr
 | Combat, instances, restrictions | All network work stops; the session and the queued merges are dropped and come again in a later session. |
 | Fishing | Your own record is updated by plain counter additions, as Stats does now; it is encoded only for sending, once per version. |
 
-Check: `tests/share_load_test.lua` logs in with 20,000 stored places, runs queries and merges a full session one
-record per step; `tests/catchdb_seed_test.lua` sums a seed of 3,000 places. In game `/okf share` shows the records
+Check: `tests/exchange/share/load_test.lua` logs in with 20,000 stored places, runs queries and merges a full session one
+record per step; `tests/catchdb/seed_test.lua` sums a seed of 3,000 places. In game `/okf share` shows the records
 and places held; `/okf debug` shows the longest merge step in milliseconds (`debugprofilestop`; goal under 5 ms,
 `specs/003-guild-group-sync/spec.md` SC-006).
 
@@ -452,7 +452,7 @@ all parts is closed and the release goes out once:
    every part (`docs/checklists/`). The answers go into `docs/forever-api.md`; code is fixed where an
    assumption was wrong; `VERIFY` markers are removed and the `verification.md` items of every spec are ticked.
 2. Part 3 ships only if the spike confirmed `CHANNEL`; otherwise its code is left out of 1.2.0 (its spec says how).
-3. `Spike.lua`, its TOC line, the `spike` command entry and `tests/spike_test.lua` are removed.
+3. `Spike.lua`, its TOC line, the `spike` command entry and `tests/ui/spike_test.lua` are removed.
 4. The author fishes and runs `npm run harvest` for the first real seed (own data, friends' files and the records
    the exchange collected); `SeedData.lua` and `seed/contributions.json` are committed.
 5. `develop` (which by then holds 1.1.0) is merged into `002-shared-db`. In `CHANGELOG.md`, the interface-language

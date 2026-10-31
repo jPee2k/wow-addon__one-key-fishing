@@ -15,7 +15,7 @@ robust price (FR-025 to FR-027) and the harvest merge, validation, reset and siz
 
 ## Harvest dry run
 
-`tests/harvest_test.mjs` builds its fixtures in a temporary folder (a fake `WTF` tree with two accounts, a friend's
+`tests/tools/harvest_test.mjs` builds its fixtures in a temporary folder (a fake `WTF` tree with two accounts, a friend's
 file and a broken file; a broken `.lua` file cannot live in `tests/`, where `npm run check` parses every Lua file)
 and runs the harvest with an output folder in that temporary folder. Expected: the report lists the broken file as
 rejected; the seed is written with `epoch + 1`; a second run with the same files gives the same sums.
