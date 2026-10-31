@@ -173,6 +173,50 @@ function ns.CountRecent(counts, now, weight, minutes)
     return total
 end
 
+-- Text folded to lower case for comparing localized names (specs/005-catch-catalog, research R7). string.lower
+-- handles ASCII letters only (Principle II), so the capitals of the other scripts with letter case among the client
+-- languages are lowered by their UTF-8 bytes: Latin-1 Supplement U+00C0-U+00DE (C3 80-9E) except the multiplication
+-- sign U+00D7 (C3 97), and Cyrillic U+0400-U+042F (D0 80-AF). Byte patterns, so Lua 5.1 and 5.3 agree.
+local function FoldLatin(second)
+    if second == "\151" then
+        return nil -- the multiplication sign has no small form
+    end
+    return "\195" .. string.char(second:byte() + 32)
+end
+
+local function FoldCyrillic(second)
+    local byte = second:byte()
+    if byte >= 144 and byte <= 159 then -- U+0410-U+041F -> U+0430-U+043F
+        return "\208" .. string.char(byte + 32)
+    elseif byte >= 160 then -- U+0420-U+042F -> U+0440-U+044F
+        return "\209" .. string.char(byte - 32)
+    end
+    return "\209" .. string.char(byte + 16) -- U+0400-U+040F -> U+0450-U+045F
+end
+
+function ns.FoldCase(text)
+    return (text:lower():gsub("\195([\128-\158])", FoldLatin):gsub("\208([\128-\175])", FoldCyrillic))
+end
+
+-- The key a name is searched by: the game's own folding of case and accents when the client has it (a typed "e"
+-- then finds an "e" with an accent), then ns.FoldCase.
+function ns.SearchKey(text)
+    -- VERIFY(V36): CaseAccentInsensitiveParse folds case and accents of the client's language
+    local parse = CaseAccentInsensitiveParse
+    local parsed = type(parse) == "function" and parse(text)
+    return ns.FoldCase(type(parsed) == "string" and parsed or text)
+end
+
+-- True when name a sorts before name b: the game's own alphabetical order when the client has it, else the byte
+-- order of the search keys.
+function ns.CompareText(a, b)
+    local compare = strcmputf8i
+    if type(compare) == "function" then
+        return compare(a, b) < 0
+    end
+    return ns.SearchKey(a) < ns.SearchKey(b)
+end
+
 -- The number of keys of a table.
 function ns.CountKeys(tbl)
     local count = 0

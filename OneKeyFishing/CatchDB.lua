@@ -32,9 +32,41 @@ local casts = {} -- cast ID (Catch.lua) -> { key, x, y, start, stop } until its 
 local lastSeqBump -- GetTime() of the last seq bump
 local seqWaiting = false -- a change since the last bump
 local ownItems -- item ID -> true: the items of the own catch, for the views (OwnItems below)
+-- "<mapID>:<range>" -> { place key -> true }: the keys of the own tables (mine, the own record and the frozen own
+-- records), so a map's sum does not walk every own cell (OwnIndex below). Built on first use, grown by Settle.
+local ownIndex
 
 function CatchDB.GetVersion()
     return version
+end
+
+---------------------------------------------------------------------------
+-- Change stamps (specs/005-catch-catalog, research R3): a stamp per map, moved whenever that map's sums may change,
+-- and one for every map. The catalog recomputes only the maps whose stamp moved.
+---------------------------------------------------------------------------
+local stamps, globalStamp = {}, 0
+local stampVersion = 0 -- grows with every bump of any stamp: nothing moved while it stays
+local mapCache = {} -- "<kind>|<mapID>|<filter>" -> { stamp, value }: the views of QueryMap and QueryCells
+
+local function BumpMap(mapID)
+    if mapID then
+        stamps[mapID] = (stamps[mapID] or 0) + 1
+        stampVersion = stampVersion + 1
+    end
+end
+
+local function BumpAll()
+    globalStamp = globalStamp + 1
+    stampVersion = stampVersion + 1
+    wipe(mapCache) -- every entry is stale now
+end
+
+function CatchDB.MapStamp(mapID)
+    return globalStamp .. ":" .. (stamps[mapID] or 0)
+end
+
+function CatchDB.GetStampVersion()
+    return stampVersion
 end
 
 ---------------------------------------------------------------------------
@@ -51,6 +83,19 @@ end
 
 local function KeyMapRange(key)
     return type(key) == "string" and key:match("^(%d+:%d):")
+end
+
+-- The map ID of a place key or a "<mapID>:<range>" prefix.
+local function KeyMapID(key)
+    return type(key) == "string" and tonumber(key:match("^(%d+):")) or nil
+end
+
+local function AddToOwnIndex(key)
+    local prefix = KeyMapRange(key)
+    if prefix then
+        ownIndex[prefix] = ownIndex[prefix] or {}
+        ownIndex[prefix][key] = true
+    end
 end
 
 local function Digit(value)
@@ -389,6 +434,7 @@ local function Roll()
     local epoch = NextEpoch(shared)
     shared.records[shared.myID] = { id = shared.myID, epoch = epoch, seq = 0, builds = {} }
     NewChain(epoch)
+    ownIndex = nil
     return key
 end
 
@@ -498,9 +544,17 @@ local function Settle(cast, caught, fromPool)
     end
     if ownItems and caught then
         for itemID in pairs(caught) do
+            if not ownItems[itemID] then
+                -- An item new to the own catch may now show on other maps too (BuildView's rule for new items).
+                BumpAll()
+            end
             ownItems[itemID] = true
         end
     end
+    if ownIndex then
+        AddToOwnIndex(cast.key)
+    end
+    BumpMap(KeyMapID(cast.key))
     Changed(CatchDB.IsBuild(build))
 end
 
@@ -693,8 +747,27 @@ local NEW_ITEM_REPORTERS = 3 -- other contributions that must report an item nei
 -- seed and the own catch go into the sum itself; each other player's contribution into its own part, so it can be
 -- weighted before the parts are added.
 -- x: the catches weighted by casts, for the miss rate (a seed cell's own x, else its catches).
+-- px, py, n: the summed positions of the cells that have one and their casts, for a spot's point; ranges: item ID ->
+-- { min, max }, the skill ranges the item was caught in. These three are never weighted.
 local function NewSum()
-    return { c = 0, m = 0, x = 0, i = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {} }
+    return { c = 0, m = 0, x = 0, i = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {}, px = 0, py = 0, n = 0,
+        ranges = {} }
+end
+
+local function AddRanges(sum, cell, range)
+    if not range or type(cell.i) ~= "table" then
+        return
+    end
+    for itemID, entry in pairs(cell.i) do
+        if type(entry) == "table" and (tonumber(entry[1]) or 0) > 0 then
+            local span = sum.ranges[itemID]
+            if span then
+                span.min, span.max = math.min(span.min, range), math.max(span.max, range)
+            else
+                sum.ranges[itemID] = { min = range, max = range }
+            end
+        end
+    end
 end
 
 -- factor: the weight of the cell's counts (research.md R7 of part 3), 1 when nil.
@@ -714,10 +787,16 @@ local function AddCounts(target, cell, factor)
     end
 end
 
-local function AddCell(sum, cell, source)
+-- range: the skill range of the cell's place key.
+local function AddCell(sum, cell, source, range)
     if type(cell) ~= "table" then
         return
     end
+    if tonumber(cell.px) and tonumber(cell.py) then
+        sum.px, sum.py = sum.px + cell.px, sum.py + cell.py
+        sum.n = sum.n + (tonumber(cell.c) or 0) + (tonumber(cell.m) or 0)
+    end
+    AddRanges(sum, cell, range)
     -- Who caught something here: a cell of misses only adds no player.
     if (tonumber(cell.c) or 0) > 0 then
         if source.seed then
@@ -792,7 +871,7 @@ local function IndexRecord(key)
             local prefix = KeyMapRange(place)
             if prefix then
                 local entry = { cell = cell, id = record.id, build = build, place = place, prefix = prefix,
-                    other = true }
+                    other = true, mapID = KeyMapID(prefix), range = tonumber(prefix:match(":(%d)$")) }
                 AddToSet(others.byKey, place, entry)
                 AddToSet(others.byPrefix, prefix, entry)
                 table.insert(entries, entry)
@@ -843,6 +922,31 @@ local function Others()
     return others
 end
 
+-- True for a record key of the own ID: the live record, or one a roll froze under "<myID>@<epoch>".
+local function IsOwnKey(key)
+    local myID = ns.db.shared.myID
+    return key == myID or (CatchDB.IsOtherKey(key) and CatchDB.ParseUnit(key) == myID)
+end
+
+local function OwnIndex()
+    if not ownIndex then
+        ownIndex = {}
+        for key in pairs(ns.db.shared.mine) do
+            AddToOwnIndex(key)
+        end
+        for key, record in pairs(ns.db.shared.records) do
+            if IsOwnKey(key) and type(record) == "table" and type(record.builds) == "table" then
+                for _, cells in pairs(record.builds) do
+                    for place in pairs(type(cells) == "table" and cells or {}) do
+                        AddToOwnIndex(place)
+                    end
+                end
+            end
+        end
+    end
+    return ownIndex
+end
+
 -- What a source sums for a map. "all": the seed, the own record and, with sharing on, the other players'
 -- records, each without its cells of game versions older than a reset of the map (after a patch that changed its
 -- catch); "mine": the lifetime counts. A record's cells count for its ID in the player count.
@@ -871,19 +975,21 @@ end
 local function AddOthers(sum, entries, reset)
     for entry in pairs(entries or {}) do
         if not (reset and OlderBuild(entry.build, reset)) then
-            AddCell(sum, entry.cell, entry)
+            AddCell(sum, entry.cell, entry, entry.range)
         end
     end
 end
 
-local function SumSpot(sources, keys)
+-- One cell of a map over the given skill ranges.
+local function SumSpot(sources, mapID, ranges, cell)
     local sum = NewSum()
-    for _, key in ipairs(keys) do
+    for _, range in ipairs(ranges) do
+        local key = CatchDB.PlaceKey(mapID, range, cell)
         if sources.seed then
-            AddCell(sum, sources.seed.cells[key], sources.seed)
+            AddCell(sum, sources.seed.cells[key], sources.seed, range)
         end
         for _, source in ipairs(sources.tables) do
-            AddCell(sum, source.cells[key], source)
+            AddCell(sum, source.cells[key], source, range)
         end
         if sources.others then
             AddOthers(sum, sources.others.byKey[key], sources.reset)
@@ -908,28 +1014,50 @@ local function Players(sum)
 end
 
 local function SumMap(sources, mapID, ranges)
-    local sum, wanted = NewSum(), {}
+    local sum, own = NewSum(), OwnIndex()
     for _, range in ipairs(ranges) do
-        wanted[MapRange(mapID, range)] = true
-    end
-    for prefix in pairs(wanted) do
+        local prefix = MapRange(mapID, range)
         if sources.seed then
             for _, key in ipairs(SeedIndex(sources.seed.cells)[prefix] or {}) do
-                AddCell(sum, sources.seed.cells[key], sources.seed)
+                AddCell(sum, sources.seed.cells[key], sources.seed, range)
             end
         end
         if sources.others then
             AddOthers(sum, sources.others.byPrefix[prefix], sources.reset)
         end
-    end
-    for _, source in ipairs(sources.tables) do
-        for key, cell in pairs(source.cells) do
-            if wanted[KeyMapRange(key)] then
-                AddCell(sum, cell, source)
+        for key in pairs(own[prefix] or {}) do
+            for _, source in ipairs(sources.tables) do
+                AddCell(sum, source.cells[key], source, range)
             end
         end
     end
     return sum
+end
+
+-- The cells of a map ("47", "x") with a cell in any source, in the given ranges.
+local function MapCells(sources, mapID, ranges)
+    local cells, own = {}, OwnIndex()
+    local function Add(key)
+        local cell = key:match(":([^:]+)$")
+        if cell then
+            cells[cell] = true
+        end
+    end
+    for _, range in ipairs(ranges) do
+        local prefix = MapRange(mapID, range)
+        if sources.seed then
+            for _, key in ipairs(SeedIndex(sources.seed.cells)[prefix] or {}) do
+                Add(key)
+            end
+        end
+        for entry in pairs(sources.others and sources.others.byPrefix[prefix] or {}) do
+            Add(entry.place)
+        end
+        for key in pairs(own[prefix] or {}) do
+            Add(key)
+        end
+    end
+    return cells
 end
 
 -- Catches of a sum with every other player's part, unweighted.
@@ -1079,7 +1207,7 @@ local function BuildView(scope, sum, rules)
         if catches > 0 and entry[1] > 0 and shown then
             table.insert(items, { itemID = itemID, catches = catches,
                 chance = weighted.c > 0 and entry[1] / weighted.c or 0, pieces = entry[2] / entry[1],
-                reporters = reporters[itemID] or 0, inSeed = seed[itemID] == true })
+                reporters = reporters[itemID] or 0, inSeed = seed[itemID] == true, ranges = sum.ranges[itemID] })
         end
     end
     table.sort(items, function(a, b)
@@ -1090,7 +1218,16 @@ local function BuildView(scope, sum, rules)
     end)
     local catches = RawCatches(sum)
     return { scope = scope, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
-        missRate = casts > 0 and misses / casts or 0, items = items, players = players }
+        missRate = casts > 0 and misses / casts or 0, items = items, players = players,
+        point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
+end
+
+local function Ranges(filter)
+    return filter.range == "all" and CatchDB.RANGES or { filter.range }
+end
+
+local function FilterKey(filter)
+    return tostring(filter.range) .. "|" .. filter.source
 end
 
 local cache, cacheVersion = {}, nil
@@ -1111,29 +1248,105 @@ function CatchDB.Query(mapID, cell, filter)
         wipe(reportersCache)
         cacheVersion = version
     end
-    local cacheKey = table.concat({ mapID, cell, tostring(filter.range), filter.source }, "|")
+    local cacheKey = mapID .. "|" .. cell .. "|" .. FilterKey(filter)
     if cache[cacheKey] then
         return cache[cacheKey]
     end
-    local ranges = filter.range == "all" and CatchDB.RANGES or { filter.range }
+    local ranges = Ranges(filter)
     local sources = Sources(filter.source, mapID)
     local reportersKey = mapID .. "|" .. filter.source
     reportersCache[reportersKey] = reportersCache[reportersKey] or Reporters(sources, mapID)
     local rules = { mine = filter.source == "mine", reporters = reportersCache[reportersKey] }
-    local keys = {}
-    for i, range in ipairs(ranges) do
-        keys[i] = CatchDB.PlaceKey(mapID, range, cell)
-    end
-    local spot = SumSpot(sources, keys)
+    local spot = SumSpot(sources, mapID, ranges, cell)
     local view
     if RawCatches(spot) >= LITTLE_DATA then
         view = BuildView("spot", spot, rules)
+        view.cell = cell
     else
         local map = SumMap(sources, mapID, ranges)
         view = BuildView(RawCatches(map) > 0 and "map" or "none", map, rules) -- "none": nothing caught at all
     end
     cache[cacheKey] = view
     return view
+end
+
+-- value of build(), cached until the map's stamp moves.
+local function ByStamp(kind, mapID, filter, build)
+    local key = kind .. "|" .. mapID .. "|" .. FilterKey(filter)
+    local stamp = CatchDB.MapStamp(mapID)
+    local entry = mapCache[key]
+    if not (entry and entry.stamp == stamp) then
+        entry = { stamp = stamp, value = build() }
+        mapCache[key] = entry
+    end
+    return entry.value
+end
+
+local function MapRules(sources, mapID, filter)
+    return { mine = filter.source == "mine", reporters = Reporters(sources, mapID) }
+end
+
+-- The whole map's view (Query's shape, scope "map" or "none" when nothing was caught), without the spot: the
+-- catalog's zone rows and the tooltips (specs/005-catch-catalog/contracts/api.md).
+function CatchDB.QueryMap(mapID, filter)
+    return ByStamp("map", mapID, filter, function()
+        local sources = Sources(filter.source, mapID)
+        local map = SumMap(sources, mapID, Ranges(filter))
+        return BuildView(RawCatches(map) > 0 and "map" or "none", map, MapRules(sources, mapID, filter))
+    end)
+end
+
+-- One spot view per cell of the map with catches under the filter, sorted by cell: the catalog's spot rows. Each
+-- carries cell and, with positions, point.
+function CatchDB.QueryCells(mapID, filter)
+    return ByStamp("cells", mapID, filter, function()
+        local sources, ranges = Sources(filter.source, mapID), Ranges(filter)
+        local rules, views = MapRules(sources, mapID, filter), {}
+        for cell in pairs(MapCells(sources, mapID, ranges)) do
+            local sum = SumSpot(sources, mapID, ranges, cell)
+            if RawCatches(sum) > 0 then
+                local view = BuildView("spot", sum, rules)
+                view.cell = cell
+                table.insert(views, view)
+            end
+        end
+        table.sort(views, function(a, b) return a.cell < b.cell end)
+        return views
+    end)
+end
+
+-- The map IDs with any cell under the filter's source, sorted: the seed's, the own tables' and, with sharing on,
+-- the other players'; for "mine" those of shared.mine.
+function CatchDB.Maps(filter)
+    local set, list = {}, {}
+    local function Add(key)
+        local mapID = KeyMapID(key)
+        if mapID then
+            set[mapID] = true
+        end
+    end
+    if filter.source == "mine" then
+        for key in pairs(ns.db.shared.mine) do
+            Add(key)
+        end
+    else
+        for prefix in pairs(SeedIndex(Seed().cells)) do
+            Add(prefix)
+        end
+        for prefix in pairs(OwnIndex()) do
+            Add(prefix)
+        end
+        if ns.Share.IsEnabled() then
+            for prefix in pairs(Others().byPrefix) do
+                Add(prefix)
+            end
+        end
+    end
+    for mapID in pairs(set) do
+        table.insert(list, mapID)
+    end
+    table.sort(list)
+    return list
 end
 
 -- The seed's cell of a place key, or nil (the eviction order of Share.lua weighs records by it).
@@ -1203,7 +1416,8 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
         end
     end
     version = version + 1 -- the seed or the record may be new
-    others, frozen, ownItems = nil, nil, nil
+    others, frozen, ownItems, ownIndex = nil, nil, nil, nil
+    BumpAll()
 end)
 
 -- The place is read at every cast start, also for a cast picked up after a /reload: nothing is counted here,
@@ -1249,22 +1463,42 @@ ns.On("FISH_MISSED", function(castID)
     end
 end)
 
+-- The maps of a record's indexed entries move.
+local function BumpEntries(entries)
+    for _, entry in ipairs(entries or {}) do
+        BumpMap(entry.mapID)
+    end
+end
+
 -- Records under "<id>@<epoch>" came or went (other players', Share.lua, or the own one a roll kept), or sharing
 -- was switched: the views and their index change. A change in another store (a protocol node of the tests) is not
--- this player's data.
+-- this player's data. Named records move the stamps of their maps, before and after the change; anything else,
+-- or an own record, moves every stamp.
 ns.On("SHARED_DATA_CHANGED", function(keys, store)
     if store ~= nil and ns.db and store ~= ns.db.shared then
         return
     end
     version = version + 1
     frozen = nil
+    local own = keys == nil
+    for _, key in ipairs(keys or {}) do
+        own = own or IsOwnKey(key)
+    end
+    if own then
+        ownIndex = nil
+    end
     if others and keys then
         for _, key in ipairs(keys) do
+            BumpEntries(others.byRecord[key])
             UnindexRecord(key)
             IndexRecord(key)
+            BumpEntries(others.byRecord[key])
         end
     else
         others = nil
+    end
+    if own or not others then
+        BumpAll()
     end
 end)
 

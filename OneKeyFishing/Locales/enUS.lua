@@ -291,3 +291,6 @@ L["Public channel: locked or refused by the game"] = true
 L["Public channel: you left it, back at the next login"] = true
 L["Public channel: waiting"] = true
 L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] = true
+
+-- Catalog.lua: the catch catalog (part 4)
+L["Unknown zone (%d)"] = true

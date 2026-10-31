@@ -316,4 +316,7 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Public channel: waiting"] = "公开频道：等待中"
     L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
         "过去一小时听到的玩家：公会%d，队伍%d，好友%d，Battle.net %d，频道%d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "未知区域 (%d)"
 end)
