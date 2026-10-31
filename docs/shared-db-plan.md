@@ -36,7 +36,7 @@ They already exist in `Stats.lua` and `Catch.lua`; only a new place key is neede
 | Sums of the cast positions (`px`, `py`) | `C_Map.GetPlayerMapPosition` at cast start, in 1/1000 of the map | The average catch point of a cell, for the part 4 map pin | Yes |
 | Skill range | `Skill.lua` (base rank) | The catch may depend on the skill | Yes, as a range number |
 | Pool or open water | `GetLootSourceInfo` (check in game) | Pools have a different catch | If the spike confirms it |
-| Auction prices | `Auction.lua` | Catch value without your own scan | Later, phase 6 |
+| Auction prices | `Auction.lua` | Catch value without your own scan | Not in 1.2.0 (`docs/ROADMAP.md`) |
 
 Not shared: character names, guild, exact coordinates, session times, gear.
 
@@ -359,10 +359,10 @@ data for other places goes into tooltips.
 
 | Where | What it shows |
 | --- | --- |
-| StatsFrame, "What can be caught here" tab | Items of the current cell (or the whole map, when there is little data) for the chosen skill range and source: icon, name, chance %, pieces per catch, price; "1,840 catches from 14 players" (from 2 players on), the miss rate and the exchange status line. Planned (part 4): a source mark (your catch / network / seed). |
+| StatsFrame, "What can be caught here" tab | Items of the current cell (or the whole map, when there is little data) for the chosen skill range and source: icon, name, chance %, pieces per catch, price; "1,840 catches from 14 players" (from 2 players on), the miss rate and the exchange status line. Planned (part 4): a "Water" filter when there is pool data; a click on an item opens it in the catalog. |
 | Item tooltip (ItemHooks) | Planned (part 4): "Caught in: Zone A 12%, Zone B 8%", top 3 zones. |
 | Minimap button tooltip | Planned (part 4): top 3 items of the current place. |
-| StatsFrame, "Catch catalog" tab | Planned (part 4): every item in the database (seed, your own catch, network) with a search by name in the client's language. Choosing an item lists the places it was caught: zone, cell, chance, catches, skill range. Choosing a place sets a map pin there. |
+| StatsFrame, "Catch catalog" tab | Planned (part 4): every item in the database (seed, your own catch, network) with a search by name in the client's language. Choosing an item lists its zones, each expanding into its cells (subzone, coordinates, chance, catches, skill span). A cell's pin button sets a map pin there. |
 | Settings, a "Shared database" page | "Use the shared catch database" (part 2), a short text and a status line; "Use the public channel" (part 3, planned; off = guild, group and friends only). |
 | `/okf share` | State: the bundled data's version and places, the records and places held, players heard in the last hour (guild, group, friends, Battle.net), players exchanged with in the last hour, the last exchange, traffic in the last hour, and the status line (with the pause reason). |
 | `/okf debug` | A section with the same state in English for bug reports, plus rejected senders, the running session, queued merges, the longest merge step and whether the own record is offered. |
@@ -402,8 +402,8 @@ first to the guild and the group, where it is easy to test with friends, and onl
      players the author does not know.
 6. **Catalog, chances and tooltips.** The "Catch catalog" tab: every item in the database with a search, the
    places for a chosen item, a map pin for a chosen place (`C_Map.SetUserWaypoint` + super tracking; no button on
-   maps where `C_Map.CanSetUserWaypointOnMap` is false, such as instances). Item and minimap tooltips, a pool mark.
-   Optionally, auction prices within a realm: the freshest scan wins, a price older than 3 days is not shared.
+   maps where `C_Map.CanSetUserWaypointOnMap` is false, such as instances). Item and minimap tooltips, a pool filter.
+   Shared auction prices are left out of 1.2.0 (decided on 2026-10-31, "Part 4" below; `docs/ROADMAP.md`).
    - Done when: every item in the seed is found by a search in any interface language; a chosen place puts a pin
      on the map and the navigation arrow points to it. Part 4 (spec 005).
 
@@ -604,6 +604,27 @@ fails.
 
 ### Part 4 (spec 005): catch catalog, tooltips, pools, prices
 
+Decisions (agreed on 2026-10-31 in a quiz before the spec, `specs/005-catch-catalog/spec.md`; they replace the
+matching parts of the brief below, of phase 6 and of "UI and settings"):
+
+| Topic | Decision |
+| --- | --- |
+| Shared auction prices | Left out of 1.2.0, moved to `docs/ROADMAP.md`: before the launch no client can tell which auction house a peer uses (no realms, game modes split by faction) |
+| Places of an item | One row per zone (the map's numbers); a zone expands into its cells, each with its chance, catches and a pin button |
+| Skill | The catalog's skill filter defaults to "All"; the item tooltip sums every range; a place row shows the span of skill the item was caught with there |
+| Cell name | The subzone for every player plus the coordinates of the average catch point: the client records the area ID of each cast (the area whose `C_Map.GetAreaInfo` name matches `GetSubZoneText()`, both folded so letter case never matters), shared and seeded per cell; each client renders the name by ID |
+| Pin button | `C_Map.SetUserWaypoint` + super tracking, a toast, the world map opened at the zone (not in combat); a confirmation when a pin the addon did not set is on the map; no button for cell `x`, where `C_Map.CanSetUserWaypointOnMap` is false (the enclosing zone's map is tried for a map inside a zone) or when a game rule turns pins off |
+| Little data | Under 50 catches: "little data" instead of a percentage, listed after the reliable places; the tooltip falls back to such zones, marked, only without a reliable one |
+| Item list | Alphabetical by client-language name; grey items only through a search (their tooltip keeps the line); items the client does not know are hidden until it loads them |
+| Item tooltip | "Caught in", top 3 zones, always, for every item in the database |
+| Minimap tooltip | Top 3 items of the current place, only in fishing mode, with the tab's defaults (own range, "All", the 50-catch fallback) |
+| Tooltip setting | One checkbox for both tooltips, on by default |
+| Pools | A "Water" filter "Everywhere / Open water / Pools" in both tabs, shown only when there is pool data; the miss rate only under "Everywhere"; tooltips use "Everywhere" |
+| Ways in | A click on an item row of "What can be caught here"; `/okf catalog [name or item link]` |
+| Source mark | Dropped: the "All / Only mine" filter (in the catalog too) and "N catches from K players" say where the numbers come from |
+| Search | Item name only, substring, any letter case, client language |
+| Remembered | Only the last open tab, as before; filters, the search and the chosen item reset |
+
 ```
 Catch database, part 4 of 4 (release 1.2.0): a catalog of everything caught in the game, and catch chances
 outside the current spot.
@@ -655,7 +676,8 @@ Open questions:
   honestly.
 - [x] Pin precision: a cell is 10% of the map, so its centre may fall on land. Decided for part 1: an average catch
   point per cell (still not an exact position).
-- [ ] Is the auction house in Forever per realm or per region? This decides whether to share prices.
+- [ ] Is the auction house in Forever per realm or per region? This decides whether to share prices. Shared prices
+  are left out of 1.2.0 (part 4 decisions) and wait in `docs/ROADMAP.md` for this answer.
 - [ ] Does `GetLootSourceInfo` show a pool, so that pool catches can be separated?
 
 ### Sources

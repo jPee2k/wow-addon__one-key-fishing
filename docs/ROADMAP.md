@@ -12,8 +12,9 @@ as release 1.2.0, in [shared-db-plan.md](shared-db-plan.md). Part 1 (own data, t
 and a bundled database refreshed by `npm run harvest`) is built in `specs/002-local-catch-db`; part 2 (exchange
 in the guild, the group and with friends) is built in
 [specs/003-guild-group-sync](../specs/003-guild-group-sync/spec.md) (`Comm.lua`, `Share.lua`, `/okf share`). Both
-wait for the in-game checks after the game launch. Parts 3 (a hidden public channel) and 4 (catch catalog,
-tooltips, pools) are planned in the same file and have no spec yet.
+wait for the in-game checks after the game launch. Part 3 (a hidden public channel) is built in
+[specs/004-public-channel-sync](../specs/004-public-channel-sync/spec.md); part 4 (catch catalog, map pins, tooltips,
+pools) is specified in [specs/005-catch-catalog](../specs/005-catch-catalog/spec.md).
 
 How it works now:
 
@@ -48,4 +49,8 @@ What is left:
 - Fishing pools: notice and point out nearby pools.
 - A map pin on the nearest fishing trainer for Journeyman (spec 001 research R16): needs the trainers' Forever map
   IDs and points, checked in game; until then the minimap's trainer tracking finds them.
+- Shared auction prices: the catch value without a scan of one's own (the freshest scan wins, prices older than 3
+  days are not shared). Left out of 1.2.0 (part 4 of the shared database): it waits for the in-game answer to which
+  auction house a player uses in WoW Forever (game modes split by faction, no realms), since a peer from another
+  house would bring wrong prices.
 - Skill-up forecast: how many catches until the next skill point or rank cap.
