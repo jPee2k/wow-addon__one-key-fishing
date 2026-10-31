@@ -61,8 +61,10 @@ world, out of combat.
 
 - [ ] **C1. Slots** (V23): `MaxChatChannels` (expected `20`), `GetNumActiveChannels()`, and the "too many channels"
   text as the addon looks for it. Report: ____
-- [ ] **C2. Joining and hiding** (V19, V21): what `JoinTemporaryChannel` returned, the notice tokens and their
-  events, the channel number; a chat window listed the channel before the removal and none after it. Report: ____
+- [ ] **C2. Joining and hiding** (V19, V21, V41): what `JoinTemporaryChannel` returned, the notice tokens and their
+  events, the channel number; a chat window listed the channel before the removal and none after it. Then a macro
+  with `/leave OKFSpikeNNNN` and `/join OKFSpikeNNNN` (the name the report prints), and one with `/join`, `/leave`
+  and `/join` of it: the notices in their order (one `YOU_LEFT` per leave, before the next `YOU_JOINED`?). Report: ____
 - [ ] **C3. Sending** (V19, V25): the result of the `OKFSPIKE` message to the channel (expected `0`) and, for its
   echo, the chat type (expected `CHANNEL`) and the shapes of `target` and `name`. Report: ____
 - [ ] **C4. Ownership** (V24): whether the player owns the new channel; the notices after setting and clearing a

@@ -10,21 +10,8 @@ cleanup, no wrong behaviour.
 ## Open items
 
 Grouped into fix batches: the items of one batch touch the same code and are fixed and tested in one commit. The
-batches are ordered by severity. Batches C and D and items 6 to 9 come from a review of the whole `002-shared-db`
+batches are ordered by severity. Batch D and items 6 to 9 come from a review of the whole `002-shared-db`
 branch against `develop` on 2026-10-31; every one was confirmed by a test or a traced path.
-
-### Batch C: the echo of the channel leave (medium)
-
-4. **The player's own leave of a fallback channel is taken for the echo of the addon's leave**
-   (`Exchange/Channel.lua:375`, `YOU_LEFT` in `OnNotice`). The echo window (`leftAt`: 5 s, 15 s while joining) does
-   not check which name was left. After a move (`Lock` by `MUTED`, a ban, a lock or two refusals), a `/leave` of the
-   new channel within the window is ignored. Confirmed with two tests: after the join is confirmed the state stays
-   `"in"` while the client is out, so every HELLO is dropped until logout; before it is confirmed the join check
-   fails three times, the healthy channel is locked and a third one is joined, against spec 004 FR-005. The leave
-   of the old name never needs the window (`index ~= current` already drops it). Direction: keep `leftIndex` next
-   to `leftAt` in `Leave()` and apply the window only when `index == leftIndex`. Test: in
-   `tests/exchange/channel/lock_test.lua`, `MUTED` and then `YOU_LEFT` of the fallback within 3 s gives `"left"`;
-   the same before the confirmation gives `"left"` and no join of `OneKeyFishingShare3` after `advance(20)`.
 
 ### Batch D: the tag table of the exchange (low)
 
@@ -73,6 +60,37 @@ Items 10 to 13 were found while building the catch catalog (`specs/005-catch-cat
     pools are not told apart (V3). Direction: check only the records the change names. Test: count the cells walked
     after a keyed change in `tests/catchdb/water_record_test.lua`.
 
+### Review of the batch C fix, 2026-10-31 (low)
+
+Found by four reviews of the fix of the channel leave's echo (`Exchange/Channel.lua`, `echoes`). They were not
+introduced by it (the old time window had them too), and only the game can tell how the server orders the notices.
+
+14. **A join of a name whose own leave is not answered yet** (`Join` right after `LeaveName` of the same name: a
+    second name of ours, then a move to it). If the client drops the join while the leave is under way, the late
+    `YOU_LEFT` is taken for the leave's answer, the join checks fail and a healthy name is locked. The tests assume
+    the server answers the leave first and the join after it (as `late_join_test.lua` does). Direction: confirm the
+    order in game (V41); if the join is lost, join again when the answer of the name being joined comes. The same
+    check tells whether a leave during an unconfirmed join is answered at all (if not, its entry may cover a
+    `/leave` of that name within its window).
+15. **The owed answers do not survive a `/reload`** (`channelSession` keeps `rejoinAt`, not `echoes`). A leave cut off
+    by a `/reload` within its 5 s whose answer comes after it is taken for a leave by hand. Direction: save `echoes`
+    with the session, as `rejoinAt` is (`GetTime()` goes on across a `/reload`).
+16. **An answer more than 5 s late, after the new join is confirmed, counts as a leave by hand** (the window is 15 s
+    only while the join waits). A wider window would also swallow the player's `/leave` after a leave the server
+    never answered. Direction: measure the answer's delay in game first.
+17. **A name of ours joined by hand after a leave by hand is left at once** (`OnNotice`, `YOU_JOINED` of a name that
+    is not `current`). After a `/leave` (`left`), a `/join OneKeyFishingShare2` by hand is taken for an old
+    session's second channel and left; the `/reload` path already keeps such a channel (`not left`). Direction: the
+    same `not left` guard there. Test: `YOU_LEFT` by hand, then `YOU_JOINED` of the second name: no leave.
+18. **A join answered while a later leave of the name is owed confirms the next join too early** (`OnNotice`
+    `YOU_JOINED`, and `Check` by the channel's number). The setting off and on twice: the answer to the first join
+    (and the client still in it) confirms the second one, so the 15 s window of the second leave shrinks to 5 s and
+    an answer later than that counts as a leave by hand. Only on a slow server. Direction: keep the joins as well as
+    the leaves per name and match each notice to the oldest request of its kind (needs V41 first).
+19. **A `YOU_CHANGED` of the joined channel resets the lock wait** (`OnJoined` clears `lockTimer`, `sawPassword`,
+    `owner`): if the game sends one during the 10-20 s wait, the addon stays in a locked channel. Direction: reset
+    only when the addon was joining. Test: `PASSWORD_CHANGED` by a stranger, `YOU_CHANGED`, then the wait: moved.
+
 ## History
 
 Every review of the shared catch database was closed with tests the same or the next day; the details are in the
@@ -87,4 +105,5 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
   as accepted limits in `specs/004-public-channel-sync` (spec edge cases, data-model.md) or left as style.
 - 2026-10-31, a review of the whole branch against `develop` (five areas): one high, two medium and six low items,
   recorded as batches A to E. SHA-256, the codec, the merges and the session states held up. Batch A (item IDs
-  from the loot link) and batch B (the pool part of a cell must fit the cell) were fixed the same day.
+  from the loot link) and batch B (the pool part of a cell must fit the cell) were fixed the same day, and batch C
+  (each of the addon's own channel leaves owes one `YOU_LEFT` of its name, used up when it comes) after them.

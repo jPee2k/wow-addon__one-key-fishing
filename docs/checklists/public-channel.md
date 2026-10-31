@@ -2,8 +2,8 @@
 
 **Feature**: the exchange through the hidden public channel and the protections against data from strangers
 (`specs/004-public-channel-sync`, part 3 of the shared catch database).
-**Closes**: V28, V29 of `specs/004-public-channel-sync/verification.md`, and the feature side of V19-V27 (their API
-side is closed by [spike.md](spike.md), which runs first).
+**Closes**: V28, V29 of `specs/004-public-channel-sync/verification.md`, and the feature side of V19-V27 and V41
+(their API side is closed by [spike.md](spike.md), which runs first).
 **Needs**: accounts **A** and **B** for the exchange and **C** for the lock test (two accounts show everything but
 the lock). A, B and C share no guild, group or friends list. Full accounts: Trial and Veteran accounts cannot send
 addon data.
@@ -36,11 +36,13 @@ release ships without the channel; skip steps 1-8 and 10 and run only steps 9 an
    two channels brings the addon back within a few minutes.
 6. [ ] **Setting**: "Use the public channel" off leaves the channel at once, the guild exchange goes on, data from B
    stays counted; on joins at once. With "Use the shared catch database" off the channel setting is greyed out.
-7. [ ] **Left by hand**: `/leave` the channel: the addon stays out until the next login (`/okf share`: "you left it,
-   back at the next login"). The same when the `/leave` comes within a few seconds of the addon's join (right after
-   the login delay, or 60 s after a kick). `/join OneKeyFishingShare` by hand after that, then `/reload`: the channel
-   stays in the chat window and the addon does not leave it (also with "Use the public channel" turned off). The
-   setting's checkbox ticked while the notice popup is open closes the popup.
+7. [ ] **Left by hand** (V41): `/leave` the channel: the addon stays out until the next login (`/okf share`: "you
+   left it, back at the next login"). The same when the `/leave` comes within a few seconds of the addon's join (right
+   after the login delay, or 60 s after a kick), of the move to a fallback channel (step 4), or of turning "Use the
+   public channel" off and on again; turning it off and on twice in a row leaves the addon in the channel.
+   `/join OneKeyFishingShare` by hand after that, then `/reload`: the channel stays in the chat window and the addon
+   does not leave it (also with "Use the public channel" turned off). The setting's checkbox ticked while the notice
+   popup is open closes the popup.
 8. [ ] **Slow join and kicks** (V24): `/okf debug` after a login on a busy realm: the channel is the main one
    (index 1), not a fallback, also when the join took a few seconds. C kicks A while A fights: A is back in the
    channel within about a minute of the combat's end, and B (who has not heard A this hour) counts A among the

@@ -154,7 +154,10 @@ channel = {
   rejoinAt = nil,            -- GetTime() before which a kicked client does not join again (60 s after the kick)
   joinAt = 4100,             -- GetTime() of the delayed join after the login
   joining = false,           -- the addon's own join is under way (a limit refusal now is not the player's)
-  leftAt = nil,              -- GetTime() of the addon's own last leave (a YOU_LEFT within 5 s is not "left by hand")
+  echoes = {},               -- index -> GetTime() of each of the addon's own leaves of that name whose YOU_LEFT has
+                             -- not come, oldest first. A YOU_LEFT of the name uses up the oldest one within 5 s (15 s
+                             -- while a join of the same name waits) and is not "left by hand"; older ones are dropped.
+                             -- Any other YOU_LEFT of the name joined is the player's; one of another name is ignored
   joins = 0,                 -- joins started this session (CHANNEL_STATE's third value)
   sawPassword = false,       -- a password set by a player not heard announcing on this channel (the owner clears it;
                              -- moderation has no undo, so it only starts the wait)

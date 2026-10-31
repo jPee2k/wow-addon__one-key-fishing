@@ -35,7 +35,10 @@ end
 local current -- the index joined or being joined (1 main, 2..6 fallback)
 local joined, joining = false, false
 local joins = 0 -- joins started this session (CHANNEL_STATE passes it: a new one, not a pause's end, means a new join)
-local leftAt -- GetTime() of the addon's own last leave: a YOU_LEFT soon after is its own, not the player's
+-- The addon's own leaves whose YOU_LEFT has not come yet: index -> GetTime() of each, oldest first. A YOU_LEFT of
+-- that name is the answer to the oldest one still within LEAVE_ECHO (while a join of the name waits, as long as that
+-- join may wait), not the player's leave, and uses it up; older ones (a leave the server never answered) are dropped.
+local echoes = {}
 local locked = {} -- index -> true: found locked or banned this session
 local refused = false -- the game refuses the channel itself (a Trial account, an invalid name): until logout
 local left = false -- the player left by hand: out until the next login
@@ -190,10 +193,25 @@ local function OnJoined()
     Notify()
 end
 
+-- Every leave of one of our names goes through here, so its YOU_LEFT is known for the addon's own.
+-- VERIFY(V41): the server answers each leave of a channel with one YOU_LEFT of that name, before it answers a later
+-- join of the same name
+local function LeaveName(index)
+    echoes[index] = echoes[index] or {}
+    table.insert(echoes[index], GetTime())
+    pcall(LeaveChannelByName, Channel.NAMES[index])
+end
+
+-- A leave of the name may still get its answer (as long as a join may wait): a second join notice of a name already
+-- left is not a new join.
+local function Owed(index)
+    local owed = echoes[index]
+    return owed ~= nil and GetTime() - owed[#owed] < JOIN_CHECK * JOIN_TRIES
+end
+
 local function Leave()
     if current and (joined or joining) then
-        leftAt = GetTime()
-        pcall(LeaveChannelByName, Channel.NAMES[current])
+        LeaveName(current)
     end
     joined, joining = false, false
     sawPassword, lockTimer, owner = false, nil, false
@@ -364,15 +382,19 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
     if token == "YOU_CHANGED" or token == "YOU_JOINED" then
         if index == current and (joining or joined) then
             OnJoined()
-        elseif index ~= current then
-            pcall(LeaveChannelByName, Channel.NAMES[index]) -- another of ours (an old session's): one is enough
+        elseif index ~= current and not Owed(index) then
+            LeaveName(index) -- another of ours (an old session's): one is enough
         end
     elseif token == "YOU_LEFT" then
-        if index ~= current then
-            return
+        local owed, own = echoes[index] or {}, false
+        local wait = (joining and index == current) and JOIN_CHECK * JOIN_TRIES or LEAVE_ECHO
+        while owed[1] and not own do
+            own = GetTime() - table.remove(owed, 1) < wait
         end
-        -- The addon's own leave; while a join of the same name waits for the server, as long as that join may wait.
-        if leftAt and GetTime() - leftAt < (joining and JOIN_CHECK * JOIN_TRIES or LEAVE_ECHO) then
+        if not owed[1] then
+            echoes[index] = nil
+        end
+        if own or index ~= current then
             return
         elseif joined or joining then
             -- The player left it by hand (or another addon did), also before the join was confirmed: out until the
@@ -491,10 +513,10 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
         end
         -- The client is still in it after a /reload: taken as joined (a second one of our names, or one found locked
         -- whose leave the /reload cut off, is left). Not after a leave by hand: one joined again is the player's.
-        for index, name in ipairs(Channel.NAMES) do
+        for index in ipairs(Channel.NAMES) do
             if NumberOf(index) and not left then
                 if joined or locked[index] then
-                    pcall(LeaveChannelByName, name)
+                    LeaveName(index)
                 else
                     current, joined = index, true
                 end
