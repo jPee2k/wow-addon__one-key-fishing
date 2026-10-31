@@ -144,4 +144,6 @@ off, notice, unavailable, paused, alone, active); `Share.ChannelLine()` is the c
 and the settings page, and `GetStatus` carries the channel fields (`channel`, `channelIndex`, `channelPeers`,
 `population`, `blocked`, `ownBlocked`). The one-time notice names the channel: closing the popup sets
 `shareNotice` and, while the release has the channel, `shareNoticeChannel`; a player who closed an earlier notice
-that did not name the channel sees it once more.
+that did not name the channel sees it once more. The popup itself is the view's (`UI/ShareNotice.lua`): Share says
+whether one is owed (`Share.NoticeOwed()`), what closing it means (`Share.NoticeRead()`: the exchange starts) and
+hides it by `Share.NOTICE_POPUP` when a setting on the page counts as reading it (`Share.CloseNotice()`).

@@ -53,9 +53,10 @@ function Skill.GetRankName(maxRank)
     return RankNames()[maxRank] or ""
 end
 
+-- Chat and (at the cap) the raid warning here; the toast is the UI's (SKILL_WARNING, UI/Toast.lua).
 local function Announce(text, loud)
     ns.Print(text)
-    ns.Toast(text, 1, 0.55, 0.1)
+    ns.Fire("SKILL_WARNING", text, loud)
     if loud and RaidNotice_AddMessage and RaidWarningFrame and ChatTypeInfo then
         RaidNotice_AddMessage(RaidWarningFrame, text, ChatTypeInfo.RAID_WARNING)
     end

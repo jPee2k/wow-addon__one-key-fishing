@@ -33,4 +33,5 @@ than 5 pieces or fewer than 3 result rows (price points; several sellers at one 
   only when the server takes requests; later pages arrive as `COMMODITY_SEARCH_RESULTS_ADDED`; at a timeout the
   pages that came decide.
 - Throttle retry and timeout.
-- `Auction.CanScan()` is the one "can scan now" rule for every scan button.
+- `Auction.CanScan()` is the one "can scan now" rule for every scan button; `Auction.GetProgress()` (scanning,
+  done, total) and `AUCTION_STATE` feed the button above the auction house window (`UI/AuctionButton.lua`).

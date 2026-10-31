@@ -295,11 +295,7 @@ test("/okf share prints every number of the state", function()
 end)
 
 test("/okf debug has a Shared database section without the ID or a name", function()
-    local report
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, text) report = text end
-    ns.ShowReport()
-    ns.ShowCopyWindow = show
+    local _, report = ns.Debug.Report()
     assert(report:find("-- Shared database --", 1, true), "section")
     assert(report:find("state alone", 1, true), "state")
     assert(report:find("transport: pause", 1, true), "transport")
@@ -383,11 +379,7 @@ test("/okf share counts the channel among the players heard, while the release h
 end)
 
 test("/okf debug has the channel, the population, the channel peers, the blocked counts and the chain state", function()
-    local report
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, text) report = text end
-    ns.ShowReport()
-    ns.ShowCopyWindow = show
+    local _, report = ns.Debug.Report()
     assert(report:find("channel: ", 1, true), "Channel.Describe")
     assert(report:find("free slots", 1, true), "the slots")
     assert(report:find("population", 1, true), "the population estimate")
@@ -407,11 +399,7 @@ test("GetStatus has the channel, its index, the channel peers and the blocked fi
     eq(status.ownBlocked, false, "the own ID is not blocked")
     ns.SeedData.blocked = { [ns.db.shared.myID] = true }
     eq(Share.GetStatus().ownBlocked, true, "blocked")
-    local report
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, text) report = text end
-    ns.ShowReport()
-    ns.ShowCopyWindow = show
+    local _, report = ns.Debug.Report()
     assert(report:find("own record offered: no, blocked by the bundled data", 1, true), "the debug report says so")
     ns.SeedData.blocked = nil
 end)

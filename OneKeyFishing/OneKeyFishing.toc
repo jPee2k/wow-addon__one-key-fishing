@@ -50,12 +50,15 @@ Exchange\Share.lua
 # Catch catalog
 Catalog\Catalog.lua
 # UI
+UI\Widgets.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
 UI\CatchHere.lua
 UI\CatalogTab.lua
 UI\StatsFrame.lua
+UI\AuctionButton.lua
+UI\ShareNotice.lua
 Core\Debug.lua
 Core\Spike.lua
 UI\Settings.lua

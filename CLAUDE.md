@@ -67,14 +67,32 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 
 ## Architecture
 
-All files share the addon namespace (`local _, ns = ...`). The addon folder has one subfolder per area, the same
-areas as `docs/architecture/` and `tests/`. Load order is the TOC order (the table below follows it); a module may only call another module at runtime, not at file load time, unless it comes earlier in the TOC.
+All files share the addon namespace (`local _, ns = ...`). Load order is the TOC order (the table below follows
+it); a module may only call another module at runtime, not at file load time, unless it comes earlier in the TOC.
+
+The code is **a core plus feature modules over a message bus**, in layers; the addon folder has one subfolder per
+area, the same areas as `docs/architecture/` and `tests/`. The layers, the rule and how MVC maps onto them are in
+[core.md](docs/architecture/core.md), "Layers":
+
+| Layer | Folders | May use the module tables (`ns.<Name>`) of |
+|---|---|---|
+| 0 Core | `Core/`, `Locales/` | nothing above: no module of an area |
+| 1 Game | `Fishing/`, `Catch/` | layers 0-1 |
+| 2 Data | `CatchDB/`, `Exchange/`, `Catalog/` | layers 0-2 |
+| 3 View | `UI/` | everything |
+
+`Core/Commands.lua` is the entry that may open a window; `Core/Debug.lua` and `Core/Spike.lua` read every module
+but the UI. `npm run check` enforces the rule and allows `CreateFrame` outside `UI/` only where `tools/addon.mjs`
+lists it. **Every new feature is built inside this architecture**: its data and rules in a module of layer 1 or 2
+(a new folder only for a new area, with its document in `docs/architecture/` and its folder in `tests/`), its
+frames in `UI/`, the two joined by messages and module functions, never by a lower layer naming a frame; its
+commands in `Core/Commands.lua`.
 
 | Module | Job | Details |
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
-| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, shared widgets, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
+| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared data and helpers (fishing IDs, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
@@ -86,7 +104,7 @@ areas as `docs/architecture/` and `tests/`. Load order is the TOC order (the tab
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua` | the catch database: recording by place, the seed, views | [catch-db.md](docs/architecture/catch-db.md) |
 | `Exchange/Comm.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua` | the catch exchange: transport; the hidden public channel; protocol, others' records, state | [exchange.md](docs/architecture/exchange.md) |
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catalog.md](docs/architecture/catalog.md) |
-| `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/StatsFrame.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua` | copy window, indicator, toast, the statistics window and its tabs | [ui.md](docs/architecture/ui.md) |
+| `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/StatsFrame.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers, copy window, indicator, toast, the statistics window and its tabs, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
 | `Core/Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before release 1.2.0 | [ui.md](docs/architecture/ui.md), [docs/checklists/spike.md](docs/checklists/spike.md) |
 | `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
@@ -100,6 +118,8 @@ Cross-module rules:
 - Everything fishing mode changes (CVars, gear, camera) is stored in the character DB *before* it is changed;
   what is restored when is in constitution Principle III and [fishing-mode.md](docs/architecture/fishing-mode.md).
 - Slash commands are declared only in `Core/Commands.lua`; modules register none.
+- The layers (table above): a lower layer never names a UI module; the UI listens to messages and calls module
+  functions. `npm run check` reports a break.
 - Sharing is switched by `Share.SetEnabled`, never by a direct write of `settings.shareDB` (it fires
   `SHARED_DATA_CHANGED`, which drops cached views). The public channel likewise by `Channel.SetEnabled`, never by a
   write of `settings.shareChannel` (it joins or leaves at once).
@@ -114,6 +134,7 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
 - `FISH_CAUGHT` (items, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
+- `SKILL_WARNING` (text, loud: a cap warning of `Fishing/Skill.lua`; the toast shows it)
 - `AUCTION_STATE` (scan progress), `PRICES_CHANGED` (a scan finished or stopped)
 - `SHARED_DATA_CHANGED` (keys, and the store when Share changed one: records under `<id>@<epoch>` came or went:
   other players', or the own one a roll kept; or sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)

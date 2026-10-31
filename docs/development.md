@@ -29,6 +29,8 @@ Run it after every change. It checks:
 - Lua files only in `OneKeyFishing/` and `tests/` (test files get the syntax and line-length checks);
 - every repository root entry is either packaged or listed in the `.pkgmeta` `ignore` list;
 - every Lua file is listed in the TOC, and every TOC file is in one of the area folders;
+- the layers: a file names only the module tables of its own layer or below, and `CreateFrame` outside `UI/` only
+  where `tools/addon.mjs` allows it ([core.md](architecture/core.md), Layers);
 - locale keys in sync;
 - the bundled seed `CatchDB/SeedData.lua` exists, is at most 1 MB, the `ns.SeedData` fields, place keys;
 - no packager keywords in addon Lua and XML (see Packaging);
@@ -56,7 +58,7 @@ stays at the root of `tests/`:
 | Folder | Area | Examples |
 |---|---|---|
 | `core/` | [core.md](architecture/core.md): loading, migrations, locales, commands, text folding, SHA-256 | `load_test.lua`, `migrations_test.lua`, `locale_test.lua`, `proof_test.lua` |
-| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua` |
+| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua`, `skill_test.lua` |
 | `catch/` | [catch-and-stats.md](architecture/catch-and-stats.md) | `prices_test.lua`, `stats_test.lua` |
 | `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
 | `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `pin_test.lua`, `load_test.lua` |

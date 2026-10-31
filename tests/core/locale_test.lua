@@ -172,12 +172,8 @@ test("the language button names the preference", function()
 end)
 
 test("the debug report names the preference, the language in use and the client", function()
-    local report
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, text) report = text end
     ns.db.settings.language = "ukUA"
-    ns.ShowReport()
-    ns.ShowCopyWindow = show
+    local _, report = ns.Debug.Report()
     ns.db.settings.language = "auto"
     assert(report:find("ukUA", 1, true), "preference")
     assert(report:find("in use: enUS", 1, true), "language in use")

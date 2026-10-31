@@ -17,7 +17,6 @@ local isOpen = false
 local queue = {}
 local current -- itemID being searched
 local total, scanned = 0, 0
-local button
 
 function Auction.IsOpen()
     return isOpen
@@ -50,21 +49,12 @@ local function ItemsToScan()
     return list
 end
 
-local function UpdateButton()
-    if not button then
-        return
-    end
-    if current then
-        button:SetText((L["Scanning %d/%d"]):format(total - #queue, total))
-        button:Disable()
-    else
-        button:SetText(L["Scan fish prices"])
-        button:Enable()
-    end
+-- The scan's progress for the scan button (UI/AuctionButton.lua): scanning, items done, items in all.
+function Auction.GetProgress()
+    return current ~= nil, total - #queue, total
 end
 
 local function NotifyState()
-    UpdateButton()
     ns.Fire("AUCTION_STATE")
 end
 
@@ -193,24 +183,8 @@ function Auction.Scan()
     Next()
 end
 
--- Button above the top right corner of the auction house window.
-local function EnsureButton()
-    if button or not AuctionHouseFrame then
-        return
-    end
-    button = ns.CreateButton(AuctionHouseFrame, "", 150, Auction.Scan)
-    -- Wide enough for the longest text it shows, so it keeps its size while the count goes up.
-    for _, text in ipairs({ L["Scan fish prices"], (L["Scanning %d/%d"]):format(999, 999) }) do
-        button:SetText(text)
-        button.minWidth = button:GetWidth() or button.minWidth
-    end
-    button:SetPoint("BOTTOMRIGHT", AuctionHouseFrame, "TOPRIGHT", -24, 2)
-    UpdateButton()
-end
-
 ns.RegisterEvent("AUCTION_HOUSE_SHOW", function()
     isOpen = true
-    EnsureButton()
     NotifyState()
 end)
 

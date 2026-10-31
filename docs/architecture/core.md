@@ -3,6 +3,36 @@
 Localization, the core services, saved variables, slash commands and the shared helpers. The module map and the
 message list are in `CLAUDE.md`; languages and translation file rules are in [languages.md](../languages.md).
 
+## Layers
+
+WoW addons follow the pattern Ace3 formalized and the large addons use: a core plus feature modules over a message
+bus. Here it is layered, one folder per area, so that MVC maps onto it: the model is the data and its rules
+(`CatchDB/`, `Catalog/`, the statistics and prices of `Catch/`, the exchange's records and protocol); the
+controller is what turns game events and key presses into model changes and game actions (`Fishing/`, catch
+detection and auction scans, the transport and the channel, `Core/Commands.lua`); the view is `UI/`; the message
+bus `ns.On` / `ns.Fire` is the observer: model and controller announce, the view listens, nothing below knows a
+frame.
+
+| Layer | Folders | May use the module tables (`ns.<Name>`) of |
+|---|---|---|
+| 0 Core | `Core/` (Localization, Core, Data), `Locales/` | nothing above |
+| 1 Game | `Fishing/`, `Catch/`: the game's state and actions | layers 0-1 |
+| 2 Data | `CatchDB/`, `Exchange/`, `Catalog/`: the catch data, its exchange and index | layers 0-2 |
+| 3 View | `UI/`: every frame | everything |
+
+- Entries: `Core/Commands.lua` is the one place a command opens a window (it sees everything); `Core/Debug.lua`
+  and `Core/Spike.lua` read every module but the UI and return text that `Commands.lua` shows.
+- Chat output (`ns.Print`) and the game's popup (`ns.ShowPopup`) stay in Core as infrastructure any layer may use:
+  they are not addon frames.
+- `npm run check` enforces the rule: what a file defines at the start of a line (`ns.Name = ...`,
+  `function ns.Name(`) belongs to its folder's layer, and a file may name only what its layer and the layers below
+  define. `CreateFrame` outside `UI/` is allowed only where `tools/addon.mjs` (`FRAMES_OUTSIDE_UI`) lists it: the
+  event frame, the secure button and its state handler, the scanning tooltip, the spike's probes.
+- Lifecycle: a module registers its own `ADDON_LOADED` / `PLAYER_LOGIN` handlers with `ns.RegisterEvent` (no
+  `OnInitialize` / `OnEnable` framework); handlers of one event run in TOC order.
+- A new feature goes into the module of its area (layer 1 or 2) and `UI/`, joined by messages and module
+  functions; a new area adds a folder, its document here and its folder in `tests/`.
+
 ## Core/Localization.lua (loaded first)
 
 - `ns.L` is keyed by the English text: the effective translation, then English, then the key.
@@ -29,10 +59,9 @@ message list are in `CLAUDE.md`; languages and translation file rules are in [la
 
 - `ns.RegisterEvent` (several handlers per event) and the internal message bus `ns.On` / `ns.Fire` (messages in
   `CLAUDE.md`).
-- Widgets and helpers: `ns.CreateButton` (the shared panel button, which grows to its text on every `SetText`),
-  `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip` (item tooltip with the
-  few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.ShowPopup` (two-button popups),
-  `ns.Print` (a chat line with the addon prefix), `ns.ReportSection` (a titled block of the debug report).
+- Helpers: `ns.ShowPopup` (two-button popups), `ns.Print` (a chat line with the addon prefix), `ns.ReportSection`
+  (a titled block of the debug report). The frame helpers (`ns.CreateButton`, `ns.CreateText`, `ns.ItemDisplay`,
+  `ns.ShowItemTooltip`, `ns.OpenRadioMenu`) are the view's, in `UI/Widgets.lua` ([ui.md](ui.md)).
 - The slash command dispatcher and help (`/okf` and `/onekeyfishing`; the commands themselves are in
   Commands.lua), `ns.version` from the TOC, and binding labels.
 
@@ -103,4 +132,5 @@ Builds the `/okf debug` report (English, not localized): versions and locale, th
 and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database
 (`CatchDB.Describe()`, never the anonymous ID), the shared database (`Share.Describe()`, `Channel.Describe()`, no
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
-and the name queue, never an item name).
+and the name queue, never an item name). `Debug.Report()` returns the window title and the text; `/okf debug`
+(`Commands.lua`) shows them in the copy window.

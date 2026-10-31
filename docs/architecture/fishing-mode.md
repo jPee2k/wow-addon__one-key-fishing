@@ -69,6 +69,6 @@ Lures and fished containers.
 
 ## Fishing/Skill.lua
 
-Reads the Fishing rank (`Skill.Get()`), stores the session's starting rank and warns (chat, toast, raid warning at
-the cap) when the rank is near or at its cap, with where to learn the next one; it checks on skill events, after
+Reads the Fishing rank (`Skill.Get()`), stores the session's starting rank and warns (chat and, at the cap, the
+raid warning here; the toast through `SKILL_WARNING`, shown by `UI/Toast.lua`) when the rank is near or at its cap, with where to learn the next one; it checks on skill events, after
 login and on entering fishing mode.

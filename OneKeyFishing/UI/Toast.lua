@@ -82,3 +82,7 @@ end)
 ns.On("FISH_MISSED", function()
     ns.Toast(L["Nothing caught"], 1, 0.4, 0.4)
 end)
+
+ns.On("SKILL_WARNING", function(text)
+    ns.Toast(text, 1, 0.55, 0.1)
+end)

@@ -306,11 +306,7 @@ test("Describe lists the state, maps, items, the build times and the name queue"
 end)
 
 test("the debug report holds the catalog section and no item name", function()
-    local report
-    local show = ns.ShowCopyWindow
-    ns.ShowCopyWindow = function(_, text) report = text end
-    ns.ShowReport()
-    ns.ShowCopyWindow = show
+    local _, report = ns.Debug.Report()
     assert(report:find("-- Catch catalog --", 1, true), "section")
     assert(report:find("index all|all|all: ready", 1, true), "the index")
     for _, itemID in ipairs({ FISH, TROUT, OWN }) do
