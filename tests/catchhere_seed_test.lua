@@ -21,7 +21,7 @@ test("a character with no catches sees the bundled numbers", function()
     eq(here.rows[1].itemID, 6291, "most caught first")
     eq(here.rows[1].chance.text, "75%", "90 of 120")
     eq(here.rows[2].chance.text, "25%", "30 of 120")
-    eq(here.hint.text, "", "no note: the seed is there")
+    eq(here.hint.text, L["Click an item to see where else it is caught."], "no note: the seed is there")
 end)
 
 test("Only mine shows that nothing of their own was caught here", function()

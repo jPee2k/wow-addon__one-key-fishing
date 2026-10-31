@@ -76,6 +76,20 @@ test("only part 1 fields are kept: nothing a peer adds reaches the saved data", 
     eq(Store.ForSending(stored).seen, nil, "seen is not sent")
 end)
 
+test("a received cell's subzone counts survive the cleaning; a record with bad ones is refused (part 4)", function()
+    local record = rec("daaaaaad", 1, 1)
+    local cell = record.builds["1.60.1"]["1415:3:47"]
+    cell.px, cell.py, cell.a = 1000, 1000, { [1519] = 2, [1617] = 1 }
+    eq(Store.Accept(shared, record, 5700), "new", "accepted")
+    local stored = shared.records["daaaaaad@1"].builds["1.60.1"]["1415:3:47"].a
+    eq(stored[1519], 2, "kept")
+    eq(stored[1617], 1, "both")
+    assert(stored ~= cell.a, "a copy, not the sender's table")
+    local bad = rec("eaaaaaae", 1, 1)
+    bad.builds["1.60.1"]["1415:3:47"].a = { [1519] = 99 }
+    eq(Store.Accept(shared, bad, 5700), "refused", "more casts in areas than in the cell")
+end)
+
 test("a unit the seed holds whole is refused and deleted at cleanup", function()
     local absorbed = { [A] = { [1] = 9 } }
     eq(Store.Accept(shared, rec(A, 1, 9), 5700, absorbed), "refused", "seq 9 is in the seed")

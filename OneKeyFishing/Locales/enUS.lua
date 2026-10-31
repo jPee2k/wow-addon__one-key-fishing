@@ -294,3 +294,22 @@ L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d
 
 -- Catalog.lua: the catch catalog (part 4)
 L["Unknown zone (%d)"] = true
+
+-- Catalog.lua: spots
+L["%s (%s)"] = true
+L["No exact spot"] = true
+
+-- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+L["Catch catalog"] = true
+L["Search by item name"] = true
+L["Zones: %d"] = true
+L["Back"] = true
+L["Place"] = true
+L["Skill"] = true
+L["Counting the catch..."] = true
+L["Nothing has been caught yet."] = true
+L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] = true
+L["You have not caught anything yet."] = true
+L["No item matches the search."] = true
+L["No data for this item under these filters."] = true
+L["Click an item to see where else it is caught."] = true

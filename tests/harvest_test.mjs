@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import zlib from "node:zlib";
 import luaparse from "luaparse";
 import { harvest, parseArgs, parseSeed, proofStep, seedProblems } from "../tools/harvest.mjs";
 
@@ -102,6 +103,48 @@ const NOW = new Date("2026-12-01T12:00:00Z");
 function run(env, extra = {}) {
   return harvest({ addonsDir: env.addonsDir, files: [env.friend, env.broken], outDir: env.outDir, now: NOW, ...extra });
 }
+
+// A minimal CBOR encoder (RFC 8949) for the size check of part 4: maps, arrays, unsigned and negative integers and
+// text strings, the subset a record uses. Map keys that are whole numbers in text ("1519") are encoded as integers,
+// as the game encodes a Lua table's number keys. The game's encoder may differ by a few bytes; V18 confirms the size
+// in game.
+function cborHead(major, value) {
+  if (value < 24) {
+    return Buffer.from([(major << 5) | value]);
+  }
+  const sizes = [[0xff, 24, 1], [0xffff, 25, 2], [0xffffffff, 26, 4]];
+  for (const [max, info, bytes] of sizes) {
+    if (value <= max) {
+      const out = Buffer.alloc(1 + bytes);
+      out[0] = (major << 5) | info;
+      out.writeUIntBE(value, 1, bytes);
+      return out;
+    }
+  }
+  throw new Error(`too large for this encoder: ${value}`);
+}
+
+function cbor(value) {
+  if (typeof value === "number") {
+    if (!Number.isInteger(value)) {
+      throw new Error(`not an integer: ${value}`);
+    }
+    return value >= 0 ? cborHead(0, value) : cborHead(1, -1 - value);
+  }
+  if (typeof value === "string") {
+    const bytes = Buffer.from(value, "utf8");
+    return Buffer.concat([cborHead(3, bytes.length), bytes]);
+  }
+  if (Array.isArray(value)) {
+    return Buffer.concat([cborHead(4, value.length), ...value.map(cbor)]);
+  }
+  const entries = Object.entries(value);
+  return Buffer.concat([cborHead(5, entries.length), ...entries.flatMap(([key, field]) =>
+    [cbor(/^\d+$/.test(key) ? Number(key) : key), cbor(field)])]);
+}
+
+// The record as the exchange sends it: CBOR, then raw Deflate, then Base64 (Share.lua, research R4 of part 2).
+const encodedSize = (record) => zlib.deflateRawSync(cbor(record)).toString("base64").length;
 
 export const tests = [
   {
@@ -720,6 +763,75 @@ export const tests = [
       assert.match(report, /outlier {3}haaaaaa3@0: pieces per catch 3 times the others'/);
       assert.doesNotMatch(report, /outlier {3}caaaaaa3/, "an honest player");
       assert.match(report, /block one with: npm run harvest -- --block <id> "why"/);
+    },
+  },
+
+  {
+    name: "subzone counts are checked, summed per area, kept to the 8 largest, written sorted and checked (part 4)",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-areas-"));
+      const file = path.join(root, "author.lua");
+      const areas = (a) => ({ px: 1000, py: 1000, a });
+      fs.writeFileSync(file, savedFile({
+        [A]: oneCell(A, 0, 5, "1415:3:47", cell(10, 0, { 6291: [10, 10] },
+          areas({ 1519: 5, 10: 2, 11: 1, 12: 1, 13: 1 }))),
+        [`${B}@0`]: record(B, 0, 5, { "1.60.1": {
+          "1415:3:47": cell(10, 0, { 6291: [10, 10] }, areas({ 1519: 3, 14: 3, 15: 2, 16: 1, 17: 1 })),
+          "1415:3:48": cell(2, 0, { 6291: [2, 2] }, areas({ 1519: 9 })), // more casts in areas than in the cell
+        } }),
+      }));
+      const outDir = path.join(root, "out");
+      const result = harvest({ files: [file], outDir, now: NOW });
+      assert.equal(result.ok, true, result.report.join("\n"));
+      assert.match(result.report.join("\n"), /skipped {3}bbbbbbbb cell 1415:3:48: more casts in areas than in the cell/);
+      const { text, store } = readSeed(outDir);
+      assert.deepEqual(store.contributions[`${A}@0`].builds["1.60.1"]["1415:3:47"].a,
+        { 10: 2, 11: 1, 12: 1, 13: 1, 1519: 5 }, "kept in the contribution");
+      const c = seedCells(text)["1415:3:47"];
+      // Nine areas in the sum: 1519 8, 14 3, 10 2, 15 2, then 11, 12, 13, 16, 17 with 1 each: the lowest IDs stay.
+      assert.deepEqual(c.a, { 10: 2, 11: 1, 12: 1, 13: 1, 14: 3, 15: 2, 16: 1, 1519: 8 }, "the 8 largest");
+      assert.match(text, /^ {6}a = \{ \[10\] = 2, \[11\] = 1, \[12\] = 1, \[13\] = 1, \[14\] = 3, \[15\] = 2, \[16\] = 1, \[1519\] = 8 \},$/m,
+        "sorted by ID");
+      assert.deepEqual(seedProblems(luaparse.parse(text, { luaVersion: "5.1" })), [], "npm run check is happy");
+      const bad = text.replace("[1519] = 8 },", "[1519] = 80 },");
+      assert.ok(seedProblems(luaparse.parse(bad, { luaVersion: "5.1" }))
+        .some((problem) => problem.includes("more casts in areas")), "a bad seed cell is a problem");
+    },
+  },
+  {
+    name: "a weighted contributor's subzone counts are scaled by its cast factor, within the cell's casts",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-areas-weights-"));
+      const file = path.join(root, "author.lua");
+      const records = {};
+      for (const id of ["caaaaaa4", "daaaaaa4", "eaaaaaa4", "faaaaaa4"]) {
+        records[id] = oneCell(id, 0, 1, "1415:3:47", cell(10, 0, { 6291: [10, 10] }, { px: 100, py: 100,
+          a: { 40: 10 } }));
+      }
+      records.gaaaaaa4 = oneCell("gaaaaaa4", 0, 50, "1415:3:47", cell(900, 0, { 6303: [900, 900] },
+        { px: 9000, py: 9000, a: { 30: 899, 31: 1 } }));
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(file, savedFile(records));
+      harvest({ files: [file], outDir, now: NOW });
+      const c = seedCells(readSeed(outDir).text)["1415:3:47"];
+      assert.equal(c.a["40"], 40, "the four others in full");
+      assert.equal(c.a["30"], 10, "899 casts scaled like the 900 casts: 10");
+      assert.equal(c.a["31"], undefined, "one cast scaled to nothing");
+      const total = Object.values(c.a).reduce((sum, n) => sum + n, 0);
+      assert.ok(total <= c.c + c.m, "within the cell's casts");
+    },
+  },
+  {
+    name: "a 500-place record with two subzones per place encodes under 28 KB (V18)",
+    fn() {
+      const cells = {};
+      for (let i = 0; i < 500; i += 1) {
+        const key = `${1400 + (i % 50)}:${i % 5}:${String(Math.floor(i / 5) % 100).padStart(2, "0")}`;
+        cells[key] = { c: 300 + i, m: 40, t: 4000 + i, px: 150000 + i * 7, py: 120000 + i * 11,
+          i: { 6291: [200, 210], 6303: [80, 80], 6358: [20 + (i % 7), 25] }, a: { [1500 + i]: 250, [2000 + i]: 90 } };
+      }
+      const size = encodedSize({ id: A, epoch: 3, seq: 4000, proof: "abcdefghijklmnop", builds: { "1.60.1": cells } });
+      assert.ok(size < 28 * 1024, `${size} bytes`);
     },
   },
 ];

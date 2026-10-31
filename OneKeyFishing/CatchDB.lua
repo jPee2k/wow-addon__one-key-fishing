@@ -12,6 +12,7 @@ local GRID = 10 -- cells per map side
 local RANGE_STEP = 75 -- skill points per range
 local MAX_RANGE = 4 -- 300 and above
 local MAX_PIECES = 20 -- pieces counted per catch and item, against bogus quantities
+local MAX_AREAS = 8 -- subzones counted per cell (a, specs/005-catch-catalog research R4); a ninth is not added
 local SEQ_INTERVAL = 60 -- seconds between bumps of the record's seq
 -- Places of the own record before a new one rolls it (Roll below): a peer takes a record of up to 1,000 places and
 -- 32 KB encoded. Measured with CBOR + Deflate + Base64 in Node: 34-47 bytes per place, so 500 places stay under
@@ -128,6 +129,28 @@ function CatchDB.GetCurrentPlace()
         return nil
     end
     return mapID, math.min(MAX_RANGE, math.floor(rank / RANGE_STEP)), CatchDB.GetCell(mapID)
+end
+
+-- The game's area ID of the player's subzone at a position of map mapID (research R4 of specs/005-catch-catalog),
+-- or nil. Of the explored areas there it keeps the one the game names as GetSubZoneText does. Principle II: matching
+-- against localized text must tolerate case changes in non-ASCII text, so both names are folded (ns.FoldCase); the
+-- needle is the client's own text and only the ID is kept.
+function CatchDB.GetArea(mapID, x, y)
+    local subzone = GetSubZoneText and GetSubZoneText()
+    if type(subzone) ~= "string" or subzone == "" or not (C_MapExplorationInfo and CreateVector2D and x and y) then
+        return nil
+    end
+    -- VERIFY(V34): the explored areas at the player's own position include the subzone, named as GetSubZoneText
+    -- shows it
+    local areas = C_MapExplorationInfo.GetExploredAreaIDsAtPosition(mapID, CreateVector2D(x, y))
+    local wanted = ns.FoldCase(subzone)
+    for _, areaID in ipairs(type(areas) == "table" and areas or {}) do
+        local name = C_Map.GetAreaInfo(areaID)
+        if type(name) == "string" and ns.FoldCase(name) == wanted then
+            return areaID
+        end
+    end
+    return nil
 end
 
 -- The game version the data is recorded under.
@@ -529,6 +552,10 @@ local function Settle(cast, caught, fromPool)
         if cast.x then
             cell.px = (cell.px or 0) + math.floor(cast.x * 1000 + 0.5)
             cell.py = (cell.py or 0) + math.floor(cast.y * 1000 + 0.5)
+            if cast.area and (cell.a == nil or cell.a[cast.area] or ns.CountKeys(cell.a) < MAX_AREAS) then
+                cell.a = cell.a or {}
+                cell.a[cast.area] = (cell.a[cast.area] or 0) + 1
+            end
         end
         if caught then
             cell.c = cell.c + 1
@@ -616,6 +643,38 @@ local function CheckItems(items, catches)
     return true
 end
 
+-- The subzone counts a of a cell (data-model.md of specs/005-catch-catalog): absent or a table of at most 8
+-- entries; every key is a whole number from 1 to 2,147,483,647; every count is a count, and their sum is at most
+-- c + m.
+local MAX_AREA_ID = 2147483647
+
+local function CheckAreas(areas, casts)
+    if areas == nil then
+        return true
+    end
+    if type(areas) ~= "table" then
+        return false, "the areas are not a table"
+    end
+    local count, total = 0, 0
+    for areaID, n in pairs(areas) do
+        count = count + 1
+        if count > MAX_AREAS then
+            return false, "more than " .. MAX_AREAS .. " areas"
+        end
+        if not (IsCount(areaID) and areaID >= 1 and areaID <= MAX_AREA_ID) then
+            return false, "area ID " .. tostring(areaID) .. " is not a positive 32-bit number"
+        end
+        if not IsCount(n) then
+            return false, "area " .. areaID .. " has no count"
+        end
+        total = total + n
+    end
+    if total > casts then
+        return false, "more casts in areas than in the cell"
+    end
+    return true
+end
+
 local function CheckCell(cell)
     if type(cell) ~= "table" or not (IsCount(cell.c) and IsCount(cell.m) and IsCount(cell.t)) then
         return false, "not a cell"
@@ -633,6 +692,10 @@ local function CheckCell(cell)
         end
     end
     local ok, reason = CheckItems(cell.i, cell.c)
+    if not ok then
+        return false, reason
+    end
+    ok, reason = CheckAreas(cell.a, casts)
     if not ok then
         return false, reason
     end
@@ -750,8 +813,8 @@ local NEW_ITEM_REPORTERS = 3 -- other contributions that must report an item nei
 -- px, py, n: the summed positions of the cells that have one and their casts, for a spot's point; ranges: item ID ->
 -- { min, max }, the skill ranges the item was caught in. These three are never weighted.
 local function NewSum()
-    return { c = 0, m = 0, x = 0, i = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {}, px = 0, py = 0, n = 0,
-        ranges = {} }
+    return { c = 0, m = 0, x = 0, i = {}, a = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {}, px = 0,
+        py = 0, n = 0, ranges = {} }
 end
 
 local function AddRanges(sum, cell, range)
@@ -809,11 +872,16 @@ local function AddCell(sum, cell, source, range)
     if source.other then
         target = sum.parts[source.id]
         if not target then
-            target = { c = 0, m = 0, x = 0, i = {} }
+            target = { c = 0, m = 0, x = 0, i = {}, a = {} }
             sum.parts[source.id] = target
         end
     end
     AddCounts(target, cell)
+    if type(cell.a) == "table" then
+        for areaID, n in pairs(cell.a) do
+            target.a[areaID] = (target.a[areaID] or 0) + (tonumber(n) or 0)
+        end
+    end
     -- A seed cell weighted by the harvest carries its catches weighted by casts (x) and its raw catches (r); records
     -- never do (CleanCell).
     target.x = target.x + ((source.seed and tonumber(cell.x)) or tonumber(cell.c) or 0)
@@ -1216,8 +1284,23 @@ local function BuildView(scope, sum, rules)
         end
         return a.itemID < b.itemID
     end)
+    -- The subzone with the most casts, other players' parts scaled like their casts; ties to the lower ID.
+    local areas, area = {}, nil
+    for areaID, n in pairs(sum.a) do
+        areas[areaID] = n
+    end
+    for id, part in pairs(sum.parts) do
+        for areaID, n in pairs(part.a) do
+            areas[areaID] = (areas[areaID] or 0) + n * (castFactors[id] or 1)
+        end
+    end
+    for areaID, n in pairs(areas) do
+        if n > 0 and (not area or n > areas[area] or (n == areas[area] and areaID < area)) then
+            area = areaID
+        end
+    end
     local catches = RawCatches(sum)
-    return { scope = scope, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
+    return { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
         missRate = casts > 0 and misses / casts or 0, items = items, players = players,
         point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
 end
@@ -1426,7 +1509,7 @@ ns.On("FISHING_CAST_START", function()
     local mapID, range, cell, x, y = CatchDB.GetCurrentPlace()
     if mapID then
         casts[ns.GetFishingCastID()] = { key = CatchDB.PlaceKey(mapID, range, cell), x = x, y = y,
-            start = GetTime() }
+            area = x and CatchDB.GetArea(mapID, x, y), start = GetTime() }
     end
 end)
 

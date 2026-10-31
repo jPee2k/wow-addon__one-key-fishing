@@ -48,6 +48,7 @@ end
 local function SourceLabel(value)
     return value == "mine" and L["Only mine"] or L["All"]
 end
+CatchHere.RangeLabel, CatchHere.SourceLabel = RangeLabel, SourceLabel -- the catalog's buttons read the same
 
 -- The skill filter: the one picked by hand, else the own range.
 local function EffectiveRange(ownRange)
@@ -111,6 +112,12 @@ local function CreateRow(parent, index)
         end
     end)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- A known item opens the catalog on it (FR-024); an "Unknown item" has no name to show there.
+    row:SetScript("OnMouseUp", function(self, button)
+        if button == "LeftButton" and self.itemID and not self.unknown then
+            ns.StatsFrame.OpenCatalog(self.itemID)
+        end
+    end)
     return row
 end
 
@@ -240,6 +247,7 @@ function CatchHere.Refresh(mapID, ownRange, cell)
             end
             FillRow(page.rows[i], item, view.littleData)
         end
+        table.insert(hints, L["Click an item to see where else it is caught."])
         if view.littleData and filter.range ~= "all" then
             table.insert(hints, L["Try \"All skill levels\": little data for your skill."])
         end

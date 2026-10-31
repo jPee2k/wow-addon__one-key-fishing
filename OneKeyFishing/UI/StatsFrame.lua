@@ -1,5 +1,6 @@
--- StatsFrame: session / current zone / all-time statistics, top catches and zones, on the first of two tabs;
--- the second tab is the "What can be caught here" page (UI/CatchHere.lua). The last open tab is saved.
+-- StatsFrame: session / current zone / all-time statistics, top catches and zones, on the first of three tabs;
+-- the second tab is the "What can be caught here" page (UI/CatchHere.lua), the third the catch catalog
+-- (UI/CatalogTab.lua). The last open tab is saved.
 -- Everything is recomputed when the data changed (catch, miss, cast, zone change, scan, Refresh);
 -- otherwise only the time rows tick.
 local _, ns = ...
@@ -225,17 +226,20 @@ local function Create()
     title:SetPoint("TOP", 0, -6)
     title:SetText(L["OneKeyFishing - Statistics"])
 
-    -- Two pages over the same area, switched by the tabs below the window: today's statistics and
-    -- "What can be caught here" (UI/CatchHere.lua).
+    -- Three pages over the same area, switched by the tabs below the window: today's statistics,
+    -- "What can be caught here" (UI/CatchHere.lua) and the catch catalog (UI/CatalogTab.lua).
     local page = CreateFrame("Frame", nil, f)
     page:SetAllPoints()
     f.statsPage = page
     f.herePage = ns.CatchHere.Create(f)
+    f.catalogPage = ns.CatalogTab.Create(f)
     pages = {
         { key = "stats", label = L["Statistics"], frame = page,
             refresh = StatsFrame.Refresh, tick = StatsFrame.TickStatistics },
         { key = "here", label = L["What can be caught here"], frame = f.herePage,
             refresh = ns.CatchHere.Refresh, tick = ns.CatchHere.Tick },
+        { key = "catalog", label = L["Catch catalog"], frame = f.catalogPage,
+            refresh = ns.CatalogTab.Refresh, tick = ns.CatalogTab.Tick },
     }
 
     f.skill = CreateText(page, "GameFontNormal")
@@ -509,6 +513,14 @@ end
 function StatsFrame.Toggle()
     frame = frame or Create()
     frame:SetShown(not frame:IsShown())
+end
+
+-- Shows the window on the catch catalog; arg as CatalogTab.Show takes it (an item ID, a search text or nil).
+function StatsFrame.OpenCatalog(arg)
+    frame = frame or Create()
+    frame:Show()
+    SelectTab("catalog")
+    ns.CatalogTab.Show(arg)
 end
 
 -- Statistics changes are seen through the Stats version; these only mark the window dirty, so a burst

@@ -145,6 +145,12 @@ local function CleanCell(cell)
     if cell.p then
         out.p = { c = cell.p.c, i = CleanItems(cell.p.i) }
     end
+    if cell.a then
+        out.a = {} -- the subzone counts (part 4): a fresh table of the same numbers
+        for areaID, count in pairs(cell.a) do
+            out.a[areaID] = count
+        end
+    end
     return out
 end
 

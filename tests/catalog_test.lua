@@ -317,3 +317,45 @@ test("the debug report holds the catalog section and no item name", function()
         assert(not report:find(item_names[itemID], 1, true), "no name of " .. itemID)
     end
 end)
+
+---------------------------------------------------------------------------
+-- Spots (US1)
+---------------------------------------------------------------------------
+test("the spots of an item on a map: sorted like zones, each with its name, point and numbers", function()
+    area_names[20] = "Crystal Lake"
+    local function spot(c, item, x, y, a)
+        local out = cell(c, { [FISH] = { item, item } })
+        if x then
+            out.px, out.py = math.floor(x * 1000 + 0.5) * c, math.floor(y * 1000 + 0.5) * c
+        end
+        out.a = a
+        return out
+    end
+    add_seed({
+        ["8000:3:47"] = spot(60, 30, 0.45, 0.72, { [20] = 60 }),
+        ["8000:1:47"] = spot(10, 10, 0.45, 0.72),
+        ["8000:3:12"] = spot(20, 5, 0.51, 0.66),
+        ["8000:3:x"] = spot(5, 5),
+    })
+    local rows = Catalog.Spots(FISH, 8000, ALL)
+    eq(#rows, 3, "three spots")
+    eq(rows[1].cell, "47", "the reliable spot first")
+    eq(rows[1].name, "Crystal Lake (45, 72)", "named after its subzone")
+    near(rows[1].chance, 40 / 70, "chance")
+    eq(rows[1].catches, 70, "the spot's catches")
+    eq(rows[1].littleData, false, "reliable")
+    eq(rows[1].ranges.min, 1, "skill span from")
+    eq(rows[1].ranges.max, 3, "to")
+    eq(rows[1].pin, nil, "no pin before US2")
+    eq(rows[2].cell, "12", "little data, a tie by the item's catches: by cell")
+    eq(rows[2].name, "51, 66", "the coordinates alone")
+    eq(rows[3].name, ns.L["No exact spot"], "cell x")
+    eq(rows[3].point, nil, "no point")
+    assert(Catalog.Spots(FISH, 8000, ALL) == rows, "kept while the map does not change")
+end)
+
+test("SpotName", function()
+    eq(Catalog.SpotName({ point = { x = 0.454, y = 0.716 }, area = 20 }), "Crystal Lake (45, 72)", "with an area")
+    eq(Catalog.SpotName({ point = { x = 0.5, y = 0.1 }, area = 999 }), "50, 10", "an area without a name")
+    eq(Catalog.SpotName({}), ns.L["No exact spot"], "no point")
+end)

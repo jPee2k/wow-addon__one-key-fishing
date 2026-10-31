@@ -319,4 +319,24 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
 
     -- Catalog.lua: the catch catalog (part 4)
     L["Unknown zone (%d)"] = "未知區域 (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s（%s）"
+    L["No exact spot"] = "無確切地點"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "漁獲目錄"
+    L["Search by item name"] = "依物品名稱搜尋"
+    L["Zones: %d"] = "區域：%d"
+    L["Back"] = "返回"
+    L["Place"] = "地點"
+    L["Skill"] = "技能"
+    L["Counting the catch..."] = "正在統計漁獲..."
+    L["Nothing has been caught yet."] = "尚未釣到任何東西。"
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "目錄會收錄你的漁獲、內建資料，以及開啟分享時其他玩家的漁獲。"
+    L["You have not caught anything yet."] = "你尚未釣到任何東西。"
+    L["No item matches the search."] = "沒有符合搜尋的物品。"
+    L["No data for this item under these filters."] = "在這些篩選條件下沒有此物品的資料。"
+    L["Click an item to see where else it is caught."] = "點擊物品以查看還能在哪裡釣到。"
 end)

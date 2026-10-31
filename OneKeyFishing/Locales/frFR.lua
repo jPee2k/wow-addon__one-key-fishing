@@ -353,4 +353,25 @@ ns.AddTranslation("frFR", "Français", function(L)
 
     -- Catalog.lua: the catch catalog (part 4)
     L["Unknown zone (%d)"] = "Zone inconnue (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "Pas d'endroit précis"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "Catalogue des prises"
+    L["Search by item name"] = "Rechercher par nom d'objet"
+    L["Zones: %d"] = "Zones : %d"
+    L["Back"] = "Retour"
+    L["Place"] = "Lieu"
+    L["Skill"] = "Compétence"
+    L["Counting the catch..."] = "Décompte des prises..."
+    L["Nothing has been caught yet."] = "Rien n'a encore été pêché."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "Le catalogue se remplit de vos prises, des données fournies et, avec le partage activé, des prises des autres "
+        .. "joueurs."
+    L["You have not caught anything yet."] = "Vous n'avez encore rien pêché."
+    L["No item matches the search."] = "Aucun objet ne correspond à la recherche."
+    L["No data for this item under these filters."] = "Aucune donnée pour cet objet avec ces filtres."
+    L["Click an item to see where else it is caught."] = "Cliquez sur un objet pour voir où il se pêche ailleurs."
 end)

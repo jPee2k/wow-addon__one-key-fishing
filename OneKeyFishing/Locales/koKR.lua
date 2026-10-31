@@ -324,4 +324,24 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- Catalog.lua: the catch catalog (part 4)
     L["Unknown zone (%d)"] = "알 수 없는 지역 (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "정확한 위치 없음"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "낚시 도감"
+    L["Search by item name"] = "아이템 이름으로 검색"
+    L["Zones: %d"] = "지역: %d"
+    L["Back"] = "뒤로"
+    L["Place"] = "장소"
+    L["Skill"] = "숙련도"
+    L["Counting the catch..."] = "잡은 물고기를 집계하는 중..."
+    L["Nothing has been caught yet."] = "아직 잡은 것이 없습니다."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "도감은 내가 잡은 것, 기본 제공 데이터, 그리고 공유를 켜면 다른 플레이어가 잡은 것으로 채워집니다."
+    L["You have not caught anything yet."] = "아직 아무것도 잡지 않았습니다."
+    L["No item matches the search."] = "검색과 일치하는 아이템이 없습니다."
+    L["No data for this item under these filters."] = "이 필터로는 이 아이템의 데이터가 없습니다."
+    L["Click an item to see where else it is caught."] = "아이템을 클릭하면 다른 어디에서 잡히는지 볼 수 있습니다."
 end)

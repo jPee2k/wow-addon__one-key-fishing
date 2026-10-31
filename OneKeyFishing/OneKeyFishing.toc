@@ -46,6 +46,7 @@ UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
 UI\CatchHere.lua
+UI\CatalogTab.lua
 UI\StatsFrame.lua
 Debug.lua
 Spike.lua

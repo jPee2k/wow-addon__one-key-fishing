@@ -297,7 +297,7 @@ match "What can be caught here" at that spot with the same filters (spec US1).
 
 ### Tests for User Story 1
 
-- [ ] T014 [P] [US1] Create `tests/catchdb_area_test.lua` (research R4, data-model.md "Cell").
+- [X] T014 [P] [US1] Create `tests/catchdb_area_test.lua` (research R4, data-model.md "Cell").
   - **Reading the area.** With `player_map_position`, `explored_areas = { 10, 20 }`, `area_names` and
     `sub_zone = area_names[20]`, a cast keeps area 20. `area_lookups` shows the map and the position.
     - A `sub_zone` that differs from the area name only in letter case, Cyrillic included
@@ -316,9 +316,9 @@ match "What can be caught here" at that spot with the same filters (spec US1).
     It accepts a cell without `a`.
   - **The spot's area.** A spot view's `area` is the area with the most casts, ties to the lower ID, with other
     players' parts scaled like their casts.
-- [ ] T015 [P] [US1] Extend `tests/share_store_test.lua`: a received record's `a` survives `CleanCell` unchanged; a
+- [X] T015 [P] [US1] Extend `tests/share_store_test.lua`: a received record's `a` survives `CleanCell` unchanged; a
   record with a bad `a` is refused.
-- [ ] T016 [P] [US1] Extend `tests/harvest_test.mjs`:
+- [X] T016 [P] [US1] Extend `tests/harvest_test.mjs`:
   - `a` is cleaned, checked (the rules of T014), summed per area, kept to the 8 largest, and scaled by the cast
     factor where a cell is weighted (rounded, the sum capped at `c + m`);
   - it is written as `a = { [id] = n }` sorted by ID and accepted by `seedProblems`;
@@ -327,7 +327,7 @@ match "What can be caught here" at that spot with the same filters (spec US1).
     the test carries a minimal one (maps, arrays, unsigned and negative integers, text strings: the subset a record
     uses), followed by `zlib.deflateRawSync` and Base64 (research R11). A comment says that the game's encoder may
     differ by a few bytes and that V18 confirms the size in game.
-- [ ] T017 [P] [US1] Extend `tests/catalog_test.lua` for `Catalog.Spots(itemID, mapID, filter)` and
+- [X] T017 [P] [US1] Extend `tests/catalog_test.lua` for `Catalog.Spots(itemID, mapID, filter)` and
   `Catalog.SpotName(spot)`.
   - **Spots:**
     - sorted like zones;
@@ -337,7 +337,7 @@ match "What can be caught here" at that spot with the same filters (spec US1).
     - "Crystal Lake (45, 72)" from `area_names` and the point rounded to whole percent;
     - "45, 72" without an area;
     - "No exact spot" for cell `"x"`.
-- [ ] T018 [P] [US1] Create `tests/catalogtab_test.lua` ([contracts/ui.md](contracts/ui.md) "The Catch catalog tab").
+- [X] T018 [P] [US1] Create `tests/catalogtab_test.lua` ([contracts/ui.md](contracts/ui.md) "The Catch catalog tab").
   - **The tab.** It is the third tab, and `statsTab = "catalog"` reopens it.
   - **The list.**
     - The status line reads "Counting the catch..." until the index is ready.
@@ -358,17 +358,17 @@ match "What can be caught here" at that spot with the same filters (spec US1).
   - **Empty states.**
     - An empty database shows the two empty lines.
     - "Only mine" without own catches shows its line.
-- [ ] T019 [P] [US1] Extend `tests/catchhere_test.lua`: a click on a known item row opens the statistics window on
+- [X] T019 [P] [US1] Extend `tests/catchhere_test.lua`: a click on a known item row opens the statistics window on
   the catalog with that item chosen; an "Unknown item" row does nothing on click; the hint line includes
   "Click an item to see where else it is caught.".
-- [ ] T020 [P] [US1] Extend `tests/commands_test.lua`: `catalog` is listed in sorted order with its English
+- [X] T020 [P] [US1] Extend `tests/commands_test.lua`: `catalog` is listed in sorted order with its English
   description. `/okf catalog` opens the catalog list. `/okf catalog trout` fills the search, and when exactly one
   item matches it is chosen. `/okf catalog |cff..|Hitem:6291::|h[x]|h|r` chooses item 6291, or, when it is not in
   the index, puts its name in the search.
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] In `OneKeyFishing/CatchDB.lua`, record the area of a cast (research R4).
+- [X] T021 [US1] In `OneKeyFishing/CatchDB.lua`, record the area of a cast (research R4).
   - **`CatchDB.GetArea(mapID, x, y)`.** It asks `C_MapExplorationInfo.GetExploredAreaIDsAtPosition(mapID,
     CreateVector2D(x, y))` and returns the ID whose `C_Map.GetAreaInfo` name, folded with `ns.FoldCase`, equals
     the folded `GetSubZoneText()`. The comment cites Principle II: matching against localized text tolerates case
@@ -383,20 +383,20 @@ match "What can be caught here" at that spot with the same filters (spec US1).
     the parts by `castFactors` and sets `area` on spot views (the most casts, ties to the lower ID).
   - Add `C_MapExplorationInfo` and `CreateVector2D` to `.luacheckrc`.
   Make T014 pass.
-- [ ] T022 [US1] In `OneKeyFishing/Share.lua`, make `CleanCell` copy `a` (a fresh table of the same numbers). Make
+- [X] T022 [US1] In `OneKeyFishing/Share.lua`, make `CleanCell` copy `a` (a fresh table of the same numbers). Make
   T015 pass.
-- [ ] T023 [US1] In `tools/harvest.mjs`, carry `a`:
+- [X] T023 [US1] In `tools/harvest.mjs`, carry `a`:
   - `cleanCell` and `checkCell` copy and check it (the rules of T021);
   - the sums add it and keep the 8 largest;
   - `scaledCell` scales it by the cast factor, rounded, with the sum capped at `c + m`;
   - `seedText` writes it sorted by ID;
   - `seedProblems` checks it.
   Make T016 pass.
-- [ ] T024 [US1] In `OneKeyFishing/Catalog.lua`, add `Catalog.Spots(itemID, mapID, filter)`, from
+- [X] T024 [US1] In `OneKeyFishing/Catalog.lua`, add `Catalog.Spots(itemID, mapID, filter)`, from
   `CatchDB.QueryCells` cached with the map's stamp, sorted like `Places`; and `Catalog.SpotName(spot)`, with
   `L["%s (%s)"]`, `L["No exact spot"]` and the `%d, %d` coordinates. In `OneKeyFishing/Spike.lua`, replace "not
   built yet" in part 2 by `CatchDB.GetArea`. Make T017 pass.
-- [ ] T025 [US1] Create `OneKeyFishing/UI/CatalogTab.lua` and add it to `OneKeyFishing/OneKeyFishing.toc` after
+- [X] T025 [US1] Create `OneKeyFishing/UI/CatalogTab.lua` and add it to `OneKeyFishing/OneKeyFishing.toc` after
   `UI\CatchHere.lua` ([contracts/ui.md](contracts/ui.md), research R8).
   - **Functions:** `CatalogTab.Create(parent)`, `Refresh()`, `Tick()` and `Show(arg)`.
   - **The list view.**
@@ -422,15 +422,15 @@ match "What can be caught here" at that spot with the same filters (spec US1).
     `-- VERIFY(V37): the scroll list, the scroll bar and the search box render inside the statistics window`.
   - **Texts.** The empty states and all the texts above, with nine translations.
   Make T018 pass.
-- [ ] T026 [US1] In `OneKeyFishing/UI/StatsFrame.lua`, add the third page `{ key = "catalog", label =
+- [X] T026 [US1] In `OneKeyFishing/UI/StatsFrame.lua`, add the third page `{ key = "catalog", label =
   L["Catch catalog"], frame = ns.CatalogTab.Create(f), refresh = ns.CatalogTab.Refresh, tick = ns.CatalogTab.Tick }`
   and `StatsFrame.OpenCatalog(arg)`: it shows the window, calls `SelectTab("catalog")` and `CatalogTab.Show(arg)`.
   In `OneKeyFishing/Core.lua`, update the `statsTab` comment to `"stats" | "here" | "catalog"`. Add the text and its
   nine translations.
-- [ ] T027 [US1] In `OneKeyFishing/UI/CatchHere.lua`, make a known item row clickable: `OnMouseUp` with the left
+- [X] T027 [US1] In `OneKeyFishing/UI/CatchHere.lua`, make a known item row clickable: `OnMouseUp` with the left
   button calls `ns.StatsFrame.OpenCatalog(row.itemID)`; "Unknown item" rows stay unclickable. Add
   `L["Click an item to see where else it is caught."]` to the hint lines, with nine translations. Make T019 pass.
-- [ ] T028 [US1] In `OneKeyFishing/Commands.lua`, add `{ name = "catalog", description = "open the catch catalog
+- [X] T028 [US1] In `OneKeyFishing/Commands.lua`, add `{ name = "catalog", description = "open the catch catalog
   (optionally with an item name or link)", run = function(rest) ns.StatsFrame.OpenCatalog(ns.Catalog.CommandArg(rest))
   end }` in sorted order. `CatalogTab.Show` with text fills the search and chooses the item when `Catalog.Find`
   returns exactly one. With an item ID that has no entry, it puts the item's name (or the ID) into the search. Make

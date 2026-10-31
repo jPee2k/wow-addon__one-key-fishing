@@ -32,6 +32,8 @@ const STEP_SECONDS = 180; // CatchDB.STEP_SECONDS: casting per step of a record'
 const WEIGHT_FROM = 5; // contributors at a cell from which one contribution carries at most WEIGHT_SHARE
 const WEIGHT_SHARE = 1 / 5;
 const MAX_ITEM_ID = 2147483647;
+const MAX_AREAS = 8; // CatchDB's MAX_AREAS: subzone counts per cell (part 4, research R4)
+const MAX_AREA_ID = 2147483647;
 
 // --- Reading Lua tables (luaparse AST -> plain JS values) ------------------------------------------------------
 
@@ -123,9 +125,16 @@ export function seedProblems(ast) {
       problems.push(`ns.SeedData.${name} is missing or not a ${type === "object" ? "table" : type}`);
     }
   }
-  for (const key of Object.keys(seed.cells || {})) {
+  for (const [key, cell] of Object.entries(seed.cells || {})) {
     if (!PLACE_KEY.test(key)) {
       problems.push(`cell key "${key}" is not "<mapID>:<range>:<cell>"`);
+    }
+    try {
+      if (cell && typeof cell === "object") {
+        checkAreas(cell.a, (cell.c || 0) + (cell.m || 0), `cell ${key}`);
+      }
+    } catch (error) {
+      problems.push(error.message);
     }
   }
   for (const [id, epochs] of Object.entries(seed.proofs || {})) {
@@ -220,6 +229,41 @@ function checkItems(items, catches, where) {
   }
 }
 
+// The subzone counts a of a cell (CatchDB.lua CheckAreas, data-model.md of specs/005-catch-catalog): absent or a
+// table of at most 8 entries; every key is a whole number from 1 to 2,147,483,647; every count is a count, and their
+// sum is at most c + m.
+function checkAreas(areas, casts, where) {
+  if (areas === undefined) {
+    return;
+  }
+  if (typeof areas !== "object" || areas === null) {
+    throw new Error(`${where}: the areas are not a table`);
+  }
+  const entries = Object.entries(areas);
+  if (entries.length > MAX_AREAS) {
+    throw new Error(`${where}: more than ${MAX_AREAS} areas`);
+  }
+  let total = 0;
+  for (const [areaID, count] of entries) {
+    if (!/^[1-9]\d*$/.test(areaID) || Number(areaID) > MAX_AREA_ID) {
+      throw new Error(`${where}: area ID ${areaID} is not a positive 32-bit number`);
+    }
+    if (!isCount(count)) {
+      throw new Error(`${where}: area ${areaID} has no count`);
+    }
+    total += count;
+  }
+  if (total > casts) {
+    throw new Error(`${where}: more casts in areas than in the cell`);
+  }
+}
+
+// The largest `max` areas (ties to the lower ID), as { [id]: count }.
+function largestAreas(areas, max) {
+  return Object.fromEntries(Object.entries(areas).filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1] || Number(a[0]) - Number(b[0])).slice(0, max));
+}
+
 // Only the fields the client reads (as Share.lua's CleanCell rebuilds a received cell), as own properties.
 function cleanCell(cell) {
   const items = (source) => Object.fromEntries(Object.entries(source || {})
@@ -232,6 +276,9 @@ function cleanCell(cell) {
   clean.i = items(cell.i);
   if (cell.p !== undefined) {
     clean.p = { c: cell.p.c, i: items(cell.p.i) };
+  }
+  if (cell.a !== undefined) {
+    clean.a = Object.fromEntries(Object.entries(cell.a));
   }
   return clean;
 }
@@ -266,6 +313,7 @@ function checkCell(cell, key) {
     }
     checkItems(pool.i, pool.c, `${where} (pool)`);
   }
+  checkAreas(cell.a, casts, where);
 }
 
 // The casts (catches and misses) of every cell of every build whose counts are counts, valid or not otherwise; the
@@ -422,6 +470,24 @@ function scaleCell(cell, factor, missFactor = factor) {
     const poolCatches = Math.min(Math.round(cell.p.c * factor), c);
     scaled.p = { c: poolCatches, i: scaleItems(cell.p.i, factor, poolCatches) };
   }
+  if (cell.a) {
+    // Casts per subzone go with the casts; rounding up must not give more than the scaled casts.
+    const a = {};
+    let total = 0;
+    for (const [areaID, count] of Object.entries(cell.a)) {
+      a[areaID] = Math.round(count * missFactor);
+      total += a[areaID];
+    }
+    for (const [areaID] of Object.entries(a).sort((x, y) => y[1] - x[1] || Number(x[0]) - Number(y[0]))) {
+      const cut = Math.min(a[areaID], total - (c + m));
+      if (cut <= 0) {
+        break;
+      }
+      a[areaID] -= cut;
+      total -= cut;
+    }
+    scaled.a = Object.fromEntries(Object.entries(a).filter(([, count]) => count > 0));
+  }
   return scaled;
 }
 
@@ -486,6 +552,13 @@ function sumContributions(store) {
         sum.p.c += cell.p.c;
         addItems(sum.p.i, cell.p.i);
       }
+      for (const [areaID, count] of Object.entries(cell.a || {})) {
+        sum.a = sum.a || {};
+        sum.a[areaID] = (sum.a[areaID] || 0) + count;
+      }
+    }
+    if (sum.a) {
+      sum.a = largestAreas(sum.a, MAX_AREAS); // a client keeps at most MAX_AREAS per cell
     }
     // The catches weighted by casts, when they differ from those weighted by catches: the views take the miss rate
     // from x + m (CatchDB.lua), so it is the one weighted by casts, while c gives the chances.
@@ -650,6 +723,10 @@ function cellLines(key, cell) {
   }
   head.push(`k = ${cell.k}`);
   const lines = [`    ["${key}"] = { ${head.join(", ")},`];
+  if (cell.a && Object.keys(cell.a).length > 0) {
+    lines.push(...wrap("      a = {", Object.keys(cell.a).sort(byNumber).map((id) => `[${id}] = ${cell.a[id]}`),
+      "        ", " },"));
+  }
   const items = itemParts(cell.i);
   if (cell.p) {
     lines.push(...wrap("      i = {", items, "        ", " },"));
