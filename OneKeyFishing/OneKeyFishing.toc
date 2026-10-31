@@ -43,6 +43,9 @@ Catch\Stats.lua
 # Catch database
 CatchDB\SeedData.lua
 CatchDB\CatchDB.lua
+CatchDB\Checks.lua
+CatchDB\Views.lua
+CatchDB\Events.lua
 # Catch exchange
 Exchange\Comm.lua
 Exchange\Channel.lua
