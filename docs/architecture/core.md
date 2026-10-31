@@ -97,7 +97,7 @@ new field only needs a default.
 | `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `auctionPrices`, `camera`, `minimapButton`, `tooltipChances`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`) | UI/Settings.lua |
 | `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Share.lua |
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
-| `fishedItems` | itemID -> true for everything ever looted from fishing | Catch.lua |
+| `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
 | `statsTab` | the last open tab of the statistics window (`"stats"`, `"here"`, `"catalog"`) | UI/StatsFrame.lua |
 | `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent) | CatchDB.lua, Share.lua |

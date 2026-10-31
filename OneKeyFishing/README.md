@@ -92,7 +92,8 @@ bottom, **Statistics** and **What can be caught here**; it opens on the one you 
   **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
   name to see how it is counted. Decimal numbers use your game client's separator (2,5 on a German client),
   whatever the interface language.
-- **Top catches** and **zones** of all time.
+- **Top catches** and **zones** of all time. Items your game client does not know yet are counted too and show by
+  their number until the game knows them.
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a
   catch, a miss, a zone change, an auction scan); only the time rows tick while you fish. The session shows
   `H:MM:SS`, the zone and all-time columns `1h 23m`.

@@ -49,8 +49,9 @@ ns.RegisterEvent("LOOT_READY", function()
         local link = GetLootSlotLink(i)
         if link then
             local _, _, quantity = GetLootSlotInfo(i)
-            -- itemID is nil for an item the client does not know yet; the consumers leave such an item out.
-            table.insert(items, { link = link, itemID = C_Item.GetItemInfoInstant(link), quantity = quantity or 1 })
+            -- The ID comes from the link: GetItemInfoInstant has none for an item the client does not know yet.
+            -- VERIFY(V27): the loot link of an item the client does not know yet carries its item ID
+            table.insert(items, { link = link, itemID = ns.ItemIDFromLink(link), quantity = quantity or 1 })
         end
     end
     ns.Fire("FISH_CAUGHT", items, ns.IsPoolLoot(), castID)

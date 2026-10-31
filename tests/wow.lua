@@ -1080,7 +1080,8 @@ end
 function GetLootSlotLink(slot)
     local current = Loot()
     local item = current and current.items[slot]
-    return item and ("item:" .. item[1])
+    -- A loot link as the game gives it: the ID is in it also for an item the client does not know yet.
+    return item and ("|cffffffff|Hitem:%d::::::::|h[Item %d]|h|r"):format(item[1], item[1])
 end
 
 -- icon, name, quantity
