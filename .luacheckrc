@@ -34,12 +34,14 @@ read_globals = {
     "ChatTypeInfo", "ChatFrameUtil",
     "TooltipDataProcessor", "ItemLocation",
     "PanelTemplates_SetTab", "PanelTemplates_SetNumTabs", "PanelTemplates_TabResize",
+    "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "CreateVector2D",
 
     -- Namespaced APIs
     "C_AddOns", "C_CVar", "C_Spell", "C_SpellBook", "C_Item", "C_Container", "C_AuctionHouse", "C_Map",
     "C_Timer", "C_TooltipInfo", "C_QuestLog", "C_SuperTrack", "C_GameRules", "UiMapPoint", "OpenWorldMap",
     "C_RestrictedActions",
-    "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_EncodingUtil",
+    "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_EncodingUtil", "C_MapExplorationInfo",
+    "C_Texture",
 
     -- Global API
     "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",
@@ -57,6 +59,7 @@ read_globals = {
     "issecretvalue", "debugprofilestop", "Constants",
     "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName", "GetChannelList", "GetChatWindowChannels",
     "SetChannelPassword", "DisplayChannelOwner", "IsDisplayChannelOwner",
+    "CaseAccentInsensitiveParse", "strcmputf8i",
 
     -- Constants
     "WOW_PROJECT_ID", "DECIMAL_SEPERATOR", "INVSLOT_MAINHAND", "INVSLOT_OFFHAND", "INVSLOT_RANGED",

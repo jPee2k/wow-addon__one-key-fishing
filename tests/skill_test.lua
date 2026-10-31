@@ -4,6 +4,7 @@
 
 fishing_skill = { 49, 75 }
 player_level = 12
+unknown_items[16083] = true -- the client has not loaded the book yet: no name for it
 load_addon()
 advance(2) -- the check a moment after logging in
 
@@ -117,6 +118,7 @@ test("NPC names without a tooltip: the client language in the table, then Englis
 end)
 
 test("names come from the client when it has them", function()
+    unknown_items[16083] = nil
     item_names[16083] = "Angeln fuer Experten"
     area_names[35], area_names[33] = "Beutebucht", "Schlingendorntal"
     tooltip_names[2626] = "Heming (tooltip)"
@@ -141,7 +143,7 @@ test("the rank name comes from the spell subtext when the client has it", functi
 end)
 
 test("Artisan at 225: only the cap notice, with the level and a map link", function()
-    pin_maps[1445] = true
+    waypoint_maps[1445] = true
     player_level = 30
     fishing_skill = { 225, 225 }
     fire("SKILL_LINES_CHANGED")

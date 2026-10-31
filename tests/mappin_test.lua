@@ -11,11 +11,11 @@ test("no target while the client knows none of the candidate maps", function()
 end)
 
 test("the first candidate the client knows and allows pins on wins", function()
-    map_info_missing[224], pin_maps[224] = nil, true
+    map_info_missing[224], waypoint_maps[224] = nil, true
     eq(MapPin.Target(MAPS, 0.274, 0.77).mapID, 224, "only the modern map works")
     map_info_missing[1434] = nil
     eq(MapPin.Target(MAPS, 0.274, 0.77).mapID, 224, "a known map without pins is skipped")
-    pin_maps[1434] = true
+    waypoint_maps[1434] = true
     local target = MapPin.Target(MAPS, 0.274, 0.77)
     eq(target.mapID, 1434, "the Classic map first")
     near(target.x, 0.274, "x")
@@ -23,9 +23,9 @@ test("the first candidate the client knows and allows pins on wins", function()
 end)
 
 test("no target while the game rule turns map pins off", function()
-    pins_disabled = true
+    game_rules[Enum.GameRule.WorldMapTrackingPinDisabled] = true
     eq(MapPin.Target(MAPS, 0.274, 0.77), nil, "target")
-    pins_disabled = false
+    game_rules[Enum.GameRule.WorldMapTrackingPinDisabled] = nil
 end)
 
 test("no target without the waypoint API", function()
@@ -41,17 +41,17 @@ test("setting a pin: waypoint, navigation arrow, saved, the map opens", function
     near(user_waypoint.position.x, 0.274, "waypoint x")
     eq(super_tracked, true, "navigation arrow")
     eq(ns.charDB.pin.mapID, 1434, "saved as the addon's pin")
-    eq(opened_map, 1434, "world map opened")
+    eq(world_maps_opened[#world_maps_opened], 1434, "world map opened")
 end)
 
 test("the addon's own pin is replaced without asking; in combat the map stays closed", function()
     reset_popup()
-    opened_map = nil
+    world_maps_opened = {}
     in_combat = true
     MapPin.Set({ mapID = 1445, x = 0.586, y = 0.602 }, "Tidefury Cove")
     eq(rawget(_G, "last_popup"), nil, "no popup")
     eq(user_waypoint.uiMapID, 1445, "replaced")
-    eq(rawget(_G, "opened_map"), nil, "no world map in combat")
+    eq(#world_maps_opened, 0, "no world map in combat")
     in_combat = false
 end)
 
