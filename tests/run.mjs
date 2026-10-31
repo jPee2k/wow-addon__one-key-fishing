@@ -1,8 +1,10 @@
-// Runs the Lua tests: every tests/*_test.lua in its own fresh Lua state, after tests/wow.lua (WoW API stubs);
-// then the Node tests: every tests/*_test.mjs, which exports `tests`, a list of { name, fn } (fn may be async).
-//   npm test             all test files
-//   npm test -- lures    only the files whose name contains "lures"
-//   OKF_SIM_NODES=1000 npm test -- channel_sim   the channel simulation at that size (global SIM_NODES)
+// Runs the Lua tests: every *_test.lua under tests/ (one folder per area of the addon, any depth) in its own
+// fresh Lua state, after tests/wow.lua (WoW API stubs); then the Node tests: every *_test.mjs under tests/, which
+// exports `tests`, a list of { name, fn } (fn may be async). The layout is in docs/development.md.
+//   npm test                      all test files
+//   npm test -- lures             only the files whose path (relative to tests/) contains "lures"
+//   npm test -- exchange/channel  one folder
+//   OKF_SIM_NODES=1000 npm test -- sim_test   the channel simulation at that size (global SIM_NODES)
 // Exits with code 1 when a test fails.
 import fs from "node:fs";
 import path from "node:path";
@@ -11,14 +13,28 @@ import { ADDON_DIR, TOC, parseToc } from "../tools/addon.mjs";
 import { getGlobalNumber, newState, run, setGlobalList, setGlobalNumber, setGlobalString } from "./lua.mjs";
 
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
-const filter = process.argv[2];
-// The size of tests/channel_sim_test.lua, when given (a positive integer).
+// The filter is matched against the path relative to tests/, with forward slashes.
+const filter = (process.argv[2] || "").replace(/\\/g, "/");
+// The size of tests/exchange/channel/sim_test.lua, when given (a positive integer).
 const simNodesText = process.env.OKF_SIM_NODES || "";
 const simNodes = /^[1-9]\d*$/.test(simNodesText) ? Number(simNodesText) : null;
 
 const tocFiles = parseToc(fs.readFileSync(path.join(ADDON_DIR, TOC), "utf8")).files;
 const stubs = fs.readFileSync(path.join(TESTS_DIR, "wow.lua"), "utf8");
-const matching = (suffix) => fs.readdirSync(TESTS_DIR)
+// Every file under tests/ (any depth), as a path relative to tests/ with forward slashes.
+function walk(dir, prefix = "", out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix + entry.name;
+    if (entry.isDirectory()) {
+      walk(path.join(dir, entry.name), `${rel}/`, out);
+    } else {
+      out.push(rel);
+    }
+  }
+  return out;
+}
+const allFiles = walk(TESTS_DIR);
+const matching = (suffix) => allFiles
   .filter((name) => name.endsWith(suffix) && (!filter || name.includes(filter)))
   .sort();
 const testFiles = matching("_test.lua");

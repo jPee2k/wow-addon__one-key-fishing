@@ -5,10 +5,10 @@
 ```bash
 npm run check   # key sync of every translation, ASCII rule, line length, TOC lists the files,
                 # no SetFont call
-npm test        # includes tests/locale_test.lua
+npm test        # includes tests/core/locale_test.lua
 ```
 
-`tests/locale_test.lua` is expected to cover:
+`tests/core/locale_test.lua` is expected to cover:
 
 - `ResolveLanguage`: auto + client with translation → that language; auto + `ruRU` → `enUS`; picked `ukUA` on
   any client → `ukUA`; unknown stored code → as auto.

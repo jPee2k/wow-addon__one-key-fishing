@@ -1,7 +1,7 @@
 -- Channel.lua: the hidden public channel (specs/004-public-channel-sync, contracts/channel.md): names, slots,
--- joining after a login, hiding, the filters, pauses, the settings and CHANNEL_STATE. Locks are in
--- channel_lock_test.lua and channel_join_lock_test.lua, giving the slot up in channel_slot_test.lua, /reload in
--- channel_reload_test.lua. The notice was closed in an earlier session. The tests run in order and share one login.
+-- joining after a login, hiding, the filters, pauses, the settings and CHANNEL_STATE. Locks are in lock_test.lua
+-- and join_lock_test.lua, giving the slot up in slot_test.lua, /reload in reload_test.lua (this folder). The notice
+-- was closed in an earlier session. The tests run in order and share one login.
 
 local MAIN = "OneKeyFishingShare"
 local FISH = 6291

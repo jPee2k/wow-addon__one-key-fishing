@@ -15,7 +15,7 @@ by itself. MIT licensed.
 OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
   OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/  README.md (the player manual)
 tools/                  check, build, install and link scripts (Node.js)
-tests/                  Lua tests of the addon code, run in fengari with WoW API stubs
+tests/                  tests of the addon code, run in fengari with WoW API stubs; one folder per area
 docs/                   developer documentation (below)
 specs/                  feature specifications, plans and tasks (Spec Kit)
 .specify/               Spec Kit: the project constitution, templates and scripts

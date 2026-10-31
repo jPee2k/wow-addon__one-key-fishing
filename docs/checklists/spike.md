@@ -109,7 +109,7 @@ items part shows the names before and after the game was asked for them.
 - Then the feature checklists: [catch-database.md](catch-database.md), [catch-exchange.md](catch-exchange.md),
   [public-channel.md](public-channel.md), [catch-catalog.md](catch-catalog.md).
 - Once every section has run, the spike code goes: `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in
-  `OneKeyFishing/Commands.lua`, `tests/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and
+  `OneKeyFishing/Commands.lua`, `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and
   its row in `CLAUDE.md` ([release-plan.md](../release-plan.md)).
 
 ## Results

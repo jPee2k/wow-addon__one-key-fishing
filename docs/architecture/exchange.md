@@ -134,7 +134,7 @@ The hidden public channel; it knows nothing about records.
   - at most 300 peers known only from the channel; a channel peer has the 30 min cooldown, and a guild, group or
     friend `HELLO` from it upgrades its path;
   - the full refresh of every record's `seen` (a `HELLO` with the same hash) runs at most every 10 min.
-- `tests/channel_sim_test.lua` runs many nodes through one fake channel (`OKF_SIM_NODES`); measured numbers in
+- `tests/exchange/channel/sim_test.lua` runs many nodes through one fake channel (`OKF_SIM_NODES`); measured numbers in
   research R5 of `specs/004-public-channel-sync/`.
 
 ## Share.lua: setting and state

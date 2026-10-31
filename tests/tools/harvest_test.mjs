@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import luaparse from "luaparse";
-import { harvest, parseArgs, parseSeed, proofStep, seedProblems } from "../tools/harvest.mjs";
+import { harvest, parseArgs, parseSeed, proofStep, seedProblems } from "../../tools/harvest.mjs";
 
 // A JS value as Lua source, the way the game writes saved variables (string and number keys in brackets).
 function toLua(value) {
@@ -441,7 +441,7 @@ export const tests = [
   },
   // --- Part 3 (specs/004-public-channel-sync): the version chain, the casting limit, the weights --------------
   {
-    name: "a link step is the same in Node as in the game's Lua (tests/proof_test.lua)",
+    name: "a link step is the same in Node as in the game's Lua (tests/core/proof_test.lua)",
     fn() {
       assert.equal(proofStep("abcdefghijklmnop"), "6oo2y3f2xjjv4lba");
       assert.equal(proofStep(proofStep("abcdefghijklmnop")), "sbb5d3yn6x6u3vuz");

@@ -83,5 +83,5 @@ Carries `VERIFY(spike)`. `/okf spike` shows, in the copy window, the game facts 
 were built on (build, map and position, fishing loot sources, auction results, `PanelTabButtonTemplate`, network
 APIs, and "Map pins and areas": pins, areas, item names, folding, templates) for the checks of
 [docs/checklists/spike.md](../checklists/spike.md) and the `verification.md` of each part.
-The file, its TOC line, its Commands.lua entry and `tests/spike_test.lua` go before the release, since
+The file, its TOC line, its Commands.lua entry and `tests/ui/spike_test.lua` go before the release, since
 `npm run build` refuses `VERIFY` markers.

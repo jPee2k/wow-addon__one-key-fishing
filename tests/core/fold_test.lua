@@ -1,5 +1,5 @@
 -- Data.lua: ns.FoldCase, ns.SearchKey and ns.CompareText (specs/005-catch-catalog, research R7). This file runs
--- without the game's folding functions; tests/fold_game_test.lua runs with them.
+-- without the game's folding functions; tests/core/fold_game_test.lua runs with them.
 
 load_addon()
 

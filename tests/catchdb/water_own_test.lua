@@ -1,5 +1,5 @@
--- CatchDB.HasPoolData from an own pool catch (specs/005-catch-catalog, research R5); tests/catchdb_water_test.lua
--- has the seed's pool data, tests/catchdb_water_record_test.lua a received record's.
+-- CatchDB.HasPoolData from an own pool catch (specs/005-catch-catalog, research R5); tests/catchdb/water_test.lua
+-- has the seed's pool data, tests/catchdb/water_record_test.lua a received record's.
 
 player_map_id = 1415
 player_map_position = { 0.43, 0.78 }

@@ -1605,7 +1605,7 @@ end
 ns = {} -- the addon namespace, shared by every file as in the game
 
 -- SHA-256 in fengari costs milliseconds per call, and an own record's chain takes thousands of them, so every test
--- but tests/proof_test.lua (which sets real_proof = true before loading) runs with this fast stand-in for
+-- but tests/core/proof_test.lua (which sets real_proof = true before loading) runs with this fast stand-in for
 -- ns.ProofStep: deterministic, 16 base32 characters, not one-way. ns.real_ProofStep keeps the real one.
 local function FastProofStep(link)
     local a, b = 7, 13

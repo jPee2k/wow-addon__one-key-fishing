@@ -24,7 +24,7 @@ Found while building the catch catalog (`specs/005-catch-catalog`) on 2026-10-31
 4. **HasPoolData scans every stored record while there is no pool data** (`CatchDB.HasPoolData`): every
    `SHARED_DATA_CHANGED` clears the false answer, and the next tab draw walks up to 20,000 places again. Only while
    pools are not told apart (V3). Direction: check only the records the change names. Test: count the cells walked
-   after a keyed change in `tests/catchdb_water_record_test.lua`.
+   after a keyed change in `tests/catchdb/water_record_test.lua`.
 
 ## History
 

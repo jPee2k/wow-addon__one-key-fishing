@@ -36,15 +36,34 @@ It also lists the open `VERIFY` markers.
 
 ## `npm test`
 
-Runs the Lua tests in `tests/` and the Node tests `tests/*_test.mjs` (they export `tests`, a list of
-`{ name, fn }`; used for `tools/harvest.mjs`). `npm test -- lures` runs only matching files.
-`OKF_SIM_NODES=1000 npm test -- channel_sim` runs the public channel simulation at that size (the global
-`SIM_NODES`); the default size (60 clients, about 15 s) keeps `npm test` fast, the full sizes run by hand before a
-release. The run time grows with the square of the size (every client hears every announcement), so 120 clients take
-about 45 s and 500 about 25 minutes.
+Runs the Lua tests (every `*_test.lua` under `tests/`, any depth) and the Node tests (every `*_test.mjs`; they
+export `tests`, a list of `{ name, fn }`; used for `tools/harvest.mjs`). `npm test -- lures` runs only the files
+whose path relative to `tests/` contains the text, so `npm test -- exchange/channel` runs one folder and
+`npm test -- share/load` one file. `OKF_SIM_NODES=1000 npm test -- sim_test` runs the public channel simulation at
+that size (the global `SIM_NODES`); the default size (60 clients, about 15 s) keeps `npm test` fast, the full sizes
+run by hand before a release. The run time grows with the square of the size (every client hears every
+announcement), so 120 clients take about 45 s and 500 about 25 minutes.
 
-- `tests/run.mjs` runs every `tests/*_test.lua` in a fresh fengari state (`tests/lua.mjs` is the fengari wrapper)
-  after `tests/wow.lua`, and every `tests/*_test.mjs`.
+The tests are grouped like `docs/architecture/`, one folder per area; the harness (`run.mjs`, `lua.mjs`, `wow.lua`)
+stays at the root of `tests/`:
+
+| Folder | Area | Examples |
+|---|---|---|
+| `core/` | [core.md](architecture/core.md): loading, migrations, locales, commands, text folding, SHA-256 | `load_test.lua`, `migrations_test.lua`, `locale_test.lua`, `proof_test.lua` |
+| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md), [catch-and-stats.md](architecture/catch-and-stats.md) | `lures_test.lua`, `prices_test.lua`, `stats_test.lua` |
+| `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
+| `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `pin_test.lua`, `load_test.lua` |
+| `exchange/comm/`, `exchange/channel/`, `exchange/share/` | [exchange.md](architecture/exchange.md), one folder per module | `comm/transport_test.lua`, `channel/joining_test.lua`, `channel/sim_test.lua`, `share/protocol_test.lua` |
+| `ui/` | [ui.md](architecture/ui.md): the statistics window's tabs, settings, tooltips, the spike | `catchhere_test.lua`, `catalogtab_test.lua`, `settings_test.lua` |
+| `tools/` | the Node tests of `tools/` | `harvest_test.mjs` |
+
+A new test goes into the folder of its area. The folder names the module, so the file names only what it tests
+(`exchange/channel/lock_test.lua`, not `channel_lock_test.lua`); the same short name in two folders is fine, the
+filter takes the path. A file about the module as a whole is named after its subject (`catchdb/recording_test.lua`,
+`exchange/comm/transport_test.lua`), not `<module>_test.lua`.
+
+- `tests/run.mjs` runs every `*_test.lua` in a fresh fengari state (`tests/lua.mjs` is the fengari wrapper) after
+  `tests/wow.lua`, and then every `*_test.mjs`; the chunk name of a test is its path (`tests/core/load_test.lua`).
 - `tests/wow.lua` holds the WoW API stubs: frames, events, a controllable clock and timers, configurable bag item
   counts, cooldowns, prices, loot, maps and positions, chat and addon messages. Unknown globals are permissive
   stubs. The game data a test can set and the helpers (`test`, `eq`, `fire`, `advance`, `tick`, `click`,
