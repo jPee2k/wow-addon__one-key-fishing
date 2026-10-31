@@ -19,6 +19,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - Buttons grow to fit longer texts; long statistics labels are cut at the first column (the tooltip shows them
   in full).
 - `/okf debug` shows the language setting, the language in use and the client language.
+- The player manual ships inside the addon folder as `README.md`, next to `CHANGELOG.md`.
 
 ## [1.0.0] - 2026-10-23
 

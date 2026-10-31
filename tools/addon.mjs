@@ -12,9 +12,10 @@ export const DIST = path.join(ROOT, "dist");
 export const TOC = `${ADDON}.toc`;
 
 // Packaged next to the files listed in the TOC: from the addon folder (Bindings.xml is loaded by the client
-// by its name) and from the repository root.
-export const ADDON_EXTRAS = ["Bindings.xml"];
-export const ROOT_EXTRAS = ["LICENSE", "README.md", "CHANGELOG.md"];
+// by its name; README.md is the player manual) and from the repository root (the root README.md is the
+// developer page and stays out of the package).
+export const ADDON_EXTRAS = ["Bindings.xml", "README.md"];
+export const ROOT_EXTRAS = ["LICENSE", "CHANGELOG.md"];
 
 // Parses a TOC: `## Key: Value` metadata and the list of files (as forward-slash paths).
 export function parseToc(text) {

@@ -1,8 +1,8 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
 //   ASCII-only Lua, TOC and XML files (translations excepted), the addon folder holds only packaged files, the
-//   repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, and the version in
-//   package.json vs CHANGELOG.md.
+//   repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
+//   package.json vs CHANGELOG.md, every slash command in the player manual, and no Cyrillic in the docs.
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
@@ -249,6 +249,46 @@ if (fs.existsSync(changelogPath)) {
   if (!top || top[1] !== version) {
     problem("CHANGELOG.md", `newest entry is ${top ? top[1] : "missing"}, package.json says ${version}`);
   }
+}
+
+// The player manual (OneKeyFishing/README.md, shipped in the package) documents every slash command: the
+// `ns.RegisterCommand("name", ...)` calls, or the `name = "..."` entries of Commands.lua when it exists. A command
+// whose declaration is marked VERIFY (temporary, removed before a release) is not expected there.
+const manualPath = path.join(ADDON_DIR, "README.md");
+if (fs.existsSync(manualPath)) {
+  const manual = fs.readFileSync(manualPath, "utf8");
+  const commandsFile = path.join(ADDON_DIR, "Commands.lua");
+  const COMMAND = fs.existsSync(commandsFile) ? /\{\s*name\s*=\s*"([a-z]+)"/g : /ns\.RegisterCommand\(\s*"([a-z]+)"/g;
+  for (const file of fs.existsSync(commandsFile) ? [commandsFile] : luaFiles) {
+    const source = fs.readFileSync(file, "utf8");
+    for (const match of source.matchAll(COMMAND)) {
+      // The comment lines right above the declaration (and the declaration's own line).
+      const before = source.slice(0, match.index).split(/\r?\n/);
+      let comment = source.slice(match.index).split(/\r?\n/)[0];
+      while (before.length > 0 && /^\s*(--.*)?$/.test(before[before.length - 1])) {
+        comment = before.pop() + "\n" + comment;
+      }
+      const temporary = /VERIFY\(/.test(comment);
+      if (!temporary && !manual.includes(`\`/okf ${match[1]}\``)) {
+        problem(rel(manualPath), `the command "/okf ${match[1]}" (${rel(file)}) is not in the player manual`);
+      }
+    }
+  }
+} else {
+  problem(rel(manualPath), "missing (the player manual is packaged with the addon)");
+}
+
+// English is the development language: no Cyrillic in the Markdown files, except the language name in the
+// language setting (translations live in Locales/<code>.lua).
+const CYRILLIC = /[Ѐ-ӿ]+/g;
+for (const file of files.filter((f) => f.endsWith(".md"))) {
+  fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
+    for (const match of line.matchAll(CYRILLIC)) {
+      if (match[0] !== "Українська") {
+        problem(`${rel(file)}:${i + 1}`, `Cyrillic text "${match[0]}" (documentation is written in English)`);
+      }
+    }
+  });
 }
 
 if (problems.length > 0) {
