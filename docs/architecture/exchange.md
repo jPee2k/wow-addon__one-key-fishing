@@ -1,12 +1,12 @@
 # Architecture: catch exchange
 
-Comm.lua (the transport), Channel.lua (the hidden public channel) and Share.lua (the protocol, other players' records
+`Exchange/Comm.lua` (the transport), `Exchange/Channel.lua` (the hidden public channel) and `Exchange/Share.lua` (the protocol, other players' records
 and the state). The spec, model and contracts are in `specs/003-guild-group-sync/` (`data-model.md`,
 `contracts/sync-protocol.md` for the wire format, `contracts/share-api.md`) and, for the public channel and the
 protections against strangers, in `specs/004-public-channel-sync/`; the in-game checklists are
 [catch-exchange.md](../checklists/catch-exchange.md) and [public-channel.md](../checklists/public-channel.md).
 
-## Comm.lua
+## Exchange/Comm.lua
 
 The transport of the catch exchange; it knows nothing about records.
 
@@ -47,7 +47,7 @@ The transport of the catch exchange; it knows nothing about records.
   `Comm.OnFlood` once and drop that sender until logout; what a peer still sends after its session ended here
   never reaches that.
 
-## Channel.lua
+## Exchange/Channel.lua
 
 The hidden public channel; it knows nothing about records.
 
@@ -74,7 +74,7 @@ The hidden public channel; it knows nothing about records.
   (state, index, joins) on each change; a new `joins` is a new join (Share's first channel round, Comm's refusal
   count), the same one after a pause is not. `Channel.Describe()` for `/okf debug`.
 
-## Share.lua: the store
+## Exchange/Share.lua: the store
 
 `Share.Store` keeps received records in `shared.records` under `<id>@<epoch>` with `seen`:
 
@@ -93,7 +93,7 @@ The hidden public channel; it knows nothing about records.
   days, the rest, mostly rare places), then by `seen`. The seed's chain proofs of units it holds in part are checked
   in the background after login.
 
-## Share.lua: the protocol
+## Exchange/Share.lua: the protocol
 
 - `Share.NewNode(store, env)` is a protocol node with its clock, scheduler and transport injected. The tests run
   several over a fake network; the game makes one bound to Comm on `PLAYER_LOGIN`, once the one-time popup was
@@ -137,7 +137,7 @@ The hidden public channel; it knows nothing about records.
 - `tests/exchange/channel/sim_test.lua` runs many nodes through one fake channel (`OKF_SIM_NODES`); measured numbers in
   research R5 of `specs/004-public-channel-sync/`.
 
-## Share.lua: setting and state
+## Exchange/Share.lua: setting and state
 
 `Share.SetEnabled` (the setting), `Share.GetStatus()` / `StatusLine()` / `PrintStatus()` / `Describe()` (states
 off, notice, unavailable, paused, alone, active); `Share.ChannelLine()` is the channel's line for `/okf share`

@@ -13,7 +13,8 @@ by itself. MIT licensed.
 
 ```
 OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
-  OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/  README.md (the player manual)
+  OneKeyFishing.toc  Bindings.xml  README.md (the player manual)
+  Core/  Locales/  GameData/  Fishing/  Catch/  CatchDB/  Exchange/  Catalog/  UI/   one folder per area
 tools/                  check, build, install and link scripts (Node.js)
 tests/                  tests of the addon code, run in fengari with WoW API stubs, and Node tests; one folder per area
 seed/                   the contributions behind the bundled catch database (written by npm run harvest)

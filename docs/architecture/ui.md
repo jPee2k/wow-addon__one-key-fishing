@@ -1,6 +1,6 @@
 # Architecture: UI
 
-The frames in `UI/` and the temporary `Spike.lua`.
+The frames in `UI/` and the temporary `Core/Spike.lua`.
 
 ## Indicator
 
@@ -82,7 +82,7 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 - CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug` and
   `/okf spike` reports.
 
-## Spike.lua (temporary)
+## Core/Spike.lua (temporary)
 
 Carries `VERIFY(spike)`. `/okf spike` shows, in the copy window, the game facts the catch database and the exchange
 were built on (build, map and position, fishing loot sources, auction results, `PanelTabButtonTemplate`, network

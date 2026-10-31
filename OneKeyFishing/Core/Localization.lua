@@ -1,7 +1,7 @@
 -- Localization: ns.L, the registered languages and the choice of the effective language.
 -- Locales/enUS.lua fills the English list; every other Locales/<code>.lua registers a translation through
 -- ns.AddTranslation. Core picks the language in ADDON_LOADED, when the saved preference exists, so no text may be
--- looked up while the addon files load (the lookup would be stuck in English; tests/locale_test.lua checks it).
+-- looked up while the addon files load (the lookup would be stuck in English; tests/core/locale_test.lua checks it).
 local _, ns = ...
 
 -- Order of the language menu (docs/languages.md); only registered languages are listed.

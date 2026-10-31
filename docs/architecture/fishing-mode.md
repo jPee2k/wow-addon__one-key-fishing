@@ -3,7 +3,7 @@
 The fishing key, entering and leaving the mode, gear, camera, lures and containers, and the skill. Principle III
 of the constitution says what must be restored when.
 
-## Action.lua
+## Fishing/Action.lua
 
 The single fishing key.
 
@@ -18,7 +18,7 @@ The single fishing key.
 - The keys are re-read on `UPDATE_BINDINGS` and after combat; our own overrides fire that event too, so it rebinds
   only when the keys changed.
 
-## Mode.lua
+## Fishing/Mode.lua
 
 Enter and exit fishing mode.
 
@@ -35,7 +35,7 @@ Enter and exit fishing mode.
 - While the mode is on, the plain binding body of the action key only runs when combat dropped the overrides, so
   `OneKeyFishing_ActionKeyIdle` says why the key does nothing.
 
-## Gear.lua
+## Fishing/Gear.lua
 
 - Equips the chosen pole (or the best pole by fishing bonus) plus user-picked extra items.
 - It records only the slots it changed (`charDB.gearSwap`). On exit a slot is restored only if it still holds
@@ -45,14 +45,14 @@ Enter and exit fishing mode.
 - Weapons return immediately in combat; the rest waits until combat ends.
 - `C_Item.EquipItemByName` fails silently while casting or channeling ([forever-api.md](../forever-api.md)).
 
-## Camera.lua
+## Fishing/Camera.lua
 
 - Zooms to `settings.cameraDistance` on entering fishing mode and back on exit.
 - The previous zoom is kept in `charDB.savedCameraZoom`, so it survives a `/reload`; `Camera.Forget` drops it on
   a real login (Mode.lua).
 - A zoom is animated, so for 1.5 s after one the target, not `GetCameraZoom()`, is the starting point.
 
-## Bags.lua
+## Fishing/Bags.lua
 
 Lures and fished containers.
 
@@ -75,7 +75,7 @@ English fallback names), `ns.FishingRankSpells` (rank spell per cap) and `ns.Npc
 data tables that are plain data belong in `GameData/`; the older ones (lures, containers, pole bonuses, spell and
 bobber IDs) move there in 1.2.0 (`docs/release-plan.md`).
 
-## Skill.lua
+## Fishing/Skill.lua
 
 - The Fishing skill (`Skill.Get`), rank names (`Skill.GetRankName`: the rank spell's subtext in the client's
   language, else `L`), and the next-rank advice `Skill.GetNextRank()` (state `later` / `now` / `level` / `cap`,

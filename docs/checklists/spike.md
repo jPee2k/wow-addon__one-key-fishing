@@ -1,7 +1,7 @@
 # In-game checklist: the spike (game facts)
 
 **Feature**: the game facts the shared catch database was built on before the game could be played
-(`specs/002-local-catch-db` to `specs/005-catch-catalog`). `/okf spike` (`Spike.lua`, temporary) prints them in one
+(`specs/002-local-catch-db` to `specs/005-catch-catalog`). `/okf spike` (`Core/Spike.lua`, temporary) prints them in one
 report with a section per part. This checklist is run **once, in one game session**, before the feature checklists;
 afterwards the spike code is removed ([release-plan.md](../release-plan.md)).
 **Closes**: V1-V7 (part 1), V10-V15 (part 2), V19-V27 (part 3), V30-V37 (part 4). Each `verification.md` says what
@@ -79,7 +79,7 @@ world, out of combat.
   exist, and the result of asking the game to load one of them. Report: ____
 
 **If C2, C3 and C6 show that addon messages in a custom channel do not work (V19 fails)**: set
-`Channel.AVAILABLE = false` in `OneKeyFishing/Channel.lua`; the release ships without the channel, V20-V25 are
+`Channel.AVAILABLE = false` in `OneKeyFishing/Exchange/Channel.lua`; the release ships without the channel, V20-V25 are
 closed as "not shipped" in `specs/004-public-channel-sync/verification.md`, and the feature checklist of the public
 channel keeps only its protection steps.
 
@@ -108,8 +108,8 @@ items part shows the names before and after the game was asked for them.
   test; the `VERIFY` markers of the closed ids are removed and the ids ticked in the four `verification.md` files.
 - Then the feature checklists: [catch-database.md](catch-database.md), [catch-exchange.md](catch-exchange.md),
   [public-channel.md](public-channel.md), [catch-catalog.md](catch-catalog.md).
-- Once every section has run, the spike code goes: `OneKeyFishing/Spike.lua`, its TOC line, the `spike` entry in
-  `OneKeyFishing/Commands.lua`, `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and
+- Once every section has run, the spike code goes: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in
+  `OneKeyFishing/Core/Commands.lua`, `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and
   its row in `CLAUDE.md` ([release-plan.md](../release-plan.md)).
 
 ## Results

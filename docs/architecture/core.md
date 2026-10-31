@@ -3,7 +3,7 @@
 Localization, the core services, saved variables, slash commands and the shared helpers. The module map and the
 message list are in `CLAUDE.md`; languages and translation file rules are in [languages.md](../languages.md).
 
-## Localization.lua (loaded first)
+## Core/Localization.lua (loaded first)
 
 - `ns.L` is keyed by the English text: the effective translation, then English, then the key.
 - The registry `ns.AddTranslation(code, nativeName, fill)`, `ns.GetLanguages()` (menu order),
@@ -21,13 +21,13 @@ message list are in `CLAUDE.md`; languages and translation file rules are in [la
 - `Locales/enUS.lua` is the English list. Every `L["..."]` in the code must be listed there and vice versa
   (`npm run check`).
 - Use literal keys only (`L["text"]`, never `L[a .. b]`) and keep color codes outside the strings.
-- Every other `Locales/<code>.lua` (listed after `enUS.lua`, before `Core.lua`) registers a complete translation
+- Every other `Locales/<code>.lua` (listed after `enUS.lua`, before `Core/Core.lua`) registers a complete translation
   through `ns.AddTranslation`; `npm test` checks completeness and placeholder order, so a new English text needs
   its nine translations in the same change.
 - Not localized on purpose: the debug report, slash commands (names, help descriptions and the `/okf` help
   output), the addon name and the language names (constitution, Principle II).
 
-## Core.lua
+## Core/Core.lua
 
 - `ns.RegisterEvent` (several handlers per event) and the internal message bus `ns.On` / `ns.Fire` (messages in
   `CLAUDE.md`).
@@ -74,7 +74,7 @@ new field only needs a default.
 | `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | UI/MapPin.lua, UI/CatalogTab.lua |
 | `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks) | Channel.lua |
 
-## Commands.lua (loaded last)
+## Core/Commands.lua (loaded last)
 
 `ns.COMMANDS`: every slash command in one place, sorted by name, with its English description and a `run`
 function that calls the module at runtime (constitution, Principles II and VI). Modules register no commands; the
@@ -83,7 +83,7 @@ names, descriptions and `/okf` help are English on every client. `catalog` passe
 player manual `OneKeyFishing/README.md` (`npm run check`), except a temporary one whose declaration carries a
 `VERIFY` marker.
 
-## Data.lua
+## Core/Data.lua
 
 Shared data and helpers:
 
@@ -106,7 +106,7 @@ Shared data and helpers:
   characters): one step down a version chain ([catch-db.md](catch-db.md)). The tests swap a fast stand-in for
   `ns.ProofStep` unless `real_proof` is set.
 
-## Debug.lua
+## Core/Debug.lua
 
 Builds the `/okf debug` report (English, not localized): versions and locale, the language setting, the mode state
 and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database

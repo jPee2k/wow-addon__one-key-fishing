@@ -91,6 +91,7 @@ test("all ten languages are registered, in menu order", function()
 end)
 
 test("every translation is complete and keeps the placeholders", function()
+    eq(#translationFiles, 9, "the TOC lists nine translations under Locales/")
     for _, code in ipairs(translationFiles) do
         local name, texts = load_translation(code) -- also checks that it registers its own file name
         assert(type(name) == "string" and name ~= "", code .. ": native name")

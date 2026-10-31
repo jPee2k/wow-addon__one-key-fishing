@@ -1,4 +1,4 @@
-// tools/harvest.mjs: saved files in a temporary game tree -> seed/contributions.json and OneKeyFishing/SeedData.lua
+// tools/harvest.mjs: saved files in a temporary game tree -> seed/contributions.json and OneKeyFishing/CatchDB/SeedData.lua
 // in a temporary output folder. Run by tests/run.mjs (exports `tests`).
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -85,7 +85,7 @@ function setup() {
 }
 
 function readSeed(outDir) {
-  const text = fs.readFileSync(path.join(outDir, "OneKeyFishing", "SeedData.lua"), "utf8");
+  const text = fs.readFileSync(path.join(outDir, "OneKeyFishing", "CatchDB", "SeedData.lua"), "utf8");
   return { text, store: JSON.parse(fs.readFileSync(path.join(outDir, "seed", "contributions.json"), "utf8")) };
 }
 
@@ -198,7 +198,7 @@ export const tests = [
       const first = seedCells(readSeed(env.outDir).text);
       const second = run(env);
       assert.match(second.report.join("\n"), /New places: 0 {3}New items: 0/);
-      assert.match(second.report.join("\n"), /Nothing new: OneKeyFishing\/SeedData\.lua stays at epoch 1/);
+      assert.match(second.report.join("\n"), /Nothing new: OneKeyFishing\/CatchDB\/SeedData\.lua stays at epoch 1/);
       assert.deepEqual(seedCells(readSeed(env.outDir).text), first);
       assert.match(readSeed(env.outDir).text, /^ {2}epoch = 1,$/m, "the epoch does not move without new data");
     },
@@ -256,7 +256,7 @@ export const tests = [
       const result = run(env);
       assert.equal(result.ok, false);
       assert.match(result.report.join("\n"), /more than the 1 MB limit; nothing was written/);
-      assert.equal(fs.existsSync(path.join(env.outDir, "OneKeyFishing", "SeedData.lua")), false);
+      assert.equal(fs.existsSync(path.join(env.outDir, "OneKeyFishing", "CatchDB", "SeedData.lua")), false);
       assert.equal(fs.existsSync(path.join(env.outDir, "seed", "contributions.json")), false);
     },
   },
@@ -287,7 +287,7 @@ export const tests = [
       const result = harvest({ synthetic: 300, outDir: env.outDir, now: NOW });
       assert.equal(result.ok, true);
       assert.match(result.report.join("\n"), /synthetic seed: do not commit/);
-      const text = fs.readFileSync(path.join(env.outDir, "OneKeyFishing", "SeedData.lua"), "utf8");
+      const text = fs.readFileSync(path.join(env.outDir, "OneKeyFishing", "CatchDB", "SeedData.lua"), "utf8");
       const cells = seedCells(text);
       assert.ok(Object.keys(cells).length > 250, "about 300 places (random keys may repeat)");
       for (const [key, value] of Object.entries(cells)) {
@@ -368,7 +368,7 @@ export const tests = [
         assert.match(text, new RegExp(`^ {4}\\["${id}"\\] = \\{ \\[${epoch}\\] = ${seq} \\},$`, "m"), id);
       }
       const again = harvest({ files: [author, other], outDir, now: NOW });
-      assert.match(again.report.join("\n"), /Nothing new: OneKeyFishing\/SeedData\.lua stays at epoch 1/);
+      assert.match(again.report.join("\n"), /Nothing new: OneKeyFishing\/CatchDB\/SeedData\.lua stays at epoch 1/);
     },
   },
   {

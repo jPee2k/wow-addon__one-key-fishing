@@ -5,9 +5,15 @@ in [publishing.md](publishing.md).
 
 ## Layout
 
-The addon lives in `OneKeyFishing/`: exactly what goes into `Interface/AddOns` (the TOC, Lua files,
-`Bindings.xml`, `Locales/`, `UI/` and the player manual `README.md`). `tools/`, `tests/`, `docs/`, `specs/` and
-project files stay in the repository root; the root `README.md` is the developer page.
+The addon lives in `OneKeyFishing/`: exactly what goes into `Interface/AddOns` (the TOC, `Bindings.xml`, the player
+manual `README.md`, and the Lua files in one folder per area of `docs/architecture/`: `Core/`, `Locales/`,
+`GameData/` (data only), `Fishing/`, `Catch/`, `CatchDB/`, `Exchange/`, `Catalog/`, `UI/`; `Bindings.xml` stays at
+the root, the client loads it by name). The TOC lists the files with their folder (`Core\Core.lua`), grouped by
+area, in load order; the folders the tools name (`Locales/enUS.lua`, `CatchDB/SeedData.lua`, `Core/Commands.lua`)
+are constants of `tools/addon.mjs`.
+
+`tools/`, `tests/`, `docs/`, `specs/` and project files stay in the repository root; the root `README.md` is the
+developer page.
 The tools need Node.js 18+ (`npm install` once).
 
 ## `npm run check`
@@ -25,9 +31,9 @@ Run it after every change. It checks:
 - no `SetFont` call in the addon (the game's font objects pick a Korean, Chinese or Cyrillic font when needed);
 - Lua files only in `OneKeyFishing/` and `tests/` (test files get the syntax and line-length checks);
 - every repository root entry is either packaged or listed in the `.pkgmeta` `ignore` list;
-- every Lua file is listed in the TOC;
+- every Lua file is listed in the TOC, and every TOC file is in one of the area folders;
 - locale keys in sync;
-- the bundled seed `SeedData.lua`: at most 1 MB, the `ns.SeedData` fields, place keys;
+- the bundled seed `CatchDB/SeedData.lua` exists, is at most 1 MB, the `ns.SeedData` fields, place keys;
 - no packager keywords in addon Lua and XML (see Packaging);
 - the TOC has `Interface`, `Title`, `Notes`, `Category`, `Author` and `Version: @project-version@`, and
   `## Notes-<code>` / `## Category-<code>` for every translation with a client locale;
@@ -54,7 +60,8 @@ stays at the root of `tests/`:
 | Folder | Area | Examples |
 |---|---|---|
 | `core/` | [core.md](architecture/core.md): loading, migrations, locales, commands, text folding, SHA-256 | `load_test.lua`, `migrations_test.lua`, `locale_test.lua`, `proof_test.lua` |
-| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md), [catch-and-stats.md](architecture/catch-and-stats.md) | `lures_test.lua`, `prices_test.lua`, `stats_test.lua` |
+| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua` |
+| `catch/` | [catch-and-stats.md](architecture/catch-and-stats.md) | `prices_test.lua`, `stats_test.lua` |
 | `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
 | `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `pin_test.lua`, `load_test.lua` |
 | `exchange/comm/`, `exchange/channel/`, `exchange/share/` | [exchange.md](architecture/exchange.md), one folder per module | `comm/transport_test.lua`, `channel/joining_test.lua`, `channel/sim_test.lua`, `share/protocol_test.lua` |
@@ -103,7 +110,7 @@ only after the author confirms the behaviour in game.
 ## `npm run harvest`
 
 Before a release, turns the catch data of every account under `WOW_ADDONS_DIR` (plus saved files given as
-arguments; they are parsed, never executed) into `OneKeyFishing/SeedData.lua`, the seed bundled with the release.
+arguments; they are parsed, never executed) into `OneKeyFishing/CatchDB/SeedData.lua`, the seed bundled with the release.
 
 - Accepted contributions are kept in `seed/contributions.json` (repository only) by `<id>@<epoch>`, so the same
   input never counts twice, and a run without new sums leaves the seed and its epoch alone.

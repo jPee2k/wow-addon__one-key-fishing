@@ -1,6 +1,6 @@
 # Architecture: catch database
 
-SeedData.lua and CatchDB.lua: recording catches by place, the bundled seed and the views. The model and contracts
+`CatchDB/SeedData.lua` and `CatchDB/CatchDB.lua`: recording catches by place, the bundled seed and the views. The model and contracts
 are in `specs/002-local-catch-db/` (`data-model.md`, `contracts/catchdb-api.md`, `contracts/seed-data.md`,
 `contracts/harvest-command.md`), the later additions in `specs/004-public-channel-sync/` (weights, the version
 chain) and `specs/005-catch-catalog/` (views across maps, areas, the water filter); the design is recorded in

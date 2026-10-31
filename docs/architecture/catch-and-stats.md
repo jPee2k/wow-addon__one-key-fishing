@@ -2,7 +2,7 @@
 
 How casts become catch messages, how they are counted, and how items are valued.
 
-## Catch.lua
+## Catch/Catch.lua
 
 - Turns casts and loot into `FISH_CAUGHT` / `FISH_MISSED` messages.
 - `FISH_CAUGHT` also says whether the loot came from a fishing pool: `ns.IsPoolLoot()`, a loot source GUID of a
@@ -10,7 +10,7 @@ How casts become catch messages, how they are counted, and how items are valued.
 - A cast without loot is settled as a miss 1 s after it ends, also when the next cast already started.
 - The messages are consumed by Stats.lua, UI/Toast.lua and CatchDB.lua ([catch-db.md](catch-db.md)).
 
-## Stats.lua
+## Catch/Stats.lua
 
 - Counts time in segments (fishing mode on, optionally not AFK) and flushes them on zone change and logout.
 - Keeps per-session, per-zone and total buckets and bumps `Stats.GetVersion()` on every change.
@@ -19,13 +19,13 @@ How casts become catch messages, how they are counted, and how items are valued.
   counted twice.
 - The item value is computed at read time through Prices.lua.
 
-## Prices.lua
+## Catch/Prices.lua
 
 The value of an item is the higher of the vendor and the scanned auction price. An auction price based on fewer
 than 5 pieces or fewer than 3 result rows (price points; several sellers at one price share a row) is shown with a
 "few lots" mark and not used for values.
 
-## Auction.lua
+## Catch/Auction.lua
 
 - Runs one `C_AuctionHouse.SendSearchQuery` at a time and stores the average unit price of the cheapest 20% of
   all listed pieces (results sorted locally).

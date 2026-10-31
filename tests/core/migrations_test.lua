@@ -1,6 +1,6 @@
 -- Core.lua: the saved-variable migrations.
 
-load_files({ "Localization.lua", "Locales/enUS.lua", "Core.lua" })
+load_files({ "Core/Localization.lua", "Locales/enUS.lua", "Core/Core.lua" })
 
 -- Logs in with the given saved data; returns the chat lines printed while loading.
 local function LoadWith(db, charDB)

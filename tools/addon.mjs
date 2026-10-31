@@ -17,6 +17,14 @@ export const TOC = `${ADDON}.toc`;
 export const ADDON_EXTRAS = ["Bindings.xml", "README.md"];
 export const ROOT_EXTRAS = ["LICENSE", "CHANGELOG.md"];
 
+// The addon's folders, one per area of docs/architecture/ (and of tests/); every TOC file is under one of them.
+export const ADDON_FOLDERS = ["Core", "Locales", "GameData", "Fishing", "Catch", "CatchDB", "Exchange", "Catalog", "UI"];
+// Files the tools name on their own (paths inside the addon folder, forward slashes).
+export const LOCALES_DIR = "Locales";
+export const BASE_LOCALE = "Locales/enUS.lua";
+export const SEED_FILE = "CatchDB/SeedData.lua"; // written by npm run harvest
+export const COMMANDS_FILE = "Core/Commands.lua"; // ns.COMMANDS, every slash command
+
 export const MAX_LINE_LENGTH = 120;
 
 // Verification debt: `-- VERIFY(<id>): <what>` marks addon code built on an assumption not yet checked in game

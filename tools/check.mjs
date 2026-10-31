@@ -6,8 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
-import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, MAX_LINE_LENGTH, findMarkers, parseToc }
-  from "./addon.mjs";
+import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
+  COMMANDS_FILE, MAX_LINE_LENGTH, findMarkers, parseToc } from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
 // --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
@@ -115,11 +115,11 @@ function parseLua(file) {
   }
 }
 
-const SEED_FILE = path.join(ADDON_DIR, "SeedData.lua");
+const seedPath = path.join(ADDON_DIR, SEED_FILE);
 let seedAst = null;
 for (const file of luaFiles) {
   const ast = parseLua(file);
-  if (file === SEED_FILE) {
+  if (file === seedPath) {
     seedAst = ast;
   }
   for (const name of new Set(ast ? ast.globals.map((g) => g.name) : [])) {
@@ -151,7 +151,7 @@ for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
 // official game names per client language (NPC names) in their string literals, while their code, keys and
 // comments stay ASCII.
 const isTranslation = (file) =>
-  inAddon(file) && relAddon(file).startsWith("Locales/") && relAddon(file) !== "Locales/enUS.lua";
+  inAddon(file) && relAddon(file).startsWith(`${LOCALES_DIR}/`) && relAddon(file) !== BASE_LOCALE;
 const isGameData = (file) => inAddon(file) && relAddon(file).startsWith("GameData/");
 const TRANSLATED_TOC_FIELDS = ["Notes", "Category"];
 const TRANSLATED_TOC_LINE = new RegExp(`^##\\s*(?:${TRANSLATED_TOC_FIELDS.join("|")})-[a-z]{2}[A-Z]{2}\\s*:`);
@@ -199,6 +199,12 @@ if (!fs.existsSync(tocPath)) {
   for (const file of files.filter(inAddon)) {
     if (!packaged.has(relAddon(file))) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
+    }
+  }
+  // One folder per area (docs/architecture/): nothing but the TOC and the extras at the root of the addon folder.
+  for (const file of toc.files) {
+    if (!file.includes("/") || !ADDON_FOLDERS.includes(file.split("/")[0])) {
+      problem(tocName, `"${file}" is not in one of the area folders (${ADDON_FOLDERS.join(", ")})`);
     }
   }
   for (const field of ["Interface", "Title", "Notes", "Category", "Author", "Version"]) {
@@ -258,9 +264,9 @@ for (const entry of packagedRoot) {
 // Other locales may only translate keys that exist in enUS.lua.
 const L_KEY = /\bL\["((?:[^"\\]|\\.)*)"\]/g;
 const keysIn = (file) => new Set([...fs.readFileSync(file, "utf8").matchAll(L_KEY)].map((m) => m[1]));
-const baseLocale = path.join(ADDON_DIR, "Locales", "enUS.lua");
+const baseLocale = path.join(ADDON_DIR, BASE_LOCALE);
 const baseName = rel(baseLocale);
-const isLocale = (file) => relAddon(file).startsWith("Locales/");
+const isLocale = (file) => relAddon(file).startsWith(`${LOCALES_DIR}/`);
 if (!fs.existsSync(baseLocale)) {
   problem(baseName, "missing");
 } else {
@@ -288,14 +294,17 @@ if (!fs.existsSync(baseLocale)) {
   }
 }
 
-// The bundled seed (written by npm run harvest; the format is defined in tools/harvest.mjs).
-if (fs.existsSync(SEED_FILE)) {
-  const bytes = fs.statSync(SEED_FILE).size;
+// The bundled seed (written by npm run harvest; the format is defined in tools/harvest.mjs). It is always
+// committed, so a missing one is a problem, not a silently skipped check.
+if (!fs.existsSync(seedPath)) {
+  problem(`${ADDON}/${SEED_FILE}`, "missing (the bundled seed; npm run harvest writes it)");
+} else {
+  const bytes = fs.statSync(seedPath).size;
   if (bytes > MAX_SEED_BYTES) {
-    problem(rel(SEED_FILE), `${bytes} bytes, more than the 1 MB limit`);
+    problem(rel(seedPath), `${bytes} bytes, more than the 1 MB limit`);
   }
   for (const message of seedAst ? seedProblems(seedAst) : []) { // no AST: the syntax error is reported above
-    problem(rel(SEED_FILE), message);
+    problem(rel(seedPath), message);
   }
 }
 
@@ -310,14 +319,16 @@ if (fs.existsSync(changelogPath)) {
 }
 
 // The player manual (OneKeyFishing/README.md, shipped in the package) documents every slash command: the
-// `ns.RegisterCommand("name", ...)` calls, or the `name = "..."` entries of Commands.lua when it exists. A command
-// whose declaration is marked VERIFY (temporary, removed before a release) is not expected there.
+// `name = "..."` entries of Core/Commands.lua, the one place commands are declared. A command whose declaration
+// is marked VERIFY (temporary, removed before a release) is not expected there.
 const manualPath = path.join(ADDON_DIR, "README.md");
-if (fs.existsSync(manualPath)) {
+const commandsPath = path.join(ADDON_DIR, COMMANDS_FILE);
+if (!fs.existsSync(commandsPath)) {
+  problem(`${ADDON}/${COMMANDS_FILE}`, "missing (every slash command is declared there)");
+} else if (fs.existsSync(manualPath)) {
   const manual = fs.readFileSync(manualPath, "utf8");
-  const commandsFile = path.join(ADDON_DIR, "Commands.lua");
-  const COMMAND = fs.existsSync(commandsFile) ? /\{\s*name\s*=\s*"([a-z]+)"/g : /ns\.RegisterCommand\(\s*"([a-z]+)"/g;
-  for (const file of fs.existsSync(commandsFile) ? [commandsFile] : luaFiles) {
+  const COMMAND = /\{\s*name\s*=\s*"([a-z]+)"/g;
+  for (const file of [commandsPath]) {
     const source = fs.readFileSync(file, "utf8");
     for (const match of source.matchAll(COMMAND)) {
       // The comment lines right above the declaration (and the declaration's own line).

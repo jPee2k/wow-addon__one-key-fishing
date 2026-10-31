@@ -18,8 +18,8 @@ How a release is built and published, and what it is checked against.
    version entry and remove that heading, because the packager shows the whole file on the CurseForge file
    page and the release workflow stops while the heading is there.
 2. Refresh the bundled catch database: fish for a while, then `npm run harvest` (plus the saved files friends
-   sent, as arguments). Check the report and `git diff OneKeyFishing/SeedData.lua`, and commit
-   `OneKeyFishing/SeedData.lua` with `seed/contributions.json`. After a game patch that changed what a zone
+   sent, as arguments). Check the report and `git diff OneKeyFishing/CatchDB/SeedData.lua`, and commit
+   `OneKeyFishing/CatchDB/SeedData.lua` with `seed/contributions.json`. After a game patch that changed what a zone
    gives, add `-- --reset <mapID>` for that map.
 3. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`. No
    `VERIFY` marker may be left (`npm run check` lists them; `npm run build` refuses them): each is an assumption

@@ -71,7 +71,7 @@ character screen, before the addon runs. They follow the **client** language, no
 ## Translation files
 
 - One file per language: `OneKeyFishing/Locales/<code>.lua`, listed in the TOC after `Locales/enUS.lua` and
-  before `Core.lua`. The exact format and rules are in
+  before `Core/Core.lua`. The exact format and rules are in
   [the translation file contract](../specs/001-interface-language/contracts/translation-file.md):
 
   ```lua
