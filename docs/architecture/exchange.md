@@ -76,9 +76,11 @@ The hidden public channel; it knows nothing about records.
   `OWNER_CHANGED` or the `CHANNEL_OWNER` answer to `DisplayChannelOwner`, asked only after a lock); otherwise, and
   for moderation, which has no undo call, it moves on after a random 10-20 s unless a heard player undoes it. Kicks
   rejoin after 60 s, the third counts as a ban; a ban or a mute moves on. `TRIAL_RESTRICTED`, `INVALID_NAME` or a
-  nil join result: locked, no fallback. A `YOU_LEFT` the addon did not cause (also before the join is confirmed):
-  out until the next login. After a `/reload` a channel found locked that the client is still in is left, and one the
-  player joined again by hand after a leave is left alone. Ticking the setting counts as reading the notice.
+  nil join result: locked, no fallback. Each leave by the addon (`Leave`, a second name of ours once per join, the
+  clean-up after a `/reload`) owes one `YOU_LEFT` of that name; one that comes within 5 s (15 s while a join of the
+  same name waits) uses it up. Any other `YOU_LEFT` of the name joined (also before the join is confirmed) is a leave
+  by hand: out until the next login. After a `/reload` a channel found locked that the client is still in is left,
+  and one the player joined again by hand after a leave is left alone. Ticking the setting counts as reading the notice.
 - `Channel.GetState()` (unavailable, off, notice, paused, left, noslot, locked, waiting, in) fires `CHANNEL_STATE`
   (state, index, joins) on each change; a new `joins` is a new join (Share's first channel round, Comm's refusal
   count), the same one after a pause is not. `Channel.Describe()` for `/okf debug`.

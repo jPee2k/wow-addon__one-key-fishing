@@ -108,3 +108,5 @@ move to "Verified in game":
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
 - Is the hidden CVar `showInGameNavigation` on by default, so the navigation arrow points to a map pin? (V31)
+- Does the server answer every `LeaveChannelByName` with one `YOU_LEFT` of that name, also a leave made before the
+  join is confirmed, and before the answer to a later join of the same name? (V41)
