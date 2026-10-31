@@ -13,7 +13,7 @@ local casts = {} -- cast ID (Catch.lua) -> { key, x, y, start, stop } until its 
 -- Events
 ---------------------------------------------------------------------------
 ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
-    if loadedName ~= "OneKeyFishing" or not ns.db then
+    if loadedName ~= ns.name or not ns.db then
         return
     end
     local shared = ns.db.shared

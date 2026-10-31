@@ -260,18 +260,18 @@ local function OlderBuild(build, than)
     if build == "unknown" then
         return true
     end
-    local a = { tostring(build):match("^(%d+)%.(%d+)%.(%d+)$") }
-    local b = { tostring(than):match("^(%d+)%.(%d+)%.(%d+)$") }
-    if #a < 3 or #b < 3 then
+    local a1, a2, a3 = tostring(build):match("^(%d+)%.(%d+)%.(%d+)$")
+    local b1, b2, b3 = tostring(than):match("^(%d+)%.(%d+)%.(%d+)$")
+    if not (a1 and b1) then
         return false
     end
-    for i = 1, 3 do
-        local x, y = tonumber(a[i]), tonumber(b[i])
-        if x ~= y then
-            return x < y
-        end
+    a1, b1, a2, b2, a3, b3 = tonumber(a1), tonumber(b1), tonumber(a2), tonumber(b2), tonumber(a3), tonumber(b3)
+    if a1 ~= b1 then
+        return a1 < b1
+    elseif a2 ~= b2 then
+        return a2 < b2
     end
-    return false
+    return a3 < b3
 end
 
 local function OwnRecord()

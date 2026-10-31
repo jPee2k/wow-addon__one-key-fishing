@@ -219,7 +219,7 @@ local function FillRow(row, item, littleData)
             C_Item.RequestLoadItemDataByID(item.itemID)
         end
     end
-    row.chance:SetText(littleData and L["Little data"] or ns.Percent(item.chance))
+    row.chance:SetText(ns.Catalog.ChanceText(item.chance, littleData))
     row.pieces:SetText(("%.1f"):format(item.pieces))
     row:Show()
 end
