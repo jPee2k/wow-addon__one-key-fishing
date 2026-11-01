@@ -7,6 +7,7 @@ local L = ns.L
 local Debug = {}
 ns.Debug = Debug
 
+local STAMP = "%Y-%m-%d %H:%M:%S" -- the times of the Errors section
 local REPORT_CVARS = { "autoLootDefault", "SoftTargetInteract", "SoftTargetIconGameObject", "SoftTargetIconInteract" }
 
 local function Section(lines, title, fn)
@@ -140,6 +141,25 @@ local function BuildReport()
         table.sort(names)
         for _, name in ipairs(names) do
             add("%s = %s", name, tostring(ns.db.settings[name]))
+        end
+    end)
+
+    -- The addon's recent errors (Core.lua, ns.Safe), the newest first; the last section, as README.md says.
+    Section(lines, "Errors", function()
+        local log = ns.GetErrors()
+        if #log == 0 then
+            add("none")
+        end
+        for i = #log, 1, -1 do
+            local entry = log[i]
+            local when = date(STAMP, entry.first)
+            if entry.last ~= entry.first then
+                when = when .. " to " .. date(STAMP, entry.last)
+            end
+            add("%dx %s, %s, %s", entry.count, entry.context, when, entry.version)
+            for line in (entry.message .. "\n" .. entry.stack):gmatch("[^\n]+") do
+                add("  %s", line)
+            end
         end
     end)
 

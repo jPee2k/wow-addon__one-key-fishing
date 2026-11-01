@@ -57,6 +57,8 @@ for (const name of testFiles) {
   try {
     run(L, stubs, "@tests/wow.lua");
     run(L, fs.readFileSync(path.join(TESTS_DIR, name), "utf8"), `@tests/${name}`);
+    // An error handed to the game's handler after the last test() stops the file (tests/wow.lua).
+    run(L, "check_no_errors()", "@tests/wow.lua");
     const filePassed = getGlobalNumber(L, "tests_passed");
     const fileFailed = getGlobalNumber(L, "tests_failed");
     passed += filePassed;

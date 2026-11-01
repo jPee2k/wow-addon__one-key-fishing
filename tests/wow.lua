@@ -92,6 +92,12 @@
 --   profile_ms = n, profile_step = n    debugprofilestop returns profile_ms, then adds profile_step to it (nil:
 --                                       debugprofilestop is undefined, as a clock missing)
 -- Helpers: scroll_rows(box), type_text(box, text), show_item_tooltip(tooltip, itemID).
+-- The error log (specs/006-error-log): geterrorhandler() collects the errors the addon hands on in lua_errors.
+--   take_errors()                       the collected errors as a list, and a new empty one (a test that expects
+--                                       an error takes it; any other one fails the test)
+--   check_no_errors()                   stops the file on an error handed on outside a test (test(), load_addon
+--                                       and tests/run.mjs call it)
+--   GetErrorCallstackHeight()           what the addon last set with SetErrorCallstackHeight (nil when cleared)
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -197,9 +203,82 @@ end
 ---------------------------------------------------------------------------
 tests_passed, tests_failed = 0, 0
 
--- Runs one named test; a failing assert marks it FAIL and the next test still runs.
+-- Errors the addon handed to the game's error handler (ns.Safe catches them in the dispatchers). The default
+-- handler collects them here; a test that expects one takes them (take_errors), any other one fails the test.
+lua_errors = {}
+local function CollectError(err) -- returns nothing, like the game's handler (HandleLuaError)
+    table.insert(lua_errors, tostring(err))
+end
+
+function geterrorhandler()
+    return CollectError
+end
+
+-- The game's error stack height (FrameScript): GetCallstackHeight is the caller's depth; the addon sets the error
+-- height around the call of the error handler, as Blizzard's CallErrorHandler does.
+local errorCallstackHeight
+function GetCallstackHeight()
+    local height = 0
+    while debug.getinfo(height + 2, "l") do
+        height = height + 1
+    end
+    return height
+end
+
+function SetErrorCallstackHeight(height)
+    errorCallstackHeight = height
+end
+
+function GetErrorCallstackHeight()
+    return errorCallstackHeight
+end
+
+-- The errors collected since the last call, as a list; the collection starts empty again.
+function take_errors()
+    local taken = lua_errors
+    lua_errors = {}
+    return taken
+end
+
+-- debugstack(level, top): the stack from `level` (1 = the caller), its first `top` lines.
+function debugstack(level, top)
+    local text = debug.traceback("", (level or 1) + 1):gsub("^\n?stack traceback:\n", "")
+    local lines = {}
+    for line in text:gmatch("[^\n]+") do
+        if top and #lines >= top then
+            break
+        end
+        table.insert(lines, line)
+    end
+    return table.concat(lines, "\n") .. "\n"
+end
+
+-- The collected errors as one message, and the list wiped; nil when there were none.
+local function TakeErrors()
+    local taken = take_errors()
+    if #taken > 0 then
+        return "error handed to the game's error handler:\n  " .. table.concat(taken, "\n  ")
+    end
+end
+
+-- Stops the file when an error was handed on outside a test (top-level code), as an uncaught error did before
+-- ns.Safe caught the dispatchers' errors. Called by test(), load_addon and, after each file, tests/run.mjs.
+function check_no_errors()
+    local caught = TakeErrors()
+    if caught then
+        error(caught, 2)
+    end
+end
+
+-- Runs one named test; a failing assert marks it FAIL and the next test still runs. An error left in lua_errors
+-- fails the test too (before ns.Safe it would have stopped the test), reported with the test's own failure if any.
 function test(name, fn)
+    check_no_errors()
     local ok, err = xpcall(fn, debug.traceback)
+    local caught = TakeErrors()
+    if caught then
+        ok, err = false, ok and caught or tostring(err) .. "\n" .. caught
+    end
     if ok then
         tests_passed = tests_passed + 1
         print("  ok   " .. name)
@@ -1687,6 +1766,7 @@ function load_addon(beforeLogin)
     fire("ADDON_LOADED", "OneKeyFishing")
     fire("PLAYER_LOGIN")
     fire("PLAYER_ENTERING_WORLD", true, false)
+    check_no_errors() -- a handler that failed while loading stops the file
 end
 
 ---------------------------------------------------------------------------

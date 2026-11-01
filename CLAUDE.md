@@ -28,7 +28,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   [docs/languages.md](docs/languages.md).
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
-  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 002 to 005
+  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 002 to 006
   have one); a marker is removed only after the author confirms the behaviour in game.
 
 ## Documents
@@ -92,7 +92,7 @@ commands in `Core/Commands.lua`.
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
-| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
+| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared data and helpers (fishing IDs, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |

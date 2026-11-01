@@ -59,6 +59,16 @@ frame.
 
 - `ns.RegisterEvent` (several handlers per event) and the internal message bus `ns.On` / `ns.Fire` (messages in
   `CLAUDE.md`).
+- The error log. `ns.Safe(context, fn, ...)` runs `fn` protected and returns `true` and its results, or `false` and
+  the error. On a failure it records the error and hands it on to `geterrorhandler()`, from inside the `xpcall`
+  handler and with the error stack height set as Blizzard's `CallErrorHandler` does, so BugSack and the
+  `scriptErrors` popup show it with the failing code's stack. The event dispatcher
+  (context: the event), `ns.Fire` (the message) and the slash dispatcher (`/okf <command>`) run every handler
+  through it, so one failing handler no longer keeps the others from the same event, message or command. A caller of
+  `ns.Fire` no longer sees a listener's error. Nothing else is wrapped. `ns.GetErrors()` returns the log: at most 30
+  entries ordered by last occurrence, a repeat of the same context and message counted into its entry. Before
+  `ADDON_LOADED` the log lives in memory; the load drops saved entries of another addon version and adds the ones in
+  memory (specs/006-error-log).
 - Helpers: `ns.ShowPopup` (two-button popups), `ns.Print` (a chat line with the addon prefix), `ns.ReportSection`
   (a titled block of the debug report). The frame helpers (`ns.CreateButton`, `ns.CreateText`, `ns.ItemDisplay`,
   `ns.ShowItemTooltip`, `ns.OpenRadioMenu`) are the view's, in `UI/Widgets.lua` ([ui.md](ui.md)).
@@ -80,6 +90,7 @@ new field only needs a default.
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
 | `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
+| `errors` | the error log: `{ context, message, stack, version, first, last, count }`, at most 30, ordered by last occurrence | Core.lua |
 | `statsTab` | the last open tab of the statistics window (`"stats"`, `"here"`, `"catalog"`) | UI/StatsFrame.lua |
 | `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent) | CatchDB.lua, Share.lua |
 
@@ -133,5 +144,6 @@ Builds the `/okf debug` report (English, not localized): versions and locale, th
 and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database
 (`CatchDB.Describe()`, never the anonymous ID), the shared database (`Share.Describe()`, `Channel.Describe()`, no
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
-and the name queue, never an item name). `Debug.Report()` returns the window title and the text; `/okf debug`
+and the name queue, never an item name), then "Errors" (the error log, the newest first: count, context, times,
+version, message and stack). `Debug.Report()` returns the window title and the text; `/okf debug`
 (`Commands.lua`) shows them in the copy window.

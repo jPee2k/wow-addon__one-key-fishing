@@ -18,18 +18,19 @@ Built on `001-interface-language` (`specs/001-interface-language`), waiting for 
 
 ## 1.2.0: the shared catch database
 
-Built on `002-shared-db` (`specs/002-local-catch-db` to `specs/005-catch-catalog`), waiting for the game, for a
-character that can fish, and for a second player. The four parts ship together; the design is recorded in
+Built on `002-shared-db` (`specs/002-local-catch-db` to `specs/005-catch-catalog`, and the error log
+`specs/006-error-log`), waiting for the game, for a character that can fish, and for a second player. The four parts
+and the error log ship together; the design is recorded in
 [history/shared-db-plan.md](history/shared-db-plan.md).
 
 1. After 1.1.0 is out: merge `develop` into `002-shared-db`. In `CHANGELOG.md` the interface-language entries then
    sit under `## [1.1.0]`; `[Unreleased]` keeps the shared catch database.
 2. Run [checklists/spike.md](checklists/spike.md) once, in one session, with a second player: the game facts of all
-   four parts (`/okf spike`). Paste the reports.
+   four parts and the error log (`/okf spike`). Paste the reports.
 3. Record the answers in [forever-api.md](forever-api.md) "Verified in game"; fix the code where an assumption was
-   wrong, with tests; remove the `VERIFY` markers of the closed ids and tick them in the four `verification.md`
-   files. If V19 failed, set `Channel.AVAILABLE = false` in `OneKeyFishing/Exchange/Channel.lua` and close V20-V25 as "not
-   shipped" (`specs/004-public-channel-sync/verification.md`).
+   wrong, with tests; remove the `VERIFY` markers of the closed ids and tick them in the five `verification.md`
+   files (002 to 006). If V19 failed, set `Channel.AVAILABLE = false` in `OneKeyFishing/Exchange/Channel.lua` and
+   close V20-V25 as "not shipped" (`specs/004-public-channel-sync/verification.md`).
 4. Run the feature checklists: [catch-database.md](checklists/catch-database.md),
    [catch-exchange.md](checklists/catch-exchange.md), [public-channel.md](checklists/public-channel.md) (a week of
    play for its step 10), [catch-catalog.md](checklists/catch-catalog.md). Fix, test, remove the remaining markers.

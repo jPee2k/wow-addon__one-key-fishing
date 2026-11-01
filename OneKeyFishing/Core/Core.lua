@@ -47,7 +47,85 @@ function ns.Print(msg, ...)
     DEFAULT_CHAT_FRAME:AddMessage(CHAT_PREFIX .. tostring(msg))
 end
 
--- Event dispatch: several modules may listen to the same event.
+-- The error log. The dispatchers below run each handler through ns.Safe, so one failing handler does not keep
+-- the others from the same event, message or command. A failure is recorded (the debug report's "Errors") and
+-- handed on to the game's error handler, which shows it as before (BugSack, the scriptErrors popup) or not at all.
+local ERROR_LOG_SIZE = 30
+local ERROR_STACK_LINES = 10
+local errorLog = {} -- in memory until the saved variables load, then db.errors (ADDON_LOADED below)
+
+-- Adds an entry, or counts it into the entry of the same context and message, which becomes the newest. The list
+-- is ordered by last occurrence, so the first entry is the one dropped over the cap.
+local function AddError(log, entry)
+    for i, old in ipairs(log) do
+        if old.context == entry.context and old.message == entry.message then
+            table.remove(log, i)
+            old.count, old.last = old.count + entry.count, entry.last
+            entry = old
+            break
+        end
+    end
+    table.insert(log, entry)
+    while #log > ERROR_LOG_SIZE do
+        table.remove(log, 1)
+    end
+end
+
+local function RecordError(context, err, stack)
+    local now = time()
+    AddError(errorLog, { context = context, message = tostring(err), stack = stack, version = ns.version,
+        first = now, last = now, count = 1 })
+end
+
+-- The saved log at ADDON_LOADED: entries of another version are of code that changed; the ones recorded before the
+-- load join them. The result is the log from then on.
+local function AttachErrorLog(saved)
+    local log = {}
+    for _, entry in ipairs(saved) do
+        if entry.version == ns.version then
+            table.insert(log, entry)
+        end
+    end
+    for _, entry in ipairs(errorLog) do
+        AddError(log, entry)
+    end
+    errorLog = log
+    return log
+end
+
+-- One handler for every ns.Safe (no closure per call): it runs at the error, where the stack still holds the
+-- failing code, and reads the context of the innermost ns.Safe running.
+local safeContext
+local function OnSafeError(err)
+    -- VERIFY(V42): with the error stack height set like Blizzard's CallErrorHandler, the game's handler shows the
+    -- failing code's stack, once
+    pcall(RecordError, safeContext, err, debugstack(2, ERROR_STACK_LINES, 0)) -- never hides the error itself
+    SetErrorCallstackHeight(GetCallstackHeight() - 1) -- the stack from the failure, as CallErrorHandler does
+    geterrorhandler()(err) -- the game's handler returns nothing
+    SetErrorCallstackHeight(nil)
+    return err
+end
+
+-- Puts the outer context back and passes the results through.
+local function LeaveSafe(outer, ...)
+    safeContext = outer
+    return ...
+end
+
+-- Runs fn(...) protected; returns true and its results, or false and the error. The game's xpcall passes the
+-- arguments on (Blizzard's ExecuteFrameScript does the same).
+function ns.Safe(context, fn, ...)
+    local outer = safeContext
+    safeContext = context
+    return LeaveSafe(outer, xpcall(fn, OnSafeError, ...))
+end
+
+-- The log, ordered by last occurrence (the newest last); read only.
+function ns.GetErrors()
+    return errorLog
+end
+
+-- Event dispatch: several modules may listen to the same event; each handler runs on its own (ns.Safe).
 local eventFrame = CreateFrame("Frame")
 local handlers = {}
 
@@ -61,12 +139,14 @@ end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     for _, fn in ipairs(handlers[event]) do
-        fn(event, ...)
+        ns.Safe(event, fn, event, ...)
     end
 end)
 
--- Internal messages between modules (e.g. UI reacting to mode changes).
+-- Internal messages between modules (e.g. UI reacting to mode changes). Each listener runs on its own (ns.Safe):
+-- a listener's failure is recorded and handed on, and the sender goes on as if it had run.
 local listeners = {}
+local NO_LISTENERS = {}
 
 function ns.On(message, fn)
     listeners[message] = listeners[message] or {}
@@ -74,8 +154,8 @@ function ns.On(message, fn)
 end
 
 function ns.Fire(message, ...)
-    for _, fn in ipairs(listeners[message] or {}) do
-        fn(...)
+    for _, fn in ipairs(listeners[message] or NO_LISTENERS) do
+        ns.Safe(message, fn, ...)
     end
 end
 
@@ -116,6 +196,7 @@ local DB_DEFAULTS = {
     minimapAngle = 220,
     indicatorPos = nil, -- { point, relativePoint, x, y }
     fishedItems = {}, -- itemID -> true for everything ever looted from fishing
+    errors = {}, -- the error log, ordered by last occurrence (ns.Safe above; data-model in specs/006-error-log)
     statsTab = "stats", -- the last open tab of the statistics window: "stats" | "here" | "catalog"
     shared = { -- the catch database (CatchDB.lua); myID is created there
         mine = {}, -- place key -> cell: this account's catches, never reset
@@ -188,6 +269,7 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     ApplyDefaults(OneKeyFishingCharDB, CHAR_DB_DEFAULTS)
     ns.db = OneKeyFishingDB
     ns.charDB = OneKeyFishingCharDB
+    ns.db.errors = AttachErrorLog(ns.db.errors)
     -- The first point where the saved preference exists; no text is looked up before this.
     ns.SetLanguage(ns.ResolveLanguage(ns.db.settings.language, GetLocale()))
     BINDING_NAME_ONEKEYFISHING_ACTION = L["Fishing action (cast / hook)"]
@@ -221,7 +303,7 @@ SlashCmdList.ONEKEYFISHING = function(input)
     name = name:lower()
     local command = FindCommand(name)
     if command then
-        command.run(rest)
+        ns.Safe("/okf " .. name, command.run, rest)
     else
         PrintHelp()
     end

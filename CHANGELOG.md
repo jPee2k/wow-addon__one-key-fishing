@@ -51,6 +51,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
   tooltip shows the three most likely catches of the place. "Show catch chances in tooltips" turns both off.
 - `/okf share` shows the state of the shared catch database; `/okf debug` has sections for the catch database, the
   exchange and the catalog.
+- `/okf debug` ends with the addon's recent errors ("Errors"): where each happened, how often and when, with a few
+  lines of the code that failed. Errors still show as before in the game's error window or BugSack.
 
 ### Changed
 
@@ -62,6 +64,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
   offers (prices) on sale the price is marked "(few lots)" and the catch value uses the vendor price.
 - Slash commands and the `/okf` help are always in English, whatever the interface language.
 - The player manual ships inside the addon folder as `README.md`, next to `CHANGELOG.md`.
+- When one part of the addon fails, the others keep working: an error in one part no longer stops the others from
+  handling the same moment (a failure in the statistics no longer costs the catch database a catch).
 
 ### Fixed
 
