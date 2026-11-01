@@ -1,11 +1,12 @@
 # In-game checklist: the spike (game facts)
 
 **Feature**: the game facts the shared catch database was built on before the game could be played
-(`specs/002-local-catch-db` to `specs/005-catch-catalog`). `/okf spike` (`Core/Spike.lua`, temporary) prints them in one
-report with a section per part. This checklist is run **once, in one game session**, before the feature checklists;
-afterwards the spike code is removed ([release-plan.md](../release-plan.md)).
-**Closes**: V1-V7 (part 1), V10-V15 (part 2), V19-V27 (part 3), V30-V37 (part 4). Each `verification.md` says what
-happens when an answer differs from the assumption.
+(`specs/002-local-catch-db` to `specs/005-catch-catalog`), and the error log (`specs/006-error-log`). `/okf spike`
+(`Core/Spike.lua`, temporary) prints them in one report with a section per part. This checklist is run **once, in one
+game session**, before the feature checklists; afterwards the spike code is removed
+([release-plan.md](../release-plan.md)).
+**Closes**: V1-V7 (part 1), V10-V15 (part 2), V19-V27 (part 3), V30-V37 (part 4), V42 (error log). Each
+`verification.md` says what happens when an answer differs from the assumption.
 **Needs**: one character with Fishing at open water, a fishing pool, a capital and, if reachable, a cave and an
 instance with water; the auction house; a second player or account **B** with the addon (full account: Trial and
 Veteran accounts cannot send addon data) in a guild and a group with you and on your Battle.net friends list; if
@@ -103,11 +104,21 @@ items part shows the names before and after the game was asked for them.
 - [ ] **P5. Templates** (V37): the scroll and search templates and the pin atlas exist: `true` for each.
   Report: ____
 
+## Part 5: error log (V42), section "Error log (V42)"
+
+Each run of the report causes one deliberate error, recorded like any other.
+
+- [ ] **E1. Error path** (V42): `/console scriptErrors 1`, then `/okf spike`. Expected: one popup (or one BugSack entry)
+  with "OneKeyFishing spike test error" and a stack whose first Lua line is in `Spike.lua`; the section shows
+  `ns.Safe returned false; entry spike, count <runs>` and that `Spike.lua` line; `/okf debug` lists the error under
+  "Errors" with the same count. Then `/console scriptErrors 0`. Report: ____
+
 ## Report back
 
 - Paste every report into the conversation (the section headers name the parts).
 - The answers go into `docs/forever-api.md` "Verified in game"; a wrong assumption is fixed in the code with a
-  test; the `VERIFY` markers of the closed ids are removed and the ids ticked in the four `verification.md` files.
+  test; the `VERIFY` markers of the closed ids are removed and the ids ticked in the five `verification.md` files
+  (002 to 006).
 - Then the feature checklists: [catch-database.md](catch-database.md), [catch-exchange.md](catch-exchange.md),
   [public-channel.md](public-channel.md), [catch-catalog.md](catch-catalog.md).
 - Once every section has run, the spike code goes: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in

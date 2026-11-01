@@ -327,6 +327,10 @@ Typing commands is optional: everything is also available from the menus. `/onek
 3. Open an issue at https://github.com/jPee2k/wow-addon__one-key-fishing/issues (or a comment on the CurseForge
    page) with the report, what you did and what happened. Copy any Lua error text as well.
 
+The report ends with the addon's recent errors ("Errors"): where each happened, how often and when, with a few lines
+of the code that failed. An error listed there needs no separate copy. When one part of the addon fails, the others
+keep working.
+
 ## Requirements
 
 - WoW Forever (Interface 16001), any client language.

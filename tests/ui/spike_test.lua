@@ -5,8 +5,12 @@ player_map_position = { 0.43, 0.78 }
 fishing_rank = 230
 load_addon()
 
+-- Each report runs the deliberate error of its "Error log (V42)" section: one error handed on, taken here.
 local function report()
     local _, text = ns.Spike.Report()
+    local handled = take_errors()
+    eq(#handled, 1, "the spike's error handed on once")
+    assert(handled[1]:find("Spike.lua:%d+: OneKeyFishing spike test error"), handled[1])
     return text
 end
 
@@ -171,4 +175,17 @@ test("the map pins and areas section survives every new call failing", function(
     assert(text:find("strcmputf8i(b, A): failed: ", 1, true), "order")
     assert(not text:find("!! failed", 1, true), text:match("!! failed[^\n]*") or "")
     eq(#waypoint_sets, 0, "no waypoint set")
+end)
+
+test("the error log section runs a deliberate error and finds its entry", function()
+    local before = 0
+    for _, entry in ipairs(ns.GetErrors()) do
+        if entry.context == "spike" then
+            before = entry.count
+        end
+    end
+    local text = report()
+    assert(text:find("-- Error log (V42) --", 1, true), "the section")
+    assert(text:find(("ns.Safe returned false; entry spike, count %d"):format(before + 1), 1, true), text)
+    assert(text:find("first Lua stack line: [^\n]-Spike%.lua"), "the stack starts in Spike.lua")
 end)

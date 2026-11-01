@@ -81,6 +81,10 @@ filter takes the path. A file about the module as a whole is named after its sub
   counts, cooldowns, prices, loot, maps and positions, chat and addon messages. Unknown globals are permissive
   stubs. The game data a test can set and the helpers (`test`, `eq`, `fire`, `advance`, `tick`, `click`,
   `load_addon`, `fish_cast`, `receive_addon`, ...) are listed in the file's header comment.
+- The addon's dispatchers catch handler errors (`ns.Safe`) and hand them to `geterrorhandler()`; the stub collects
+  them in `lua_errors`. A test that leaves one there fails, and one outside a test stops the file
+  (`check_no_errors`, also run by `tests/run.mjs` after each file). A test that expects an error takes it with
+  `take_errors()`.
 - Run it after every change. Add or extend a test when changing logic that can run without the game: every
   module but the pure frame code has tests (Core, Bags, Catch, Stats, Prices, CatchDB, Comm, Channel, Share,
   Catalog, the statistics window and its tabs, settings, tooltips, locales).

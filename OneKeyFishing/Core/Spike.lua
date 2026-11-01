@@ -569,6 +569,23 @@ local function MapPinSection(out)
     end
 end
 
+-- V42: a deliberate error through ns.Safe. The game's handler (the scriptErrors popup, BugSack) shows it with a
+-- stack that starts here, and /okf debug lists it under "Errors". FailOnPurpose is of this file: the global
+-- `error` passed directly would carry no file and line at all.
+local function FailOnPurpose()
+    error("OneKeyFishing spike test error")
+end
+
+local function ErrorLogSection(out)
+    local ok = ns.Safe("spike", FailOnPurpose)
+    local log = ns.GetErrors()
+    local entry = log[#log] or { stack = "" } -- the newest: a repeat moves to the end
+    table.insert(out, ("  ns.Safe returned %s; entry %s, count %s"):format(tostring(ok), tostring(entry.context),
+        tostring(entry.count)))
+    -- The first line of a file: the ones above it are the game's `error` itself.
+    table.insert(out, "  first Lua stack line: " .. tostring(entry.stack:match("[^\n]*%.lua:%d+[^\n]*")))
+end
+
 local function BuildReport()
     local lines = { "OneKeyFishing spike report " .. tostring(ns.version) }
     Section(lines, "Build (V7)", function(out)
@@ -626,6 +643,7 @@ local function BuildReport()
     Section(lines, "Network (V10-V15)", NetworkSection)
     Section(lines, "Chat channel (V19-V27)", ChatChannelSection)
     Section(lines, "Map pins and areas (V30-V37)", MapPinSection)
+    Section(lines, "Error log (V42)", ErrorLogSection)
     return table.concat(lines, "\n")
 end
 
