@@ -2,6 +2,7 @@
 
 load_addon()
 local L = ns.L
+local hintShownAtLogin = ns.db.settings.languageHintShown
 
 test("an English client gets English", function()
     eq(ns.language, "enUS")
@@ -178,4 +179,34 @@ test("the debug report names the preference, the language in use and the client"
     assert(report:find("ukUA", 1, true), "preference")
     assert(report:find("in use: enUS", 1, true), "language in use")
     assert(report:find("locale enUS", 1, true), "client locale")
+end)
+
+test("only a non-English client without a translation, left on auto, gets the language hint", function()
+    eq(ns.NeedsLanguageHint("auto", "ruRU"), true, "ruRU")
+    eq(ns.NeedsLanguageHint("auto", "itIT"), true, "a client the addon has no translation for")
+    eq(ns.NeedsLanguageHint("auto", "enUS"), false, "enUS")
+    eq(ns.NeedsLanguageHint("auto", "enGB"), false, "enGB")
+    eq(ns.NeedsLanguageHint("auto", "deDE"), false, "a translated client")
+    eq(ns.NeedsLanguageHint("auto", "ptPT"), false, "a variant of a translated client")
+    eq(ns.NeedsLanguageHint("ukUA", "ruRU"), false, "a language picked by the player")
+    eq(ns.NeedsLanguageHint("enUS", "ruRU"), false, "English picked by the player")
+    eq(ns.NeedsLanguageHint("gone", "ruRU"), true, "a stored code that is no longer shipped counts as auto")
+    eq(ns.NeedsLanguageHint("gone", "enGB"), false, "the same on an English client")
+end)
+
+test("an English client gets no language hint", function()
+    assert(not chat_contains("Other languages"), "no hint")
+    eq(hintShownAtLogin, false, "flag after the login")
+end)
+
+test("decimal numbers use the game client's separator", function()
+    eq(ns.FormatDecimal(2.5, 1), "2.5", "one decimal")
+    eq(ns.FormatDecimal(12, 1), "12.0", "a whole number")
+    DECIMAL_SEPERATOR = ","
+    eq(ns.FormatDecimal(2.5, 1), "2,5", "a German client")
+    DECIMAL_SEPERATOR = "%"
+    eq(ns.FormatDecimal(2.5, 1), "2%5", "no character acts as a pattern")
+    DECIMAL_SEPERATOR = nil
+    eq(ns.FormatDecimal(2.5, 1), "2.5", "a point when the client has no separator")
+    DECIMAL_SEPERATOR = "."
 end)

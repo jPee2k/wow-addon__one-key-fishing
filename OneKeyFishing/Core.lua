@@ -53,6 +53,15 @@ function ns.ShowPopup(key, text, onAccept, acceptText, cancelText)
     StaticPopup_Show(key)
 end
 
+-- A number with `digits` decimals and the game client's decimal separator: numbers follow the client's
+-- conventions, as gold amounts do (GetMoneyString uses the client's thousands separator), whatever the interface
+-- language. The replacement is a function, so no separator acts as a pattern.
+function ns.FormatDecimal(value, digits)
+    local separator = type(DECIMAL_SEPERATOR) == "string" and DECIMAL_SEPERATOR or "."
+    local text = ("%." .. digits .. "f"):format(value)
+    return (text:gsub("%.", function() return separator end, 1))
+end
+
 function ns.Print(msg, ...)
     if select("#", ...) > 0 then
         msg = msg:format(...)
@@ -119,6 +128,7 @@ local DB_DEFAULTS = {
         cameraDistance = 10,
         minimapButton = true,
         language = "auto", -- "auto" (the game client's language) or a language code, see Localization.lua
+        languageHintShown = false, -- the one-time hint for clients without a translation was shown
     },
     prices = {}, -- itemID -> { price = copper, time = time() } from auction scans
     minimapAngle = 220,
@@ -196,6 +206,20 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     if not (dbOk and charOk) then
         ns.Print(L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."])
     end
+end)
+
+-- A client without a translation of its own gets English; it is told once per account that the language can be
+-- changed. The text stays English (the language in use); the example is Ukrainian, named in its own language.
+ns.RegisterEvent("PLAYER_LOGIN", function()
+    local settings = ns.db.settings
+    local ukrainian = ns.translations.ukUA
+    if settings.languageHintShown or not ukrainian or not ns.NeedsLanguageHint(settings.language, GetLocale()) then
+        return
+    end
+    settings.languageHintShown = true
+    ns.Print(
+        L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."],
+        ukrainian.name)
 end)
 
 -- Slash commands. Every command is also reachable from the menus;

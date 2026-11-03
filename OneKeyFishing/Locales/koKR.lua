@@ -8,6 +8,9 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "저장된 데이터가 더 새로운 버전의 OneKeyFishing에서 만들어졌습니다. 문제를 피하려면 애드온을 업데이트하세요."
     L["v%s commands:"] = "v%s 명령어:"
+    L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
+        "게임 클라이언트에 맞는 번역이 없어 애드온이 영어로 표시됩니다. " ..
+        "%s 등 다른 언어는 /okf config에서 고를 수 있습니다."
 
     -- Gear.lua
     L["Fishing pole set."] = "낚싯대를 지정했습니다."

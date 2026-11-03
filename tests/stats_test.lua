@@ -75,6 +75,16 @@ test("Refresh recomputes the rates with the current time", function()
     eq(cell(GOLD_PER_HOUR), "49c", "100c in 2:02:05")
 end)
 
+test("the rate uses the game client's decimal separator, whatever the interface language", function()
+    DECIMAL_SEPERATOR = ","
+    click(ns.L["Refresh"], window)
+    eq(ns.language, "enUS", "English interface")
+    eq(cell(CATCHES_PER_HOUR), "0,5", "the client's separator")
+    DECIMAL_SEPERATOR = "."
+    click(ns.L["Refresh"], window)
+    eq(cell(CATCHES_PER_HOUR), "0.5", "back to the point")
+end)
+
 test("Reset session redraws at once", function()
     click(ns.L["Reset session"], window)
     accept_popup()

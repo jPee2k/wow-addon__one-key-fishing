@@ -44,9 +44,28 @@ The translations other than Ukrainian have not been reviewed by native speakers 
   shows after a reload. Nothing reloads without that click.
 - The setting is account-wide (`OneKeyFishingDB.settings.language`, `"auto"` or a code). A stored code that a
   later version no longer ships counts as "Game client language".
+- No Russian translation, and a Russian client is never switched to Ukrainian on its own: the addon does not pick
+  a language for the player. A client with no translation (`ruRU` or any other) gets English and, once per
+  account (`settings.languageHintShown`), a chat line in English that other languages, naming Українська, are in
+  `/okf config` (the Language button). Nothing is shown when the player has already picked a language, and never again once
+  the player has changed the language in the menu (even back to "Game client language").
 - A text that a translation does not have falls back to English.
+- Decimal numbers use the game client's decimal separator (`DECIMAL_SEPERATOR`, through `ns.FormatDecimal`),
+  whatever the interface language: numbers follow the client's conventions, as gold amounts do (`GetMoneyString`
+  uses the client's thousands separator). On a German client that is "2,5" next to "1.234g".
 - Not translated on purpose: the debug report (`/okf debug`, it goes into bug reports), slash command names,
   the addon name and the language names. Item, zone and spell names come from the game client in its language.
+
+## The addon list (TOC)
+
+The game shows the description (`## Notes`) and the category (`## Category`) in its addon list, already on the
+character screen, before the addon runs. They follow the **client** language, not the language setting:
+
+- Every translation that a client can use has `## Notes-<code>` and `## Category-<code>` in the TOC (the category
+  is the game's own word for professions in that language). English is the plain field.
+- There is no Ukrainian client, so there is no `ukUA` field: the game would never show it.
+- These two field kinds are the only TOC lines where `npm run check` allows non-ASCII text, and it reports a
+  missing field for a shipped translation as well as a field for a language that is not shipped.
 
 ## Translation files
 
@@ -63,8 +82,8 @@ The translations other than Ukrainian have not been reviewed by native speakers 
   ```
 
 - The translation is plain text in its own language, in UTF-8. These are the only Lua files where
-  `npm run check` allows non-ASCII text; every other Lua, TOC and XML file is ASCII, and the rest of the
-  project is written in English.
+  `npm run check` allows non-ASCII text (besides the translated TOC fields above); every other Lua, TOC and XML
+  file is ASCII, and the rest of the project is written in English.
 - Every key of `enUS.lua`, nothing else: `npm run check` reports unknown keys, `npm test` reports missing
   ones. A new English text therefore needs its translations in the same change.
 - Keep the `%s` / `%d` placeholders in the same order as in the English text (Lua 5.1 has no positional

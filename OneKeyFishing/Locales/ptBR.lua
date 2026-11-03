@@ -8,6 +8,9 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "Seus dados salvos vêm de uma versão mais nova do OneKeyFishing. Atualize o addon para evitar problemas."
     L["v%s commands:"] = "Comandos da v%s:"
+    L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
+        "Não há tradução para o seu cliente do jogo, então o addon está em inglês. " ..
+        "Outros idiomas, como %s, estão em /okf config."
 
     -- Gear.lua
     L["Fishing pole set."] = "Vara de pesca definida."

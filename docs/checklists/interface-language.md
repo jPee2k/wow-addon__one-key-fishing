@@ -60,7 +60,8 @@ After the reload, everything below is in Ukrainian:
 - [ ] Minimap button tooltip and right-click menu.
 - [ ] Item tooltip line (fishing gear / Alt+Click hint).
 - [ ] Chat messages (for example `/okf toggle` twice: fishing mode on / off).
-- [ ] `/okf` help: command names and descriptions stay in English (they are not translated on purpose).
+- [ ] `/okf` help: the command names stay in English (not translated on purpose); their descriptions are in
+  Ukrainian.
 - [ ] Options -> Keybindings -> AddOns -> OneKeyFishing: both binding names.
 
 ## 4. The choice is kept
@@ -83,12 +84,25 @@ Pick each language below, reload, and look at the settings pages and the statist
 
 - [ ] Pick "Game client language", reload: English again.
 
-## 7. Debug report
+## 7. The addon list and the language hint
+
+On a client in German (or another language with a translation), on the character screen -> AddOns:
+
+- [x] OneKeyFishing is under the category in the client's language ("Berufe" in German).
+- [x] The tooltip of OneKeyFishing shows the description in the client's language, special letters intact
+  (ä, ö, ü, ß in German).
+- [ ] In game, no chat line "Your game client has no translation..." appears (the client has a translation). That the
+  line shows once on a client without one (Russian) is covered by `tests/locale_hint_test.lua`.
+- [ ] Statistics window, "Catches per hour": the decimal separator is the client's (a comma on a German client),
+  whatever the interface language. Gold of 1000g or more shows the client's thousands separator instead (a point
+  on a German client: "1.234g" next to "2,5" is correct).
+
+## 8. Debug report
 
 - [ ] `/okf debug`: the report is in English, with a line `Language: <setting> (in use: <language>)` under the line
   with the client locale.
 
-## 8. Fishing works the same in another language
+## 9. Fishing works the same in another language
 
 With the addon in Ukrainian (or any other non-English language):
 

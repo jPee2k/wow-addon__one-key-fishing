@@ -82,7 +82,8 @@ Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
   **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
-  name to see how it is counted.
+  name to see how it is counted. Decimal numbers use your game client's separator (2,5 on a German client),
+  whatever the interface language.
 - **Top catches** and **zones** of all time.
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a
   catch, a miss, a zone change, an auction scan); only the time rows tick while you fish. The session shows
@@ -137,10 +138,12 @@ The same entry is in the Addon Compartment (the addons button next to the minima
 - **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position, Scan auction prices
   (with the auction house open).
 - **Language** (top right): **Game client language** follows your client and uses English when there is no
-  translation for it (a Russian client gets English). Pick a language from the menu to use it instead; Українська
-  is only available this way, because the game has no Ukrainian client. The new language shows after a reload: the
-  addon asks **Reload now** or **Later**. Korean and Chinese may show as squares on a client in another language;
-  pick **English** to get a readable interface back.
+  translation for it (a Russian client gets English, and the addon says once in the chat where to change it). Pick
+  a language from the menu to use it instead; Українська is only available this way, because the game has no
+  Ukrainian client. The description in the game's addon list always follows the client language, because the game
+  shows it before the addon loads. The new language shows after a reload: the addon asks **Reload now** or
+  **Later**. Korean and Chinese may show as squares on a client in another language; pick **English** to get a
+  readable interface back.
 - **Fishing gear**: a page of its own, see [Fishing gear](#fishing-gear).
 
 ## Commands

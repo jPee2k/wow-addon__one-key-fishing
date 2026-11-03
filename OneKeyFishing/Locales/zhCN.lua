@@ -8,6 +8,9 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "你的存档数据来自更新版本的 OneKeyFishing。请更新插件以免出现问题。"
     L["v%s commands:"] = "v%s 命令："
+    L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
+        "你的游戏客户端没有对应的翻译，因此插件显示为英文。" ..
+        "其他语言（例如 %s）可在 /okf config 中选择。"
 
     -- Gear.lua
     L["Fishing pole set."] = "已设置鱼竿。"

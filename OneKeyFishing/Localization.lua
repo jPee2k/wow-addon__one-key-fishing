@@ -62,6 +62,15 @@ function ns.ResolveLanguage(preference, clientLocale)
     return "enUS"
 end
 
+-- True when the client has no translation of its own, so "auto" fell back to English: the player is told once
+-- that other languages exist. English clients need no such hint. A stored code that is no longer shipped counts
+-- as "auto", as in ResolveLanguage.
+function ns.NeedsLanguageHint(preference, clientLocale)
+    local auto = preference == "auto" or not ns.translations[preference]
+    return auto and (LOCALE_ALIASES[clientLocale] or clientLocale) ~= "enUS"
+        and ns.ResolveLanguage(preference, clientLocale) == "enUS"
+end
+
 -- Builds the translation of `code`. Core calls it once per session; a new language needs a UI reload.
 function ns.SetLanguage(code)
     wipe(active)

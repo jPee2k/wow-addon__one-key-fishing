@@ -66,6 +66,6 @@ How a release is built and published, and what it is checked against.
 |---|---|
 | A zip with one top-level folder named like the TOC | `OneKeyFishing/OneKeyFishing.toc` (`tools/build.mjs`, `.pkgmeta`) |
 | No executables or unrelated files | Only the TOC, the files it lists, `Bindings.xml` and the player manual `README.md` from `OneKeyFishing/`, plus `LICENSE` and `CHANGELOG.md` from the root (`tools/addon.mjs`; the `ignore` list in `.pkgmeta`, kept complete by `npm run check`) |
-| TOC metadata | `Interface`, `Title`, `Notes`, `Author`, `Version` (filled in at build time), `X-License`, `IconTexture`, Addon Compartment functions |
+| TOC metadata | `Interface`, `Title`, `Notes`, `Category`, `Author`, `Version` (filled in at build time), `X-License`, `IconTexture`, Addon Compartment functions; `Notes-<code>` and `Category-<code>` for every translation with a client locale (`npm run check`, `docs/languages.md`) |
 | A license | `LICENSE` (MIT) |
 | A changelog for the file page | `CHANGELOG.md` (packager `manual-changelog`) |

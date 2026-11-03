@@ -99,6 +99,8 @@ function SettingsUI.ChooseLanguage(value)
         return
     end
     ns.db.settings.language = value
+    -- The player has found the language menu: the one-time hint about it (Core.lua) is no longer needed.
+    ns.db.settings.languageHintShown = true
     -- No reload when the interface would come back in the language it already has (e.g. "Deutsch" picked on
     -- a German client that follows the client language); a reload offered for an earlier choice is withdrawn.
     if ns.ResolveLanguage(value, GetLocale()) == ns.language then

@@ -138,15 +138,19 @@ for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
 }
 
 // Lua, TOC and XML files are plain ASCII. Translations are the exception: Locales/<code>.lua (all but enUS.lua)
-// is UTF-8 text in its own language.
+// is UTF-8 text in its own language, and so are the translated TOC fields (## Notes-deDE: ...), which the game
+// shows in the addon list in the client's language.
 const isTranslation = (file) =>
   inAddon(file) && relAddon(file).startsWith("Locales/") && relAddon(file) !== "Locales/enUS.lua";
+const TRANSLATED_TOC_FIELDS = ["Notes", "Category"];
+const TRANSLATED_TOC_LINE = new RegExp(`^##\\s*(?:${TRANSLATED_TOC_FIELDS.join("|")})-[a-z]{2}[A-Z]{2}\\s*:`);
 for (const file of files) {
   if (![".lua", ".toc", ".xml"].includes(path.extname(file).toLowerCase()) || isTranslation(file)) {
     continue;
   }
+  const isToc = path.extname(file).toLowerCase() === ".toc";
   fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
-    if (NON_ASCII.test(line)) {
+    if (NON_ASCII.test(line) && !(isToc && TRANSLATED_TOC_LINE.test(line))) {
       problem(`${rel(file)}:${i + 1}`, "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
     }
   });
@@ -176,9 +180,31 @@ if (!fs.existsSync(tocPath)) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
     }
   }
-  for (const field of ["Interface", "Title", "Notes", "Author", "Version"]) {
+  for (const field of ["Interface", "Title", "Notes", "Category", "Author", "Version"]) {
     if (!toc.fields[field]) {
       problem(tocName, `missing "## ${field}"`);
+    }
+  }
+  // The translated fields: one per shipped translation that a game client can use (English is the plain
+  // field; there is no Ukrainian client, so the game would never show a ukUA field), and nothing else.
+  const NO_CLIENT_LOCALE = new Set(["enUS", "ukUA"]);
+  const localesDir = path.join(ADDON_DIR, "Locales");
+  const clientCodes = (fs.existsSync(localesDir) ? fs.readdirSync(localesDir) : [])
+    .filter((f) => f.endsWith(".lua"))
+    .map((f) => f.slice(0, -4))
+    .filter((code) => !NO_CLIENT_LOCALE.has(code));
+  for (const field of TRANSLATED_TOC_FIELDS) {
+    for (const code of clientCodes) {
+      if (!toc.fields[`${field}-${code}`]) {
+        problem(tocName, `missing "## ${field}-${code}" (Locales/${code}.lua is shipped)`);
+      }
+    }
+  }
+  for (const key of Object.keys(toc.fields)) {
+    const match = key.match(/^(\w+)-([a-z]{2}[A-Z]{2})$/);
+    if (match && !(TRANSLATED_TOC_FIELDS.includes(match[1]) && clientCodes.includes(match[2]))) {
+      problem(tocName, `"## ${key}": only ${TRANSLATED_TOC_FIELDS.join(" and ")} are translated, `
+        + "for the shipped languages a game client can use");
     }
   }
   if (toc.fields.Version && toc.fields.Version !== "@project-version@") {

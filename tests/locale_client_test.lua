@@ -3,6 +3,7 @@
 CLIENT_LOCALE = "deDE"
 load_addon()
 local L = ns.L
+local hintShownAtLogin = ns.db.settings.languageHintShown
 
 local _, german = load_translation("deDE")
 
@@ -24,4 +25,16 @@ test("picking Deutsch on a German client needs no reload", function()
     ns.SettingsUI.ChooseLanguage("deDE")
     eq(ns.db.settings.language, "deDE", "saved")
     eq(rawget(_G, "last_popup"), nil, "no popup")
+end)
+
+test("a German client gets no language hint", function()
+    eq(hintShownAtLogin, false, "flag after the login")
+    assert(not chat_contains("Other languages"), "no hint")
+end)
+
+test("the decimal separator comes from the client, not from the translation", function()
+    DECIMAL_SEPERATOR = "."
+    eq(ns.FormatDecimal(2.5, 1), "2.5", "German interface, a point from the client")
+    DECIMAL_SEPERATOR = ","
+    eq(ns.FormatDecimal(2.5, 1), "2,5", "German interface, a comma from the client")
 end)

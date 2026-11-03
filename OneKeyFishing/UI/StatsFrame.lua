@@ -60,7 +60,7 @@ local function BuildRows()
             tip = L["Catches per hour of fishing time. Updated with every cast and with Refresh."],
             text = function(c)
                 local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
-                return value and ("%.1f"):format(value) or "-"
+                return value and ns.FormatDecimal(value, 1) or "-"
             end },
         { section = L["Money"] },
         { key = "value", label = L["Value"],

@@ -12,6 +12,7 @@ L["Fishing action (cast / hook)"] = true
 L["Toggle fishing mode"] = true
 L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] = true
 L["v%s commands:"] = true
+L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] = true
 
 -- Gear.lua
 L["Fishing pole set."] = true

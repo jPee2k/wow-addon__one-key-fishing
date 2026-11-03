@@ -585,6 +585,9 @@ function GetLocale()
     return CLIENT_LOCALE
 end
 
+-- The decimal separator of the game client (Blizzard spells it SEPERATOR); a test may set "," for a German client.
+DECIMAL_SEPERATOR = "."
+
 function GetBuildInfo()
     return "1.60.1", "70450", "Oct 15 2026", 16001
 end

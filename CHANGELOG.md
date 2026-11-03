@@ -13,6 +13,12 @@ All notable changes to OneKeyFishing are listed here. The format follows
   also on a Russian client).
 - Language setting at the top right of the settings page: pick a language by its own name, or "Game client
   language". Українська is available this way. A change applies after a reload, which the addon offers.
+- On a client without a translation (a Russian one, for example) the addon says once in the chat that other
+  languages can be picked in the settings. Nothing is switched for you.
+- The description in the game's addon list is in the client's language, and the addon sits in the Professions
+  category there.
+- Decimal numbers in the statistics use the game client's decimal separator (2,5 on a German client), whatever
+  the interface language.
 
 ### Changed
 
