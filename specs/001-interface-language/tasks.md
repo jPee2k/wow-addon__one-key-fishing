@@ -247,6 +247,7 @@ language and stays so on another character; "Game client language" returns to US
 - **US1 (Phase 3)**: after Foundational.
 - **US2 (Phase 4)**: after Foundational; T033 also needs the nine translation files of US1 (T016-T024).
 - **Polish (Phase 5)**: after both stories.
+- **Convergence (Phase 6, User Story 3)**: after Phase 5; its order is in "Phase 6 execution order" below.
 
 ### Within phases
 
@@ -301,3 +302,45 @@ Task: "Create OneKeyFishing/Locales/zhCN.lua (简体中文)"
 - Commit after each phase on `001-interface-language`; merge into `develop`, never into `main`.
 - Translation files are the only Lua files allowed to contain non-ASCII text; everything else stays ASCII.
 - Claude cannot run the game: T041 hands the in-game checks to the author.
+
+---
+
+## Phase 6: Convergence
+
+- [X] T042 CRITICAL: amend `.specify/memory/constitution.md` Technical Constraints (through `/speckit-constitution`, PATCH) so the ASCII rule also excepts the translated TOC lines `## Notes-<code>` and `## Category-<code>`, which `OneKeyFishing/OneKeyFishing.toc`, `tools/check.mjs` and `CLAUDE.md` already allow per Constitution Technical Constraints (contradicts)
+- [X] T043 In `tests/wow.lua`, add configurable stubs for User Story 3: `C_Map.GetAreaInfo`, `GetMapInfo`, `CanSetUserWaypointOnMap`, `SetUserWaypoint`, `HasUserWaypoint`, `GetUserWaypoint`, `ClearUserWaypoint`, `UiMapPoint.CreateFromCoordinates`, `C_SuperTrack.SetSuperTrackedUserWaypoint`, `C_GameRules.IsGameRuleActive` with `Enum.GameRule.WorldMapTrackingPinDisabled`, `OpenWorldMap`, `C_Item.GetItemNameByID` / `RequestLoadItemDataByID`, `C_QuestLog.GetTitleForQuestID` / `RequestLoadQuestByID`, `C_Spell.GetSpellSubtext`, `C_TooltipInfo.GetHyperlink`, `UnitLevel`, a settable Fishing rank / max rank through `GetProfessions` / `GetProfessionInfo`, and a recorded `RaidNotice_AddMessage` per plan: Testing (missing)
+- [X] T044 Create `tests/skill_test.lua` (fails before T047-T048): quiet notice at skill 50 / 125 with level 10 / 20 (FR-018); no notice below the level, notice after `PLAYER_LEVEL_UP` (FR-019); at the cap a raid-warning message the first time, a chat line only on the next `MODE_CHANGED` on, and at 225 only the cap notice (FR-020); `Skill.GetNextRank()` nil at 300 (FR-021); no notices with `skillCapWarning` off (FR-023); names from the game, then `ns.NpcNames` for `GetLocale()`, then English, and a rank name from the spell subtext or `L` (FR-015, FR-016); the where sentence per source kind (FR-017) per US3/AC1-AC5, AC7, AC8 (missing)
+- [X] T045 Create `tests/mappin_test.lua` (fails before T049): `MapPin.Target(maps, x, y)` returns the first candidate the client knows and allows pins on, nil without the waypoint API, under the game rule and when no candidate is allowed; `MapPin.Set` sets the waypoint, turns on super tracking and saves `charDB.pin`; a pin of the player's own shows the replace popup first, the addon's own pin (same map, within 0.0005) is replaced without it per FR-022, US3/AC6 (missing)
+- [X] T046 In `tools/check.mjs`, allow non-ASCII characters only inside string literals of `OneKeyFishing/GameData/*.lua` (code, keys and comments stay ASCII) and update the rule comment per Constitution 1.3.0 Technical Constraints and plan: Source Code (missing)
+- [X] T047 Create `OneKeyFishing/GameData/FishingRanks.lua` (data only, no `L`) per data-model.md "Rank steps": `ns.FishingRanks[75|150|225]` with `next`, `learnAt`, `level`, `source` (trainer; book 16083 / NPC 2626 / areas 35, 33 / maps 1434, 224 / 0.274, 0.770; quest 6607 / NPC 12919 / areas 517, 15 / maps 1445, 70 / 0.586, 0.602) and English `fallback` names; `ns.FishingRankSpells`; `ns.NpcNames[2626|12919]` for enUS, deDE, esES, esMX, frFR, itIT, ptBR, ruRU, koKR, zhCN, zhTW from Wowhead's localized pages (only names that are found); a `-- VERIFY(R11)` marker on every value checked in game; list it in `OneKeyFishing/OneKeyFishing.toc` after `Data.lua` per FR-024, research R11, R15 (missing)
+- [X] T048 Rewrite the advice in `OneKeyFishing/Skill.lua`: remove `WARN_BEFORE`, `RankNames`, `NextRanks`; `Skill.GetRankName(maxRank)` from `C_Spell.GetSpellSubtext` with the `L` rank names as fallback; `Skill.GetNextRank()` per data-model.md "Next-rank advice" (state, level, where sentence, pin target through `ns.MapPin.Target`, name sources); names by ID (`C_Map.GetAreaInfo`, `C_Item.GetItemNameByID`, `C_QuestLog.GetTitleForQuestID`), requested at login and refreshed on `ITEM_DATA_LOAD_RESULT`, `QUEST_DATA_LOAD_RESULT`, `SPELL_DATA_LOAD_RESULT`; NPC names from `C_TooltipInfo.GetHyperlink` line 1, then `ns.NpcNames`, then English; notices per FR-018 - FR-020 on `SKILL_LINES_CHANGED`, `CHAT_MSG_SKILL`, `PLAYER_LEVEL_UP`, login and `MODE_CHANGED`, with the `worldmap:` map link in the chat line when a pin target exists (research R14); guard every uncertain API per FR-015 - FR-020, Constitution IV (missing)
+- [X] T049 Create `OneKeyFishing/UI/MapPin.lua` from the `002-shared-db` code (`Catalog.PinTarget`, `CatalogTab.Pin`, `IsOwnPin`): `MapPin.Target(maps, x, y)` with the game-rule check, `MapPin.Set(target, placeName)` with `SetUserWaypoint`, `SetSuperTrackedUserWaypoint(true)`, `OpenWorldMap` out of combat, toast `L["Map pin: %s"]` and the `ONEKEYFISHING_REPLACE_PIN` popup (`L["Replace your map pin with this place?"]`, `L["Replace"]`); `charDB.pin` defaults to nil, so no `CHAR_DB_DEFAULTS` entry (data-model.md "Map pin"); list the file in the TOC before `UI\StatsFrame.lua`; add the new globals to `.luacheckrc` per FR-022, research R14 (missing)
+- [X] T050 In `OneKeyFishing/UI/StatsFrame.lua`, add the "Next rank" line under the skill line (rank, where sentence, level needed) and a pin button (`ns.CreateButton`, shown only with a pin target) that calls `ns.MapPin.Set`; mark the window dirty on the name-load events and `PLAYER_LEVEL_UP` per FR-021, FR-022, US3/AC6, AC7 (missing)
+- [X] T051 In `OneKeyFishing/UI/Minimap.lua`, add the next-rank advice to the tooltip and a menu entry "Pin: next Fishing rank" (only with a pin target) per FR-021, FR-022 (missing)
+- [X] T052 In `OneKeyFishing/UI/Settings.lua`, rename the `skillCapWarning` toggle to "Remind me about the next Fishing rank" (saved key unchanged) per FR-023 (partial)
+- [X] T053 In `OneKeyFishing/Debug.lua`, add English report lines: next-rank state and level, the source of each name (game / table / english) and the pin target or why there is none per FR-025 (missing)
+- [X] T054 In `OneKeyFishing/Locales/enUS.lua`, add the state sentences, the trainer / book / quest sentences, the "Next rank" line texts, the level text, the pin texts and the new setting label; remove `a fishing trainer`, the book and quest phrases, `Fishing skill capped (%d/%d): learn %s Fishing from %s.`, `Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s.` and the old setting label; translate every new text in the nine `Locales/<code>.lua` files (keep the author's uncommitted review changes in `ukUA.lua`; the author reviews the Ukrainian texts) per FR-017, FR-011, research R13 (partial)
+- [X] T055 Update the docs per plan: Phase 12: a "Next rank" section in `docs/checklists/interface-language.md` (the steps of quickstart.md "User Story 3") and section 8 of `docs/checklists/fishing-mode.md`; the rank reminder in `OneKeyFishing/README.md`; `CHANGELOG.md` `[Unreleased]` Added/Changed lines; `CLAUDE.md` (`GameData/` and its rule, `UI/MapPin.lua`, `charDB.pin`, the `Skill.lua` description, the `npm run check` exception); `docs/release-plan.md` 1.2.0 (move lures, containers, pole bonuses, spell and bobber IDs to `GameData/`; the catalog uses `ns.MapPin`); `docs/ROADMAP.md` (pin on the nearest fishing trainer) (missing)
+- [X] T056 Add functional requirements to `specs/001-interface-language/spec.md` for the work already in the code but not in the spec: the one-time language hint on clients without a translation (`ns.NeedsLanguageHint`, `settings.languageHintShown`), the translated TOC `Notes-<code>` / `Category-<code>` lines, and the client decimal separator (`ns.FormatDecimal`); update research.md R10, which still calls localized TOC fields out of scope per spec: Requirements (unrequested)
+- [ ] T057 Run `npm run check` and `npm test` (T044, T045 pass) and hand the "User Story 3" steps of quickstart.md to the author; record the in-game results (IDs, map IDs, coordinates, subtext, tooltip names, map link) in research.md R11/R12 and `CLAUDE.md` "Known API facts" per plan: Phase 13, Constitution IV (missing)
+
+### Phase 6 execution order
+
+Added after `/speckit-analyze` (findings O1, O2, I2, D1, W1); the tasks above keep their IDs.
+
+1. T042 (done), then T043, T044, T045, T046: stubs, failing tests, the check rule.
+2. T047: the data file.
+3. T049 before T048: `Skill.lua` calls `ns.MapPin.Target`, so the module comes first (calls stay at runtime,
+   Constitution VI).
+4. T048 (the chat map link is the game's standard `worldmap:` link, set by the game without the addon's
+   confirmation; T044 only checks that the link is built for a pin target, FR-022), then T050, T051, T052,
+   T053. **Texts go with the code**: every task that adds an `L["..."]` adds the
+   English key to `Locales/enUS.lua` and its nine translations in the same task, and removes the keys it
+   retires; T054 is then the final pass (author review of the Ukrainian texts, nothing missing; its wording
+   above predates this order), so
+   `npm run check` and `npm test` stay green after every task.
+5. T055 docs, T056 spec backfill.
+6. T057 together with T041: one in-game run of the checklist (both stories).
+
+**Commits**: T048-T055 go into one commit, so the player-visible change carries its `CHANGELOG.md` and
+`OneKeyFishing/README.md` lines (Development Workflow); T042-T047 and T056 may be committed before it.

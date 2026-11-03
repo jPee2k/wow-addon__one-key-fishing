@@ -93,9 +93,15 @@ Rationale: a small addon stays maintainable only while each module has one clear
 - Shipped files live in `OneKeyFishing/` and are exactly the TOC, the files it lists,
   `Bindings.xml` and the player manual `README.md`; the package adds only `LICENSE` and
   `CHANGELOG.md` from the repository root.
-- Lua, TOC and XML files are ASCII-only and lines are at most 120 characters. Translation
-  files (`Locales/<code>.lua` other than `enUS.lua`) are the exception: UTF-8 text in its own
-  language.
+- Lua, TOC and XML files are ASCII-only and lines are at most 120 characters, with three
+  exceptions:
+  - translation files (`Locales/<code>.lua` other than `enUS.lua`): UTF-8 text in their own
+    language;
+  - the translated TOC lines `## Notes-<code>` and `## Category-<code>`, which the game's addon
+    list shows in the client's language (one pair for every translation with a client locale);
+  - string literals in the data-only files under `OneKeyFishing/GameData/` that hold official
+    game names per client language (for example NPC names, which no API provides): they MAY be
+    UTF-8. Code, identifiers, table keys and comments in those files stay ASCII.
 - Addon Lua and XML MUST NOT contain packager keywords (`@project-version@`, `--@debug@` blocks).
 - Every repository root entry is either packaged or listed in the `.pkgmeta` `ignore` list.
 - Tooling requires Node.js 18+; `npm run check` enforces the rules above.
@@ -125,4 +131,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.2.1 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-10-24
+**Version**: 1.3.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-03

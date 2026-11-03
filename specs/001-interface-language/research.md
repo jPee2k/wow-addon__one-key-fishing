@@ -13,7 +13,9 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
     (`function() return L["..."] end`), called when the help is printed. Five commands: scan, debug, toggle,
     config, stats.
   - `UI/Settings.lua` `TOGGLES`, `UI/StatsFrame.lua` `ROWS`, `UI/Indicator.lua` `LABELS`, `Skill.lua`
-    `RANK_NAMES` / `NEXT_RANK`: built by a function on first use instead of at file load.
+    `RANK_NAMES` / `NEXT_RANK`: built by a function on first use instead of at file load. (User Story 3
+    later replaces the `Skill.lua` tables with `GameData/FishingRanks.lua` and runtime sentences, R13, R15;
+    the no-load-time-lookup rule still holds.)
 - **Rationale**: WoW loads saved variables after all addon files have run, just before `ADDON_LOADED`, so the
   preference does not exist at file load. A text looked up at load time would be stuck in the client
   language. Keys stay literal (`L["text"]`), so the key sync of `npm run check` keeps working.
@@ -117,8 +119,114 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 
 ## R10. Out of scope (confirmed)
 
-- Localized TOC fields (`## Notes-deDE:`): they follow the client, not the setting, and the TOC must stay
-  ASCII.
+- Localized TOC fields (`## Notes-deDE:`): first left out because they follow the client, not the setting, and
+  the TOC had to stay ASCII. **Revised during implementation**: they were added (FR-027) after the game's addon
+  list was seen to read them in the client's language (German client, 2026-11-03); `npm run check` allows UTF-8
+  only in those lines, and constitution 1.3.0 names that exception.
 - Game names (items, zones, spells): always from the client.
 - The debug report and slash command names: stay English (FR-009); the report gains three lines: the
   preference, the effective language and the client locale.
+
+## R11. How Fishing ranks are learned (User Story 3)
+
+Sources (2026-11-03): Wowhead Classic, warcraft.wiki.gg, Forever guides (wow-professions.com, Warcraft Tavern,
+Metabot, kami-labs), the Forever client export (build 1.60.1.70685). No source describes a Forever-specific
+change; the guides are based on the beta and say requirements may still change.
+
+| Next rank (cap -> new cap) | Source | Can learn from | IDs (VERIFY in game) |
+|---|---|---|---|
+| Journeyman (75 -> 150) | any fishing trainer | skill 50, level 10 | spell 7731 |
+| Expert (150 -> 225) | book "Expert Fishing - The Bass and You", 1 gold, sold by Old Man Heming in Booty Bay (also tradable) | skill 125, level 20 | spell 7732, item 16083, NPC 2626, area 35 (Booty Bay) in 33 (Stranglethorn Vale), map 1434 (Classic) or 224, point ~0.274 / 0.770 |
+| Artisan (225 -> 300) | quest "Nat Pagle, Angler Extreme" (four fish: items 16967-16970) from Nat Pagle on an island in Tidefury Cove | skill 225, level 35 | spell 18248, quest 6607, NPC 12919, area 517 (Tidefury Cove) in 15 (Dustwallow Marsh), map 1445 (Classic) or 70, point ~0.586 / 0.602 |
+
+- **Faction**: Old Man Heming, Nat Pagle and the quest are neutral; nothing in the rank path depends on the
+  faction. Only the trainers' places differ (each capital and many towns have one; the Booty Bay trainer is
+  Myizz Luckycatch, Heming only sells the book).
+- **Apprentice** (rank 1) is learned at any trainer; the addon only runs for characters that know Fishing, so
+  it has no advice for it.
+- **Uncertain until the launch**: whether Forever keeps the book and the quest (one guide says ranks come
+  "from a trainer"), which map IDs the Forever client uses (Classic 1434 / 1445 or the modern 224 / 70), the
+  exact coordinates, the level requirements. All are checked in game ([quickstart.md](quickstart.md)).
+- **Forever extras** that do not change the path: Legacy points at skill 150 / 225 / 300, new recipes (Fishing
+  Rack, Fishing Hut, Bait and Tackle), faction-bound poles. No Fishing above 300.
+- **Decision**: thresholds `learnAt` 50 / 125 / 225 and `level` 10 / 20 / 35 replace the old `WARN_BEFORE = 5`
+  (the old rule warned at 70 and 145, long after the next rank could be learned).
+
+## R12. Game names by ID (FR-015, FR-016)
+
+- **Decision**: every game name in the advice is read from the client in its language:
+  - zone and sub-zone: `C_Map.GetAreaInfo(areaID)` (synchronous);
+  - book: `C_Item.GetItemNameByID(16083)`; requested at login with `C_Item.RequestLoadItemDataByID`, refreshed
+    on `ITEM_DATA_LOAD_RESULT`;
+  - quest: `C_QuestLog.GetTitleForQuestID(6607)`; requested with `C_QuestLog.RequestLoadQuestByID`, refreshed on
+    `QUEST_DATA_LOAD_RESULT`;
+  - rank names: `C_Spell.GetSpellSubtext(spellID)` of the rank's Fishing spell (7620 / 7731 / 7732 / 18248),
+    which in Classic is the rank name ("Apprentice"); requested with `C_Spell.RequestLoadSpellData`, refreshed on `SPELL_DATA_LOAD_RESULT` and `SPELL_TEXT_UPDATE` (the API doc of `GetSpellSubtext` names the latter); fallback the
+    translated `L["Apprentice"]` ... (VERIFY that Forever fills the subtext);
+  - NPC names: no API exists. First `C_TooltipInfo.GetHyperlink("unit:Creature-0-0-0-0-<npcID>-0")`, line 1
+    (untested; works only when the client has the creature cached, VERIFY), then the table of official names
+    per client locale (`GetLocale()`, from Wowhead's localized pages, including ruRU for Ukrainian players on a
+    Russian client), then English.
+- All of them exist in the Forever export (`Blizzard_APIDocumentationGenerated`: `MapDocumentation.lua`,
+  `ItemDocumentation.lua`, `QuestLogDocumentation.lua`, `SpellDocumentation.lua`,
+  `TooltipInfoDocumentation.lua`).
+- **Rationale**: names the addon translates itself never match a client exactly (and Ukrainian has no client
+  at all, so its players see English or Russian names on the map). Reading by ID also keeps Principle II.
+- **Alternatives rejected**: translating game names in `Locales/` (the old way; mismatches); keeping names in
+  English everywhere (wrong on every non-English client).
+
+## R13. Sentences per learning source (FR-017)
+
+- **Decision**: the advice is built from complete sentences: a state sentence ("You can learn %s Fishing
+  now.", "Fishing skill capped (%d/%d): learn %s Fishing to go on.", "%s Fishing needs character level %d.")
+  and a where sentence per source (trainer, book, quest), each a literal `L` key with its nine translations.
+  Game names only fill `%s` placeholders, quoted where the language quotes titles. The old keys (`a fishing
+  trainer`, the book and quest phrases, the two old templates) are removed.
+- **Rationale**: the old "learn %s Fishing from %s" put a translated phrase into another sentence, and the
+  case of the inserted phrase was wrong in several languages (Ukrainian genitive, German "von"/"ueber").
+- **Alternative rejected**: one template with an inserted phrase (the old way).
+
+## R14. Notices, the "Next rank" line and the map pin (FR-018 - FR-023)
+
+- **Notices**: "can learn" is quiet (chat and toast) once per session per rank, checked on
+  `SKILL_LINES_CHANGED`, `CHAT_MSG_SKILL`, `PLAYER_LEVEL_UP` and 2 s after `PLAYER_ENTERING_WORLD`. The cap
+  notice adds the raid-warning message only the first time per session; entering fishing mode repeats it as a
+  chat line. When a pin target exists, the chat line ends with a clickable map link
+  (`|Hworldmap:<mapID>:<x*10000>:<y*10000>|h[...]|h`, the link type `LinkTypes.WorldMapWaypoint` that
+  Blizzard's own handler turns into a pin, `ItemRefHandlers.lua`; VERIFY). That handler
+  (`Blizzard_UIPanels_Game/Mainline/ItemRefHandlers.lua:219`) calls `C_Map.SetUserWaypoint` and
+  `OpenMapToUserWaypoint` directly: no confirmation, no navigation arrow, no `charDB.pin`. FR-022 accepts this
+  for the chat link (standard game behaviour); the confirmation and the arrow belong to the addon's own pin
+  button and menu entry. A custom addon link type running `MapPin.Set` was rejected: more code and one more
+  in-game unknown for little gain.
+- **No journal**: no branch has a message journal; a permanent line in the statistics window and the minimap
+  tooltip keeps the advice, which is all the player needs after the toast fades.
+- **Map pin**: a shared module `UI/MapPin.lua` takes over the pin logic built for the catch catalog on
+  `002-shared-db` (`Catalog.PinTarget`, `CatalogTab.Pin`): `C_Map.CanSetUserWaypointOnMap`, the game rule
+  `Enum.GameRule.WorldMapTrackingPinDisabled` (checked with `C_GameRules.IsGameRuleActive`),
+  `C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(...))`, `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`,
+  `OpenWorldMap(mapID)` out of combat, a popup before replacing a pin the player set, the addon's last pin in
+  `charDB.pin`. Same saved field and texts as on `002-shared-db`, so the 1.2.0 merge switches the catalog to the
+  module. The map is the first candidate ID the client knows and allows pins on (Classic ID first).
+- **Policy**: setting a pin is the player's click; no game action is automated (Principle I).
+
+## R15. Static game data (FR-024)
+
+- **Decision**: a data-only file `OneKeyFishing/GameData/FishingRanks.lua` (after `Data.lua` in the TOC) holds
+  the rank steps, thresholds, levels, IDs, map candidates, coordinates, English fallback names and the NPC
+  names per client locale (`ns.FishingRanks`, `ns.FishingRankSpells`, `ns.NpcNames`). No logic, no `L`
+  lookup. The NPC names are UTF-8: constitution 1.3.0 (Technical Constraints) allows UTF-8 string literals
+  in `GameData/` files, while code, keys and comments there stay ASCII; `npm run check` enforces exactly that.
+- **Checked**: `002-shared-db` has no separate game-data layer (`LURES`, `CONTAINERS` and `KNOWN_POLE_BONUS`
+  stay in `Fishing/Bags.lua` and `Fishing/Gear.lua`; `Core/Data.lua` mixes IDs with helpers), so there is no
+  pattern to follow yet.
+- **Technical debt (1.2.0)**: move the older tables (lures, containers, pole bonuses, Fishing spell IDs, the
+  bobber ID) into `GameData/` after `001-interface-language` is merged into `002-shared-db`
+  (`docs/release-plan.md`).
+
+## R16. Out of scope for User Story 3
+
+- A pin on the nearest fishing trainer: needs a table of about 25 trainers with Forever map IDs and coordinates
+  that cannot be checked before the launch; the minimap's trainer tracking (enabled in Forever,
+  `MinimapConstants.lua` `TrainerProfession`) already finds them. Goes to `docs/ROADMAP.md`.
+- A general message journal: not needed for this story (R14).

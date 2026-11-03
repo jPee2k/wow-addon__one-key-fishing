@@ -118,6 +118,92 @@ translation files under `OneKeyFishing/Locales/`, plus one test file.
 5. **Docs and release notes**: `docs/languages.md`, README, CHANGELOG `[Unreleased]`, CLAUDE.md.
 6. **In-game validation**: hand [quickstart.md](quickstart.md) to the author.
 
+## Addendum 2026-11-03: User Story 3 (the next Fishing rank)
+
+Spec: User Story 3, FR-015 - FR-025, SC-007 - SC-009. Research: [research.md](research.md) R11-R16. Data:
+[data-model.md](data-model.md) "Rank steps" and "Map pin".
+
+### Summary
+
+The rank advice in `Skill.lua` stops translating game names: zone, sub-zone, book, quest and rank names are
+read by ID in the client's language, NPC names come from a tooltip, a per-locale table or English. Each
+learning source (trainer, book, quest) gets its own sentence. Notices follow the game's rules (can learn at
+50 / 125 / 225 with level 10 / 20 / 35, cap at 75 / 150 / 225, raid warning once per session). The advice
+stays visible in the statistics window and the minimap tooltip, and the book seller and quest giver get the
+game's map pin through a shared `MapPin` module taken over from `002-shared-db`.
+
+### Technical Context (delta)
+
+**Primary Dependencies**: `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `C_Map.CanSetUserWaypointOnMap`,
+`C_Map.SetUserWaypoint`, `C_Map.HasUserWaypoint`, `C_Map.GetUserWaypoint`, `UiMapPoint.CreateFromCoordinates`,
+`C_SuperTrack.SetSuperTrackedUserWaypoint`, `C_GameRules.IsGameRuleActive`, `OpenWorldMap`,
+`C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_QuestLog.GetTitleForQuestID`,
+`C_QuestLog.RequestLoadQuestByID`, `C_Spell.GetSpellSubtext`, `C_TooltipInfo.GetHyperlink`, `UnitLevel`; events
+`ITEM_DATA_LOAD_RESULT`, `QUEST_DATA_LOAD_RESULT`, `SPELL_DATA_LOAD_RESULT`, `SPELL_TEXT_UPDATE`,
+`PLAYER_LEVEL_UP`; `C_Spell.RequestLoadSpellData`. All present in the
+Forever export (R12, R14); behaviour marked VERIFY until the in-game check.
+
+**Storage**: `OneKeyFishingCharDB.pin` (`{ mapID, x, y }`, the addon's last pin; new key, no migration), the same
+field as on `002-shared-db`. `settings.skillCapWarning` keeps its key, its label changes.
+
+**Testing**: new `tests/skill_test.lua` and `tests/mappin_test.lua`; stubs in `tests/wow.lua` for the APIs
+above (configurable names, level, map candidates, game rule, existing waypoint).
+
+**Scale/Scope**: about 12 new English texts (state and source sentences, "Next rank" line, pin texts, the
+renamed setting) x 9 translations; 5 old texts removed.
+
+### Constitution Check (User Story 3)
+
+| Principle | Check | Status |
+|---|---|---|
+| I. Blizzard Policy | Pins are set only from the player's click (button, menu, chat link); nothing automated | Pass |
+| II. Language-Independent Game Data | Game names read by ID in the client language; data in `GameData/`; sentences via `ns.L` with literal keys | Pass |
+| III. Safe, Restorable State | One new char field `pin` (nil by default, no migration); a pin of the player's own is replaced only after a confirmation | Pass |
+| IV. Verified Forever API | Every API is in the Forever export; IDs, maps, coordinates, subtext, tooltip names and the map link are VERIFY items in the in-game checklist | Pass |
+| V. Checked and Tested | `skill_test.lua` (thresholds, level wait, once per session, name fallbacks) and `mappin_test.lua` (map choice, game rule, replace popup) | Pass |
+| Technical Constraints (1.3.0) | UTF-8 only inside string literals of `GameData/` files (NPC names); `tools/check.mjs` allows exactly that, code and comments stay ASCII | Pass |
+| VI. Simple Module Boundaries | `GameData/FishingRanks.lua` data only; `UI/MapPin.lua` owns pins; `Skill.lua` owns the advice; no new message (the statistics window is marked dirty through existing paths) | Pass |
+
+### Source Code (delta)
+
+```text
+OneKeyFishing/
+├── OneKeyFishing.toc          # + GameData\FishingRanks.lua after Data.lua; + UI\MapPin.lua before StatsFrame
+├── GameData/
+│   └── FishingRanks.lua       # NEW, data only: ns.FishingRanks (steps per cap), ns.FishingRankSpells,
+│                              #      ns.NpcNames (per client locale, UTF-8 string literals)
+├── Skill.lua                  # thresholds, level wait, names by ID, Skill.GetNextRank(), notices, map link
+├── UI/
+│   ├── MapPin.lua             # NEW: MapPin.Target(maps, x, y), MapPin.Set(target, placeName), replace popup
+│   ├── StatsFrame.lua         # "Next rank" line + pin button under the skill line
+│   ├── Minimap.lua            # tooltip line + menu entry "Pin: next Fishing rank"
+│   └── Settings.lua           # renamed rank reminder toggle
+├── Debug.lua                  # next-rank state, name sources, pin target
+├── Core.lua                   # unchanged: charDB.pin defaults to nil (data-model.md "Map pin")
+└── Locales/*.lua              # new sentences, old rank phrases removed (all ten files)
+
+tests/wow.lua tests/skill_test.lua tests/mappin_test.lua
+tools/check.mjs                # GameData/: non-ASCII allowed only inside string literals (constitution 1.3.0)
+CLAUDE.md                      # npm run check description: the GameData/ exception
+.luacheckrc                    # new API globals
+docs/checklists/interface-language.md   # new section "Next rank"; fishing-mode.md section 8 updated
+OneKeyFishing/README.md CHANGELOG.md CLAUDE.md docs/release-plan.md docs/ROADMAP.md
+```
+
+### Phases (for /speckit-converge)
+
+7. **Data and tests**: `GameData/FishingRanks.lua`, test stubs, `skill_test.lua` and `mappin_test.lua` failing
+   first.
+8. **Advice logic**: `Skill.lua` thresholds, level wait, names by ID with fallbacks, notices, map link.
+9. **Map pin**: `UI/MapPin.lua` from the `002-shared-db` code, same saved field and texts.
+10. **UI**: statistics line and pin button, minimap tooltip and menu, settings label, debug report.
+11. **Texts**: new English sentences and their nine translations, added with the code that uses them (tasks.md
+    "Phase 6 execution order"), old keys removed; a final pass checks completeness and the Ukrainian review.
+12. **Docs**: checklists, README, CHANGELOG `[Unreleased]`, CLAUDE.md (modules, `charDB.pin`, the `GameData/`
+    rule), `docs/release-plan.md` (1.2.0: move older tables to `GameData/`, catalog uses `MapPin`),
+    `docs/ROADMAP.md` (pin on the nearest trainer).
+13. **In-game validation**: the "Next rank" section of [quickstart.md](quickstart.md), handed to the author.
+
 ## Complexity Tracking
 
 No constitution violations to justify.
