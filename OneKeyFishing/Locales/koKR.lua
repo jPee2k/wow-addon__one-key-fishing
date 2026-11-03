@@ -64,14 +64,18 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Journeyman"] = "숙련"
     L["Expert"] = "전문"
     L["Artisan"] = "장인"
-    L["a fishing trainer"] = "낚시 전문기술 상급자"
-    L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] =
-        "책 \"Expert Fishing - The Bass and You\" (Old Man Heming, 무법항)"
-    L["the quest from Nat Pagle (Dustwallow Marsh)"] = "내트 페글의 퀘스트 (먼지진흙 습지대)"
-    L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] =
-        "낚시 숙련도가 최대입니다 (%d/%d). %s 낚시를 배우세요. 배울 곳: %s."
-    L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] =
-        "낚시 %d/%d: 이 등급에서 %d점 남음. 다음: %s 낚시, 배울 곳: %s."
+    L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] =
+        "모든 낚시 전문기술 상급자에게 배울 수 있습니다 (수도와 마을, 미니맵에서 상급자 추적 가능)."
+    L["Buy the book \"%s\" from %s in %s, %s."] = "'%s' 책을 %s에게서 구입하세요 (%s, %s)."
+    L["Do the quest \"%s\" from %s at %s, %s."] = "퀘스트 '%s'를 완료하세요. 퀘스트 제공: %s (%s, %s)."
+    L["%s Fishing needs character level %d."] = "%s 낚시는 캐릭터 레벨 %d이(가) 필요합니다."
+    L["Map pin"] = "지도 핀"
+    L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] = "낚시 숙련도가 최대입니다 (%d/%d). 계속하려면 %s 낚시를 배우세요."
+    L["You can learn %s Fishing now."] = "이제 %s 낚시를 배울 수 있습니다."
+    L["Next rank: %s Fishing, from skill %d."] = "다음 등급: %s 낚시, 숙련도 %d부터."
+    L["Next rank: %s Fishing, from skill %d and character level %d."] = "다음 등급: %s 낚시, 숙련도 %d 및 캐릭터 레벨 %d부터."
+    L["Next rank: %s Fishing, from character level %d."] = "다음 등급: %s 낚시, 캐릭터 레벨 %d부터."
+    L["Next rank: %s Fishing, ready to learn."] = "다음 등급: %s 낚시, 지금 배울 수 있습니다."
 
     -- UI/CopyWindow.lua
     L["Click the text, then Ctrl+A and Ctrl+C to copy."] = "텍스트를 클릭한 후 Ctrl+A, Ctrl+C로 복사하세요."
@@ -88,7 +92,14 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Caught: %s"] = "낚음: %s"
     L["Nothing caught"] = "아무것도 낚지 못함"
 
+    -- UI/MapPin.lua
+    L["The game did not accept the map pin."] = "게임이 지도 핀을 받아들이지 않았습니다."
+    L["Map pin: %s"] = "지도 핀: %s"
+    L["Replace your map pin with this place?"] = "지도 핀을 이 장소로 바꾸시겠습니까?"
+    L["Replace"] = "바꾸기"
+
     -- UI/StatsFrame.lua
+    L["Pin"] = "핀"
     L["Time fishing"] = "낚시 시간"
     L["Time casting"] = "찌 대기 시간"
     L["Casts"] = "던진 횟수"
@@ -152,7 +163,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Show catch notifications"] = "어획 알림 표시"
     L["Show session fishing time under the indicator"] = "표시기 아래에 세션 낚시 시간 표시"
     L["Pause the fishing timer while AFK"] = "자리 비움 중 낚시 타이머 일시 중지"
-    L["Warn when the Fishing rank is capped"] = "낚시 숙련도가 등급 최대치에 도달하면 경고"
+    L["Remind me about the next Fishing rank"] = "다음 낚시 등급 알림"
     L["Use scanned auction prices for catch value"] = "어획 가치에 검색한 경매장 가격 사용"
     L["Zoom the camera while fishing"] = "낚시 중 카메라 확대"
     L["Show the minimap button"] = "미니맵 버튼 표시"
@@ -212,6 +223,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["OneKeyFishing: Alt+Click to add to fishing gear"] = "OneKeyFishing: Alt+클릭으로 낚시 장비에 추가"
 
     -- UI/Minimap.lua
+    L["Pin: next Fishing rank"] = "핀: 다음 낚시 등급"
     L["Leave fishing mode"] = "낚시 모드 종료"
     L["Enter fishing mode"] = "낚시 모드 시작"
     L["Statistics"] = "통계"

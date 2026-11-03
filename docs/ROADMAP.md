@@ -38,4 +38,6 @@ What is left:
 ## Ideas to discuss
 
 - Fishing pools: notice and point out nearby pools.
+- A map pin on the nearest fishing trainer for Journeyman (spec 001 research R16): needs the trainers' Forever map
+  IDs and points, checked in game; until then the minimap's trainer tracking finds them.
 - Skill-up forecast: how many catches until the next skill point or rank cap.

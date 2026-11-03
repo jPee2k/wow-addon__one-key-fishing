@@ -62,11 +62,17 @@ L["Apprentice"] = true
 L["Journeyman"] = true
 L["Expert"] = true
 L["Artisan"] = true
-L["a fishing trainer"] = true
-L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] = true
-L["the quest from Nat Pagle (Dustwallow Marsh)"] = true
-L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] = true
-L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] = true
+L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] = true
+L["Buy the book \"%s\" from %s in %s, %s."] = true
+L["Do the quest \"%s\" from %s at %s, %s."] = true
+L["%s Fishing needs character level %d."] = true
+L["Map pin"] = true
+L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] = true
+L["You can learn %s Fishing now."] = true
+L["Next rank: %s Fishing, from skill %d."] = true
+L["Next rank: %s Fishing, from skill %d and character level %d."] = true
+L["Next rank: %s Fishing, from character level %d."] = true
+L["Next rank: %s Fishing, ready to learn."] = true
 
 -- UI/CopyWindow.lua
 L["Click the text, then Ctrl+A and Ctrl+C to copy."] = true
@@ -83,7 +89,14 @@ L["Drag to move. Lock it in the settings."] = true
 L["Caught: %s"] = true
 L["Nothing caught"] = true
 
+-- UI/MapPin.lua
+L["The game did not accept the map pin."] = true
+L["Map pin: %s"] = true
+L["Replace your map pin with this place?"] = true
+L["Replace"] = true
+
 -- UI/StatsFrame.lua
+L["Pin"] = true
 L["Time fishing"] = true
 L["Time casting"] = true
 L["Casts"] = true
@@ -141,7 +154,7 @@ L["Lock the indicator position"] = true
 L["Show catch notifications"] = true
 L["Show session fishing time under the indicator"] = true
 L["Pause the fishing timer while AFK"] = true
-L["Warn when the Fishing rank is capped"] = true
+L["Remind me about the next Fishing rank"] = true
 L["Use scanned auction prices for catch value"] = true
 L["Zoom the camera while fishing"] = true
 L["Show the minimap button"] = true
@@ -193,6 +206,7 @@ L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = true
 L["OneKeyFishing: Alt+Click to add to fishing gear"] = true
 
 -- UI/Minimap.lua
+L["Pin: next Fishing rank"] = true
 L["Leave fishing mode"] = true
 L["Enter fishing mode"] = true
 L["Statistics"] = true

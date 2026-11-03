@@ -69,14 +69,20 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Journeyman"] = "Geselle"
     L["Expert"] = "Experte"
     L["Artisan"] = "Fachmann"
-    L["a fishing trainer"] = "einen Angellehrer"
-    L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] =
-        "das Buch \"Expert Fishing - The Bass and You\" (Der alte Heming, Beutebucht)"
-    L["the quest from Nat Pagle (Dustwallow Marsh)"] = "die Quest von Nat Pagle (Düstermarschen)"
-    L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] =
-        "Angelfertigkeit am Maximum (%d/%d): Lerne Angeln (%s) über %s."
-    L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] =
-        "Angeln %d/%d: noch %d Punkt(e) in diesem Rang. Als Nächstes: Angeln (%s) über %s."
+    L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] =
+        "Jeder Angellehrer bringt es dir bei (Hauptstädte und Orte; die Minikarte kann Lehrer anzeigen)."
+    L["Buy the book \"%s\" from %s in %s, %s."] = "Kaufe das Buch „%s“ bei %s (%s, %s)."
+    L["Do the quest \"%s\" from %s at %s, %s."] = "Erledige die Quest „%s“ von %s (%s, %s)."
+    L["%s Fishing needs character level %d."] = "Angeln (%s) erfordert Charakterstufe %d."
+    L["Map pin"] = "Kartenmarkierung"
+    L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] =
+        "Angelfertigkeit am Maximum (%d/%d): Lerne Angeln (%s), um weiterzukommen."
+    L["You can learn %s Fishing now."] = "Du kannst jetzt Angeln (%s) lernen."
+    L["Next rank: %s Fishing, from skill %d."] = "Nächster Rang: Angeln (%s), ab Fertigkeit %d."
+    L["Next rank: %s Fishing, from skill %d and character level %d."] =
+        "Nächster Rang: Angeln (%s), ab Fertigkeit %d und Charakterstufe %d."
+    L["Next rank: %s Fishing, from character level %d."] = "Nächster Rang: Angeln (%s), ab Charakterstufe %d."
+    L["Next rank: %s Fishing, ready to learn."] = "Nächster Rang: Angeln (%s), jetzt erlernbar."
 
     -- UI/CopyWindow.lua
     L["Click the text, then Ctrl+A and Ctrl+C to copy."] = "Klicke in den Text, dann Strg+A und Strg+C zum Kopieren."
@@ -93,7 +99,14 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Caught: %s"] = "Gefangen: %s"
     L["Nothing caught"] = "Nichts gefangen"
 
+    -- UI/MapPin.lua
+    L["The game did not accept the map pin."] = "Das Spiel hat die Kartenmarkierung nicht angenommen."
+    L["Map pin: %s"] = "Kartenmarkierung: %s"
+    L["Replace your map pin with this place?"] = "Deine Kartenmarkierung durch diesen Ort ersetzen?"
+    L["Replace"] = "Ersetzen"
+
     -- UI/StatsFrame.lua
+    L["Pin"] = "Markieren"
     L["Time fishing"] = "Angelzeit"
     L["Time casting"] = "Wurfzeit"
     L["Casts"] = "Würfe"
@@ -157,7 +170,7 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Show catch notifications"] = "Fangbenachrichtigungen anzeigen"
     L["Show session fishing time under the indicator"] = "Angelzeit der Sitzung unter der Anzeige anzeigen"
     L["Pause the fishing timer while AFK"] = "Angel-Timer pausieren, solange du AFK bist"
-    L["Warn when the Fishing rank is capped"] = "Warnen, wenn der Angelrang ausgeschöpft ist"
+    L["Remind me about the next Fishing rank"] = "An den nächsten Angelrang erinnern"
     L["Use scanned auction prices for catch value"] = "Gescannte Auktionspreise für den Fangwert verwenden"
     L["Zoom the camera while fishing"] = "Kamera beim Angeln zoomen"
     L["Show the minimap button"] = "Minikartenknopf anzeigen"
@@ -223,6 +236,7 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "OneKeyFishing: Alt+Klick, um zur Angelausrüstung hinzuzufügen"
 
     -- UI/Minimap.lua
+    L["Pin: next Fishing rank"] = "Markieren: nächster Angelrang"
     L["Leave fishing mode"] = "Angelmodus verlassen"
     L["Enter fishing mode"] = "Angelmodus aktivieren"
     L["Statistics"] = "Statistik"

@@ -439,14 +439,132 @@ C_CVar = {
     end,
 }
 
+-- Maps and the game's map pin (UI/MapPin.lua, User Story 3 of spec 001):
+--   known_maps[uiMapID] = true        C_Map.GetMapInfo answers (map 1, the player's zone, is always known)
+--   pin_maps[uiMapID] = true          C_Map.CanSetUserWaypointOnMap
+--   pins_disabled = true              the game rule that turns map pins off is active
+--   user_waypoint                     the pin on the map: { uiMapID, position = { x, y } } or nil
+--   super_tracked, opened_map         C_SuperTrack.SetSuperTrackedUserWaypoint, OpenWorldMap
+--   area_names[areaID] = "name"       C_Map.GetAreaInfo
+known_maps, pin_maps, area_names = {}, {}, {}
+pins_disabled, user_waypoint, super_tracked, opened_map = false, nil, false, nil
+
 C_Map = {
     GetBestMapForUnit = function()
         return 1
     end,
-    GetMapInfo = function()
-        return { name = "Test Zone" }
+    GetMapInfo = function(mapID)
+        if mapID == 1 or known_maps[mapID] then
+            return { mapID = mapID, name = mapID == 1 and "Test Zone" or ("Map " .. mapID) }
+        end
+    end,
+    GetAreaInfo = function(areaID)
+        return area_names[areaID]
+    end,
+    CanSetUserWaypointOnMap = function(mapID)
+        return pin_maps[mapID] == true
+    end,
+    SetUserWaypoint = function(point)
+        user_waypoint = point
+        return true
+    end,
+    HasUserWaypoint = function()
+        return rawget(_G, "user_waypoint") ~= nil
+    end,
+    GetUserWaypoint = function()
+        return rawget(_G, "user_waypoint")
+    end,
+    ClearUserWaypoint = function()
+        user_waypoint = nil
     end,
 }
+
+UiMapPoint = {
+    CreateFromCoordinates = function(mapID, x, y)
+        return { uiMapID = mapID, position = { x = x, y = y } }
+    end,
+}
+
+C_SuperTrack = {
+    SetSuperTrackedUserWaypoint = function(value)
+        super_tracked = value
+    end,
+}
+
+C_GameRules = {
+    IsGameRuleActive = function(rule)
+        return rule == Enum.GameRule.WorldMapTrackingPinDisabled and pins_disabled
+    end,
+}
+
+function OpenWorldMap(mapID)
+    opened_map = mapID
+end
+
+-- Names the client knows by ID (User Story 3), nil until a test sets them, as for data the client has not loaded:
+--   item_names[itemID], quest_titles[questID], spell_subtexts[spellID], tooltip_names[npcID] (a creature link)
+--   requested_items[itemID], requested_quests[questID], requested_spells[spellID]: the addon asked the client to
+--   load them
+item_names, quest_titles, spell_subtexts, tooltip_names = {}, {}, {}, {}
+requested_items, requested_quests = {}, {}
+
+C_QuestLog = {
+    GetTitleForQuestID = function(questID)
+        return quest_titles[questID]
+    end,
+    RequestLoadQuestByID = function(questID)
+        requested_quests[questID] = true
+    end,
+}
+
+requested_spells = {}
+C_Spell = {
+    GetSpellSubtext = function(spellID)
+        return spell_subtexts[spellID] or ""
+    end,
+    RequestLoadSpellData = function(spellID)
+        requested_spells[spellID] = true
+    end,
+}
+
+C_TooltipInfo = {
+    GetHyperlink = function(link)
+        local npcID = tonumber(tostring(link):match("^unit:Creature%-0%-0%-0%-0%-(%d+)%-"))
+        local name = npcID and tooltip_names[npcID]
+        if name then
+            return { lines = { { leftText = name } } }
+        end
+    end,
+}
+
+-- The Fishing skill and the character (User Story 3): fishing_skill = { rank, maxRank } or nil (not learned).
+fishing_skill = nil
+player_level = 60
+
+function GetProfessions()
+    if rawget(_G, "fishing_skill") then
+        return nil, nil, nil, 4 -- the fourth value is Fishing
+    end
+end
+
+function GetProfessionInfo(index)
+    local skill = rawget(_G, "fishing_skill")
+    if index == 4 and skill then
+        return "Fishing", 136245, skill[1], skill[2]
+    end
+end
+
+function UnitLevel()
+    return player_level
+end
+
+-- Raid-warning style messages (RaidNotice_AddMessage), oldest first.
+raid_warnings = {}
+RaidWarningFrame = CreateFrame("Frame", "RaidWarningFrame")
+ChatTypeInfo = { RAID_WARNING = { r = 1, g = 0.3, b = 0.1 } }
+function RaidNotice_AddMessage(_, text)
+    table.insert(raid_warnings, text)
+end
 
 C_Item = {
     GetItemCount = function(itemID)
@@ -465,6 +583,12 @@ C_Item = {
     end,
     GetItemInfoInstant = function(item)
         return tonumber(item) or tonumber(tostring(item):match("item:(%d+)"))
+    end,
+    GetItemNameByID = function(itemID)
+        return item_names[itemID]
+    end,
+    RequestLoadItemDataByID = function(itemID)
+        requested_items[itemID] = true
     end,
 }
 
@@ -522,6 +646,7 @@ Enum = {
     ItemClass = { Weapon = 2 },
     ItemWeaponSubclass = { Fishingpole = 20 },
     TooltipDataType = { Item = 0 },
+    GameRule = { WorldMapTrackingPinDisabled = 1 },
 }
 
 auction_queries = {} -- item keys sent with C_AuctionHouse.SendSearchQuery
@@ -550,7 +675,7 @@ local function WithStubFallback(name, api)
     })
 end
 for _, name in ipairs({ "C_AddOns", "C_CVar", "C_Map", "C_Item", "C_Container", "C_AuctionHouse", "C_Timer",
-    "Settings" }) do
+    "Settings", "UiMapPoint", "C_SuperTrack", "C_GameRules", "C_QuestLog", "C_Spell", "C_TooltipInfo" }) do
     WithStubFallback(name, _G[name])
 end
 
@@ -594,10 +719,6 @@ end
 
 function UnitIsAFK()
     return false
-end
-
-function GetProfessions()
-    return nil
 end
 
 -- Lua extensions of the game client

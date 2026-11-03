@@ -53,7 +53,7 @@ One fishing round:
 - **Statistics**: casts, catches, misses, fishing time and the value of the catch, per session, per zone and in
   total.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
-- **Rank cap warning**: when your Fishing rank is full, and where to learn the next one.
+- **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
 - **Minimap button** with a menu: every action is available without typing a command.
 
@@ -88,10 +88,31 @@ Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a
   catch, a miss, a zone change, an auction scan); only the time rows tick while you fish. The session shows
   `H:MM:SS`, the zone and all-time columns `1h 23m`.
-- The line under the skill shows when auction prices were last scanned.
+- The line under the skill shows when auction prices were last scanned; the next line says what the next Fishing
+  rank waits for and where it is learned, with a **Pin** button for the book seller and the quest giver.
 - **Reset session** and **Reset all** ask for confirmation first.
 
 The timer runs only while fishing mode is on. It pauses while you are AFK (you can turn that off).
+
+## The next Fishing rank
+
+| Next rank | Can be learned from | Where |
+|---|---|---|
+| Journeyman | skill 50, character level 10 | any fishing trainer (capitals and many towns) |
+| Expert | skill 125, character level 20 | the book "Expert Fishing - The Bass and You", sold by Old Man Heming in Booty Bay |
+| Artisan | skill 225, character level 35 | the quest "Nat Pagle, Angler Extreme" from Nat Pagle in Dustwallow Marsh |
+
+- When the next rank can be learned, a chat line and a notification say so once per session (also with catch
+  notifications off: the reminders have their own setting). Until your character
+  has the level, the addon waits and says it once the level is reached.
+- When your skill is at the cap (75, 150, 225), a large on-screen message says so the first time in a session;
+  every time you enter fishing mode afterwards, a chat line repeats it.
+- The names of the book, the quest, the places and the ranks are the ones your game client shows, in its language,
+  whatever language the addon is in.
+- For the book and the quest, the chat line ends with a map link, and the statistics window and the minimap menu
+  have a pin button: the game's map pin and navigation arrow point at the seller or the quest giver. A pin you set
+  yourself is replaced only after you confirm (the chat link works like any map link and sets the pin at once).
+- Turn the reminders off with "Remind me about the next Fishing rank"; the line in the statistics window stays.
 
 ## Auction prices
 
@@ -106,11 +127,11 @@ scanned auction prices for catch value**.
 
 - **Left-click**: toggle fishing mode.
 - **Shift+Left-click**: statistics.
-- **Right-click**: a menu with every action (mode, statistics, settings, auction scan, reset indicator position,
-  debug report).
+- **Right-click**: a menu with every action (mode, statistics, settings, auction scan, a map pin for the next
+  Fishing rank when it has a place, reset indicator position, debug report).
 - **Drag**: move the button around the minimap.
-- The tooltip shows the mode, your Fishing skill, the session time, your key bindings and short instructions. The
-  button is grey while fishing mode is off.
+- The tooltip shows the mode, your Fishing skill and the next rank, the session time, your key bindings and short
+  instructions. The button is grey while fishing mode is off.
 
 The same entry is in the Addon Compartment (the addons button next to the minimap).
 
@@ -131,7 +152,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Show catch notifications
   - Show session fishing time under the indicator
   - Pause the fishing timer while AFK
-  - Warn when the Fishing rank is capped
+  - Remind me about the next Fishing rank
   - Use scanned auction prices for catch value
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button

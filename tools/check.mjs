@@ -1,7 +1,7 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
-//   ASCII-only Lua, TOC and XML files (translations excepted), the addon folder holds only packaged files, the
-//   repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
+//   ASCII-only Lua, TOC and XML files (translations and GameData/ strings excepted), the addon folder holds
+//   only packaged files, the repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
 //   package.json vs CHANGELOG.md, every slash command in the player manual, and no Cyrillic in the docs.
 import fs from "node:fs";
 import path from "node:path";
@@ -137,21 +137,34 @@ for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
   checkPackagerKeywords(file, fs.readFileSync(file, "utf8").split(/\r?\n/));
 }
 
-// Lua, TOC and XML files are plain ASCII. Translations are the exception: Locales/<code>.lua (all but enUS.lua)
-// is UTF-8 text in its own language, and so are the translated TOC fields (## Notes-deDE: ...), which the game
-// shows in the addon list in the client's language.
+// Lua, TOC and XML files are plain ASCII (constitution, Technical Constraints). The exceptions: Locales/<code>.lua
+// (all but enUS.lua) is UTF-8 text in its own language; so are the translated TOC fields (## Notes-deDE: ...),
+// which the game shows in the addon list in the client's language; and the data files in GameData/ may hold
+// official game names per client language (NPC names) in their string literals, while their code, keys and
+// comments stay ASCII.
 const isTranslation = (file) =>
   inAddon(file) && relAddon(file).startsWith("Locales/") && relAddon(file) !== "Locales/enUS.lua";
+const isGameData = (file) => inAddon(file) && relAddon(file).startsWith("GameData/");
 const TRANSLATED_TOC_FIELDS = ["Notes", "Category"];
 const TRANSLATED_TOC_LINE = new RegExp(`^##\\s*(?:${TRANSLATED_TOC_FIELDS.join("|")})-[a-z]{2}[A-Z]{2}\\s*:`);
+// A Lua line without its quoted string literals (a GameData line may hold non-ASCII only inside them). Read left to
+// right, so quotes inside a comment stay part of the comment, and a bracketed key (["..."] =) stays too: both are
+// checked.
+const STRING_OR_KEEP = /--.*$|\[\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*\]|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g;
+const withoutStrings = (line) =>
+  line.replace(STRING_OR_KEEP, (match) => (match.startsWith("--") || match.startsWith("[") ? match : '""'));
 for (const file of files) {
   if (![".lua", ".toc", ".xml"].includes(path.extname(file).toLowerCase()) || isTranslation(file)) {
     continue;
   }
   const isToc = path.extname(file).toLowerCase() === ".toc";
+  const gameData = isGameData(file);
   fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
-    if (NON_ASCII.test(line) && !(isToc && TRANSLATED_TOC_LINE.test(line))) {
-      problem(`${rel(file)}:${i + 1}`, "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
+    const checked = gameData ? withoutStrings(line) : line;
+    if (NON_ASCII.test(checked) && !(isToc && TRANSLATED_TOC_LINE.test(line))) {
+      problem(`${rel(file)}:${i + 1}`, gameData
+        ? "non-ASCII character outside a string literal (GameData/ allows it only inside strings)"
+        : "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
     }
   });
 }

@@ -100,12 +100,18 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [ ] **Vendor only.** Turn "Use scanned auction prices for catch value" off. Expected: the value falls back to
   vendor prices.
 
-## 8. Rank cap warning
+## 8. Next rank reminder
 
-- [ ] **At the cap.** On a character whose Fishing rank is at its cap (75, 150 or 225). Expected: a raid-style
-  warning with where to learn the next rank when the mode is entered; it stops after the next rank is learned.
-- [ ] **Near the cap.** A few points before the cap. Expected: a chat or toast warning.
-- [ ] **Off.** Turn "Warn when the Fishing rank is capped" off. Expected: no warning.
+The full check (names, places, pins) is the "Next rank" section of
+[interface-language.md](interface-language.md); here only the behaviour.
+
+- [ ] **Can learn.** At skill 50 (or 125 / 225) with the character level 10 (20 / 35). Expected: one chat line and
+  a notification that the next rank can be learned and where; not again in this session.
+- [ ] **At the cap.** On a character whose Fishing rank is at its cap (75, 150 or 225). Expected: a large
+  on-screen message the first time in a session; entering fishing mode again prints only a chat line; it stops
+  after the next rank is learned.
+- [ ] **Off.** Turn "Remind me about the next Fishing rank" off. Expected: no notices; the "Next rank" line in the
+  statistics window stays.
 
 ## 9. Minimap button and settings
 

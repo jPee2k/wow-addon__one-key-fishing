@@ -7,7 +7,7 @@ local L = ns.L
 local StatsFrame = {}
 ns.StatsFrame = StatsFrame
 
-local WIDTH, HEIGHT = 580, 660
+local WIDTH, HEIGHT = 580, 700
 local LABEL_X = 20
 local COLUMN_X = { 210, 330, 450 }
 local COLUMN_WIDTH = 110
@@ -163,9 +163,16 @@ local function Create()
     f.skill:SetPoint("TOPLEFT", LABEL_X, -32)
     f.prices = CreateText(f, "GameFontDisableSmall")
     f.prices:SetPoint("TOPLEFT", f.skill, "BOTTOMLEFT", 0, -4)
+    -- The next Fishing rank (three lines at most) and the map pin for its place
+    f.nextRank = CreateText(f, "GameFontHighlightSmall")
+    f.nextRank:SetPoint("TOPLEFT", f.prices, "BOTTOMLEFT", 0, -4)
+    f.nextRank:SetWidth(WIDTH - 2 * LABEL_X - 90)
+    f.nextRank:SetMaxLines(3) -- the table header below leaves room for three
+    f.pin = CreateButton(f, L["Pin"], 60, function() ns.Skill.PinNextRank() end)
+    f.pin:SetPoint("TOPLEFT", f.nextRank, "TOPRIGHT", 10, 4) -- beside its line, clear of the prices line
 
     -- Table header
-    local headerY = -66
+    local headerY = -106
     local headers = { L["Session"], L["This zone"], L["All time"] }
     for i, text in ipairs(headers) do
         local header = CreateText(f, "GameFontNormal", "RIGHT")
@@ -335,6 +342,18 @@ local function MarkDirty()
     dirty = true
 end
 
+-- The "Next rank" line (FR-021) and its pin button (FR-022, only with a place the game allows a pin on).
+local function RefreshNextRank()
+    local advice = ns.Skill.GetNextRank()
+    if not advice then
+        frame.nextRank:SetText("")
+        frame.pin:Hide()
+        return
+    end
+    frame.nextRank:SetText(ns.Skill.DescribeNextRank(advice))
+    frame.pin:SetShown(advice.pin ~= nil)
+end
+
 -- Everything, including values and rates. Called on show, by the Refresh button, and by Tick when the data changed.
 function StatsFrame.Refresh()
     if not IsShown() then
@@ -352,6 +371,7 @@ function StatsFrame.Refresh()
         frame.skill:SetText(L["Fishing is not learned."])
     end
     frame.zoneName:SetText(zone.name or "")
+    RefreshNextRank()
 
     local lastScan = ns.Prices.GetLastScanTime()
     if ns.db.settings.auctionPrices and lastScan then
@@ -436,6 +456,22 @@ ns.On("SETTINGS_CHANGED", MarkDirty) -- e.g. auction prices on or off
 -- Skill.lua listens to both: either can come first after a skill-up.
 ns.RegisterEvent("SKILL_LINES_CHANGED", MarkDirty)
 ns.RegisterEvent("CHAT_MSG_SKILL", MarkDirty)
+-- The next-rank line: the level it may wait for (UnitLevel can lag behind PLAYER_LEVEL_UP), and the names of the
+-- book, the quest and the rank spells, which the client loads later. Other items, quests and spells are ignored.
+ns.RegisterEvent("PLAYER_LEVEL_UP", function() C_Timer.After(1, MarkDirty) end)
+local function MarkDirtyForAdvice(_, id)
+    for cap, step in pairs(ns.FishingRanks) do
+        if id == step.source.itemID or id == step.source.questID or id == step.next
+            or id == ns.FishingRankSpells[cap] then
+            MarkDirty()
+            return
+        end
+    end
+end
+ns.RegisterEvent("ITEM_DATA_LOAD_RESULT", MarkDirtyForAdvice)
+ns.RegisterEvent("QUEST_DATA_LOAD_RESULT", MarkDirtyForAdvice)
+ns.RegisterEvent("SPELL_DATA_LOAD_RESULT", MarkDirtyForAdvice)
+ns.RegisterEvent("SPELL_TEXT_UPDATE", MarkDirtyForAdvice) -- the spell subtext (rank name) arrives with it
 -- Names, icons and vendor prices of caught items the client did not know yet arrive later.
 -- Other items (bags, auction house) and failed lookups are ignored.
 ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)

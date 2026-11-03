@@ -43,6 +43,7 @@ Locales\zhTW.lua
 Locales\zhCN.lua
 Core.lua
 Data.lua
+GameData\FishingRanks.lua
 Gear.lua
 Bags.lua
 Camera.lua
@@ -56,6 +57,7 @@ Stats.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
+UI\MapPin.lua
 UI\StatsFrame.lua
 Debug.lua
 UI\Settings.lua

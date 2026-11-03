@@ -71,14 +71,20 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Journeyman"] = "Compagnon"
     L["Expert"] = "Expert"
     L["Artisan"] = "Artisan"
-    L["a fishing trainer"] = "un maître de pêche"
-    L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] =
-        "le livre « Expert Fishing - The Bass and You » (Old Man Heming, Baie-du-Butin)"
-    L["the quest from Nat Pagle (Dustwallow Marsh)"] = "la quête de Nat Pagle (marécage d'Âprefange)"
-    L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] =
-        "Compétence de Pêche au maximum (%d/%d) : apprenez le rang %s de Pêche, source : %s."
-    L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] =
-        "Pêche %d/%d : encore %d point(s) dans ce rang. Ensuite : rang %s de Pêche, source : %s."
+    L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] =
+        "N'importe quel maître de pêche l'enseigne (capitales et villes ; la minicarte peut suivre les maîtres)."
+    L["Buy the book \"%s\" from %s in %s, %s."] = "Achetez le livre « %s » à %s (%s, %s)."
+    L["Do the quest \"%s\" from %s at %s, %s."] = "Faites la quête « %s » de %s (%s, %s)."
+    L["%s Fishing needs character level %d."] = "Le rang %s de Pêche requiert le niveau %d."
+    L["Map pin"] = "Repère sur la carte"
+    L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] =
+        "Pêche au maximum (%d/%d) : apprenez le rang %s de Pêche pour progresser."
+    L["You can learn %s Fishing now."] = "Vous pouvez apprendre le rang %s de Pêche."
+    L["Next rank: %s Fishing, from skill %d."] = "Rang suivant : %s de Pêche, dès la compétence %d."
+    L["Next rank: %s Fishing, from skill %d and character level %d."] =
+        "Rang suivant : %s de Pêche, dès la compétence %d et le niveau %d."
+    L["Next rank: %s Fishing, from character level %d."] = "Rang suivant : %s de Pêche, dès le niveau %d."
+    L["Next rank: %s Fishing, ready to learn."] = "Rang suivant : %s de Pêche, à apprendre maintenant."
 
     -- UI/CopyWindow.lua
     L["Click the text, then Ctrl+A and Ctrl+C to copy."] = "Cliquez sur le texte, puis Ctrl+A et Ctrl+C pour copier."
@@ -95,7 +101,14 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Caught: %s"] = "Prise : %s"
     L["Nothing caught"] = "Rien de pêché"
 
+    -- UI/MapPin.lua
+    L["The game did not accept the map pin."] = "Le jeu n'a pas accepté le repère sur la carte."
+    L["Map pin: %s"] = "Repère sur la carte : %s"
+    L["Replace your map pin with this place?"] = "Remplacer votre repère sur la carte par ce lieu ?"
+    L["Replace"] = "Remplacer"
+
     -- UI/StatsFrame.lua
+    L["Pin"] = "Repère"
     L["Time fishing"] = "Temps de pêche"
     L["Time casting"] = "Temps de lancer"
     L["Casts"] = "Lancers"
@@ -160,7 +173,7 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Show catch notifications"] = "Afficher les notifications de prise"
     L["Show session fishing time under the indicator"] = "Afficher le temps de pêche de la session sous l'indicateur"
     L["Pause the fishing timer while AFK"] = "Mettre en pause le temps de pêche en cas d'absence (ABS)"
-    L["Warn when the Fishing rank is capped"] = "Avertir quand le rang de Pêche est au maximum"
+    L["Remind me about the next Fishing rank"] = "Me rappeler le rang de Pêche suivant"
     L["Use scanned auction prices for catch value"] = "Utiliser les prix analysés de l'HV pour la valeur des prises"
     L["Zoom the camera while fishing"] = "Zoomer la caméra pendant la pêche"
     L["Show the minimap button"] = "Afficher le bouton de la minicarte"
@@ -225,6 +238,7 @@ ns.AddTranslation("frFR", "Français", function(L)
         "OneKeyFishing : Alt+Clic pour ajouter à l'équipement de pêche"
 
     -- UI/Minimap.lua
+    L["Pin: next Fishing rank"] = "Repère : rang de Pêche suivant"
     L["Leave fishing mode"] = "Quitter le mode pêche"
     L["Enter fishing mode"] = "Entrer en mode pêche"
     L["Statistics"] = "Statistiques"

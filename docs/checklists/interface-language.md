@@ -112,8 +112,57 @@ With the addon in Ukrainian (or any other non-English language):
 - [ ] A fished clam or container is opened.
 - [ ] The statistics count casts, catches and value.
 
+## 10. Next rank (User Story 3)
+
+Closes the VERIFY marks of `GameData/FishingRanks.lua`, `Skill.lua` and `UI/MapPin.lua` (research R11, R12, R14).
+A low character helps for the first steps; the book and the quest need a trip to Booty Bay and Dustwallow Marsh.
+
+**Places and IDs** (write down what differs):
+
+- [ ] Old Man Heming in Booty Bay sells "Expert Fishing - The Bass and You" (skill 125, level 20), and it teaches
+  Expert Fishing: ____
+- [ ] Nat Pagle in Dustwallow Marsh gives "Nat Pagle, Angler Extreme" (skill 225, level 35): ____
+- [ ] Journeyman is taught by fishing trainers from skill 50, level 10: ____
+- [ ] Next to Heming and next to Nat Pagle, paste the map ID and point of each:
+  `/run local m=C_Map.GetBestMapForUnit("player") local p=C_Map.GetPlayerMapPosition(m,"player") print(m,p:GetXY())`
+  Heming: ____ Nat Pagle: ____
+
+**Names from the game** (on an English client, then on another client language if you can):
+
+- [ ] `/run print(C_Map.GetAreaInfo(35), C_Map.GetAreaInfo(33), C_Map.GetAreaInfo(517), C_Map.GetAreaInfo(15))`
+  prints Booty Bay, Stranglethorn Vale, Tidefury Cove, Dustwallow Marsh in the client's language: ____
+- [ ] `/run print(C_Item.GetItemNameByID(16083), C_QuestLog.GetTitleForQuestID(6607))` prints the book and the quest
+  (run it twice: the first call may still be empty): ____
+- [ ] `/run for _,s in ipairs({7620,7731,7732,18248}) do print(s, C_Spell.GetSpellSubtext(s)) end` prints the rank
+  names (Apprentice ... Artisan): ____
+- [ ] `/okf debug`, section Fishing: the lines "next rank", "next rank names" (game / table / english for each
+  name) and "next rank pin": paste them: ____
+
+**Notices and the line:**
+
+- [ ] At skill 50 (125, 225) with the level: one chat line and a notification "You can learn ... now." with the
+  where sentence; not again until the next login.
+- [ ] Below the level: no notice; the statistics window says "from character level N" (before the skill
+  threshold: "from skill X and character level N"); after the level-up the notice comes.
+- [ ] With "Show catch notifications" off, the rank notices still show their notification above the indicator.
+- [ ] At the cap: a large on-screen message once; entering fishing mode again prints a chat line only.
+- [ ] The statistics window shows the "Next rank" line under the prices line; the minimap tooltip shows it too.
+
+**Map pin** (Expert or Artisan advice):
+
+- [ ] The **Pin** button in the statistics window and "Pin: next Fishing rank" in the minimap menu set the game's
+  pin and the navigation arrow on Heming or Nat Pagle and open the map.
+- [ ] With a pin of your own on the map, a popup asks first; Cancel keeps your pin.
+- [ ] The map link at the end of the chat notice sets the pin and opens the map (without a question).
+
+**Languages:**
+
+- [ ] With the addon in Ukrainian on an English client: the sentences are Ukrainian, the book, quest, places and
+  ranks read exactly as the English client names them.
+
 ## Results
 
 - Date, build, client language:
 - Fonts missing:
+- Next rank: map IDs and points, names, what differs from the original game:
 - Problems found:

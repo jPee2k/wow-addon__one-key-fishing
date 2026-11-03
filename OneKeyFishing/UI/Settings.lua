@@ -26,7 +26,7 @@ local function Toggles()
         { key = "toasts", label = L["Show catch notifications"] },
         { key = "sessionTimer", label = L["Show session fishing time under the indicator"] },
         { key = "pauseOnAFK", label = L["Pause the fishing timer while AFK"] },
-        { key = "skillCapWarning", label = L["Warn when the Fishing rank is capped"] },
+        { key = "skillCapWarning", label = L["Remind me about the next Fishing rank"] },
         { key = "auctionPrices", label = L["Use scanned auction prices for catch value"] },
         { key = "camera", label = L["Zoom the camera while fishing"] },
         { key = "minimapButton", label = L["Show the minimap button"] },

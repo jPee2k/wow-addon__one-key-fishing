@@ -24,6 +24,10 @@ local function OpenMenu(owner)
         if not ns.Auction.CanScan() then
             scan:SetEnabled(false)
         end
+        local advice = ns.Skill.GetNextRank()
+        if advice and advice.pin then
+            root:CreateButton(L["Pin: next Fishing rank"], ns.Skill.PinNextRank)
+        end
         root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)
         root:CreateButton(L["Debug report"], ns.ShowReport)
     end)
@@ -43,6 +47,10 @@ local function ShowTooltip(owner)
     if rank then
         local text = L["Fishing skill: %d/%d %s"]:format(rank, maxRank, ns.Skill.GetRankName(maxRank))
         GameTooltip:AddLine(text, 1, 1, 1)
+        local advice = ns.Skill.GetNextRank()
+        if advice then
+            GameTooltip:AddLine(ns.Skill.DescribeNextRank(advice), 1, 0.82, 0, true)
+        end
     end
     local session = ns.Stats.GetSession()
     if session then

@@ -20,3 +20,12 @@ Built on `001-interface-language` (`specs/001-interface-language`), waiting for 
 
 Built on `002-shared-db` (`specs/002-local-catch-db` to `specs/005-catch-catalog`), waiting for the game and for
 a second player. Its steps are written on that branch once this page is merged there.
+
+Technical debt to settle when `001-interface-language` is merged into `002-shared-db` (spec 001 research R15):
+
+- Move the older game data into `GameData/` (data only, like `GameData/FishingRanks.lua`): the lures and the
+  fished containers (`Fishing/Bags.lua`), the pole bonuses (`Fishing/Gear.lua`), the Fishing spell IDs and the
+  bobber ID (`Core/Data.lua`).
+- Switch the catch catalog's pin (`Catalog.PinTarget`, `CatalogTab.Pin`) to `ns.MapPin` (`UI/MapPin.lua`), which
+  took that code over with the same saved field (`charDB.pin`) and texts; `ns.Toast` already has the `always`
+  argument on both branches.

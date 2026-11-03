@@ -60,21 +60,27 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Scanning auction prices of %d item(s)..."] = "Сканую ціни на аукціоні, предметів: %d..."
     L["Auction scan stopped: %d of %d price(s) found."] = "Сканування аукціону зупинено: знайдено цін %d із %d."
     L["scan auction prices of caught items (auction house must be open)"] =
-        "сканувати ціни на впіймане на аукціоні (аукціон має бути відкритий)"
+        "сканувати ціни улову на аукціоні (аукціон має бути відкритий)"
 
     -- Skill.lua
     L["Apprentice"] = "Учень"
     L["Journeyman"] = "Підмайстер"
     L["Expert"] = "Експерт"
     L["Artisan"] = "Майстер"
-    L["a fishing trainer"] = "наставника риболовлі"
-    L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] =
-        "книги «Риболовля для експертів: окунь і ти» (Старий Хемінг, Бухта Здобичі)"
-    L["the quest from Nat Pagle (Dustwallow Marsh)"] = "завдання від Нета Пейгла (Пилові Топи)"
-    L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] =
-        "Навичка риболовлі досягла межі (%d/%d): вивчіть ранг «%s» риболовлі з %s."
-    L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] =
-        "Риболовля %d/%d: до межі рангу залишилося %d. Далі: ранг «%s» з %s."
+    L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] =
+        "Його навчає будь-який наставник риболовлі (у столицях і містечках; мінікарта може показувати наставників)."
+    L["Buy the book \"%s\" from %s in %s, %s."] = "Купіть книгу «%s», продавець: %s (%s, %s)."
+    L["Do the quest \"%s\" from %s at %s, %s."] = "Виконайте завдання «%s», яке дає %s (%s, %s)."
+    L["%s Fishing needs character level %d."] = "Ранг «%s» риболовлі потребує рівня персонажа %d."
+    L["Map pin"] = "Мітка на карті"
+    L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] =
+        "Навичка риболовлі на межі (%d/%d): щоб рости далі, вивчіть ранг «%s»."
+    L["You can learn %s Fishing now."] = "Ви вже можете вивчити ранг «%s» риболовлі."
+    L["Next rank: %s Fishing, from skill %d."] = "Наступний ранг: «%s», з навички %d."
+    L["Next rank: %s Fishing, from skill %d and character level %d."] =
+        "Наступний ранг: «%s», з навички %d і рівня персонажа %d."
+    L["Next rank: %s Fishing, from character level %d."] = "Наступний ранг: «%s», з рівня персонажа %d."
+    L["Next rank: %s Fishing, ready to learn."] = "Наступний ранг: «%s», можна вивчити вже зараз."
 
     -- UI/CopyWindow.lua
     L["Click the text, then Ctrl+A and Ctrl+C to copy."] = "Клацніть по тексту, потім Ctrl+A і Ctrl+C, щоб скопіювати."
@@ -91,7 +97,14 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Caught: %s"] = "Упіймано: %s"
     L["Nothing caught"] = "Нічого не впіймано"
 
+    -- UI/MapPin.lua
+    L["The game did not accept the map pin."] = "Гра не прийняла мітку на карті."
+    L["Map pin: %s"] = "Мітка на карті: %s"
+    L["Replace your map pin with this place?"] = "Замінити вашу мітку на карті цим місцем?"
+    L["Replace"] = "Замінити"
+
     -- UI/StatsFrame.lua
+    L["Pin"] = "Мітка"
     L["Time fishing"] = "Час риболовлі"
     L["Time casting"] = "Час із закинутою вудкою"
     L["Casts"] = "Закидання"
@@ -155,7 +168,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Show catch notifications"] = "Показувати сповіщення про улов"
     L["Show session fishing time under the indicator"] = "Показувати час риболовлі за сесію під індикатором"
     L["Pause the fishing timer while AFK"] = "Ставити таймер риболовлі на паузу під час AFK"
-    L["Warn when the Fishing rank is capped"] = "Попереджати, коли ранг риболовлі досяг межі"
+    L["Remind me about the next Fishing rank"] = "Нагадувати про наступний ранг риболовлі"
     L["Use scanned auction prices for catch value"] = "Рахувати вартість улову за сканованими цінами аукціону"
     L["Zoom the camera while fishing"] = "Наближати камеру під час риболовлі"
     L["Show the minimap button"] = "Показувати кнопку біля мінікарти"
@@ -218,6 +231,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
         "OneKeyFishing: Alt+клік, щоб додати до рибальського спорядження"
 
     -- UI/Minimap.lua
+    L["Pin: next Fishing rank"] = "Мітка: наступний ранг риболовлі"
     L["Leave fishing mode"] = "Вимкнути режим риболовлі"
     L["Enter fishing mode"] = "Увімкнути режим риболовлі"
     L["Statistics"] = "Статистика"
@@ -229,7 +243,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Toggle mode key:"] = "Клавіша режиму:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =
         "Як користуватися: натисніть клавішу режиму, потім клавішу риболовлі, щоб закинути,"
-    L["and the same key again when the bobber splashes."] = "і ту саму клавішу ще раз, коли поплавець сплесне."
+    L["and the same key again when the bobber splashes."] = "і ту саму клавішу ще раз, коли рибка клюне."
     L["Alt+Click items in your bags to add fishing gear."] =
         "Alt+клік по предметах у сумках додає рибальське спорядження."
     L["Left-click: toggle fishing mode"] = "Лівий клік: режим риболовлі"

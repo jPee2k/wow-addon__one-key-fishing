@@ -53,7 +53,25 @@ local function BuildReport()
         local spellID = ns.GetFishingSpellID()
         add("spell: %s (%s)", tostring(spellID), tostring(spellID and C_Spell.GetSpellName(spellID)))
         local rank, maxRank = ns.Skill.Get()
-        add("skill: %s/%s", tostring(rank), tostring(maxRank))
+        add("skill: %s/%s, character level: %s", tostring(rank), tostring(maxRank), tostring(UnitLevel("player")))
+        local advice = ns.Skill.GetNextRank()
+        if not advice then
+            add("next rank: none")
+        else
+            add("next rank: %s (%s), state %s, from skill %d and level %d, reminders %s", advice.rank,
+                tostring(advice.sources.rank), advice.state, advice.learnAt, advice.level,
+                tostring(ns.db.settings.skillCapWarning))
+            local names = {}
+            for _, key in ipairs({ "item", "quest", "npc", "area", "zone" }) do
+                if advice.sources[key] then
+                    table.insert(names, key .. " " .. advice.sources[key])
+                end
+            end
+            add("next rank names: %s", #names > 0 and table.concat(names, ", ") or "trainer (no game names)")
+            local pin = advice.pin
+            add("next rank pin: %s", pin and ("map %d at %.3f, %.3f"):format(pin.mapID, pin.x, pin.y)
+                or "none (trainer, no usable map, or pins disabled)")
+        end
     end)
 
     Section(lines, "Gear", function()

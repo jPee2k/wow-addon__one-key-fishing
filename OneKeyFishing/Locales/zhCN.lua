@@ -62,14 +62,18 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Journeyman"] = "中级"
     L["Expert"] = "高级"
     L["Artisan"] = "专家级"
-    L["a fishing trainer"] = "钓鱼训练师"
-    L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] =
-        "书籍《Expert Fishing - The Bass and You》（Old Man Heming，藏宝海湾）"
-    L["the quest from Nat Pagle (Dustwallow Marsh)"] = "纳特·帕格的任务（尘泥沼泽）"
-    L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] =
-        "钓鱼技能已达上限（%d/%d）：请学习%s钓鱼，来源：%s。"
-    L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] =
-        "钓鱼 %d/%d：本级还差%d点。下一级：%s钓鱼，来源：%s。"
+    L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] =
+        "任何钓鱼训练师都可以传授（主城和城镇；小地图可以追踪训练师）。"
+    L["Buy the book \"%s\" from %s in %s, %s."] = "购买书籍《%s》，出售者：%s（%s，%s）。"
+    L["Do the quest \"%s\" from %s at %s, %s."] = "完成任务《%s》，任务发布者：%s（%s，%s）。"
+    L["%s Fishing needs character level %d."] = "%s钓鱼需要角色等级%d。"
+    L["Map pin"] = "地图标记"
+    L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] = "钓鱼技能已达上限（%d/%d）：请学习%s钓鱼以继续提升。"
+    L["You can learn %s Fishing now."] = "现在可以学习%s钓鱼了。"
+    L["Next rank: %s Fishing, from skill %d."] = "下一级：%s钓鱼，技能%d起可学。"
+    L["Next rank: %s Fishing, from skill %d and character level %d."] = "下一级：%s钓鱼，技能%d且角色等级%d起可学。"
+    L["Next rank: %s Fishing, from character level %d."] = "下一级：%s钓鱼，角色等级%d起可学。"
+    L["Next rank: %s Fishing, ready to learn."] = "下一级：%s钓鱼，现在即可学习。"
 
     -- UI/CopyWindow.lua
     L["Click the text, then Ctrl+A and Ctrl+C to copy."] = "点击文本，然后按 Ctrl+A 和 Ctrl+C 复制。"
@@ -86,7 +90,14 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Caught: %s"] = "钓到：%s"
     L["Nothing caught"] = "什么也没钓到"
 
+    -- UI/MapPin.lua
+    L["The game did not accept the map pin."] = "游戏未接受地图标记。"
+    L["Map pin: %s"] = "地图标记：%s"
+    L["Replace your map pin with this place?"] = "用此地点替换你的地图标记？"
+    L["Replace"] = "替换"
+
     -- UI/StatsFrame.lua
+    L["Pin"] = "标记"
     L["Time fishing"] = "钓鱼时间"
     L["Time casting"] = "抛竿时间"
     L["Casts"] = "抛竿次数"
@@ -147,7 +158,7 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Show catch notifications"] = "显示渔获提示"
     L["Show session fishing time under the indicator"] = "在指示器下方显示本次钓鱼时间"
     L["Pause the fishing timer while AFK"] = "暂离时暂停钓鱼计时"
-    L["Warn when the Fishing rank is capped"] = "钓鱼技能达到当前等级上限时提醒"
+    L["Remind me about the next Fishing rank"] = "提醒下一级钓鱼"
     L["Use scanned auction prices for catch value"] = "用扫描到的拍卖价格计算渔获价值"
     L["Zoom the camera while fishing"] = "钓鱼时调整镜头距离"
     L["Show the minimap button"] = "显示小地图按钮"
@@ -207,6 +218,7 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["OneKeyFishing: Alt+Click to add to fishing gear"] = "OneKeyFishing：Alt+点击添加到钓鱼装备"
 
     -- UI/Minimap.lua
+    L["Pin: next Fishing rank"] = "标记：下一级钓鱼"
     L["Leave fishing mode"] = "退出钓鱼模式"
     L["Enter fishing mode"] = "进入钓鱼模式"
     L["Statistics"] = "统计"

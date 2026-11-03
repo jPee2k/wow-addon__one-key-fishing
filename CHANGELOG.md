@@ -19,9 +19,20 @@ All notable changes to OneKeyFishing are listed here. The format follows
   category there.
 - Decimal numbers in the statistics use the game client's decimal separator (2,5 on a German client), whatever
   the interface language.
+- The next Fishing rank in the statistics window and the minimap tooltip: what it waits for (skill or character
+  level) and where it is learned.
+- A map pin with the game's navigation arrow for the Expert book seller and the Artisan quest giver: a Pin button
+  in the statistics window, an entry in the minimap menu and a map link in the chat. A pin you set yourself is
+  replaced only after you confirm.
 
 ### Changed
 
+- The rank reminder follows the game's rules: a short notice once per session when the next rank can be learned
+  (skill 50, 125, 225 with character level 10, 20, 35; it waits for the level), and the large on-screen message at
+  the cap only the first time in a session (later entries into fishing mode repeat it in the chat). The setting is
+  now called "Remind me about the next Fishing rank".
+- The names in the rank advice (the book, the quest, the places, the ranks, the NPCs) are the ones your game client
+  shows, in its language, so they match the map and the quest log whatever language the addon is in.
 - Buttons grow to fit longer texts; long statistics labels are cut at the first column (the tooltip shows them
   in full).
 - `/okf debug` shows the language setting, the language in use and the client language.
