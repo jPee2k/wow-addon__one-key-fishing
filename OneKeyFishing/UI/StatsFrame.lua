@@ -7,7 +7,7 @@ local L = ns.L
 local StatsFrame = {}
 ns.StatsFrame = StatsFrame
 
-local WIDTH, HEIGHT = 580, 660
+local WIDTH, HEIGHT = 580, 700
 local LABEL_X = 20
 local COLUMN_X = { 210, 330, 450 }
 local COLUMN_WIDTH = 110
@@ -37,57 +37,48 @@ end
 
 -- Sections and rows; `key` names a row's cells in frame.cells. A row's text(c) gets the column context:
 -- c.bucket, c.column, c.liveMode, c.liveCast (seconds not yet in the bucket), c.value (Stats.GetValue).
--- `live` rows are updated every second while the timer runs; the rest only on events.
-local ROWS = {
-    { section = L["Time"] },
-    { key = "timeFishing", label = L["Time fishing"], live = true,
-        tip = L["Time in fishing mode. Paused while AFK if that option is on."],
-        text = function(c) return ColumnTime(c.column, c.bucket.modeTime + c.liveMode) end },
-    { key = "timeCasting", label = L["Time casting"], live = true,
-        tip = L["Time with the bobber in the water."],
-        text = function(c) return ColumnTime(c.column, c.bucket.castTime + c.liveCast) end },
-    { section = L["Results"] },
-    { key = "casts", label = L["Casts"], tip = L["Fishing casts made in fishing mode."],
-        text = function(c) return tostring(c.bucket.casts) end },
-    { key = "catches", label = L["Catches"], tip = L["Casts that brought loot."],
-        text = function(c) return tostring(c.bucket.catches) end },
-    { key = "misses", label = L["Nothing caught"], tip = L["Casts that ended without loot."],
-        text = function(c) return tostring(c.bucket.misses) end },
-    { key = "catchesPerHour", label = L["Catches per hour"],
-        tip = L["Catches per hour of fishing time. Updated with every cast and with Refresh."],
-        text = function(c)
-            local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
-            return value and ("%.1f"):format(value) or "-"
-        end },
-    { section = L["Money"] },
-    { key = "value", label = L["Value"],
-        tip = L["Items caught, at the higher of the vendor price and the last scanned auction price."],
-        text = function(c) return ns.FormatMoney(c.value) end },
-    { key = "goldPerHour", label = L["Gold per hour"],
-        tip = L["Value per hour of fishing time. Updated with every cast and with Refresh."],
-        text = function(c)
-            local perHour = PerHour(c.value, c.bucket.modeTime + c.liveMode)
-            return perHour and ns.FormatMoney(perHour) or "-"
-        end },
-}
+-- `live` rows are updated every second while the timer runs; the rest only on events. Built by Create(): the
+-- labels need the language, which is set after the files load.
+local ROWS
+local function BuildRows()
+    return {
+        { section = L["Time"] },
+        { key = "timeFishing", label = L["Time fishing"], live = true,
+            tip = L["Time in fishing mode. Paused while AFK if that option is on."],
+            text = function(c) return ColumnTime(c.column, c.bucket.modeTime + c.liveMode) end },
+        { key = "timeCasting", label = L["Time casting"], live = true,
+            tip = L["Time with the bobber in the water."],
+            text = function(c) return ColumnTime(c.column, c.bucket.castTime + c.liveCast) end },
+        { section = L["Results"] },
+        { key = "casts", label = L["Casts"], tip = L["Fishing casts made in fishing mode."],
+            text = function(c) return tostring(c.bucket.casts) end },
+        { key = "catches", label = L["Catches"], tip = L["Casts that brought loot."],
+            text = function(c) return tostring(c.bucket.catches) end },
+        { key = "misses", label = L["Nothing caught"], tip = L["Casts that ended without loot."],
+            text = function(c) return tostring(c.bucket.misses) end },
+        { key = "catchesPerHour", label = L["Catches per hour"],
+            tip = L["Catches per hour of fishing time. Updated with every cast and with Refresh."],
+            text = function(c)
+                local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
+                return value and ns.FormatDecimal(value, 1) or "-"
+            end },
+        { section = L["Money"] },
+        { key = "value", label = L["Value"],
+            tip = L["Items caught, at the higher of the vendor price and the last scanned auction price."],
+            text = function(c) return ns.FormatMoney(c.value) end },
+        { key = "goldPerHour", label = L["Gold per hour"],
+            tip = L["Value per hour of fishing time. Updated with every cast and with Refresh."],
+            text = function(c)
+                local perHour = PerHour(c.value, c.bucket.modeTime + c.liveMode)
+                return perHour and ns.FormatMoney(perHour) or "-"
+            end },
+    }
+end
 
 local function CreateText(parent, template, justify)
     local fontString = parent:CreateFontString(nil, "OVERLAY", template)
     fontString:SetJustifyH(justify or "LEFT")
     return fontString
-end
-
-local function Confirm(key, text, onAccept)
-    StaticPopupDialogs[key] = {
-        text = text,
-        button1 = YES,
-        button2 = NO,
-        OnAccept = onAccept,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-    StaticPopup_Show(key)
 end
 
 local function ShowRowTooltip(self)
@@ -117,6 +108,9 @@ local function CreateTable(f, headerY)
             local label = CreateText(f, "GameFontHighlight")
             label:SetPoint("TOPLEFT", LABEL_X, y)
             label:SetText(definition.label)
+            -- A long translation is cut at the first column; the row tooltip shows it in full.
+            label:SetWidth(COLUMN_X[1] - LABEL_X - 8)
+            label:SetWordWrap(false)
             -- Font strings take no mouse input: a frame over the label shows the explanation.
             local hover = CreateFrame("Frame", nil, f)
             hover:SetPoint("TOPLEFT", LABEL_X, y)
@@ -143,7 +137,15 @@ local function CreateTable(f, headerY)
     return y
 end
 
+-- The bottom buttons' layout: the window is at least `minWidth` and widens for the left row (its width with the
+-- margins); returns that width and whether the Scan button wraps to a second row.
+function StatsFrame.ButtonRows(leftWidth, scanWidth, minWidth)
+    local width = math.max(minWidth, leftWidth)
+    return width, leftWidth + 8 + scanWidth > width
+end
+
 local function Create()
+    ROWS = BuildRows()
     local ok, f = pcall(CreateFrame, "Frame", nil, UIParent, "BasicFrameTemplateWithInset")
     if not ok then
         f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
@@ -168,9 +170,16 @@ local function Create()
     f.skill:SetPoint("TOPLEFT", LABEL_X, -32)
     f.prices = CreateText(f, "GameFontDisableSmall")
     f.prices:SetPoint("TOPLEFT", f.skill, "BOTTOMLEFT", 0, -4)
+    -- The next Fishing rank (three lines at most) and the map pin for its place
+    f.nextRank = CreateText(f, "GameFontHighlightSmall")
+    f.nextRank:SetPoint("TOPLEFT", f.prices, "BOTTOMLEFT", 0, -4)
+    f.nextRank:SetWidth(WIDTH - 2 * LABEL_X - 90)
+    f.nextRank:SetMaxLines(3) -- the table header below leaves room for three
+    f.pin = CreateButton(f, L["Pin"], 60, function() ns.Skill.PinNextRank() end)
+    f.pin:SetPoint("TOPLEFT", f.nextRank, "TOPRIGHT", 10, 4) -- beside its line, clear of the prices line
 
     -- Table header
-    local headerY = -66
+    local headerY = -106
     local headers = { L["Session"], L["This zone"], L["All time"] }
     for i, text in ipairs(headers) do
         local header = CreateText(f, "GameFontNormal", "RIGHT")
@@ -236,14 +245,14 @@ local function Create()
 
     -- Buttons
     local resetSession = CreateButton(f, L["Reset session"], 130, function()
-        Confirm("ONEKEYFISHING_RESET_SESSION", L["Reset the fishing statistics of this session?"], function()
+        ns.ShowPopup("ONEKEYFISHING_RESET_SESSION", L["Reset the fishing statistics of this session?"], function()
             ns.Stats.ResetSession()
             StatsFrame.Refresh() -- right away: the old buckets are gone
         end)
     end)
     resetSession:SetPoint("BOTTOMLEFT", 14, 12)
     local resetAll = CreateButton(f, L["Reset all"], 130, function()
-        Confirm("ONEKEYFISHING_RESET_ALL", L["Delete ALL fishing statistics of this character?"], function()
+        ns.ShowPopup("ONEKEYFISHING_RESET_ALL", L["Delete ALL fishing statistics of this character?"], function()
             ns.Stats.ResetAll()
             StatsFrame.Refresh()
         end)
@@ -253,6 +262,20 @@ local function Create()
     refresh:SetPoint("LEFT", resetAll, "RIGHT", 8, 0)
     f.scan = CreateButton(f, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
     f.scan:SetPoint("BOTTOMRIGHT", -14, 12)
+    -- Translated buttons can be too wide: the window widens for the three left buttons, and a Scan button that
+    -- does not fit beside them wraps like text: the left three move up a row, Scan starts the row below at the
+    -- left (the window grows by that row, so the zone list stays clear of the buttons).
+    local leftRow = 14 + (resetSession:GetWidth() or 0) + 8 + (resetAll:GetWidth() or 0) + 8
+        + (refresh:GetWidth() or 0) + 14
+    local width, wraps = StatsFrame.ButtonRows(leftRow, f.scan:GetWidth() or 0, WIDTH)
+    f:SetWidth(width)
+    if wraps then
+        f:SetHeight(HEIGHT + 28)
+        resetSession:ClearAllPoints()
+        resetSession:SetPoint("BOTTOMLEFT", 14, 40)
+        f.scan:ClearAllPoints()
+        f.scan:SetPoint("BOTTOMLEFT", 14, 12)
+    end
 
     local elapsed = 0
     f:SetScript("OnUpdate", function(_, delta)
@@ -329,6 +352,18 @@ local function MarkDirty()
     dirty = true
 end
 
+-- The "Next rank" line (FR-021) and its pin button (FR-022, only with a place the game allows a pin on).
+local function RefreshNextRank()
+    local advice = ns.Skill.GetNextRank()
+    if not advice then
+        frame.nextRank:SetText("")
+        frame.pin:Hide()
+        return
+    end
+    frame.nextRank:SetText(ns.Skill.DescribeNextRank(advice))
+    frame.pin:SetShown(advice.pin ~= nil)
+end
+
 -- Everything, including values and rates. Called on show, by the Refresh button, and by Tick when the data changed.
 function StatsFrame.Refresh()
     if not IsShown() then
@@ -346,6 +381,7 @@ function StatsFrame.Refresh()
         frame.skill:SetText(L["Fishing is not learned."])
     end
     frame.zoneName:SetText(zone.name or "")
+    RefreshNextRank()
 
     local lastScan = ns.Prices.GetLastScanTime()
     if ns.db.settings.auctionPrices and lastScan then
@@ -430,6 +466,22 @@ ns.On("SETTINGS_CHANGED", MarkDirty) -- e.g. auction prices on or off
 -- Skill.lua listens to both: either can come first after a skill-up.
 ns.RegisterEvent("SKILL_LINES_CHANGED", MarkDirty)
 ns.RegisterEvent("CHAT_MSG_SKILL", MarkDirty)
+-- The next-rank line: the level it may wait for (UnitLevel can lag behind PLAYER_LEVEL_UP), and the names of the
+-- book, the quest and the rank spells, which the client loads later. Other items, quests and spells are ignored.
+ns.RegisterEvent("PLAYER_LEVEL_UP", function() C_Timer.After(1, MarkDirty) end)
+local function MarkDirtyForAdvice(_, id)
+    for cap, step in pairs(ns.FishingRanks) do
+        if id == step.source.itemID or id == step.source.questID or id == step.next
+            or id == ns.FishingRankSpells[cap] then
+            MarkDirty()
+            return
+        end
+    end
+end
+ns.RegisterEvent("ITEM_DATA_LOAD_RESULT", MarkDirtyForAdvice)
+ns.RegisterEvent("QUEST_DATA_LOAD_RESULT", MarkDirtyForAdvice)
+ns.RegisterEvent("SPELL_DATA_LOAD_RESULT", MarkDirtyForAdvice)
+ns.RegisterEvent("SPELL_TEXT_UPDATE", MarkDirtyForAdvice) -- the spell subtext (rank name) arrives with it
 -- Names, icons and vendor prices of caught items the client did not know yet arrive later.
 -- Other items (bags, auction house) and failed lookups are ignored.
 ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
@@ -438,4 +490,4 @@ ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
     end
 end)
 
-ns.RegisterCommand("stats", L["show the fishing statistics"], StatsFrame.Toggle)
+ns.RegisterCommand("stats", function() return L["show the fishing statistics"] end, StatsFrame.Toggle)

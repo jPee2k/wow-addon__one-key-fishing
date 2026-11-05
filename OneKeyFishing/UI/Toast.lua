@@ -39,8 +39,10 @@ local function OnUpdate()
     end
 end
 
-function ns.Toast(text, r, g, b)
-    if not ns.db.settings.toasts then
+-- `always`: show it even with catch notifications off (an answer to the player's own click, the rank reminders,
+-- which have their own setting).
+function ns.Toast(text, r, g, b, always)
+    if not (always or ns.db.settings.toasts) then
         return
     end
     -- Reuse a free line, or the oldest one; push the visible ones up.

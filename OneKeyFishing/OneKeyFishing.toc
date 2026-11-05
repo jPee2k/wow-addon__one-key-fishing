@@ -1,6 +1,23 @@
 ## Interface: 16001
 ## Title: OneKeyFishing
 ## Notes: One-key fishing helper for WoW Forever: cast, hook and loot with a single key.
+## Notes-deDE: Angelhelfer für WoW Forever: Auswerfen, Anhieb und Plündern mit einer einzigen Taste.
+## Notes-esES: Asistente de pesca para WoW Forever: lanza, engancha y despoja con una sola tecla.
+## Notes-esMX: Asistente de pesca para WoW Forever: lanza, engancha y despoja con una sola tecla.
+## Notes-frFR: Assistant de pêche pour WoW Forever : lancer, ferrer et ramasser avec une seule touche.
+## Notes-koKR: WoW Forever용 낚시 도우미: 키 하나로 던지기, 낚아채기, 획득까지.
+## Notes-ptBR: Assistente de pesca para WoW Forever: lance, fisgue e saqueie com uma única tecla.
+## Notes-zhTW: WoW Forever 釣魚助手：一個按鍵完成拋竿、收竿與拾取。
+## Notes-zhCN: WoW Forever 钓鱼助手：一个按键完成抛竿、收竿与拾取。
+## Category: Professions
+## Category-deDE: Berufe
+## Category-esES: Profesiones
+## Category-esMX: Profesiones
+## Category-frFR: Métiers
+## Category-koKR: 전문 기술
+## Category-ptBR: Profissões
+## Category-zhTW: 專業技能
+## Category-zhCN: 专业技能
 ## Author: AveForged
 ## Version: @project-version@
 ## X-License: MIT
@@ -13,9 +30,20 @@
 ## AddonCompartmentFuncOnEnter: OneKeyFishing_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: OneKeyFishing_OnAddonCompartmentLeave
 
+Localization.lua
 Locales\enUS.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\ukUA.lua
+Locales\koKR.lua
+Locales\ptBR.lua
+Locales\zhTW.lua
+Locales\zhCN.lua
 Core.lua
 Data.lua
+GameData\FishingRanks.lua
 Gear.lua
 Bags.lua
 Camera.lua
@@ -29,6 +57,7 @@ Stats.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
+UI\MapPin.lua
 UI\StatsFrame.lua
 Debug.lua
 UI\Settings.lua

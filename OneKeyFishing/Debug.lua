@@ -15,6 +15,12 @@ local function Section(lines, title, fn)
     end
 end
 
+-- A function result as text. The parentheses keep one value, nil when the call returned nothing: Lua 5.1's
+-- tostring() raises an error without an argument (Bags.FindLure ends without a return when no lure is usable).
+local function Value(...)
+    return tostring((...))
+end
+
 local function Keys(binding)
     local keys = { GetBindingKey(binding) }
     return #keys > 0 and table.concat(keys, ", ") or "not bound"
@@ -38,11 +44,13 @@ local function BuildReport()
     local version, build, _, interface = GetBuildInfo()
     table.insert(lines, ("Game %s (%s), interface %s, project %s, locale %s"):format(tostring(version),
         tostring(build), tostring(interface), tostring(WOW_PROJECT_ID), GetLocale()))
+    table.insert(lines, ("Language: %s (in use: %s)"):format(tostring(ns.db.settings.language),
+        tostring(ns.language)))
 
     Section(lines, "Mode", function()
         add("fishing mode: %s, leaving after combat: %s, channeling: %s, in combat: %s",
-            tostring(ns.Mode.IsActive()), tostring(ns.Mode.IsExiting()), tostring(ns.Action.IsChanneling()),
-            tostring(InCombatLockdown()))
+            Value(ns.Mode.IsActive()), Value(ns.Mode.IsExiting()), Value(ns.Action.IsChanneling()),
+            Value(InCombatLockdown()))
         add("keys: fishing action [%s], toggle [%s], interact with target [%s]",
             Keys("ONEKEYFISHING_ACTION"), Keys("ONEKEYFISHING_TOGGLE"), Keys("INTERACTTARGET"))
     end)
@@ -51,17 +59,35 @@ local function BuildReport()
         local spellID = ns.GetFishingSpellID()
         add("spell: %s (%s)", tostring(spellID), tostring(spellID and C_Spell.GetSpellName(spellID)))
         local rank, maxRank = ns.Skill.Get()
-        add("skill: %s/%s", tostring(rank), tostring(maxRank))
+        add("skill: %s/%s, character level: %s", tostring(rank), tostring(maxRank), Value(UnitLevel("player")))
+        local advice = ns.Skill.GetNextRank()
+        if not advice then
+            add("next rank: none")
+        else
+            add("next rank: %s (%s), state %s, from skill %d and level %d, reminders %s", advice.rank,
+                tostring(advice.sources.rank), advice.state, advice.learnAt, advice.level,
+                tostring(ns.db.settings.skillCapWarning))
+            local names = {}
+            for _, key in ipairs({ "item", "quest", "npc", "area", "zone" }) do
+                if advice.sources[key] then
+                    table.insert(names, key .. " " .. advice.sources[key])
+                end
+            end
+            add("next rank names: %s", #names > 0 and table.concat(names, ", ") or "trainer (no game names)")
+            local pin = advice.pin
+            add("next rank pin: %s", pin and ("map %d at %.3f, %.3f"):format(pin.mapID, pin.x, pin.y)
+                or "none (trainer, no usable map, or pins disabled)")
+        end
     end)
 
     Section(lines, "Gear", function()
         local mainHand = GetInventoryItemID("player", INVSLOT_MAINHAND or 16)
         add("main hand: %s, fishing pole: %s, fishing bonus: %s", ItemText(mainHand),
-            tostring(ns.IsFishingPole(mainHand)), tostring(mainHand and ns.GetFishingBonus(mainHand)))
+            Value(ns.IsFishingPole(mainHand)), tostring(mainHand and ns.GetFishingBonus(mainHand)))
         local hasLure, expiration = GetWeaponEnchantInfo()
         add("lure: %s, expires in %s s", tostring(hasLure == true), tostring(expiration and expiration / 1000))
         add("lure setting: %s, needs lure: %s, next lure: %s", tostring(ns.db.settings.lure),
-            tostring(ns.Bags.NeedsLure()), tostring(ns.Bags.FindLure()))
+            Value(ns.Bags.NeedsLure()), Value(ns.Bags.FindLure()))
         for _, line in ipairs(ns.Bags.DescribeLures()) do
             add("  lure %s", line)
         end
@@ -90,7 +116,7 @@ local function BuildReport()
 
     Section(lines, "Game settings", function()
         for _, name in ipairs(REPORT_CVARS) do
-            add("%s = %s", name, tostring(C_CVar.GetCVar(name)))
+            add("%s = %s", name, Value(C_CVar.GetCVar(name)))
         end
         add("saved by the addon: CVars %s, camera zoom %s", tostring(ns.charDB.savedCVars ~= nil),
             tostring(ns.charDB.savedCameraZoom))
@@ -116,4 +142,4 @@ function ns.ShowReport()
     ns.ShowCopyWindow(L["OneKeyFishing - debug report"], BuildReport())
 end
 
-ns.RegisterCommand("debug", L["show a report to copy into a bug report"], ns.ShowReport)
+ns.RegisterCommand("debug", function() return L["show a report to copy into a bug report"] end, ns.ShowReport)

@@ -18,11 +18,18 @@ end)
 test("every slash command has a description", function()
     local names = {}
     for name, command in pairs(ns.commands) do
-        assert(type(command.description) == "string" and command.description ~= "", "description of " .. name)
+        local description = type(command.description) == "function" and command.description()
+        assert(type(description) == "string" and description ~= "", "description of " .. name)
         table.insert(names, name)
     end
     table.sort(names)
     eq(table.concat(names, " "), "config debug scan stats toggle", "commands")
+end)
+
+test("a command description must be a function (a text would be looked up while the files load)", function()
+    local ok = pcall(ns.RegisterCommand, "zz", "plain description", function() end)
+    eq(ok, false, "rejected")
+    eq(ns.commands.zz, nil, "not registered")
 end)
 
 test("the version comes from the TOC's Version field", function()

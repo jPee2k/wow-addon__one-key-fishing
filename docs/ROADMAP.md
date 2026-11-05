@@ -29,17 +29,15 @@ The chance to catch each item at the current spot.
 
 ## 3. Localization
 
-Translations of the addon's own interface.
+Done in `specs/001-interface-language`: ten languages and a language setting, see [languages.md](languages.md).
+What is left:
 
-- The code is ready: every visible text goes through `ns.L` and is listed in `OneKeyFishing/Locales/enUS.lua`.
-- A translation is a `Locales/<locale>.lua` file listed after `enUS.lua` in the TOC. It sets
-  `L[english] = translation` only when `GetLocale()` matches. `npm run check` reports keys that do not exist
-  in `enUS.lua`.
-- First translation: ruRU. Others when translators volunteer (CurseForge has a localization tool, or
-  translations can come in as pull requests).
-- Game names such as rank names and where to learn them should match the client's own wording.
+- Native-speaker review of the eight translations other than Ukrainian (CurseForge localization tool or pull
+  requests), especially game names (ranks, places, the fishing book) that were kept in English where unsure.
 
 ## Ideas to discuss
 
 - Fishing pools: notice and point out nearby pools.
+- A map pin on the nearest fishing trainer for Journeyman (spec 001 research R16): needs the trainers' Forever map
+  IDs and points, checked in game; until then the minimap's trainer tracking finds them.
 - Skill-up forecast: how many catches until the next skill point or rank cap.

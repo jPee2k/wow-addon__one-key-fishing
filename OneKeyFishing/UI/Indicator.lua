@@ -11,12 +11,17 @@ local DEFAULT_POSITION = { "CENTER", "CENTER", 0, -180 }
 local HOOK_ICON = "Interface\\Icons\\INV_Misc_Fish_02"
 -- The channel starts on the throw; the bobber needs about 1-2 s to land and become the soft target.
 local BOBBER_GRACE_MS = 3000
-local LABELS = {
-    cast = L["Cast"],
-    hook = L["Hook!"],
-    lure = L["Apply lure"],
-    open = L["Open"],
-}
+local labels -- built on first use: the texts need the language, which is set after the files load
+
+local function Label(kind)
+    labels = labels or {
+        cast = L["Cast"],
+        hook = L["Hook!"],
+        lure = L["Apply lure"],
+        open = L["Open"],
+    }
+    return labels[kind]
+end
 
 local frame = CreateFrame("Frame", "OneKeyFishingIndicator", UIParent, "BackdropTemplate")
 Indicator.frame = frame
@@ -35,6 +40,7 @@ frame.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
 frame.key = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmallGray")
 frame.key:SetPoint("TOPRIGHT", -4, -4)
+frame.key:SetJustifyH("RIGHT") -- two keys (one per keyboard layout) stand on two lines
 
 frame.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 frame.label:SetPoint("TOP", frame, "BOTTOM", 0, -2)
@@ -132,11 +138,6 @@ local function ShowNoBobber()
     return false
 end
 
-local function KeyText()
-    local key = GetBindingKey("ONEKEYFISHING_ACTION")
-    return key and GetBindingText(key, true) or ""
-end
-
 function Indicator.Update()
     if not (ns.Mode.IsActive() and ns.db.settings.indicator) then
         pulse:Stop()
@@ -154,9 +155,9 @@ function Indicator.Update()
         -- The key would interact with something else (or nothing): warn instead of "Hook!".
         frame.label:SetText("|cffff4444" .. L["No bobber"] .. "|r")
     else
-        frame.label:SetText(LABELS[kind])
+        frame.label:SetText(Label(kind))
     end
-    frame.key:SetText(KeyText())
+    frame.key:SetText(ns.KeyText("ONEKEYFISHING_ACTION", true, "", "\n"))
     if kind == "hook" then
         if not pulse:IsPlaying() then
             pulse:Play()

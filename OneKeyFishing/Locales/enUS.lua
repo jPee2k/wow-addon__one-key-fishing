@@ -1,26 +1,18 @@
--- English strings, the base locale. Keys are the English text itself and every entry is `true`
--- ("use the key"); a missing entry also falls back to its key, so the addon never shows a blank.
--- A translation goes into Locales/<locale>.lua (loaded after this file) and sets L[english] = translation
--- only when GetLocale() matches. `npm run check` keeps this list in sync with the code.
+-- English, the base language. Keys are the English text itself and every entry is `true` ("use the key").
+-- Every text the code looks up through L is listed here and vice versa (`npm run check`). A translation is a
+-- Locales/<code>.lua file listed after this one in the TOC; it registers itself through ns.AddTranslation
+-- (see Localization.lua and docs/languages.md).
 local _, ns = ...
+local L = ns.L
 
--- The strings live in a separate table so every assignment goes through __newindex.
-local strings = {}
-local L = setmetatable({}, {
-    __index = function(_, key)
-        return strings[key] or key
-    end,
-    __newindex = function(_, key, value)
-        strings[key] = value == true and key or value
-    end,
-})
-ns.L = L
+ns.AddTranslation("enUS", "English", function() end)
 
 -- Core.lua
 L["Fishing action (cast / hook)"] = true
 L["Toggle fishing mode"] = true
 L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] = true
 L["v%s commands:"] = true
+L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] = true
 
 -- Gear.lua
 L["Fishing pole set."] = true
@@ -70,11 +62,17 @@ L["Apprentice"] = true
 L["Journeyman"] = true
 L["Expert"] = true
 L["Artisan"] = true
-L["a fishing trainer"] = true
-L["the book \"Expert Fishing - The Bass and You\" (Old Man Heming, Booty Bay)"] = true
-L["the quest from Nat Pagle (Dustwallow Marsh)"] = true
-L["Fishing skill capped (%d/%d): learn %s Fishing from %s."] = true
-L["Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s."] = true
+L["Any fishing trainer teaches it (capitals and towns; the minimap can track trainers)."] = true
+L["Buy the book \"%s\" from %s in %s, %s."] = true
+L["Do the quest \"%s\" from %s at %s, %s."] = true
+L["%s Fishing needs character level %d."] = true
+L["Map pin"] = true
+L["Fishing skill capped (%d/%d): learn %s Fishing to go on."] = true
+L["You can learn %s Fishing now."] = true
+L["Next rank: %s Fishing, from skill %d."] = true
+L["Next rank: %s Fishing, from skill %d and character level %d."] = true
+L["Next rank: %s Fishing, from character level %d."] = true
+L["Next rank: %s Fishing, ready to learn."] = true
 
 -- UI/CopyWindow.lua
 L["Click the text, then Ctrl+A and Ctrl+C to copy."] = true
@@ -91,7 +89,14 @@ L["Drag to move. Lock it in the settings."] = true
 L["Caught: %s"] = true
 L["Nothing caught"] = true
 
+-- UI/MapPin.lua
+L["The game did not accept the map pin."] = true
+L["Map pin: %s"] = true
+L["Replace your map pin with this place?"] = true
+L["Replace"] = true
+
 -- UI/StatsFrame.lua
+L["Pin"] = true
 L["Time fishing"] = true
 L["Time casting"] = true
 L["Casts"] = true
@@ -149,7 +154,7 @@ L["Lock the indicator position"] = true
 L["Show catch notifications"] = true
 L["Show session fishing time under the indicator"] = true
 L["Pause the fishing timer while AFK"] = true
-L["Warn when the Fishing rank is capped"] = true
+L["Remind me about the next Fishing rank"] = true
 L["Use scanned auction prices for catch value"] = true
 L["Zoom the camera while fishing"] = true
 L["Show the minimap button"] = true
@@ -187,12 +192,24 @@ L["Automatic: no fishing pole in your bags."] = true
 L["Settings cannot be opened in combat."] = true
 L["Settings panel is not available in this client."] = true
 L["open the settings"] = true
+L["Language:"] = true
+L["Interface language"] = true
+L["Game client language"] = true
+L["Korean and Chinese may show as squares on a game client in another language."] = true
+L["Pick English to get a readable interface back."] = true
+L["The language changes after reloading the interface."] = true
+L["Reload now"] = true
+L["Later"] = true
+L["Yes"] = true
+L["No"] = true
+L["Cancel"] = true
 
 -- UI/ItemHooks.lua
 L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = true
 L["OneKeyFishing: Alt+Click to add to fishing gear"] = true
 
 -- UI/Minimap.lua
+L["Pin: next Fishing rank"] = true
 L["Leave fishing mode"] = true
 L["Enter fishing mode"] = true
 L["Statistics"] = true
