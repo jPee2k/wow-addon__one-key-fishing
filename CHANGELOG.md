@@ -13,6 +13,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
   also on a Russian client).
 - Language setting at the top right of the settings page: pick a language by its own name, or "Game client
   language". Українська is available this way. A change applies after a reload, which the addon offers.
+  Korean and Chinese read best on a Korean or Chinese game client: on a client in another language some
+  tooltips are a little too narrow for them.
 - On a client without a translation (a Russian one, for example) the addon says once in the chat that other
   languages can be picked in the settings. Nothing is switched for you.
 - The description in the game's addon list is in the client's language, and the addon sits in the Professions
@@ -29,12 +31,12 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 - The rank reminder follows the game's rules: a short notice once per session when the next rank can be learned
   (skill 50, 125, 225 with character level 10, 20, 35; it waits for the level), and the large on-screen message at
-  the cap only the first time in a session (later entries into fishing mode repeat it in the chat). The setting is
-  now called "Remind me about the next Fishing rank".
+  the cap only the first time in a session (later entries into fishing mode repeat it in the chat). These notices
+  show even with catch notifications off. The setting is now called "Remind me about the next Fishing rank".
 - The names in the rank advice (the book, the quest, the places, the ranks, the NPCs) are the ones your game client
   shows, in its language, so they match the map and the quest log whatever language the addon is in.
-- Buttons grow to fit longer texts; long statistics labels are cut at the first column (the tooltip shows them
-  in full).
+- Buttons grow to fit longer texts, and the statistics window puts its buttons on two rows when they do not fit
+  in one; long statistics labels are cut at the first column (the tooltip shows them in full).
 - `/okf debug` shows the language setting, the language in use and the client language.
 - The player manual ships inside the addon folder as `README.md`, next to `CHANGELOG.md`.
 
@@ -44,7 +46,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
   the first time you open it in a session.
 - `/okf debug` shows the whole Gear section when you have no lure in your bags.
 - The minimap tooltip, the settings page and the indicator show both keys when you bound two keys to an action
-  (for example one per keyboard language), in the same order everywhere.
+  (for example one per keyboard language), in the order of the game's Keybindings window; the indicator puts them
+  on two lines.
 
 ## [1.0.0] - 2026-10-23
 
