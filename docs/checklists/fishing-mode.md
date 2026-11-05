@@ -44,7 +44,7 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 3. Gear
 
-- [ ] **Gear page, first view (spec 007).** `/reload`, open Options -> AddOns -> OneKeyFishing -> Fishing gear
+- [x] **Gear page, first view (spec 007).** `/reload`, open Options -> AddOns -> OneKeyFishing -> Fishing gear
   first thing and hover the whole list area. Expected: only your items (or "No items yet."), no Remove button
   without an item, no Lua error. Close the panel, Alt+Click an item in the bags, open the page again: its row is
   there.

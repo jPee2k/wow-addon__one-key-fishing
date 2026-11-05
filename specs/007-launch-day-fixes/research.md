@@ -141,3 +141,7 @@ no defect. Checked and left open, low:
 - **Decision (author, 2026-11-05)**: Korean and Chinese are not tested further. The author has no Korean or Chinese
   client (EU account only), real players of those languages run their own client, where the fonts match and
   `ns.TallGlyphs()` is off, and the two leftovers above are cosmetic. They wait for an issue from players.
+- Code review of `ns.TallGlyphs()` (2026-11-05), deferred with the same case: the statistics row, indicator and item
+  tooltip lines do not use the rule yet; the minimap next-rank line no longer wraps (it can reach past the right
+  edge); no test pins that wrap flag; one shared tooltip helper would replace the two per-tooltip checks if Korean
+  and Chinese on other clients are ever worked on.

@@ -54,9 +54,9 @@ Optional, how the chat draws the names:
 
 After the reload, everything below is in Ukrainian:
 
-- [ ] Settings, main page (keys, features, camera, actions) and the Fishing gear page.
+- [x] Settings, main page (keys, features, camera, actions) and the Fishing gear page.
 - [ ] Action indicator (Cast / Hook! / Apply lure / Open, "No bobber", the drag tooltip).
-- [ ] Statistics window (`/okf stats`): titles, rows, row tooltips, buttons, reset popups.
+- [x] Statistics window (`/okf stats`): titles, rows, row tooltips, buttons, reset popups.
 - [ ] Catch notifications.
 - [x] Minimap button tooltip and right-click menu.
 - [ ] Item tooltip line (fishing gear / Alt+Click hint).
@@ -74,12 +74,12 @@ After the reload, everything below is in Ukrainian:
 
 Pick each language below, reload, and look at the settings pages and the statistics window.
 
-- [ ] Deutsch: nothing is cut off or overlaps (buttons grow with their text, checkbox labels wrap, long statistics
+- [x] Deutsch: nothing is cut off or overlaps (buttons grow with their text, checkbox labels wrap, long statistics
   labels end before the first column and show in full in the tooltip).
-- [ ] Español (EU), Español (AL), Français, Português: same.
-- [ ] 한국어: readable, or squares (as the tooltip warns); the menu still shows "English" readably.
-- [ ] 繁體中文: same.
-- [ ] 简体中文: same.
+- [x] Español (EU), Español (AL), Français, Português: same.
+- [x] 한국어: readable, or squares (as the tooltip warns); the menu still shows "English" readably.
+- [x] 繁體中文: same.
+- [x] 简体中文: same.
 
 ## 6. Back to the client language
 
@@ -168,41 +168,28 @@ A low character helps for the first steps; the book and the quest need a trip to
 
 ## 11. Launch day fixes (spec 007)
 
-Re-runs the steps that failed on 2026-11-05 ([quickstart](../../specs/007-launch-day-fixes/quickstart.md)).
+Re-runs the steps that failed on 2026-11-05 ([quickstart](../../specs/007-launch-day-fixes/quickstart.md)), on a
+build after the code review (`1.0.0-dev+09cfb6b` or later; the minimap tooltip shows the version).
 
-- [x] **US1, gear page.** `/reload`, open Fishing gear first thing, hover the whole list: only your items (or "No
-  items yet."), no Remove button without an item, no Lua error. (2026-11-05, build before the code review; re-run in
-  section 12.)
+- [x] **US1, settings pages, first view.** `/reload`, `/okf config`: the main page shows both keys of each action,
+  the Language button the current choice, the checkboxes as set. Open Fishing gear first thing and hover the whole
+  list: only your items (or "No items yet."), no Remove button without an item, no Lua error; switch pages a few
+  times; close the panel, Alt+Click an item in the bags, reopen: the item is listed; remove it the same way.
 - [x] **US2, debug.** With no lure in the bags, `/okf debug`: the Gear section is complete ("next lure: nil", best
-  pole, chosen pole, pending restore), no `!! failed` line. (2026-11-05: complete report on a level 3 character.)
+  pole, chosen pole, pending restore), no `!! failed` line.
 - [x] **US3, popups.** Addon in Ukrainian on a non-English client: Reset session / Reset all in the statistics (then
-  cancel) and the map pin replace popup show both buttons in Ukrainian. (2026-11-05: the reset popups; the pin popup
-  waits for a rank advice with a place, level 10.)
-- [x] **US4, keys.** Two keys bound to each action: the minimap tooltip, the settings key line and the indicator
-  show both, in the same order. (2026-11-05: tooltip and key line. After a reload the game swaps a binding's two
-  keys, in its Keybindings window too; the addon follows the window. The indicator is checked in fishing mode.)
+  cancel) show both buttons in Ukrainian. The map pin replace popup waits for a rank advice with a place (level 10,
+  section 10).
+- [x] **US4, keys.** Two keys bound to each action: the minimap tooltip and the settings key line show both, in the
+  order of the Keybindings columns (the game may swap the two on a reload); Deutsch: the key line wraps inside the
+  page.
+- [ ] **US4, indicator** (fishing mode): one key per line in the icon's top right corner; one key in full.
 - [x] **US5, statistics buttons.** Deutsch: the three reset/refresh buttons on the first row, "Auktionspreise
   scannen" at the left of the second row; Français, Español (EU), Português: buttons read left to right, top to
   bottom, nothing overlaps; English: all four in one row, Scan at the right edge.
-- [ ] **US6, CJK tooltip.** 한국어, 繁體中文, 简体中文 (reload each): every glyph of the minimap tooltip inside its frame.
-  (2026-11-05: skipped, see Results; no Korean or Chinese client.)
-
-## 12. After the code review (spec 007)
-
-The review changed the settings pages (created hidden), the indicator and the blank-line rule; re-run on the build
-`1.0.0-dev+f79f330` (the minimap tooltip shows the version).
-
-- [ ] **Main page, first view.** `/reload`, `/okf config`: the key line shows both keys of each action in the order
-  of the Keybindings columns, the Language button the current choice, the checkboxes as set.
-- [ ] **Fishing gear, first view and reopening.** `/reload`, open Fishing gear first: no Remove button without an
-  item, no Lua error; switch pages a few times; close the panel, Alt+Click an item in the bags, reopen: the item is
-  listed; remove it the same way.
-- [ ] **Long key line.** Deutsch, main page: the key line with four keys wraps inside the page.
-- [x] **CJK tooltips on a Russian client.** (2026-11-05: the Language tooltip no longer falls below the frame after
-  `ns.TallGlyphs()`; leftovers in Results.) 简体中文 and 한국어: a small blank line at the bottom of the minimap
-  tooltip, nothing outside; the Language button and a statistics row name: anything outside? The line colours match
-  English (click lines green, how-to lines grey)?
-- [ ] **Indicator, two keys** (fishing mode): one key per line in the icon's top right corner; one key in full.
+- [ ] **US6, Korean and Chinese on another client** (deferred, no such client): the Language tooltip no longer falls
+  below its frame; glyphs past the right edge and white text on every second minimap hover wait for an issue
+  (Results, spec 007 research R9).
 
 ## Results
 
