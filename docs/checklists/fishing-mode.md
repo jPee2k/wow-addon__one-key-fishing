@@ -44,6 +44,11 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 3. Gear
 
+- [ ] **Gear page, first view (spec 007).** `/reload`, open Options -> AddOns -> OneKeyFishing -> Fishing gear
+  first thing and hover the whole list area. Expected: only your items (or "No items yet."), no Remove button
+  without an item, no Lua error. Close the panel, Alt+Click an item in the bags, open the page again: its row is
+  there.
+
 - [ ] **Best pole.** With two poles in the bags and no chosen pole, enter the mode. Expected: the pole with the
   higher fishing bonus (then the higher item level) is equipped.
 - [ ] **Chosen pole and extra items.** Alt+Click a pole and a hat in the bags. Expected: the settings page "Fishing
@@ -114,6 +119,11 @@ The full check (names, places, pins) is the "Next rank" section of
   statistics window stays.
 
 ## 9. Minimap button and settings
+
+- [ ] **Two keys (spec 007).** Bind two keys to each action (`` ` `` and `'`, `SHIFT-`` and `SHIFT-'`). Expected:
+  the minimap tooltip, the key line of the settings page and the indicator show both keys of each action, in the
+  same order (the indicator puts them on two lines). With one key unbound: that action
+  shows one key.
 
 - [ ] **Button.** Left-click toggles the mode, Shift+Left-click opens the statistics, Right-click opens the menu
   (mode, statistics, settings, scan, reset indicator, debug report), drag moves it around the minimap; the

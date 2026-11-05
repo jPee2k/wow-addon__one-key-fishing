@@ -212,6 +212,9 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["The language changes after reloading the interface."] = "重新加载界面后语言才会更改。"
     L["Reload now"] = "立即重新加载"
     L["Later"] = "稍后"
+    L["Yes"] = "是"
+    L["No"] = "否"
+    L["Cancel"] = "取消"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = "OneKeyFishing：钓鱼装备（Alt+点击移除）"

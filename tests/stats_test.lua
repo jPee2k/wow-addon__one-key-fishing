@@ -98,3 +98,25 @@ test("short time format", function()
     eq(format(3725), "1h 02m")
     eq(format(1123300), "312h 01m")
 end)
+
+---------------------------------------------------------------------------
+-- The bottom buttons (spec 007, User Story 5): a Scan button that does not fit wraps to the left of a new row.
+---------------------------------------------------------------------------
+
+test("button rows: everything fits in one row", function()
+    local width, wraps = ns.StatsFrame.ButtonRows(394, 160, 580)
+    eq(width, 580, "window width")
+    eq(wraps, false, "one row")
+end)
+
+test("button rows: the window widens for the left buttons, Scan wraps", function()
+    local width, wraps = ns.StatsFrame.ButtonRows(700, 200, 580)
+    eq(width, 700, "window width")
+    eq(wraps, true, "two rows")
+end)
+
+test("button rows: the left buttons fit, Scan does not", function()
+    local width, wraps = ns.StatsFrame.ButtonRows(560, 160, 580)
+    eq(width, 580, "window width")
+    eq(wraps, true, "two rows")
+end)

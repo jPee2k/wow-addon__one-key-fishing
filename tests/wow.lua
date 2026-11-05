@@ -15,6 +15,8 @@
 --   loot = { fishing = true, items = { { itemID, quantity } } }   the open loot window (fire LOOT_READY)
 --   addon_version = "@project-version@"   the TOC's Version field (C_AddOns.GetAddOnMetadata)
 --   CLIENT_LOCALE = "deDE"              GetLocale (the game client's language), set before load_addon()
+--   bindings[name] = { "`", "'" }       GetBindingKey (the keys of a binding, in the game's order)
+--   settings_pages[name]                the frames registered with the Settings panel (read, not set)
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -243,7 +245,17 @@ function Frame:IsShown()
     return self.shown
 end
 
-Frame.IsVisible = Frame.IsShown
+-- Visible: shown, and every parent too (a page in the closed Settings panel is shown but not visible).
+function Frame:IsVisible()
+    local frame = self
+    while frame do
+        if not frame.shown then
+            return false
+        end
+        frame = frame.parent
+    end
+    return true
+end
 
 function Frame:SetText(text)
     self.text = text
@@ -257,11 +269,26 @@ function Frame:SetFormattedText(format, ...)
     self.text = format:format(...)
 end
 
-function Frame:GetWidth()
-    return 100
+-- Sizes are remembered; an unsized frame is 100 x 100.
+function Frame:SetWidth(width)
+    self.width = width
 end
 
-Frame.GetHeight = Frame.GetWidth
+function Frame:GetWidth()
+    return self.width or 100
+end
+
+function Frame:SetHeight(height)
+    self.height = height
+end
+
+function Frame:GetHeight()
+    return self.height or 100
+end
+
+function Frame:SetSize(width, height)
+    self.width, self.height = width, height
+end
 
 local NewFrame
 
@@ -399,11 +426,15 @@ function ReloadUI()
     reload_count = reload_count + 1
 end
 
+settings_pages = {} -- name -> the frame registered with the Settings panel
 Settings = {
-    RegisterCanvasLayoutCategory = function()
+    RegisterCanvasLayoutCategory = function(frame, name)
+        settings_pages[name] = frame
         return { GetID = function() return 1 end }
     end,
-    RegisterCanvasLayoutSubcategory = function() end,
+    RegisterCanvasLayoutSubcategory = function(_, frame, name)
+        settings_pages[name] = frame
+    end,
     RegisterAddOnCategory = function() end,
 }
 
@@ -411,6 +442,7 @@ Settings = {
 -- Game state and API
 ---------------------------------------------------------------------------
 bag_items = {}
+bindings = {} -- binding name -> its keys, in the game's order
 item_cooldowns = {}
 item_prices = {}
 weapon_enchant = false
@@ -687,6 +719,16 @@ function UnitCastingInfo() end
 
 function GetWeaponEnchantInfo()
     return weapon_enchant
+end
+
+function GetBindingKey(name)
+    return unpack(bindings[name] or {})
+end
+
+-- The game writes modifiers its own way ("SHIFT-`" reads "Shift-`"); the stub does the same, so a test can
+-- see that the text went through GetBindingText.
+function GetBindingText(key)
+    return (key:gsub("SHIFT%-", "Shift-"))
 end
 
 function InCombatLockdown()

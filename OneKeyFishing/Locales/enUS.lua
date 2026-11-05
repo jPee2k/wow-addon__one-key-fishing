@@ -200,6 +200,9 @@ L["Pick English to get a readable interface back."] = true
 L["The language changes after reloading the interface."] = true
 L["Reload now"] = true
 L["Later"] = true
+L["Yes"] = true
+L["No"] = true
+L["Cancel"] = true
 
 -- UI/ItemHooks.lua
 L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = true

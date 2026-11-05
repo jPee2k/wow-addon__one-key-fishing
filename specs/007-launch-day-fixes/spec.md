@@ -118,8 +118,8 @@ settings page and the indicator.
    minimap button, **Then** each tooltip line names both keys of its action.
 2. **Given** the same bindings, **When** the main settings page is opened, **Then** its key line names both keys
    of each action.
-3. **Given** the same bindings, **When** the indicator shows the fishing key, **Then** it names both keys, or one
-   key with no misleading order if space allows only one (see FR-012).
+3. **Given** the same bindings, **When** the indicator shows the fishing key, **Then** it names both keys; a pair
+   stands on two lines, one key each (see FR-012).
 4. **Given** only one key bound to an action, **When** any of these places shows it, **Then** it shows that one
    key exactly as before.
 5. **Given** no key bound, **When** any of these places shows it, **Then** it shows "not bound" as before.
@@ -218,8 +218,8 @@ render well.
 - **FR-010**: Two keys MUST be shown in one fixed, documented order so that all three places show the same text for the
   same bindings.
 - **FR-011**: One bound key and no bound key MUST look as they do today.
-- **FR-012**: Where space is short (the indicator), both keys MUST still be named unless they do not fit; the
-  indicator text MUST NOT grow wider than its frame.
+- **FR-012**: Where space is short (the indicator), both keys MUST still be named, one per line; one key MUST
+  show in full as before.
 
 **Statistics buttons (User Story 5)**
 

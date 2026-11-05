@@ -38,6 +38,14 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - `/okf debug` shows the language setting, the language in use and the client language.
 - The player manual ships inside the addon folder as `README.md`, next to `CHANGELOG.md`.
 
+### Fixed
+
+- The Fishing gear settings page no longer shows empty rows with Remove buttons, or an error when you hover them,
+  the first time you open it in a session.
+- `/okf debug` shows the whole Gear section when you have no lure in your bags.
+- The minimap tooltip, the settings page and the indicator show both keys when you bound two keys to an action
+  (for example one per keyboard language), in the same order everywhere.
+
 ## [1.0.0] - 2026-10-23
 
 First public release, for WoW Forever.

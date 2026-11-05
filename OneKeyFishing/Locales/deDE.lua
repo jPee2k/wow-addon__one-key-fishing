@@ -229,6 +229,9 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "Die Sprache ändert sich nach dem Neuladen der Oberfläche."
     L["Reload now"] = "Jetzt neu laden"
     L["Later"] = "Später"
+    L["Yes"] = "Ja"
+    L["No"] = "Nein"
+    L["Cancel"] = "Abbrechen"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = "OneKeyFishing: Angelausrüstung (Alt+Klick zum Entfernen)"

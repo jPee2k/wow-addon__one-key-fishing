@@ -137,6 +137,13 @@ local function CreateTable(f, headerY)
     return y
 end
 
+-- The bottom buttons' layout: the window is at least `minWidth` and widens for the left row (its width with the
+-- margins); returns that width and whether the Scan button wraps to a second row.
+function StatsFrame.ButtonRows(leftWidth, scanWidth, minWidth)
+    local width = math.max(minWidth, leftWidth)
+    return width, leftWidth + 8 + scanWidth > width
+end
+
 local function Create()
     ROWS = BuildRows()
     local ok, f = pcall(CreateFrame, "Frame", nil, UIParent, "BasicFrameTemplateWithInset")
@@ -255,16 +262,19 @@ local function Create()
     refresh:SetPoint("LEFT", resetAll, "RIGHT", 8, 0)
     f.scan = CreateButton(f, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
     f.scan:SetPoint("BOTTOMRIGHT", -14, 12)
-    -- Translated buttons can be too wide: the window widens for the three left buttons, and the Scan button gets
-    -- a row of its own (the window grows by that row, so the zone list stays clear of it).
+    -- Translated buttons can be too wide: the window widens for the three left buttons, and a Scan button that
+    -- does not fit beside them wraps like text: the left three move up a row, Scan starts the row below at the
+    -- left (the window grows by that row, so the zone list stays clear of the buttons).
     local leftRow = 14 + (resetSession:GetWidth() or 0) + 8 + (resetAll:GetWidth() or 0) + 8
         + (refresh:GetWidth() or 0) + 14
-    local width = math.max(WIDTH, leftRow)
+    local width, wraps = StatsFrame.ButtonRows(leftRow, f.scan:GetWidth() or 0, WIDTH)
     f:SetWidth(width)
-    if leftRow + 8 + (f.scan:GetWidth() or 0) > width then
+    if wraps then
         f:SetHeight(HEIGHT + 28)
+        resetSession:ClearAllPoints()
+        resetSession:SetPoint("BOTTOMLEFT", 14, 40)
         f.scan:ClearAllPoints()
-        f.scan:SetPoint("BOTTOMRIGHT", -14, 40)
+        f.scan:SetPoint("BOTTOMLEFT", 14, 12)
     end
 
     local elapsed = 0

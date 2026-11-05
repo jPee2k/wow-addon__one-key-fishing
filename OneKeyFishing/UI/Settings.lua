@@ -64,11 +64,6 @@ end
 
 local CreateButton = ns.CreateButton -- Core.lua
 
-local function KeyText(binding)
-    local key = GetBindingKey(binding)
-    return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
-end
-
 local function ItemDisplay(itemID)
     local name, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
     return link or name or ("item:" .. itemID), icon or C_Item.GetItemIconByID(itemID)
@@ -183,6 +178,7 @@ local function CreateMainPage()
     keysHeader:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
     local keys = CreateText(page, "GameFontHighlight")
     keys:SetPoint("TOPLEFT", keysHeader, "BOTTOMLEFT", 0, -6)
+    keys:SetWidth(560) -- up to two keys per action
     local keysHint = CreateText(page, "GameFontDisableSmall",
         L["Change them in Options -> Keybindings -> AddOns -> OneKeyFishing."])
     keysHint:SetPoint("TOPLEFT", keys, "BOTTOMLEFT", 0, -4)
@@ -272,7 +268,7 @@ local function CreateMainPage()
         UpdateLanguage()
         cameraValue:SetText(ns.db.settings.cameraDistance)
         keys:SetText((L["Fishing action: %s      Toggle fishing mode: %s"]):format(
-            KeyText("ONEKEYFISHING_ACTION"), KeyText("ONEKEYFISHING_TOGGLE")))
+            ns.KeyText("ONEKEYFISHING_ACTION"), ns.KeyText("ONEKEYFISHING_TOGGLE")))
     end)
     return page
 end
@@ -281,6 +277,9 @@ end
 -- Fishing gear page
 ---------------------------------------------------------------------------
 local function ShowItemTooltip(owner, itemID)
+    if not itemID then
+        return -- an empty row: the game's tooltip refuses a nil item
+    end
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:SetItemByID(itemID)
     GameTooltip:Show()
@@ -288,6 +287,7 @@ end
 
 local function CreateGearRow(parent)
     local row = CreateFrame("Frame", nil, parent)
+    row:Hide() -- until Refresh gives it an item
     row:SetSize(520, ROW_HEIGHT)
     row:EnableMouse(true)
 
@@ -384,7 +384,7 @@ local function CreateGearPage()
     end
 
     local function Refresh()
-        if not page:IsShown() then
+        if not page:IsVisible() then -- the OnShow refresh catches up
             return
         end
         local chosen = ns.Gear.GetChosenPole()
@@ -446,8 +446,13 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
         ns.Print(L["Settings panel is not available in this client."])
         return
     end
-    mainCategory = Settings.RegisterCanvasLayoutCategory(CreateMainPage(), "OneKeyFishing")
-    Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateGearPage(), L["Fishing gear"])
+    -- The panel shows a page with SetParent + Show (Blizzard_SettingsPanel.lua DisplayLayout). A frame is created
+    -- shown, so that Show would change nothing and send no OnShow, which fills the pages: they start hidden.
+    local mainPage, gearPage = CreateMainPage(), CreateGearPage()
+    mainPage:Hide()
+    gearPage:Hide()
+    mainCategory = Settings.RegisterCanvasLayoutCategory(mainPage, "OneKeyFishing")
+    Settings.RegisterCanvasLayoutSubcategory(mainCategory, gearPage, L["Fishing gear"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)
 

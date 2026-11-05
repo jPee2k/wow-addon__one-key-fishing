@@ -38,6 +38,7 @@ One fishing round:
 > current Windows keyboard language types, so a `'` bound on English is a different key for the game on another
 > language and the binding stops working after you switch. Every binding has two slots: bind the key once per
 > language. Letters, numbers, F-keys and mouse buttons work on every language. This is how WoW works, not the addon.
+> The minimap tooltip, the settings page and the indicator show both keys of each binding.
 
 ## What the addon does
 

@@ -39,18 +39,38 @@ function ns.CreateButton(parent, text, width, onClick)
     return button
 end
 
--- A two-button popup (Yes / No unless other texts are given); onAccept runs on the first button.
+-- A two-button popup (Yes / No unless other texts are given); onAccept runs on the first button. The default
+-- texts are the addon's: the game's YES / NO are in the client's language, which may not be the addon's.
 function ns.ShowPopup(key, text, onAccept, acceptText, cancelText)
     StaticPopupDialogs[key] = {
         text = text,
-        button1 = acceptText or YES,
-        button2 = cancelText or NO,
+        button1 = acceptText or L["Yes"],
+        button2 = cancelText or L["No"],
         OnAccept = onAccept,
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
     }
     StaticPopup_Show(key)
+end
+
+-- Every key bound to a binding, readable, joined with " / " (players bind a punctuation key once per keyboard
+-- layout, so two keys are common). The order is the game's (GetBindingKey), which is not the order of the
+-- Keybindings columns; it is the same wherever the keys are shown. `short` asks the game for the short key
+-- names (small labels); `unbound` is the text without a key, the red "not bound" by default; `separator`
+-- joins two keys, " / " by default.
+function ns.KeyText(binding, short, unbound, separator)
+    local texts, seen = {}, {}
+    for _, key in ipairs({ GetBindingKey(binding) }) do
+        if not seen[key] then
+            seen[key] = true
+            table.insert(texts, GetBindingText(key, short))
+        end
+    end
+    if #texts == 0 then
+        return unbound or ("|cffff5555" .. L["not bound"] .. "|r")
+    end
+    return table.concat(texts, separator or " / ")
 end
 
 -- A number with `digits` decimals and the game client's decimal separator: numbers follow the client's

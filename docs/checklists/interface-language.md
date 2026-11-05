@@ -166,6 +166,23 @@ A low character helps for the first steps; the book and the quest need a trip to
 - [ ] With the addon in Ukrainian on an English client: the sentences are Ukrainian, the book, quest, places and
   ranks read exactly as the English client names them.
 
+## 11. Launch day fixes (spec 007)
+
+Re-runs the steps that failed on 2026-11-05 ([quickstart](../../specs/007-launch-day-fixes/quickstart.md)).
+
+- [ ] **US1, gear page.** `/reload`, open Fishing gear first thing, hover the whole list: only your items (or "No
+  items yet."), no Remove button without an item, no Lua error.
+- [ ] **US2, debug.** With no lure in the bags, `/okf debug`: the Gear section is complete ("next lure: nil", best
+  pole, chosen pole, pending restore), no `!! failed` line.
+- [ ] **US3, popups.** Addon in Ukrainian on a non-English client: Reset session / Reset all in the statistics (then
+  cancel) and the map pin replace popup show both buttons in Ukrainian.
+- [ ] **US4, keys.** Two keys bound to each action: the minimap tooltip, the settings key line and the indicator
+  show both, in the same order.
+- [ ] **US5, statistics buttons.** Deutsch: the three reset/refresh buttons on the first row, "Auktionspreise
+  scannen" at the left of the second row; Français, Español (EU), Português: buttons read left to right, top to
+  bottom, nothing overlaps; English: all four in one row, Scan at the right edge.
+- [ ] **US6, CJK tooltip.** 한국어, 繁體中文, 简体中文 (reload each): every glyph of the minimap tooltip inside its frame.
+
 ## Results
 
 - Date, build, client language: 2026-11-05, game 1.60.1 (70790), EU realm, client ruRU, addon

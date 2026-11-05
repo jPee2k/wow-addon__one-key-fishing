@@ -33,10 +33,10 @@ local function OpenMenu(owner)
     end)
 end
 
-local function KeyText(binding)
-    local key = GetBindingKey(binding)
-    return key and GetBindingText(key) or ("|cffff5555" .. L["not bound"] .. "|r")
-end
+-- Korean and Chinese glyphs are taller than the line height the game measures the tooltip with, so the last line
+-- reached below the frame (seen in game, spec 007): those languages end the tooltip with a blank line, unless the
+-- client is Korean or Chinese itself and measures with that font.
+local TALL_GLYPHS = { koKR = true, zhCN = true, zhTW = true }
 
 local function ShowTooltip(owner)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
@@ -58,8 +58,8 @@ local function ShowTooltip(owner)
             ns.Stats.FormatTime(ns.Stats.GetSessionTime())), 1, 1, 1)
     end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddDoubleLine(L["Fishing key:"], KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
-    GameTooltip:AddDoubleLine(L["Toggle mode key:"], KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Fishing key:"], ns.KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L["Toggle mode key:"], ns.KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine(L["How to use: press the toggle key, then the fishing key to cast,"], 0.8, 0.8, 0.8)
     GameTooltip:AddLine(L["and the same key again when the bobber splashes."], 0.8, 0.8, 0.8)
@@ -70,6 +70,9 @@ local function ShowTooltip(owner)
     GameTooltip:AddLine(L["Right-click: menu"], 0, 1, 0)
     if owner == button then
         GameTooltip:AddLine(L["Drag: move this button"], 0, 1, 0)
+    end
+    if TALL_GLYPHS[ns.language] and not TALL_GLYPHS[GetLocale()] then
+        GameTooltip:AddLine(" ")
     end
     GameTooltip:Show()
 end

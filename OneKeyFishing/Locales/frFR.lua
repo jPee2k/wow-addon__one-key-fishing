@@ -230,6 +230,9 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["The language changes after reloading the interface."] = "La langue change après le rechargement de l'interface."
     L["Reload now"] = "Recharger"
     L["Later"] = "Plus tard"
+    L["Yes"] = "Oui"
+    L["No"] = "Non"
+    L["Cancel"] = "Annuler"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] =

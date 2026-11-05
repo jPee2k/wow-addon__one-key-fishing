@@ -40,6 +40,7 @@ frame.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
 frame.key = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmallGray")
 frame.key:SetPoint("TOPRIGHT", -4, -4)
+frame.key:SetJustifyH("RIGHT") -- two keys (one per keyboard layout) stand on two lines
 
 frame.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 frame.label:SetPoint("TOP", frame, "BOTTOM", 0, -2)
@@ -137,11 +138,6 @@ local function ShowNoBobber()
     return false
 end
 
-local function KeyText()
-    local key = GetBindingKey("ONEKEYFISHING_ACTION")
-    return key and GetBindingText(key, true) or ""
-end
-
 function Indicator.Update()
     if not (ns.Mode.IsActive() and ns.db.settings.indicator) then
         pulse:Stop()
@@ -161,7 +157,7 @@ function Indicator.Update()
     else
         frame.label:SetText(Label(kind))
     end
-    frame.key:SetText(KeyText())
+    frame.key:SetText(ns.KeyText("ONEKEYFISHING_ACTION", true, "", "\n"))
     if kind == "hook" then
         if not pulse:IsPlaying() then
             pulse:Play()

@@ -70,7 +70,7 @@ function MapPin.Set(target, placeName)
     -- Replaced without asking: the addon's last pin, or a pin already at this place (set through the chat link).
     local current = C_Map.HasUserWaypoint() and C_Map.GetUserWaypoint()
     if current and not IsAt(current, ns.charDB.pin) and not IsAt(current, target) then
-        ns.ShowPopup(REPLACE_POPUP, L["Replace your map pin with this place?"], Apply, L["Replace"], CANCEL)
+        ns.ShowPopup(REPLACE_POPUP, L["Replace your map pin with this place?"], Apply, L["Replace"], L["Cancel"])
     else
         Apply()
     end

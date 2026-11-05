@@ -226,6 +226,9 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["The language changes after reloading the interface."] = "O idioma muda após recarregar a interface."
     L["Reload now"] = "Recarregar agora"
     L["Later"] = "Depois"
+    L["Yes"] = "Sim"
+    L["No"] = "Não"
+    L["Cancel"] = "Cancelar"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] =

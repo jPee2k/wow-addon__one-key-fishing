@@ -217,6 +217,9 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["The language changes after reloading the interface."] = "언어는 인터페이스를 다시 불러온 후 바뀝니다."
     L["Reload now"] = "지금 다시 불러오기"
     L["Later"] = "나중에"
+    L["Yes"] = "예"
+    L["No"] = "아니요"
+    L["Cancel"] = "취소"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = "OneKeyFishing: 낚시 장비 (Alt+클릭으로 제거)"

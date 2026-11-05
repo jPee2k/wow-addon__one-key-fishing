@@ -223,6 +223,9 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["The language changes after reloading the interface."] = "Мова зміниться після перезавантаження інтерфейсу."
     L["Reload now"] = "Перезавантажити"
     L["Later"] = "Пізніше"
+    L["Yes"] = "Так"
+    L["No"] = "Ні"
+    L["Cancel"] = "Скасувати"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] =

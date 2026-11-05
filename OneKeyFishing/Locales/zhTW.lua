@@ -212,6 +212,9 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["The language changes after reloading the interface."] = "重新載入介面後才會變更語言。"
     L["Reload now"] = "立即重新載入"
     L["Later"] = "稍後"
+    L["Yes"] = "是"
+    L["No"] = "否"
+    L["Cancel"] = "取消"
 
     -- UI/ItemHooks.lua
     L["OneKeyFishing: fishing gear (Alt+Click to remove)"] = "OneKeyFishing：釣魚裝備（Alt+點擊移除）"
