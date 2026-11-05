@@ -1,23 +1,21 @@
 # Release plan
 
 What the next releases wait for and in which order things happen. The generic release steps (version, changelog,
-pull request, tag) are in [publishing.md](publishing.md); this page is about the two releases that are built but
-cannot be verified before WoW Forever opens on 2026-11-04. It is deleted once both are out.
+pull request, tag) are in [publishing.md](publishing.md); this page is about the checks left after 1.1.0 and
+about 1.2.0, which is built but not verified in game yet. It is deleted once 1.2.0 is out.
 
-## 1.1.0: interface languages
+## 1.1.x: in-game checks left after 1.1.0
 
-Built on `001-interface-language` (`specs/001-interface-language`), waiting for the game.
-Status 2026-11-05: the launch day fixes are done (`specs/007-launch-day-fixes`); the checklists run on a new
-character, the steps from character level 10 (rank notices, map pin) and the containers are still open.
+1.1.0 went out with the steps below still open in the checklists; a finding goes into a 1.1.x patch.
 
-1. After the launch: run [checklists/fishing-mode.md](checklists/fishing-mode.md) (the 1.0.0 features still
-   work) and [checklists/interface-language.md](checklists/interface-language.md); report the results.
-2. Fix what the checklists found, with tests; record the font results in
-   `specs/001-interface-language/research.md` R6 and the API facts in `CLAUDE.md` (`docs/forever-api.md` is on
-   `002-shared-db`, see below).
-3. Merge `001-interface-language` into `develop`.
-4. Release 1.1.0 by the steps of [publishing.md](publishing.md): version 1.1.0 in `package.json`, the
-   `[Unreleased]` entries become `## [1.1.0] - <date>`, pull request `develop` -> `main`, tag `1.1.0`.
+- [checklists/fishing-mode.md](checklists/fishing-mode.md): leaving the mode when attacked, the best of two
+  poles, a lure on cooldown, clams and locked containers, the rank notices from character level 10.
+- [checklists/interface-language.md](checklists/interface-language.md) section 10: the Journeyman notice and the
+  map pin (level 10), Old Man Heming and the book (level 20), Nat Pagle and the quest ID (level 35, quest 6607
+  has no title on Forever yet); their results go into `specs/001-interface-language/research.md` R11 / R12 and
+  remove the remaining `VERIFY` marks.
+- Korean and Chinese on a client in another language: deferred until a player reports it
+  (`specs/007-launch-day-fixes/research.md` R9).
 
 ## 1.2.0: the shared catch database
 
