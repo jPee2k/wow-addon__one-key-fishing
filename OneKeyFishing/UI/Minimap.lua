@@ -33,11 +33,6 @@ local function OpenMenu(owner)
     end)
 end
 
--- Korean and Chinese glyphs are taller than the line height the game measures the tooltip with, so the last line
--- reached below the frame (seen in game, spec 007): those languages end the tooltip with a blank line, unless the
--- client is Korean or Chinese itself and measures with that font.
-local TALL_GLYPHS = { koKR = true, zhCN = true, zhTW = true }
-
 local function ShowTooltip(owner)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
     GameTooltip:AddDoubleLine("OneKeyFishing", ns.version, nil, nil, nil, 0.6, 0.6, 0.6)
@@ -49,7 +44,7 @@ local function ShowTooltip(owner)
         GameTooltip:AddLine(text, 1, 1, 1)
         local advice = ns.Skill.GetNextRank()
         if advice then
-            GameTooltip:AddLine(ns.Skill.DescribeNextRank(advice), 1, 0.82, 0, true)
+            GameTooltip:AddLine(ns.Skill.DescribeNextRank(advice), 1, 0.82, 0, not ns.TallGlyphs())
         end
     end
     local session = ns.Stats.GetSession()
@@ -71,7 +66,7 @@ local function ShowTooltip(owner)
     if owner == button then
         GameTooltip:AddLine(L["Drag: move this button"], 0, 1, 0)
     end
-    if TALL_GLYPHS[ns.language] and not TALL_GLYPHS[GetLocale()] then
+    if ns.TallGlyphs() then
         GameTooltip:AddLine(" ")
     end
     GameTooltip:Show()

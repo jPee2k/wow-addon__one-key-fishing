@@ -170,18 +170,39 @@ A low character helps for the first steps; the book and the quest need a trip to
 
 Re-runs the steps that failed on 2026-11-05 ([quickstart](../../specs/007-launch-day-fixes/quickstart.md)).
 
-- [ ] **US1, gear page.** `/reload`, open Fishing gear first thing, hover the whole list: only your items (or "No
-  items yet."), no Remove button without an item, no Lua error.
-- [ ] **US2, debug.** With no lure in the bags, `/okf debug`: the Gear section is complete ("next lure: nil", best
-  pole, chosen pole, pending restore), no `!! failed` line.
-- [ ] **US3, popups.** Addon in Ukrainian on a non-English client: Reset session / Reset all in the statistics (then
-  cancel) and the map pin replace popup show both buttons in Ukrainian.
-- [ ] **US4, keys.** Two keys bound to each action: the minimap tooltip, the settings key line and the indicator
-  show both, in the same order.
-- [ ] **US5, statistics buttons.** Deutsch: the three reset/refresh buttons on the first row, "Auktionspreise
+- [x] **US1, gear page.** `/reload`, open Fishing gear first thing, hover the whole list: only your items (or "No
+  items yet."), no Remove button without an item, no Lua error. (2026-11-05, build before the code review; re-run in
+  section 12.)
+- [x] **US2, debug.** With no lure in the bags, `/okf debug`: the Gear section is complete ("next lure: nil", best
+  pole, chosen pole, pending restore), no `!! failed` line. (2026-11-05: complete report on a level 3 character.)
+- [x] **US3, popups.** Addon in Ukrainian on a non-English client: Reset session / Reset all in the statistics (then
+  cancel) and the map pin replace popup show both buttons in Ukrainian. (2026-11-05: the reset popups; the pin popup
+  waits for a rank advice with a place, level 10.)
+- [x] **US4, keys.** Two keys bound to each action: the minimap tooltip, the settings key line and the indicator
+  show both, in the same order. (2026-11-05: tooltip and key line. After a reload the game swaps a binding's two
+  keys, in its Keybindings window too; the addon follows the window. The indicator is checked in fishing mode.)
+- [x] **US5, statistics buttons.** Deutsch: the three reset/refresh buttons on the first row, "Auktionspreise
   scannen" at the left of the second row; Français, Español (EU), Português: buttons read left to right, top to
   bottom, nothing overlaps; English: all four in one row, Scan at the right edge.
 - [ ] **US6, CJK tooltip.** 한국어, 繁體中文, 简体中文 (reload each): every glyph of the minimap tooltip inside its frame.
+  (2026-11-05: skipped, see Results; no Korean or Chinese client.)
+
+## 12. After the code review (spec 007)
+
+The review changed the settings pages (created hidden), the indicator and the blank-line rule; re-run on the build
+`1.0.0-dev+f79f330` (the minimap tooltip shows the version).
+
+- [ ] **Main page, first view.** `/reload`, `/okf config`: the key line shows both keys of each action in the order
+  of the Keybindings columns, the Language button the current choice, the checkboxes as set.
+- [ ] **Fishing gear, first view and reopening.** `/reload`, open Fishing gear first: no Remove button without an
+  item, no Lua error; switch pages a few times; close the panel, Alt+Click an item in the bags, reopen: the item is
+  listed; remove it the same way.
+- [ ] **Long key line.** Deutsch, main page: the key line with four keys wraps inside the page.
+- [x] **CJK tooltips on a Russian client.** (2026-11-05: the Language tooltip no longer falls below the frame after
+  `ns.TallGlyphs()`; leftovers in Results.) 简体中文 and 한국어: a small blank line at the bottom of the minimap
+  tooltip, nothing outside; the Language button and a statistics row name: anything outside? The line colours match
+  English (click lines green, how-to lines grey)?
+- [ ] **Indicator, two keys** (fishing mode): one key per line in the icon's top right corner; one key in full.
 
 ## Results
 
@@ -191,7 +212,11 @@ Re-runs the steps that failed on 2026-11-05 ([quickstart](../../specs/007-launch
 - Next rank: map IDs and points, names, what differs from the original game: area, book and rank names come in
   the client's language; the quest title of 6607 stays nil, also after `RequestLoadQuestByID` (open: check at
   Nat Pagle whether Forever uses another quest ID; until then the English fallback name shows).
-- Problems found (open, to be fixed before 1.1.0):
+- Spec 007 fixed the problems below (re-run in sections 11 and 12, 2026-11-05) except two left on purpose: with the
+  addon in Korean or Chinese on a client in another language, the Language tooltip's glyphs reach a little past its
+  right edge, and the minimap tooltip turns white on every second hover. No Korean or Chinese client to test with;
+  they wait for an issue from players (spec 007 research R9).
+- Problems found on the first run:
   - the Fishing gear page shows 14 empty rows with "Remove" buttons; hovering one raises a Lua error in
     `GameTooltip:SetItemByID` (nil item ID, `UI/Settings.lua:285`). Only on the first view of the page in a
     session: after switching to the main page and back, or reopening the panel, the rows are gone. The rows are

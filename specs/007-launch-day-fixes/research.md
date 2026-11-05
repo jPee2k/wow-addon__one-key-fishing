@@ -59,14 +59,14 @@ and from reading the code at commit `72c3c44`.
 ## R4. Two bound keys
 
 - **Finding**: three copies of the key text (`UI/Minimap.lua:36`, `UI/Settings.lua:67`, `UI/Indicator.lua:140`)
-  take only the first return of `GetBindingKey`. Verified in game: `GetBindingKey` returns the keys in the game's
-  own order, not the order of the Keybindings columns (debug: action `', ``, toggle ``SHIFT-`, SHIFT-'``), so the
-  player sees one action with the English-layout key and the other with the Ukrainian one.
+  take only the first return of `GetBindingKey`. Verified in game: the game reorders a binding's two keys on a reload, in its
+  Keybindings window too (debug: action `', ``, toggle ``SHIFT-`, SHIFT-'``), so the first key alone was the
+  English-layout key for one action and the Ukrainian one for the other.
 - **Decision**: `ns.KeyText(binding, short)` in `Core.lua` collects every key of `GetBindingKey(binding)`, drops
   duplicates, turns each into `GetBindingText(key, short)` and joins them with `" / "` (no translation needed).
   No key: the red "not bound" text as today (the indicator, which shows nothing when unbound, passes its own empty
-  default; see the contract). Order: the game's order, the same in all three places (FR-010; no API gives the
-  column order). The indicator puts two keys on two lines (separator `"\n"`) and keeps no width limit, so one key
+  default; see the contract). Order: the game's order, the same in all three places (FR-010); in game it matches the
+  Keybindings columns, which the game itself may swap on a reload (checked 2026-11-05). The indicator puts two keys on two lines (separator `"\n"`) and keeps no width limit, so one key
   shows in full as before (FR-011) and a pair is never cut to its first key (FR-012). A first version capped the
   width at the icon and cut one long key (code review round 2).
 - **Alternatives rejected**: guessing the layout from the current Windows language (no API); showing only the key
@@ -126,3 +126,18 @@ no defect. Checked and left open, low:
   near that.
 - The `GetBindingText` stub ignores `short`, so no test pins the indicator's short names.
 - `Yes`, `No`, `Cancel` sit under the `UI/Settings.lua` heading of the locale files, though Core and MapPin use them.
+
+## R9. In-game re-run after the review (2026-11-05)
+
+- The Language button's tooltip in zhCN on the ruRU client: its two wrapped sentences fell about two lines below
+  the frame (the game counts wrapped lines with the client's font). Fixed with one shared rule, `ns.TallGlyphs()`
+  (Core.lua): Korean or Chinese on another client do not wrap their tooltip lines and end with a blank line; the
+  minimap tooltip uses it too. Test: `tests/minimap_tooltip_test.lua`.
+- After the fix the Language tooltip's lines no longer fall below the frame, but a few glyphs reach past its right
+  edge: the game measures the line width with the client's font too.
+- The minimap tooltip shows all lines white instead of gold, green and grey on every second hover, only with the
+  addon in Korean or Chinese (all three); English and Ukrainian keep their colours. The colours are passed on every
+  show.
+- **Decision (author, 2026-11-05)**: Korean and Chinese are not tested further. The author has no Korean or Chinese
+  client (EU account only), real players of those languages run their own client, where the fonts match and
+  `ns.TallGlyphs()` is off, and the two leftovers above are cosmetic. They wait for an issue from players.

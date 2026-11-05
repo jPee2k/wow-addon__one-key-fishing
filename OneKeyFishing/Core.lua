@@ -55,8 +55,8 @@ function ns.ShowPopup(key, text, onAccept, acceptText, cancelText)
 end
 
 -- Every key bound to a binding, readable, joined with " / " (players bind a punctuation key once per keyboard
--- layout, so two keys are common). The order is the game's (GetBindingKey), which is not the order of the
--- Keybindings columns; it is the same wherever the keys are shown. `short` asks the game for the short key
+-- layout, so two keys are common). The order is the game's (GetBindingKey), as in its Keybindings columns; the game
+-- may swap the two on a reload. It is the same wherever the keys are shown. `short` asks the game for the short key
 -- names (small labels); `unbound` is the text without a key, the red "not bound" by default; `separator`
 -- joins two keys, " / " by default.
 function ns.KeyText(binding, short, unbound, separator)
@@ -71,6 +71,14 @@ function ns.KeyText(binding, short, unbound, separator)
         return unbound or ("|cffff5555" .. L["not bound"] .. "|r")
     end
     return table.concat(texts, separator or " / ")
+end
+
+-- Korean and Chinese text on a client in another language: the game measures tooltip lines with the client's
+-- font, the Korean and Chinese glyphs are taller, so wrapped lines and the last line fell below the frame (seen in
+-- game, spec 007). Tooltips then do not wrap and end with a blank line.
+local TALL_GLYPHS = { koKR = true, zhCN = true, zhTW = true }
+function ns.TallGlyphs()
+    return TALL_GLYPHS[ns.language] and not TALL_GLYPHS[GetLocale()] or false
 end
 
 -- A number with `digits` decimals and the game client's decimal separator: numbers follow the client's

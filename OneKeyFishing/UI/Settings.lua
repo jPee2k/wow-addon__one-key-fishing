@@ -140,9 +140,13 @@ end
 local function ShowLanguageTooltip(owner)
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:AddLine(L["Interface language"])
+    local wrap = not ns.TallGlyphs() -- Core.lua: wrapped Korean and Chinese lines fell below the frame
     GameTooltip:AddLine(L["Korean and Chinese may show as squares on a game client in another language."],
-        1, 1, 1, true)
-    GameTooltip:AddLine(L["Pick English to get a readable interface back."], 1, 1, 1, true)
+        1, 1, 1, wrap)
+    GameTooltip:AddLine(L["Pick English to get a readable interface back."], 1, 1, 1, wrap)
+    if not wrap then
+        GameTooltip:AddLine(" ")
+    end
     GameTooltip:Show()
 end
 

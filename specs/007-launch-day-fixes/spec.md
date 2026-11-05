@@ -105,7 +105,7 @@ which is the same physical key in English and Ukrainian layouts), as the manual 
 names the keys, it shows both.
 
 **Why this priority**: the addon tells players to bind punctuation keys once per layout, then shows one of the two
-keys, picked in an order the player cannot see (the game's order, not the Keybindings columns). The player sees
+keys: the first one of the game's order, which the game may swap on a reload. The player sees
 one action with the English key and the other with the Ukrainian one and assumes something is wrong. It does not
 break fishing, so it follows the P1 fixes.
 
@@ -272,7 +272,8 @@ render well.
 - The Fishing gear page problem occurs only on the first view of a session (confirmed in game: after switching
   pages, or after reopening the panel, the rows are gone).
 - The order of two keys shown is the game's order of the binding (the only order an addon can read); the spec only
-  requires that it is the same everywhere. The player cannot see the Keybindings column order through any API.
+  requires that it is the same everywhere. In game it matches the Keybindings columns; the game itself may swap a
+  binding's two keys on a reload (seen 2026-11-05), so the order the player set is not kept.
 - The "Scan auction prices" button remains the last button; it is the one that wraps first.
 - The CJK overflow is a property of how the game measures tooltip lines with those fonts; a small extra space at
   the bottom of the tooltip for those three languages is acceptable.

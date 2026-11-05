@@ -154,7 +154,7 @@ and the indicator (spec FR-009 to FR-012, research R4, contract `ns.KeyText`).
 - [X] T020 [US4] Add `ns.KeyText(binding, short, unbound)` to `OneKeyFishing/Core.lua` as the contract says: keys
   from `{ GetBindingKey(binding) }` in that order, duplicates dropped, each through `GetBindingText(key, short)`,
   joined with `" / "`; no key returns `unbound`, which defaults to `"|cffff5555" .. L["not bound"] .. "|r"` built at
-  call time. Comment: the game's order is not the Keybindings column order (CLAUDE.md, known API facts).
+  call time. Comment: the game's order, as in its Keybindings columns, which it may swap on a reload (CLAUDE.md).
 - [X] T021 [P] [US4] In `OneKeyFishing/UI/Minimap.lua`, remove the local `KeyText` and call
   `ns.KeyText("ONEKEYFISHING_ACTION")` / `ns.KeyText("ONEKEYFISHING_TOGGLE")` in the tooltip.
 - [X] T022 [P] [US4] In `OneKeyFishing/UI/Settings.lua`, remove the local `KeyText` and use `ns.KeyText(...)` for
