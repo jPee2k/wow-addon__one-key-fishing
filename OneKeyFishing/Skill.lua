@@ -42,7 +42,7 @@ local function NonEmpty(text)
 end
 
 -- The name of a Fishing rank spell: its spell subtext in the client's language, else the addon's own name.
--- VERIFY(R12): the Forever client gives the rank name ("Apprentice") as the subtext of the rank's Fishing spell
+-- The Forever client gives the rank name ("Apprentice") as the subtext of the rank's Fishing spell (seen in game)
 -- name, "game" | "addon"
 local function RankNameBySpell(spellID)
     local subtext = C_Spell and type(C_Spell.GetSpellSubtext) == "function"

@@ -90,8 +90,11 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   only means nothing drew with them; the in-game check in `quickstart.md` settles it.
 - **In game (2026-11-05, EU realm, ruRU client, build 70790)**: `2002`, `ARKai_T`, `bKAI00M` and `FRIZQT___CYR`
   load through `SetFont`; `ARHei` and `blei00d` do not. The language menu draws 한국어, 繁體中文 and 简体中文
-  readably, so the font objects find a font for them; the glyphs reach slightly past the edges of some tooltips
-  (details pending).
+  readably, so the font objects find a font for them. With the addon in Korean or Chinese on a client in another
+  language the game measures tooltip lines with the client's shorter font: the last line of the minimap and
+  Language tooltips fell below the frame (fixed by `ns.TallGlyphs`, spec 007 User Story 6), and some glyphs still
+  reach past the right edge (deferred until a player reports it, spec 007 research R9). On a Korean or Chinese
+  client the fonts match.
 - **Alternatives rejected**: shipping CJK font files (several MB each, against the small package); hiding
   Korean and Chinese on other clients (rejected in clarification Q2).
 
@@ -151,6 +154,9 @@ change; the guides are based on the beta and say requirements may still change.
 - **Uncertain until the launch**: whether Forever keeps the book and the quest (one guide says ranks come
   "from a trainer"), which map IDs the Forever client uses (Classic 1434 / 1445 or the modern 224 / 70), the
   exact coordinates, the level requirements. All are checked in game ([quickstart.md](quickstart.md)).
+- **In game (2026-11-05, ruRU client)**: area IDs 35, 33, 517 and 15 and item 16083 give the expected names, so
+  their `VERIFY` marks are gone. Still open: the level and skill thresholds (level 10 is not reached yet), the
+  book seller, the quest (6607 has no title), the map IDs and the points.
 - **Forever extras** that do not change the path: Legacy points at skill 150 / 225 / 300, new recipes (Fishing
   Rack, Fishing Hut, Bait and Tackle), faction-bound poles. No Fishing above 300.
 - **Decision**: thresholds `learnAt` 50 / 125 / 225 and `level` 10 / 20 / 35 replace the old `WARN_BEFORE = 5`
@@ -174,7 +180,8 @@ change; the guides are based on the beta and say requirements may still change.
 - **In game (2026-11-05, EU realm, ruRU client, build 70790)**: the area names, the book and the four rank
   subtexts come from the client in its language; `C_QuestLog.GetTitleForQuestID(6607)` returns nil even on a
   second call and 5 s after `RequestLoadQuestByID(6607)`; `GetQuestInfo(6607)` is nil too (open: the quest ID on
-  Forever, or no quest data for a level 1 character; checked at Nat Pagle later).
+  Forever, or no quest data for a level 1 character; checked at Nat Pagle later). At skill 52, level 6, the
+  debug report shows the next rank's name from the spell subtext (`next rank: <Journeyman in Russian> (game)`).
 - All of them exist in the Forever export (`Blizzard_APIDocumentationGenerated`: `MapDocumentation.lua`,
   `ItemDocumentation.lua`, `QuestLogDocumentation.lua`, `SpellDocumentation.lua`,
   `TooltipInfoDocumentation.lua`).

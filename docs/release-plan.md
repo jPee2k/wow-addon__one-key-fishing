@@ -7,11 +7,14 @@ cannot be verified before WoW Forever opens on 2026-11-04. It is deleted once bo
 ## 1.1.0: interface languages
 
 Built on `001-interface-language` (`specs/001-interface-language`), waiting for the game.
+Status 2026-11-05: the launch day fixes are done (`specs/007-launch-day-fixes`); the checklists run on a new
+character, the steps from character level 10 (rank notices, map pin) and the containers are still open.
 
 1. After the launch: run [checklists/fishing-mode.md](checklists/fishing-mode.md) (the 1.0.0 features still
    work) and [checklists/interface-language.md](checklists/interface-language.md); report the results.
 2. Fix what the checklists found, with tests; record the font results in
-   `specs/001-interface-language/research.md` R6 and `docs/forever-api.md`.
+   `specs/001-interface-language/research.md` R6 and the API facts in `CLAUDE.md` (`docs/forever-api.md` is on
+   `002-shared-db`, see below).
 3. Merge `001-interface-language` into `develop`.
 4. Release 1.1.0 by the steps of [publishing.md](publishing.md): version 1.1.0 in `package.json`, the
    `[Unreleased]` entries become `## [1.1.0] - <date>`, pull request `develop` -> `main`, tag `1.1.0`.

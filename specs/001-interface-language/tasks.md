@@ -232,7 +232,7 @@ language and stays so on another character; "Game client language" returns to US
   volunteer corrections.
 - [X] T040 Run `npm run check`, `npm test` and `npm run dev`; confirm `dist/OneKeyFishing/` contains the ten
   locale files and `Localization.lua`.
-- [ ] T041 Hand the in-game checklist of [quickstart.md](quickstart.md) to the author (including the font
+- [X] T041 Hand the in-game checklist of [quickstart.md](quickstart.md) to the author (including the font
   `/run` line); record the font results in [research.md](research.md) R6 and any API finding in `CLAUDE.md`
   "Known API facts".
 

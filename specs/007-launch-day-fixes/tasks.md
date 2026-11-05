@@ -228,8 +228,9 @@ languages (spec FR-015, FR-016, research R6).
   `docs/checklists/fishing-mode.md`: add steps 1-2 (gear page) and 6-7 (both keys) in its Gear and Minimap
   sections. Keep the boxes unticked.
 - [X] T036 `npm run check` and `npm test` pass; `npm run dev` packages without error.
-- [ ] T037 Hand the in-game re-run to the author: `npm run install-addon`, then [quickstart.md](quickstart.md) steps
-  1-10, one at a time; tick the results in the checklists and in the artifact checklist.
+- [X] T037 Hand the in-game re-run to the author: `npm run install-addon`, then [quickstart.md](quickstart.md) steps
+  1-10, one at a time; tick the results in the checklists and in the artifact checklist. Done 2026-11-05: all
+  pass except User Story 6 on a client in another language, deferred (research R9).
 
 ---
 

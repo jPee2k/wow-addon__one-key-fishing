@@ -15,14 +15,14 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 1. Fishing mode
 
-- [ ] **On.** Press the toggle key at the water. Expected: the pole is equipped, the camera zooms to the set
+- [x] **On.** Press the toggle key at the water. Expected: the pole is equipped, the camera zooms to the set
   distance, the indicator appears with `Cast`, the minimap button lights up, the chat says the mode is on.
-- [ ] **Off.** Press it again. Expected: the previous weapons and gear are back, the camera zoom is back, auto loot
+- [x] **Off.** Press it again. Expected: the previous weapons and gear are back, the camera zoom is back, auto loot
   and the soft-target CVars are back to their previous values (check Options -> Gameplay -> Controls, Interact
   Key and Auto Loot, before and after), the indicator is gone.
-- [ ] **`/reload` in the mode.** Turn the mode on, `/reload`. Expected: the mode is still on, the gear and the camera
+- [x] **`/reload` in the mode.** Turn the mode on, `/reload`. Expected: the mode is still on, the gear and the camera
   as they were in the mode.
-- [ ] **Relog in the mode.** Turn the mode on, log out to the character screen, log in. Expected: the mode is off,
+- [x] **Relog in the mode.** Turn the mode on, log out to the character screen, log in. Expected: the mode is off,
   the gear and the CVars are restored; the camera stays as the game left it.
 - [ ] **Out of combat only.** Turn the mode on, let a mob attack you. Expected: the weapons come back at once, the
   chat says the key is paused; after the fight the rest of the gear comes back and the mode is off (with "Leave
@@ -30,17 +30,17 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 2. The key
 
-- [ ] **Cast.** In the mode press the action key. Expected: Fishing is cast, the indicator shows the cast bar and
+- [x] **Cast.** In the mode press the action key. Expected: Fishing is cast, the indicator shows the cast bar and
   `Hook!` once the bobber is out.
-- [ ] **Hook and loot.** After the splash press the same key. Expected: the bobber is hooked and the loot is taken
+- [x] **Hook and loot.** After the splash press the same key. Expected: the bobber is hooked and the loot is taken
   (auto loot on); a catch notification shows above the indicator.
-- [ ] **Miss.** Let a cast run out without hooking. Expected: a "nothing caught" notification about a second later;
+- [x] **Miss.** Let a cast run out without hooking. Expected: a "nothing caught" notification about a second later;
   the statistics count a miss.
-- [ ] **No bobber.** Cast, then turn the camera away from the bobber. Expected: the indicator shows "No bobber"
+- [x] **No bobber.** Cast, then turn the camera away from the bobber. Expected: the indicator shows "No bobber"
   after about 3 seconds; turning back clears it.
 - [x] **Outside the mode.** Turn the mode off and press the action key. Expected: a chat line that the mode is off,
   nothing else happens.
-- [ ] **Unbound.** Unbind the action key and turn the mode on. Expected: a chat line that no key is bound.
+- [x] **Unbound.** Unbind the action key and turn the mode on. Expected: a chat line that no key is bound.
 
 ## 3. Gear
 
@@ -51,24 +51,24 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 - [ ] **Best pole.** With two poles in the bags and no chosen pole, enter the mode. Expected: the pole with the
   higher fishing bonus (then the higher item level) is equipped.
-- [ ] **Chosen pole and extra items.** Alt+Click a pole and a hat in the bags. Expected: the settings page "Fishing
+- [x] **Chosen pole and extra items.** Alt+Click a pole and a hat in the bags. Expected: the settings page "Fishing
   gear" lists them; entering the mode equips both; leaving puts back the previous weapons and helmet. With no
   previous helmet, the hat goes back to the bags.
-- [ ] **Remove.** Alt+Click the hat again. Expected: it leaves the list; the next mode entry does not equip it.
-- [ ] **Find fishing items.** Press the button on the gear page with a fishing-bonus item in the bags. Expected: the
+- [x] **Remove.** Alt+Click the hat again. Expected: it leaves the list; the next mode entry does not equip it.
+- [x] **Find fishing items.** Press the button on the gear page with a fishing-bonus item in the bags. Expected: the
   item is added; pressing again adds nothing new.
-- [ ] **Leaving during a cast.** Cast, then press the toggle key while the bobber is out. Expected: the mode ends and
+- [x] **Leaving during a cast.** Cast, then press the toggle key while the bobber is out. Expected: the mode ends and
   the gear is restored once the cast ends.
-- [ ] **Full bags.** Fill the bags and leave the mode. Expected: a chat line that there is no free bag space to take
+- [x] **Full bags.** Fill the bags and leave the mode. Expected: a chat line that there is no free bag space to take
   off the gear; freeing a slot and leaving again restores it.
 
 ## 4. Lures and containers
 
-- [ ] **Lure.** With a lure in the bags and none on the pole, press the action key. Expected: the indicator shows
+- [x] **Lure.** With a lure in the bags and none on the pole, press the action key. Expected: the indicator shows
   `Apply lure`, the key applies it (a 5 second cast), the next press casts.
 - [ ] **Lure on cooldown.** Right after a lure was applied and removed (or with a second lure type), check the
   indicator. Expected: a lure on cooldown is skipped; the next one is offered, or a cast.
-- [ ] **Lure too high.** With only a lure above your skill, press the key. Expected: "Cannot apply ..." once; the
+- [x] **Lure too high.** With only a lure above your skill, press the key. Expected: "Cannot apply ..." once; the
   lure is skipped until the mode is entered again.
 - [ ] **Clam.** Catch or carry a clam. Expected: the indicator shows `Open`, the key opens it, the loot is taken.
 - [ ] **Locked container.** With a locked box in the bags. Expected: "Cannot open ..." once, then it is skipped.
@@ -77,32 +77,32 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 5. Indicator and notifications
 
-- [ ] **Drag.** With "Lock the indicator position" off, drag the indicator. Expected: it moves; `/reload` keeps the
+- [x] **Drag.** With "Lock the indicator position" off, drag the indicator. Expected: it moves; `/reload` keeps the
   place; "Reset indicator position" puts it back to the centre.
-- [ ] **Locked.** Turn the lock on. Expected: the indicator cannot be dragged.
-- [ ] **Session timer.** Turn "Show session fishing time under the indicator" on. Expected: the time counts while
+- [x] **Locked.** Turn the lock on. Expected: the indicator cannot be dragged.
+- [x] **Session timer.** Turn "Show session fishing time under the indicator" on. Expected: the time counts while
   the mode is on, stops while off, pauses while AFK (with "Pause the fishing timer while AFK" on).
-- [ ] **Notifications off.** Turn "Show catch notifications" off and catch a fish. Expected: no notification.
+- [x] **Notifications off.** Turn "Show catch notifications" off and catch a fish. Expected: no notification.
 
 ## 6. Statistics
 
-- [ ] **Counts.** `/okf stats` (or Shift+Click on the minimap button). Fish 5 casts. Expected: casts, catches and
+- [x] **Counts.** `/okf stats` (or Shift+Click on the minimap button). Fish 5 casts. Expected: casts, catches and
   misses add up to 5 in the Session column; This zone and All time grow by the same numbers.
-- [ ] **Time.** Expected: "Time fishing" counts while the mode is on, "Time casting" only while the bobber is out.
-- [ ] **Survives `/reload` and relog.** Expected: Session is kept across `/reload`, All time across a relog; a cast
+- [x] **Time.** Expected: "Time fishing" counts while the mode is on, "Time casting" only while the bobber is out.
+- [x] **Survives `/reload` and relog.** Expected: Session is kept across `/reload`, All time across a relog; a cast
   running across a `/reload` is counted once.
-- [ ] **Zones.** Fish in two zones. Expected: both in the zones list, with the current zone marked.
-- [ ] **Row tooltips and Refresh.** Hover the row names and press Refresh. Expected: an explanation per row; the
+- [x] **Zones.** Fish in two zones. Expected: both in the zones list, with the current zone marked.
+- [x] **Row tooltips and Refresh.** Hover the row names and press Refresh. Expected: an explanation per row; the
   numbers do not change on Refresh unless something happened.
-- [ ] **Reset.** Reset session and Reset all. Expected: a confirmation popup first; Cancel changes nothing.
+- [x] **Reset.** Reset session and Reset all. Expected: a confirmation popup first; Cancel changes nothing.
 
 ## 7. Auction prices
 
-- [ ] **Scan.** At the auction house press "Scan fish prices". Expected: the items you caught are looked up one at
+- [x] **Scan.** At the auction house press "Scan fish prices". Expected: the items you caught are looked up one at
   a time; the statistics show the scan date and the catch value uses auction prices.
-- [ ] **Closed auction house.** `/okf scan` away from the auction house. Expected: a chat line that it must be open;
+- [x] **Closed auction house.** `/okf scan` away from the auction house. Expected: a chat line that it must be open;
   the scan button in the settings and the minimap menu is disabled.
-- [ ] **Vendor only.** Turn "Use scanned auction prices for catch value" off. Expected: the value falls back to
+- [x] **Vendor only.** Turn "Use scanned auction prices for catch value" off. Expected: the value falls back to
   vendor prices.
 
 ## 8. Next rank reminder
@@ -114,13 +114,14 @@ The full check (names, places, pins) is the "Next rank" section of
   a notification that the next rank can be learned and where; not again in this session.
 - [ ] **At the cap.** On a character whose Fishing rank is at its cap (75, 150 or 225). Expected: a large
   on-screen message the first time in a session; entering fishing mode again prints only a chat line; it stops
-  after the next rank is learned.
-- [ ] **Off.** Turn "Remind me about the next Fishing rank" off. Expected: no notices; the "Next rank" line in the
+  after the next rank is learned. In game 2026-11-05 (cap 75 at level 6): the message and the chat line as
+  expected; the stop after learning Journeyman waits for level 10.
+- [x] **Off.** Turn "Remind me about the next Fishing rank" off. Expected: no notices; the "Next rank" line in the
   statistics window stays.
 
 ## 9. Minimap button and settings
 
-- [ ] **Two keys (spec 007).** Bind two keys to each action (`` ` `` and `'`, `SHIFT-`` and `SHIFT-'`). Expected:
+- [x] **Two keys (spec 007).** Bind two keys to each action (`` ` `` and `'`, `SHIFT-`` and `SHIFT-'`). Expected:
   the minimap tooltip, the key line of the settings page and the indicator show both keys of each action, in the
   same order (the indicator puts them on two lines). With one key unbound: that action
   shows one key.
@@ -130,20 +131,22 @@ The full check (names, places, pins) is the "Next rank" section of
   tooltip shows the mode, the skill, the session time and the keys; it is grey while the mode is off.
 - [x] **Addon Compartment.** The addons button next to the minimap lists OneKeyFishing with the same actions.
 - [x] **Hide it.** Turn "Show the minimap button" off. Expected: the button is gone, the compartment entry stays.
-- [ ] **Settings page.** Options -> AddOns -> OneKeyFishing. Expected: the Keys section shows both bindings; every
+- [x] **Settings page.** Options -> AddOns -> OneKeyFishing. Expected: the Keys section shows both bindings; every
   checkbox of the manual's Settings list is there and takes effect (auto loot, bobber icon and gear on the next
   mode entry); the camera distance buttons change the zoom on the next entry; every Actions button works.
 - [x] **`/okf`.** Expected: the command list with every command of the manual; `/onekeyfishing` does the same.
 
 ## 10. Debug report
 
-- [ ] `/okf debug` opens the copy window with the versions, the locale, the mode state and keys, the Fishing spell
+- [x] `/okf debug` opens the copy window with the versions, the locale, the mode state and keys, the Fishing spell
   and skill, gear, lure, pending restore, fished items and settings; Ctrl+A, Ctrl+C copies it. No Lua errors
   during the whole run.
 
 ## Results
 
 - Date, build, client language: 2026-11-05, game 1.60.1 (70790), EU realm, client ruRU, addon
-  1.0.0-dev+1dbac37; level 1 character without Fishing (run in progress).
+  1.0.0-dev+1dbac37, then 1.0.0-dev+212927b with the addon in Ukrainian; a new character, Fishing learned at
+  level 5, skill 52/75 at level 6 (run in progress: combat, two poles, lure cooldown, containers and the
+  rank steps from level 10 are open).
 - Problems found: see the Results of [interface-language.md](interface-language.md) (gear page, debug report,
   popups, minimap key text).
