@@ -23,12 +23,12 @@ Type in the chat (one line):
 
 Each line should end with `true` (the client has that font). Write down every `false`.
 
-- [ ] `2002` (Korean): ____
-- [ ] `ARKai_T` (Simplified Chinese): ____
-- [ ] `ARHei` (Simplified Chinese, bold): ____
-- [ ] `blei00d` (Traditional Chinese): ____
-- [ ] `bKAI00M` (Traditional Chinese): ____
-- [ ] `FRIZQT___CYR` (Cyrillic): ____
+- [x] `2002` (Korean): true
+- [x] `ARKai_T` (Simplified Chinese): true
+- [x] `ARHei` (Simplified Chinese, bold): **false**
+- [x] `blei00d` (Traditional Chinese): **false**
+- [x] `bKAI00M` (Traditional Chinese): true
+- [x] `FRIZQT___CYR` (Cyrillic): true
 
 Optional, how the chat draws the names:
 
@@ -38,18 +38,19 @@ Optional, how the chat draws the names:
 
 ## 2. Default: the client language
 
-- [ ] Settings -> AddOns -> OneKeyFishing: the **Language** button in the top right shows "Game client language".
-- [ ] On an English client the whole addon is in English, as before.
-- [ ] Hovering the Language button shows the tooltip: Korean and Chinese may show as squares; pick English to get a
+- [x] Settings -> AddOns -> OneKeyFishing: the **Language** button in the top right shows "Game client language".
+- [x] On an English client the whole addon is in English, as before. (Checked on a Russian client with the setting
+  on "Game client language", 2026-11-05: all English, only the client's YES / NO in popups.)
+- [x] Hovering the Language button shows the tooltip: Korean and Chinese may show as squares; pick English to get a
   readable interface back.
 
 ## 3. Switching to Ukrainian
 
-- [ ] Clicking the Language button opens a menu: "Game client language", then English, Deutsch, Español (EU),
+- [x] Clicking the Language button opens a menu: "Game client language", then English, Deutsch, Español (EU),
   Español (AL), Français, Українська, 한국어, Português, 繁體中文, 简体中文; the current one is marked.
-- [ ] Picking Українська shows a popup with "Reload now" and "Later".
-- [ ] "Later" closes the popup; the addon stays in English until the next reload.
-- [ ] Picking again and choosing "Reload now" reloads the interface.
+- [x] Picking Українська shows a popup with "Reload now" and "Later".
+- [x] "Later" closes the popup; the addon stays in English until the next reload.
+- [x] Picking again and choosing "Reload now" reloads the interface.
 
 After the reload, everything below is in Ukrainian:
 
@@ -57,16 +58,16 @@ After the reload, everything below is in Ukrainian:
 - [ ] Action indicator (Cast / Hook! / Apply lure / Open, "No bobber", the drag tooltip).
 - [ ] Statistics window (`/okf stats`): titles, rows, row tooltips, buttons, reset popups.
 - [ ] Catch notifications.
-- [ ] Minimap button tooltip and right-click menu.
+- [x] Minimap button tooltip and right-click menu.
 - [ ] Item tooltip line (fishing gear / Alt+Click hint).
-- [ ] Chat messages (for example `/okf toggle` twice: fishing mode on / off).
-- [ ] `/okf` help: the command names stay in English (not translated on purpose); their descriptions are in
+- [x] Chat messages (for example `/okf toggle` twice: fishing mode on / off).
+- [x] `/okf` help: the command names stay in English (not translated on purpose); their descriptions are in
   Ukrainian.
-- [ ] Options -> Keybindings -> AddOns -> OneKeyFishing: both binding names.
+- [x] Options -> Keybindings -> AddOns -> OneKeyFishing: both binding names.
 
 ## 4. The choice is kept
 
-- [ ] `/reload`: still Ukrainian.
+- [x] `/reload`: still Ukrainian.
 - [ ] Log out and in on another character of the same account: still Ukrainian.
 
 ## 5. Long texts and other scripts
@@ -82,7 +83,7 @@ Pick each language below, reload, and look at the settings pages and the statist
 
 ## 6. Back to the client language
 
-- [ ] Pick "Game client language", reload: English again.
+- [x] Pick "Game client language", reload: English again.
 
 ## 7. The addon list and the language hint
 
@@ -91,15 +92,17 @@ On a client in German (or another language with a translation), on the character
 - [x] OneKeyFishing is under the category in the client's language ("Berufe" in German).
 - [x] The tooltip of OneKeyFishing shows the description in the client's language, special letters intact
   (ä, ö, ü, ß in German).
-- [ ] In game, no chat line "Your game client has no translation..." appears (the client has a translation). That the
-  line shows once on a client without one (Russian) is covered by `tests/locale_hint_test.lua`.
+- [x] In game, no chat line "Your game client has no translation..." appears (the client has a translation). That the
+  line shows once on a client without one (Russian) is covered by `tests/locale_hint_test.lua`. In game
+  2026-11-05: none on an English client; on a Russian client the line shows once after the hint state was reset,
+  and not again after `/reload`.
 - [ ] Statistics window, "Catches per hour": the decimal separator is the client's (a comma on a German client),
   whatever the interface language. Gold of 1000g or more shows the client's thousands separator instead (a point
   on a German client: "1.234g" next to "2,5" is correct).
 
 ## 8. Debug report
 
-- [ ] `/okf debug`: the report is in English, with a line `Language: <setting> (in use: <language>)` under the line
+- [x] `/okf debug`: the report is in English, with a line `Language: <setting> (in use: <language>)` under the line
   with the client locale.
 
 ## 9. Fishing works the same in another language
@@ -129,12 +132,15 @@ A low character helps for the first steps; the book and the quest need a trip to
 
 **Names from the game** (on an English client, then on another client language if you can):
 
-- [ ] `/run print(C_Map.GetAreaInfo(35), C_Map.GetAreaInfo(33), C_Map.GetAreaInfo(517), C_Map.GetAreaInfo(15))`
-  prints Booty Bay, Stranglethorn Vale, Tidefury Cove, Dustwallow Marsh in the client's language: ____
+- [x] `/run print(C_Map.GetAreaInfo(35), C_Map.GetAreaInfo(33), C_Map.GetAreaInfo(517), C_Map.GetAreaInfo(15))`
+  prints Booty Bay, Stranglethorn Vale, Tidefury Cove, Dustwallow Marsh in the client's language: as expected
+  (ruRU client, 2026-11-05)
 - [ ] `/run print(C_Item.GetItemNameByID(16083), C_QuestLog.GetTitleForQuestID(6607))` prints the book and the quest
-  (run it twice: the first call may still be empty): ____
-- [ ] `/run for _,s in ipairs({7620,7731,7732,18248}) do print(s, C_Spell.GetSpellSubtext(s)) end` prints the rank
-  names (Apprentice ... Artisan): ____
+  (run it twice: the first call may still be empty): the book `Expert Fishing - The Bass and You`, the quest
+  **nil** (2026-11-05; open). Also nil 5 s after `C_QuestLog.RequestLoadQuestByID(6607)`;
+  `C_QuestLog.GetQuestInfo(6607)` nil, `IsQuestFlaggedCompleted(6607)` false (level 1 character)
+- [x] `/run for _,s in ipairs({7620,7731,7732,18248}) do print(s, C_Spell.GetSpellSubtext(s)) end` prints the rank
+  names (Apprentice ... Artisan): Apprentice, Journeyman, Expert, Artisan
 - [ ] `/okf debug`, section Fishing: the lines "next rank", "next rank names" (game / table / english for each
   name) and "next rank pin": paste them: ____
 
@@ -162,7 +168,26 @@ A low character helps for the first steps; the book and the quest need a trip to
 
 ## Results
 
-- Date, build, client language:
-- Fonts missing:
-- Next rank: map IDs and points, names, what differs from the original game:
-- Problems found:
+- Date, build, client language: 2026-11-05, game 1.60.1 (70790), EU realm, client ruRU, addon
+  1.0.0-dev+1dbac37; level 1 character without Fishing (run in progress).
+- Fonts missing: `ARHei.ttf` and `blei00d.ttf`; the language menu still draws every language name readably.
+- Next rank: map IDs and points, names, what differs from the original game: area, book and rank names come in
+  the client's language; the quest title of 6607 stays nil, also after `RequestLoadQuestByID` (open: check at
+  Nat Pagle whether Forever uses another quest ID; until then the English fallback name shows).
+- Problems found (open, to be fixed before 1.1.0):
+  - the Fishing gear page shows 14 empty rows with "Remove" buttons; hovering one raises a Lua error in
+    `GameTooltip:SetItemByID` (nil item ID, `UI/Settings.lua:285`). Only on the first view of the page in a
+    session: after switching to the main page and back, or reopening the panel, the rows are gone. The rows are
+    created shown and only `Refresh` from the page's `OnShow` hides them, so `OnShow` does not come on the first
+    view. The main page's key line is filled on the first view;
+  - `/okf debug` stops the Gear section with `Debug.lua:84: bad argument #1 to 'tostring' (value expected)`
+    when no lure is in the bags;
+  - the addon's popups use the client's `YES` / `NO` (Russian yes / no on a Russian client with the addon in
+    Ukrainian);
+  - the minimap tooltip shows only the first key of each binding, and the game's order of the two keys is not
+    the order of the Keybindings columns;
+  - statistics window: when the three left buttons are too wide (German), the Scan button moves to a row of its
+    own at the right edge (`UI/StatsFrame.lua:263`); the author expects it to wrap to the left, like a line of
+    text;
+  - minimap tooltip with Korean or Chinese: some glyphs of the last line reach about half a line below the
+    tooltip's bottom edge. The language menu is fine.

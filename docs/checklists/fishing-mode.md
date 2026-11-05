@@ -38,7 +38,7 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   the statistics count a miss.
 - [ ] **No bobber.** Cast, then turn the camera away from the bobber. Expected: the indicator shows "No bobber"
   after about 3 seconds; turning back clears it.
-- [ ] **Outside the mode.** Turn the mode off and press the action key. Expected: a chat line that the mode is off,
+- [x] **Outside the mode.** Turn the mode off and press the action key. Expected: a chat line that the mode is off,
   nothing else happens.
 - [ ] **Unbound.** Unbind the action key and turn the mode on. Expected: a chat line that no key is bound.
 
@@ -118,12 +118,12 @@ The full check (names, places, pins) is the "Next rank" section of
 - [ ] **Button.** Left-click toggles the mode, Shift+Left-click opens the statistics, Right-click opens the menu
   (mode, statistics, settings, scan, reset indicator, debug report), drag moves it around the minimap; the
   tooltip shows the mode, the skill, the session time and the keys; it is grey while the mode is off.
-- [ ] **Addon Compartment.** The addons button next to the minimap lists OneKeyFishing with the same actions.
-- [ ] **Hide it.** Turn "Show the minimap button" off. Expected: the button is gone, the compartment entry stays.
+- [x] **Addon Compartment.** The addons button next to the minimap lists OneKeyFishing with the same actions.
+- [x] **Hide it.** Turn "Show the minimap button" off. Expected: the button is gone, the compartment entry stays.
 - [ ] **Settings page.** Options -> AddOns -> OneKeyFishing. Expected: the Keys section shows both bindings; every
   checkbox of the manual's Settings list is there and takes effect (auto loot, bobber icon and gear on the next
   mode entry); the camera distance buttons change the zoom on the next entry; every Actions button works.
-- [ ] **`/okf`.** Expected: the command list with every command of the manual; `/onekeyfishing` does the same.
+- [x] **`/okf`.** Expected: the command list with every command of the manual; `/onekeyfishing` does the same.
 
 ## 10. Debug report
 
@@ -133,5 +133,7 @@ The full check (names, places, pins) is the "Next rank" section of
 
 ## Results
 
-- Date, build, client language:
-- Problems found:
+- Date, build, client language: 2026-11-05, game 1.60.1 (70790), EU realm, client ruRU, addon
+  1.0.0-dev+1dbac37; level 1 character without Fishing (run in progress).
+- Problems found: see the Results of [interface-language.md](interface-language.md) (gear page, debug report,
+  popups, minimap key text).

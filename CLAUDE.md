@@ -49,6 +49,21 @@ All files share the addon namespace (`local _, ns = ...`). Load order is the TOC
 ## Known API facts for Forever (verified in game)
 
 - The addon list (character screen -> AddOns) reads `## Notes-<code>` and `## Category-<code>` from the TOC in the client's language, UTF-8 included (checked on a German client, 2026-11-03).
+- Client answers on launch day (EU realm, ruRU client, game 1.60.1 build 70790, 2026-11-05):
+  - `C_Map.GetAreaInfo(35 / 33 / 517 / 15)` gives Booty Bay, Stranglethorn Vale, Tidefury Cove, Dustwallow Marsh
+    in the client's language.
+  - `C_Item.GetItemNameByID(16083)` gives "Expert Fishing - The Bass and You"; `C_QuestLog.GetTitleForQuestID(6607)`
+    gives **nil**, also 5 s after `C_QuestLog.RequestLoadQuestByID(6607)`, and `C_QuestLog.GetQuestInfo(6607)` is nil
+    (open: another quest ID on Forever, or no data for a quest this character cannot see; check at Nat Pagle).
+  - `C_Spell.GetSpellSubtext(7620 / 7731 / 7732 / 18248)` gives Apprentice / Journeyman / Expert / Artisan in the
+    client's language: the rank names can be read from the client.
+  - Font files (`SetFont` test from `/run`): `2002`, `ARKai_T`, `bKAI00M`, `FRIZQT___CYR` exist; `ARHei` and
+    `blei00d` do not. The language menu still shows Korean and both Chinese names readably.
+  - `GetBindingKey` returns the two keys of a binding in the game's own order, which is not the order of the
+    Keybindings columns.
+  - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing);
+    the tests did not catch it (`Debug.lua:84`), so wrap such calls as `tostring((f()))`.
+  - `YES`, `NO` and `CANCEL` are the client's language, not the addon's.
 - `INTERACTTARGET` exists. The bobber is readable as unit `softinteract` (name and GUID), but it has **no nameplate** and `UnitExists` is false, so nothing can be anchored to it.
 - Fishing rank spells are 7620 / 7731 / 7732 / 18248. The skill comes from `GetProfessions()` → `GetProfessionInfo` (skillLine 356); `GetSkillLineInfo` does not exist.
 - These are missing: `GetSpellInfo`, `GetItemInfo`, `EquipItemByName` and the classic auction API. Use `C_Spell`, `C_Item`, `C_Item.EquipItemByName` and `C_AuctionHouse` instead.

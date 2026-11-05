@@ -88,6 +88,10 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
   `bkai00m.ttf` (Traditional Chinese, so the client draws it); Cyrillic `frizqt___cyr.ttf` is cached on the
   retail and era clients. Korean `2002.ttf` and Simplified Chinese `arkai_t.ttf` are not cached yet, which
   only means nothing drew with them; the in-game check in `quickstart.md` settles it.
+- **In game (2026-11-05, EU realm, ruRU client, build 70790)**: `2002`, `ARKai_T`, `bKAI00M` and `FRIZQT___CYR`
+  load through `SetFont`; `ARHei` and `blei00d` do not. The language menu draws 한국어, 繁體中文 and 简体中文
+  readably, so the font objects find a font for them; the glyphs reach slightly past the edges of some tooltips
+  (details pending).
 - **Alternatives rejected**: shipping CJK font files (several MB each, against the small package); hiding
   Korean and Chinese on other clients (rejected in clarification Q2).
 
@@ -167,6 +171,10 @@ change; the guides are based on the beta and say requirements may still change.
     (untested; works only when the client has the creature cached, VERIFY), then the table of official names
     per client locale (`GetLocale()`, from Wowhead's localized pages, including ruRU for Ukrainian players on a
     Russian client), then English.
+- **In game (2026-11-05, EU realm, ruRU client, build 70790)**: the area names, the book and the four rank
+  subtexts come from the client in its language; `C_QuestLog.GetTitleForQuestID(6607)` returns nil even on a
+  second call and 5 s after `RequestLoadQuestByID(6607)`; `GetQuestInfo(6607)` is nil too (open: the quest ID on
+  Forever, or no quest data for a level 1 character; checked at Nat Pagle later).
 - All of them exist in the Forever export (`Blizzard_APIDocumentationGenerated`: `MapDocumentation.lua`,
   `ItemDocumentation.lua`, `QuestLogDocumentation.lua`, `SpellDocumentation.lua`,
   `TooltipInfoDocumentation.lua`).
