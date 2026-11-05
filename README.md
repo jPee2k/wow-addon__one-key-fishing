@@ -1,199 +1,71 @@
 # OneKeyFishing
 
-Fish with one key in **WoW Forever**: the same key casts, hooks the bobber and loots. No mouse, no clicking on the bobber.
+A World of Warcraft addon for **WoW Forever**: fish with one key (cast, hook, loot), with fishing mode, gear
+swap, statistics and auction prices. Every game action is a real key press; the addon never reacts to the bobber
+by itself. MIT licensed.
 
-Every action in the game is a real key press. The addon never reacts to a bite by itself, does not listen to sounds and uses no external tools, so it stays within Blizzard's add-on rules.
+- **Players**: install it from [CurseForge](https://www.curseforge.com/wow/addons/onekeyfishing); the manual is
+  [`OneKeyFishing/README.md`](OneKeyFishing/README.md), which ships inside the addon folder. Changes per version:
+  [`CHANGELOG.md`](CHANGELOG.md).
+- **This page** is for working on the code.
 
-It works with a game client in any language. The addon's own interface is in English for now.
-
-## Features
-
-- **One key** for everything: cast → hook → loot. The same key also applies a lure (the best one that is not on cooldown) and opens fished clams when needed.
-- **Fishing mode**: one toggle that sets everything up and puts it all back afterwards.
-- **Gear swap**: equips the best pole in your bags (or the one you chose) plus your fishing items. On exit it restores only the slots it changed.
-- **Auto loot** while fishing, and the soft-target icon over the bobber.
-- **Indicator**: shows what the key will do next (`Cast`, `Hook!`, `Apply lure`, `Open`), a cast bar and a warning when the bobber is in the water but not targeted.
-- **Catch notifications** for every catch and every miss.
-- **Statistics**: casts, catches, misses, fishing time and value of the catch. Kept per session, per zone and in total.
-- **Auction scan**: prices of everything you have ever caught, used for the catch value.
-- **Rank cap warning**: tells you when your Fishing rank is full and where to learn the next one.
-- **Camera** zooms in while fishing and back afterwards.
-- **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
-- **Minimap button** with a menu: every action is available without typing a command.
-
-## Installation
-
-- **CurseForge app**: search for *OneKeyFishing* and install it for WoW Forever.
-- **Manually**:
-  1. Download `OneKeyFishing-<version>.zip` from the releases.
-  2. Unpack it into `World of Warcraft\_forever_\Interface\AddOns`.
-     You should get `Interface\AddOns\OneKeyFishing\OneKeyFishing.toc`.
-  3. Restart the game (a `/reload` does not pick up a newly installed addon).
-
-## Quick start
-
-1. Open **Options → Keybindings → AddOns → OneKeyFishing** and bind two keys:
-   - **Fishing action (cast / hook)**, for example a letter key such as `R` or a mouse side button;
-   - **Toggle fishing mode**, for example `Shift+F`.
-
-   > **Keyboard language.** This is how WoW works, not the addon: punctuation keys (`'` `;` `[` `]` `,` `.` `/` `` ` ``)
-   > are named by the character the current Windows keyboard language types. A `'` bound on English is a different key
-   > for the game on Ukrainian, so the binding stops working after you switch. Every binding has two slots: bind the key
-   > once per language (switch the language between the two). Letters, numbers, F-keys and mouse buttons work on every
-   > language.
-2. Go to the water and press **Toggle fishing mode**. Your pole goes on, the camera zooms in and the indicator appears.
-3. Press the **fishing action** key: you cast.
-4. Wait for the splash and press the **same key** again: you hook and loot the fish.
-5. Press **Toggle fishing mode** again when you are done: your weapons, gear, camera and game settings come back.
-
-Example of one fishing round:
-
-| You press | Indicator shows | What happens |
-|---|---|---|
-| Action key | `Cast` | Fishing is cast, the bobber lands |
-| (wait for the splash) | `Hook!` | — |
-| Action key | `Hook!` | The bobber is hooked, the fish is looted |
-| Action key | `Apply lure` | The pole had no lure: a lure from your bags is applied |
-| Action key | `Open` | A clam you caught is opened |
-| Action key | `Cast` | The next cast |
-
-## Fishing gear
-
-By default the addon equips the **best pole in your bags** (by fishing bonus, then by item level).
-
-To choose your own items:
-
-- **Alt+Click** an item in your bags or on the character panel to add it to your fishing gear. Alt+Click it again to remove it.
-  - A fishing pole becomes your chosen pole.
-  - Any other item (hat, boots, gloves, ring...) is added to the list of extra items.
-- Or open **Options → AddOns → OneKeyFishing → Fishing gear**:
-  - **Use the best pole automatically** clears the chosen pole;
-  - type an item name or paste a link and press **Add**;
-  - **Find fishing items** adds every item with a Fishing bonus that you wear or carry.
-
-Example: you add *Nat Pagle's Extreme Anglin' Boots* and *Lucky Fishing Hat*. When fishing mode starts, the addon puts on the pole, the boots and the hat. On exit it puts back your weapons, your normal boots and your normal helmet. If you had no helmet, the hat goes to your bags. Slots it did not touch stay as they are.
-
-The previous items are saved right away, so a `/reload`, a disconnect or a crash will not leave you in fishing gear.
-
-## Statistics
-
-Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
-
-- **Session**, **This zone** and **All time** columns, in three sections: **Time** (time fishing, time casting), **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row name to see how it is counted.
-- **Top catches** and **zones** of all time.
-- **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a catch, a miss, a zone change, an auction scan); only the time rows and the current zone in the zone list tick while you fish. The session shows `H:MM:SS`, the zone and all-time columns `1h 23m`.
-- The line under the skill shows when auction prices were last scanned.
-- **Reset session** and **Reset all** ask for confirmation first.
-
-The timer runs only while fishing mode is on. It pauses while you are AFK (you can turn that off).
-
-## Auction prices
-
-1. Open the auction house.
-2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
-3. The addon looks up every item you have ever caught, one at a time.
-
-The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use scanned auction prices for catch value**.
-
-## Minimap button
-
-- **Left-click**: toggle fishing mode.
-- **Shift+Left-click**: statistics.
-- **Right-click**: menu with all actions (mode, statistics, settings, auction scan, reset indicator position, debug report).
-- **Drag**: move the button around the minimap.
-- The tooltip shows the mode, your Fishing skill, the session time, your key bindings and short instructions.
-- The button is grey while fishing mode is off.
-
-The same entry is in the Addon Compartment (the addons button next to the minimap).
-
-## Settings
-
-**Options → AddOns → OneKeyFishing**. Every feature can be turned on or off:
-
-- Auto loot while fishing
-- Show the interact icon over the bobber
-- Leave fishing mode when attacked
-- Equip fishing pole and fishing gear
-- Apply lures automatically
-- Open clams and fished containers
-- Show the action indicator and cast timer
-- Lock the indicator position (drag the indicator to move it while unlocked)
-- Show catch notifications
-- Show session fishing time under the indicator
-- Pause the fishing timer while AFK
-- Warn when the Fishing rank is capped
-- Use scanned auction prices for catch value
-- Zoom the camera while fishing (set the distance with **−** and **+**)
-- Show the minimap button
-
-## Commands
-
-Typing commands is optional: everything is also available from the menus. `/onekeyfishing` works the same as `/okf`.
-
-| Command | What it does |
-|---|---|
-| `/okf` | list all commands |
-| `/okf toggle` | enter or leave fishing mode |
-| `/okf stats` | show the statistics |
-| `/okf config` | open the settings |
-| `/okf scan` | scan auction prices (auction house must be open) |
-| `/okf debug` | show a report to copy into a bug report |
-
-## Troubleshooting
-
-- **"No key is bound to 'Fishing action'"**: bind it in Options → Keybindings → AddOns → OneKeyFishing.
-- **"Fishing mode is off"**: the action key only works in fishing mode. Press your toggle key first.
-- **"The fishing key is paused in combat"**: the mode is on, but the game does not let addons keep the key bound in combat. It works again when the fight ends.
-- **The key stops working after switching the keyboard language**: it is a punctuation key, which WoW names by the
-  current language. Bind it in the second slot of the same binding while the other language is on, or use a letter,
-  number, F-key or mouse button (see [Quick start](#quick-start)).
-- **The indicator shows "No bobber"**: the bobber is in the water but not soft-targeted (or still not after 3 seconds). Turn the camera towards the bobber.
-- **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon skips it until you turn fishing mode on again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the lure is offered again when its cooldown ends.
-- **"Cannot open ..."**: the container is locked. The addon skips it for the rest of the session.
-- **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the key opens it again.
-- **"No free bag space to take off ..."**: free a bag slot, then leave fishing mode again.
-- **Something else**: see [Reporting bugs](#reporting-bugs).
-
-## Reporting bugs
-
-1. Type `/okf debug` (or use **Debug report** in the minimap menu or the settings).
-2. Click the text in the window, press Ctrl+A and Ctrl+C.
-3. Open an issue with the report, what you did and what happened. Copy any Lua error text as well.
-
-## Requirements
-
-- WoW Forever (Interface 16001), any client language.
-- The Fishing skill.
-- No other addons or libraries.
-
-## Development
+## Repository layout
 
 ```
 OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
-  OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/
+  OneKeyFishing.toc  *.lua  Bindings.xml  Locales/  UI/  README.md (the player manual)
 tools/                  check, build, install and link scripts (Node.js)
 tests/                  Lua tests of the addon code, run in fengari with WoW API stubs
-docs/                   roadmap, publishing guide, finished plans in docs/history/
+docs/                   developer documentation (below)
+specs/                  feature specifications, plans and tasks (Spec Kit)
+.specify/               Spec Kit: the project constitution, templates and scripts
 ```
 
-The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, macOS and Linux:
+## Tools
+
+The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, macOS and Linux.
 
 | Command | What it does |
 |---|---|
 | `npm install` | install the development tools (once) |
-| `npm run check` | Lua syntax, globals, line length, locale keys, TOC and version checks |
-| `npm test` | run the Lua tests in `tests/` (`npm test -- lures` runs only the matching files) |
-| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: changes show up after a `/reload` |
+| `npm run check` | Lua syntax, globals, line length, locale keys, TOC, packaging, docs and version checks |
+| `npm test` | run the tests in `tests/` (`npm test -- lures` runs only the matching files) |
+| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: restart the game once, then changes show up after a `/reload` (a new file or a TOC change needs a restart) |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
 | `npm run build` | refuse uncommitted changes, run the checks and tests, then package the last commit |
 | `npm run install-addon` | `npm run dev`, then copy the package into the game |
 
-`link`, `unlink` and `install-addon` need the path of the game's `Interface/AddOns` folder. Copy `.env.example`
-to `.env` (it is not committed) and fill in `WOW_ADDONS_DIR`, or set the same environment variable.
+`link`, `unlink` and `install-addon` need the path of the game's `Interface/AddOns` folder: copy `.env.example`
+to `.env` (not committed) and fill in `WOW_ADDONS_DIR`, or set the same environment variable.
 
-Releases are built from version tags by GitHub Actions; see [docs/publishing.md](docs/publishing.md).
-Plans for later versions are in [docs/ROADMAP.md](docs/ROADMAP.md).
+Run `npm run check` and `npm test` after every change. A change a player can see also updates `CHANGELOG.md`
+(under `[Unreleased]`) and the manual `OneKeyFishing/README.md` in the same commit; `npm run check` fails when
+a slash command is missing from the manual.
+
+## Documentation
+
+| Read | For |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | the rules that always apply, the module map, the messages; the entry point for Claude Code and for a new contributor |
+| [`.specify/memory/constitution.md`](.specify/memory/constitution.md) | the project principles the rules come from |
+| [`docs/publishing.md`](docs/publishing.md) | branches, release steps, Blizzard's add-on policy and CurseForge requirements |
+| [`docs/release-plan.md`](docs/release-plan.md) | what the next releases wait for (in-game checks after the launch of WoW Forever) |
+| [`docs/checklists/`](docs/checklists/README.md) | in-game checklists: the addon cannot be tested outside the game, so each feature has one |
+| [`docs/languages.md`](docs/languages.md) | the interface languages and the rules for translation files |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | what is not built yet |
+| [`docs/history/`](docs/history/) | finished plans, kept as a record |
+| `specs/<nnn>-<name>/` | one folder per feature: specification, plan, research, data model, contracts, tasks |
+
+## Rules in short
+
+- Blizzard's UI Add-On Policy: every game action happens on a real key press through secure buttons and
+  override bindings; nothing reacts to the bobber splash.
+- Game data is matched by ID, never by name; every visible text goes through `ns.L` with its translations.
+- English is the development language for code, comments, docs, commits and branches.
+- The game cannot be run by tools: in-game behaviour is confirmed with the checklists in `docs/checklists/`.
+- Work happens on `develop` and feature branches; `main` holds released code and changes only by merging
+  `develop`. Releases are built from version tags by GitHub Actions ([`docs/publishing.md`](docs/publishing.md)).
 
 ## License
 

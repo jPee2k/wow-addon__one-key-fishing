@@ -1,0 +1,85 @@
+-- MapPin: the game's own map pin (user waypoint) with the navigation arrow, set on the player's click
+-- (spec 001, User Story 3, FR-022; research R14). Taken over from the catch catalog of 002-shared-db
+-- (Catalog.PinTarget, CatalogTab.Pin) with the same saved field and texts, so the catalog can use this module.
+local _, ns = ...
+local L = ns.L
+
+local MapPin = {}
+ns.MapPin = MapPin
+
+local PIN_EPSILON = 0.0005 -- a waypoint this close to the addon's last pin is that pin
+local REPLACE_POPUP = "ONEKEYFISHING_REPLACE_PIN"
+
+local function HasWaypointAPI()
+    return type(C_Map.SetUserWaypoint) == "function" and type(C_Map.CanSetUserWaypointOnMap) == "function"
+        and type(C_Map.GetMapInfo) == "function" and type(C_Map.HasUserWaypoint) == "function"
+        and type(C_Map.GetUserWaypoint) == "function" and UiMapPoint ~= nil
+end
+
+-- True while the game rule that turns map pins off is active.
+local function PinsDisabled()
+    local rule = Enum and Enum.GameRule and Enum.GameRule.WorldMapTrackingPinDisabled
+    return rule ~= nil and C_GameRules ~= nil and type(C_GameRules.IsGameRuleActive) == "function"
+        and C_GameRules.IsGameRuleActive(rule) == true
+end
+
+-- Where a pin for a point can go: { mapID, x, y } on the first of `maps` (uiMapIDs, best first) that the client
+-- knows and allows pins on; nil without the waypoint API, under the game rule and when no candidate fits.
+-- VERIFY(R11): which uiMapIDs the Forever client uses (Classic 1434 / 1445 or modern 224 / 70)
+function MapPin.Target(maps, x, y)
+    if not (maps and x and y) or not HasWaypointAPI() or PinsDisabled() then
+        return nil
+    end
+    for _, mapID in ipairs(maps) do
+        if C_Map.GetMapInfo(mapID) and C_Map.CanSetUserWaypointOnMap(mapID) then
+            return { mapID = mapID, x = x, y = y }
+        end
+    end
+    return nil
+end
+
+-- True when the waypoint on the map is at pin ({ mapID, x, y }): same map, positions within PIN_EPSILON.
+local function IsAt(point, pin)
+    local position = point and point.position
+    if not (pin and position) then
+        return false
+    end
+    return point.uiMapID == pin.mapID and math.abs(position.x - pin.x) <= PIN_EPSILON
+        and math.abs(position.y - pin.y) <= PIN_EPSILON
+end
+
+-- Sets the game's map pin at target ({ mapID, x, y }) with the navigation arrow, a toast and, out of combat, the
+-- world map at that map. A pin the player set is replaced only after a question. Only on the player's click.
+function MapPin.Set(target, placeName)
+    local function Apply()
+        if not C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)) then
+            ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4, true)
+            return
+        end
+        -- VERIFY(R14): super tracking the user waypoint shows the navigation arrow
+        if C_SuperTrack and type(C_SuperTrack.SetSuperTrackedUserWaypoint) == "function" then
+            C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+        end
+        ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
+        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1, true)
+        -- VERIFY(R14): OpenWorldMap from addon code opens the map without taint (no blocked action later in combat)
+        if not InCombatLockdown() and type(OpenWorldMap) == "function" then
+            OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted
+        end
+    end
+    -- Replaced without asking: the addon's last pin, or a pin already at this place (set through the chat link).
+    local current = C_Map.HasUserWaypoint() and C_Map.GetUserWaypoint()
+    if current and not IsAt(current, ns.charDB.pin) and not IsAt(current, target) then
+        ns.ShowPopup(REPLACE_POPUP, L["Replace your map pin with this place?"], Apply, L["Replace"], L["Cancel"])
+    else
+        Apply()
+    end
+end
+
+-- A chat link to a point, as the game's own map links read ("worldmap:<uiMapID>:<x * 10000>:<y * 10000>"). The game
+-- handles the click itself: it sets the pin and opens the map, without the addon's question or arrow (FR-022).
+-- VERIFY(R14): the Forever client accepts a worldmap link built by an addon
+function MapPin.Link(target, text)
+    return ("|cffffff00|Hworldmap:%d:%d:%d|h[%s]|h|r"):format(target.mapID, math.floor(target.x * 10000 + 0.5),
+        math.floor(target.y * 10000 + 0.5), text)
+end

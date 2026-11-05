@@ -75,6 +75,16 @@ test("Refresh recomputes the rates with the current time", function()
     eq(cell(GOLD_PER_HOUR), "49c", "100c in 2:02:05")
 end)
 
+test("the rate uses the game client's decimal separator, whatever the interface language", function()
+    DECIMAL_SEPERATOR = ","
+    click(ns.L["Refresh"], window)
+    eq(ns.language, "enUS", "English interface")
+    eq(cell(CATCHES_PER_HOUR), "0,5", "the client's separator")
+    DECIMAL_SEPERATOR = "."
+    click(ns.L["Refresh"], window)
+    eq(cell(CATCHES_PER_HOUR), "0.5", "back to the point")
+end)
+
 test("Reset session redraws at once", function()
     click(ns.L["Reset session"], window)
     accept_popup()
@@ -87,4 +97,26 @@ test("short time format", function()
     eq(format(59), "0m")
     eq(format(3725), "1h 02m")
     eq(format(1123300), "312h 01m")
+end)
+
+---------------------------------------------------------------------------
+-- The bottom buttons (spec 007, User Story 5): a Scan button that does not fit wraps to the left of a new row.
+---------------------------------------------------------------------------
+
+test("button rows: everything fits in one row", function()
+    local width, wraps = ns.StatsFrame.ButtonRows(394, 160, 580)
+    eq(width, 580, "window width")
+    eq(wraps, false, "one row")
+end)
+
+test("button rows: the window widens for the left buttons, Scan wraps", function()
+    local width, wraps = ns.StatsFrame.ButtonRows(700, 200, 580)
+    eq(width, 700, "window width")
+    eq(wraps, true, "two rows")
+end)
+
+test("button rows: the left buttons fit, Scan does not", function()
+    local width, wraps = ns.StatsFrame.ButtonRows(560, 160, 580)
+    eq(width, 580, "window width")
+    eq(wraps, true, "two rows")
 end)

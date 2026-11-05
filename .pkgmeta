@@ -14,12 +14,14 @@ manual-changelog:
   markup-type: markdown
 
 ignore:
+  - README.md
   - CLAUDE.md
   - package.json
   - package-lock.json
   - tools
   - tests
   - docs
+  - specs
   - dist
   - .claude
   - .specify

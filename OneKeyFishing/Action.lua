@@ -106,9 +106,6 @@ local function BindInteract()
     ns.Fire("ACTION_STATE", "hook")
 end
 
-local NO_KEY_HINT =
-    L["No key is bound to 'Fishing action'. Bind one in Options -> Keybindings -> AddOns -> OneKeyFishing."]
-
 -- Returns false (with a chat hint) when the key cannot work yet.
 function Action.Enable()
     local spellID = ns.GetFishingSpellID()
@@ -117,7 +114,8 @@ function Action.Enable()
         return false
     end
     if not ReadKeys() then
-        ns.Print(NO_KEY_HINT)
+        ns.Print(
+            L["No key is bound to 'Fishing action'. Bind one in Options -> Keybindings -> AddOns -> OneKeyFishing."])
         return false
     end
     fishingSpellID = spellID

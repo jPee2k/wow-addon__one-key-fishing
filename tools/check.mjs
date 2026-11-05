@@ -1,8 +1,8 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
-//   ASCII-only Lua, TOC and XML files,
-//   no Cyrillic text anywhere, the addon folder holds only packaged files, the repository root is packaged
-//   or ignored in .pkgmeta, TOC file list, locale keys, and the version in package.json vs CHANGELOG.md.
+//   ASCII-only Lua, TOC and XML files (translations and GameData/ strings excepted), the addon folder holds
+//   only packaged files, the repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
+//   package.json vs CHANGELOG.md, every slash command in the player manual, and no Cyrillic in the docs.
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
@@ -12,14 +12,11 @@ const MAX_LINE_LENGTH = 120;
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
-const TEXT_EXTENSIONS = new Set([".lua", ".toc", ".xml", ".md", ".json", ".yml", ".yaml", ".mjs", ".js", ""]);
 // Globals of the Lua runtime itself; WoW API names belong in .luacheckrc.
 const LUA_BUILTINS = new Set(("_G assert error ipairs pairs next pcall print select tonumber tostring type unpack " +
   "math string table os coroutine setmetatable getmetatable rawget rawset rawequal xpcall").split(" "));
 
-// Built from code points so this file itself stays free of Cyrillic.
-const NON_ASCII = new RegExp("[^" + String.fromCharCode(0) + "-" + String.fromCharCode(0x7f) + "]");
-const CYRILLIC = new RegExp("[" + String.fromCharCode(0x400) + "-" + String.fromCharCode(0x4ff) + "]");
+const NON_ASCII = /[^\x00-\x7f]/;
 
 const problems = [];
 const problem = (where, message) => problems.push(`${where}: ${message}`);
@@ -80,8 +77,21 @@ function checkPackagerKeywords(file, lines) {
   });
 }
 
-// Lua 5.1 syntax and line length (and packager keywords in addon files); returns the parsed chunk, or null
-// after a syntax error.
+// A font file set with SetFont draws only the scripts that file has (also through a variable or
+// STANDARD_TEXT_FONT); the game's font objects (GameFontNormal, ... through a template or SetFontObject) pick a
+// Korean, Chinese or Cyrillic font when the text needs it, so the translations stay readable.
+const SET_FONT = /[:.]SetFont\s*\(/;
+
+function checkFontPaths(file, lines) {
+  lines.forEach((line, i) => {
+    if (SET_FONT.test(line)) {
+      problem(`${rel(file)}:${i + 1}`, "SetFont (use the game's font objects: a template or SetFontObject)");
+    }
+  });
+}
+
+// Lua 5.1 syntax and line length (and packager keywords and font paths in addon files); returns the parsed
+// chunk, or null after a syntax error.
 function parseLua(file) {
   const source = fs.readFileSync(file, "utf8");
   const lines = source.split(/\r?\n/);
@@ -92,6 +102,7 @@ function parseLua(file) {
   });
   if (inAddon(file)) {
     checkPackagerKeywords(file, lines);
+    checkFontPaths(file, lines);
   }
   try {
     return luaparse.parse(source, { luaVersion: "5.1", scope: true });
@@ -126,19 +137,34 @@ for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
   checkPackagerKeywords(file, fs.readFileSync(file, "utf8").split(/\r?\n/));
 }
 
-// Lua, TOC and XML files are plain ASCII; nothing in the repository is written in Cyrillic.
+// Lua, TOC and XML files are plain ASCII (constitution, Technical Constraints). The exceptions: Locales/<code>.lua
+// (all but enUS.lua) is UTF-8 text in its own language; so are the translated TOC fields (## Notes-deDE: ...),
+// which the game shows in the addon list in the client's language; and the data files in GameData/ may hold
+// official game names per client language (NPC names) in their string literals, while their code, keys and
+// comments stay ASCII.
+const isTranslation = (file) =>
+  inAddon(file) && relAddon(file).startsWith("Locales/") && relAddon(file) !== "Locales/enUS.lua";
+const isGameData = (file) => inAddon(file) && relAddon(file).startsWith("GameData/");
+const TRANSLATED_TOC_FIELDS = ["Notes", "Category"];
+const TRANSLATED_TOC_LINE = new RegExp(`^##\\s*(?:${TRANSLATED_TOC_FIELDS.join("|")})-[a-z]{2}[A-Z]{2}\\s*:`);
+// A Lua line without its quoted string literals (a GameData line may hold non-ASCII only inside them). Read left to
+// right, so quotes inside a comment stay part of the comment, and a bracketed key (["..."] =) stays too: both are
+// checked.
+const STRING_OR_KEEP = /--.*$|\[\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*\]|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g;
+const withoutStrings = (line) =>
+  line.replace(STRING_OR_KEEP, (match) => (match.startsWith("--") || match.startsWith("[") ? match : '""'));
 for (const file of files) {
-  const ext = path.extname(file).toLowerCase();
-  if (!TEXT_EXTENSIONS.has(ext) || path.basename(file) === "package-lock.json") {
+  if (![".lua", ".toc", ".xml"].includes(path.extname(file).toLowerCase()) || isTranslation(file)) {
     continue;
   }
-  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
-  const asciiOnly = [".lua", ".toc", ".xml"].includes(ext);
-  lines.forEach((line, i) => {
-    if (asciiOnly && NON_ASCII.test(line)) {
-      problem(`${rel(file)}:${i + 1}`, "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
-    } else if (CYRILLIC.test(line)) {
-      problem(`${rel(file)}:${i + 1}`, "Cyrillic text (the project is written in English)");
+  const isToc = path.extname(file).toLowerCase() === ".toc";
+  const gameData = isGameData(file);
+  fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
+    const checked = gameData ? withoutStrings(line) : line;
+    if (NON_ASCII.test(checked) && !(isToc && TRANSLATED_TOC_LINE.test(line))) {
+      problem(`${rel(file)}:${i + 1}`, gameData
+        ? "non-ASCII character outside a string literal (GameData/ allows it only inside strings)"
+        : "non-ASCII character (Lua, TOC and XML files are plain ASCII)");
     }
   });
 }
@@ -167,9 +193,31 @@ if (!fs.existsSync(tocPath)) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
     }
   }
-  for (const field of ["Interface", "Title", "Notes", "Author", "Version"]) {
+  for (const field of ["Interface", "Title", "Notes", "Category", "Author", "Version"]) {
     if (!toc.fields[field]) {
       problem(tocName, `missing "## ${field}"`);
+    }
+  }
+  // The translated fields: one per shipped translation that a game client can use (English is the plain
+  // field; there is no Ukrainian client, so the game would never show a ukUA field), and nothing else.
+  const NO_CLIENT_LOCALE = new Set(["enUS", "ukUA"]);
+  const localesDir = path.join(ADDON_DIR, "Locales");
+  const clientCodes = (fs.existsSync(localesDir) ? fs.readdirSync(localesDir) : [])
+    .filter((f) => f.endsWith(".lua"))
+    .map((f) => f.slice(0, -4))
+    .filter((code) => !NO_CLIENT_LOCALE.has(code));
+  for (const field of TRANSLATED_TOC_FIELDS) {
+    for (const code of clientCodes) {
+      if (!toc.fields[`${field}-${code}`]) {
+        problem(tocName, `missing "## ${field}-${code}" (Locales/${code}.lua is shipped)`);
+      }
+    }
+  }
+  for (const key of Object.keys(toc.fields)) {
+    const match = key.match(/^(\w+)-([a-z]{2}[A-Z]{2})$/);
+    if (match && !(TRANSLATED_TOC_FIELDS.includes(match[1]) && clientCodes.includes(match[2]))) {
+      problem(tocName, `"## ${key}": only ${TRANSLATED_TOC_FIELDS.join(" and ")} are translated, `
+        + "for the shipped languages a game client can use");
     }
   }
   if (toc.fields.Version && toc.fields.Version !== "@project-version@") {
@@ -240,6 +288,46 @@ if (fs.existsSync(changelogPath)) {
   if (!top || top[1] !== version) {
     problem("CHANGELOG.md", `newest entry is ${top ? top[1] : "missing"}, package.json says ${version}`);
   }
+}
+
+// The player manual (OneKeyFishing/README.md, shipped in the package) documents every slash command: the
+// `ns.RegisterCommand("name", ...)` calls, or the `name = "..."` entries of Commands.lua when it exists. A command
+// whose declaration is marked VERIFY (temporary, removed before a release) is not expected there.
+const manualPath = path.join(ADDON_DIR, "README.md");
+if (fs.existsSync(manualPath)) {
+  const manual = fs.readFileSync(manualPath, "utf8");
+  const commandsFile = path.join(ADDON_DIR, "Commands.lua");
+  const COMMAND = fs.existsSync(commandsFile) ? /\{\s*name\s*=\s*"([a-z]+)"/g : /ns\.RegisterCommand\(\s*"([a-z]+)"/g;
+  for (const file of fs.existsSync(commandsFile) ? [commandsFile] : luaFiles) {
+    const source = fs.readFileSync(file, "utf8");
+    for (const match of source.matchAll(COMMAND)) {
+      // The comment lines right above the declaration (and the declaration's own line).
+      const before = source.slice(0, match.index).split(/\r?\n/);
+      let comment = source.slice(match.index).split(/\r?\n/)[0];
+      while (before.length > 0 && /^\s*(--.*)?$/.test(before[before.length - 1])) {
+        comment = before.pop() + "\n" + comment;
+      }
+      const temporary = /VERIFY\(/.test(comment);
+      if (!temporary && !manual.includes(`\`/okf ${match[1]}\``)) {
+        problem(rel(manualPath), `the command "/okf ${match[1]}" (${rel(file)}) is not in the player manual`);
+      }
+    }
+  }
+} else {
+  problem(rel(manualPath), "missing (the player manual is packaged with the addon)");
+}
+
+// English is the development language: no Cyrillic in the Markdown files, except the language name in the
+// language setting (translations live in Locales/<code>.lua).
+const CYRILLIC = /[Ѐ-ӿ]+/g;
+for (const file of files.filter((f) => f.endsWith(".md"))) {
+  fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
+    for (const match of line.matchAll(CYRILLIC)) {
+      if (match[0] !== "Українська") {
+        problem(`${rel(file)}:${i + 1}`, `Cyrillic text "${match[0]}" (documentation is written in English)`);
+      }
+    }
+  });
 }
 
 if (problems.length > 0) {
