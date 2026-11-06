@@ -1,4 +1,5 @@
--- Comm.lua: the channel path and the part rules of part 3 (specs/004-public-channel-sync, research R6, contracts/api.md
+-- Comm.lua and CommReceive.lua:
+-- the channel path and the part rules of part 3 (specs/004-public-channel-sync, research R6, contracts/api.md
 -- "ns.Comm additions"). Channel.lua's state is stubbed, so only Comm is under test. The exchange itself (Share.lua) is
 -- not started. The tests run in order and share one login.
 
@@ -148,7 +149,7 @@ test("two channel refusals in a row move to the next channel; five do not leave 
     end
     advance(10)
     eq(refusals, 2, "a fresh count: the fourth is the next second in a row")
-    eq(Comm.GetPaths().channel.disabled, false, "five refusals: the path is not left out")
+    eq(Comm.private.GetPaths().channel.disabled, false, "five refusals: the path is not left out")
     addon_send_result.CHANNEL = 9 -- GeneralError counts too
     Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
     advance(10)
@@ -159,7 +160,7 @@ test("two channel refusals in a row move to the next channel; five do not leave 
     end
     advance(10)
     eq(refusals, 4, "another code")
-    eq(Comm.GetPaths().channel.disabled, false, "never the part 2 path rule")
+    eq(Comm.private.GetPaths().channel.disabled, false, "never the part 2 path rule")
     addon_send_result.CHANNEL = nil
     local before = #addon_sent
     Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")

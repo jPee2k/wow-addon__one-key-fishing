@@ -3,8 +3,7 @@
 local _, ns = ...
 local L = ns.L
 
-local Minimap_ = {}
-ns.Minimap = Minimap_
+local Minimap_ = {} -- the module's own table: no other file reads it
 
 local ICON = "Interface\\Icons\\Trade_Fishing"
 

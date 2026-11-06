@@ -5,23 +5,16 @@ local L = ns.L
 local Bags = {}
 ns.Bags = Bags
 
--- Best first. IDs are from the original game; Forever may add more.
-local LURES = {
-    6533, -- Aquadynamic Fish Attractor (+100)
-    7307, -- Flesh Eating Worm (+75)
-    6532, -- Bright Baubles (+75)
-    6811, -- Aquadynamic Fish Lens (+50)
-    6530, -- Nightcrawlers (+50)
-    6529, -- Shiny Bauble (+25)
-}
-
--- Known fished containers. Anything else with loot that was caught while fishing is opened too.
-local CONTAINERS = {
-    [5523] = true, -- Small Barnacled Clam
-    [5524] = true, -- Thick-shelled Clam
-    [7973] = true, -- Big-mouth Clam
-    [15874] = true, -- Soft-shelled Clam
-}
+-- The lures and the fished containers are game data (GameData/Lures.lua, GameData/FishedContainers.lua). The lure
+-- IDs best first, by their order.
+local LURE_ORDER = {}
+for itemID in pairs(ns.GameData.Lures) do
+    table.insert(LURE_ORDER, itemID)
+end
+table.sort(LURE_ORDER, function(a, b)
+    return ns.GameData.Lures[a].order < ns.GameData.Lures[b].order
+end)
+local CONTAINER_IDS = ns.GameData.FishedContainers
 
 -- An open attempt counts as failed when the same stack is still unchanged this long after it
 -- and no loot window came from it. Generous: the item is used on key up and the loot may lag.
@@ -101,13 +94,25 @@ local function NotifyWhenReady(seconds)
     end)
 end
 
--- The best lure that can be applied now. Lures on cooldown are passed over; when one of them is ready the
--- indicator is told (LURE_READY).
+-- True when the character's Fishing skill reaches the lure's requirement, or the skill is not known yet (nothing is
+-- held back on an unknown skill). Skill.lua loads later: read at runtime only.
+local function SkillAllows(itemID, rank)
+    -- VERIFY(V44): the game compares the base skill (GetProfessionInfo rank), not the skill with bonuses
+    return rank == nil or ns.GameData.Lures[itemID].skill <= rank
+end
+
+-- The best lure that can be applied now. Lures above the Fishing skill and lures on cooldown are passed over; when
+-- one on cooldown is ready the indicator is told (LURE_READY).
 function Bags.FindLure()
     CheckLastLure()
+    local rank, rankRead -- the Fishing skill, read once and only when a lure is in the bags
     local soonest
-    for _, itemID in ipairs(LURES) do
-        if not skippedLures[itemID] and GetItemCount(itemID) > 0
+    for _, itemID in ipairs(LURE_ORDER) do
+        local held = not skippedLures[itemID] and GetItemCount(itemID) > 0
+        if held and not rankRead then
+            rank, rankRead = ns.Skill.Get(), true
+        end
+        if held and SkillAllows(itemID, rank)
             and (not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)) then
             local cooldown = LureCooldown(itemID)
             if cooldown == 0 then
@@ -124,12 +129,12 @@ end
 -- One line per lure in the bags, for the debug report.
 function Bags.DescribeLures()
     local lines = {}
-    for _, itemID in ipairs(LURES) do
+    for _, itemID in ipairs(LURE_ORDER) do
         local count = GetItemCount(itemID)
         if count > 0 then
-            table.insert(lines, ("%d x%d, usable: %s, cooldown: %.0f s, skipped: %s"):format(itemID, count,
-                tostring(not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)), LureCooldown(itemID),
-                tostring(skippedLures[itemID] == true)))
+            table.insert(lines, ("%d x%d, needs: %d, usable: %s, cooldown: %.0f s, skipped: %s"):format(itemID, count,
+                ns.GameData.Lures[itemID].skill, tostring(not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)),
+                LureCooldown(itemID), tostring(skippedLures[itemID] == true)))
         end
     end
     if lastLure then
@@ -190,7 +195,7 @@ local function CheckLastOpen()
 end
 
 local function IsFishedContainer(itemID)
-    return CONTAINERS[itemID] or ns.db.fishedItems[itemID]
+    return CONTAINER_IDS[itemID] or ns.db.fishedItems[itemID]
 end
 
 local function IsOpenable(info)
@@ -205,7 +210,7 @@ local function IsOpenable(info)
     end
     -- hasLoot marks right-click-to-open items; fall back to the known list if the field is missing.
     if info.hasLoot == nil then
-        return CONTAINERS[info.itemID] == true
+        return CONTAINER_IDS[info.itemID] == true
     end
     return info.hasLoot
 end

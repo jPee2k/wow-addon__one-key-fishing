@@ -29,14 +29,8 @@ and the error log ship together; the design is recorded in
 interface-language entries of `CHANGELOG.md` sit under `## [1.1.0]`, `[Unreleased]` keeps the shared catch
 database.
 
-Technical debt from `001-interface-language` to settle before 1.2.0 (spec 001 research R15):
-
-- Move the older game data into `GameData/` (data only, like `GameData/FishingRanks.lua`): the lures and the
-  fished containers (`Fishing/Bags.lua`), the pole bonuses (`Fishing/Gear.lua`), the Fishing spell IDs and the
-  bobber ID (`Core/Data.lua`).
-- Switch the catch catalog's pin (`Catalog.PinTarget`, `CatalogTab.Pin`) to `ns.MapPin` (`Core/MapPin.lua`), which
-  took that code over with the same saved field (`charDB.pin`) and texts; `ns.Toast` already has the `always`
-  argument on both branches.
+The technical debt from `001-interface-language` (spec 001 research R15: the older game data into `GameData/`, the
+catalog's pin through `ns.MapPin`) is settled by `specs/008-architecture-alignment`.
 
 The steps:
 
@@ -50,7 +44,8 @@ The steps:
    [catch-exchange.md](checklists/catch-exchange.md), [public-channel.md](checklists/public-channel.md) (a week of
    play for its step 10), [catch-catalog.md](checklists/catch-catalog.md). Fix, test, remove the remaining markers.
 4. Remove the spike: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Core/Commands.lua`,
-   `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and its row in `CLAUDE.md`.
+   `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and its row in `CLAUDE.md`, and
+   `ns.ReportSection` in `OneKeyFishing/Core/Debug.lua` (only the spike uses it).
 5. Fish, then `npm run harvest` for the first real seed (the author's accounts, the records the exchange collected,
    saved files friends sent); check the report and `git diff OneKeyFishing/CatchDB/SeedData.lua`; commit
    `OneKeyFishing/CatchDB/SeedData.lua` with `seed/contributions.json`.

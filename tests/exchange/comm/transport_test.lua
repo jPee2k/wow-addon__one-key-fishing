@@ -178,11 +178,11 @@ test("another refusal for one player drops the rest to that player, reports them
     eq(#sentSince(before), 1, "only the first part was tried")
     eq(offline[1], "w:Gone-Realm", "reported as offline: the rest would fail the same way")
     eq(Comm.IsSending("w:Gone-Realm"), false, "nothing left in the queue for them")
-    eq(Comm.GetPaths().whisper.failures, 1, "one refusal for the path, not one per part")
+    eq(Comm.private.GetPaths().whisper.failures, 1, "one refusal for the path, not one per part")
     addon_send_result.WHISPER = nil
     Comm.Send("w:Here-Realm", "Wab")
     drain(2)
-    eq(Comm.GetPaths().whisper.failures, 0, "a success resets the count")
+    eq(Comm.private.GetPaths().whisper.failures, 0, "a success resets the count")
 end)
 
 test("pause reasons: combat, instance, loading screen, restrictions; nothing goes out or comes in", function()
@@ -352,8 +352,8 @@ test("refused greetings to friends do not count against the path", function()
     end
     advance(5)
     bn_send_result = nil
-    eq(Comm.GetPaths().bnet.failures, 0, "not counted")
-    eq(Comm.GetPaths().bnet.disabled, false, "the path stays")
+    eq(Comm.private.GetPaths().bnet.failures, 0, "not counted")
+    eq(Comm.private.GetPaths().bnet.disabled, false, "the path stays")
 end)
 
 test("five refusals in a row leave a path out; a success resets the count; codes 3, 8, 10, 11, 12 never count",
@@ -363,21 +363,21 @@ test("five refusals in a row leave a path out; a success resets the count; codes
         Comm.Send("w:Peer" .. i, "Wab") -- one player counts once, so five players
     end
     advance(5)
-    eq(Comm.GetPaths().whisper.failures, 4, "four refusals")
+    eq(Comm.private.GetPaths().whisper.failures, 4, "four refusals")
     addon_send_result.WHISPER = nil
     Comm.Send("w:Peer", "Wab")
     advance(1)
-    eq(Comm.GetPaths().whisper.failures, 0, "reset by a success")
+    eq(Comm.private.GetPaths().whisper.failures, 0, "reset by a success")
     addon_send_result.WHISPER = 10
     Comm.Send("w:Peer", "Wab")
     advance(1)
-    eq(Comm.GetPaths().whisper.failures, 0, "NotInGuild does not count")
+    eq(Comm.private.GetPaths().whisper.failures, 0, "NotInGuild does not count")
     addon_send_result.WHISPER = 9
     for i = 1, 5 do
         Comm.Send("w:Peer" .. i, "Wab")
     end
     advance(5)
-    eq(Comm.GetPaths().whisper.disabled, true, "left out")
+    eq(Comm.private.GetPaths().whisper.disabled, true, "left out")
     addon_send_result.WHISPER = nil
     local before = #addon_sent
     eq(Comm.Send("w:Peer", "Wab"), false, "whispers refused")

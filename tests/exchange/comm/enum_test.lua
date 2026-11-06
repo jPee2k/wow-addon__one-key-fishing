@@ -17,7 +17,7 @@ test("a success by the new number counts as sent", function()
     Comm.Send("w:Peer", "Wab")
     advance(1)
     assert(Comm.GetTraffic() > 0, "traffic counted")
-    eq(Comm.GetPaths().whisper.failures, 0, "no refusal")
+    eq(Comm.private.GetPaths().whisper.failures, 0, "no refusal")
 end)
 
 test("TargetOffline by the new number reports the player offline, not a refusal", function()
@@ -25,7 +25,7 @@ test("TargetOffline by the new number reports the player offline, not a refusal"
     Comm.Send("w:Gone-Realm", "Wab")
     advance(1)
     eq(offline[#offline], "w:Gone-Realm", "reported offline")
-    eq(Comm.GetPaths().whisper.failures, 0, "not counted against the path")
+    eq(Comm.private.GetPaths().whisper.failures, 0, "not counted against the path")
 end)
 
 test("AddOnMessageLockdown by the new number pauses the exchange", function()
@@ -42,6 +42,6 @@ test("the old TargetOffline number is an ordinary refusal now", function()
     addon_send_result.WHISPER = 12
     Comm.Send("w:Peer", "Wab")
     advance(1)
-    eq(Comm.GetPaths().whisper.failures, 1, "counted")
+    eq(Comm.private.GetPaths().whisper.failures, 1, "counted")
     addon_send_result.WHISPER = nil
 end)

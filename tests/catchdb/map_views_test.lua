@@ -1,4 +1,5 @@
--- CatchDB.lua (specs/005-catch-catalog, data-model.md "Views", "Change stamps"): QueryMap, QueryCells, Maps,
+-- CatchDB/Views.lua and Index.lua (specs/005-catch-catalog, data-model.md "Views", "Change stamps"):
+-- QueryMap, QueryCells, Maps,
 -- MapStamp and the own-cells index. The tests run in order and share one login.
 
 local FISH, OTHER = 6291, 6303

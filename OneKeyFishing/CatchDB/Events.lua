@@ -26,8 +26,9 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     end
     -- A damaged record (edited by hand, an interrupted write) would break every catch, or every HELLO when its ID
     -- is another account's: it starts over.
-    if type(record) ~= "table" or type(record.builds) ~= "table" or type(record.seq) ~= "number"
-        or type(record.epoch) ~= "number" or record.id ~= shared.myID then
+    -- The same rule as CatchDB.OwnRecord (seq and epoch are counts), so no caller ever meets a nil own record.
+    if type(record) ~= "table" or type(record.builds) ~= "table" or not CatchDB.OwnRecord()
+        or record.id ~= shared.myID then
         shared.records[shared.myID] = nil
         Roll()
     -- A record the seed holds (in part or whole) rolls, so it does not count twice next to the seed; what the seed

@@ -122,6 +122,21 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   - `C_Item.EquipItemByName` from addon code is blocked in combat ("An action was blocked in combat because of
     taint from OneKeyFishing - EquipItemByName()", `taint.log`), also for weapons; in the `PLAYER_REGEN_DISABLED`
     handler, before the lockdown, it still swaps them.
+  - The game refuses a lure above the Fishing skill with "Cannot apply ..." (since spec 008 the addon does not
+    offer one: `GameData/Lures.lua`, V43 / V44).
+  - `GetBuildInfo()` gives "1.60.1" and the build "70790" (closes V7).
+  - The bobber's GUID is `GameObject-...-35591-...`: object ID 35591, read from the `softinteract` unit (V3, the
+    bobber side; the cast, hook and "No bobber" steps pass on it).
+  - In Booty Bay `C_Map.GetBestMapForUnit("player")` is 1434 (the town has no map of its own) and
+    `C_Map.GetPlayerMapPosition(1434, "player")` gives the position (V1 / V2 in part).
+  - `C_Map.HasUserWaypoint` and `C_Map.GetUserWaypoint` see a pin the player set by hand, so the replace question
+    works; the game rule `WorldMapTrackingPinDisabled` is not active in the open world (V30 in part).
+  - The auction scan: commodity search result 1 has `unitPrice`, item search result 1 has `buyoutAmount`, and both
+    give prices (V4 / V5 in part).
+  - The `TooltipDataProcessor` item post call adds lines to bag item tooltips (V38 in part).
+  - The Addon Compartment exists (the addon's entry shows and works).
+  - A settings page frame that is created shown gets no `OnShow` on its first view in a session (spec 007): create
+    it hidden.
 - `INTERACTTARGET` exists. The bobber is readable as unit `softinteract` (name and GUID), but it has **no
   nameplate** and `UnitExists` is false, so nothing can be anchored to it.
 - Fishing rank spells are 7620 / 7731 / 7732 / 18248. The skill comes from `GetProfessions()` →

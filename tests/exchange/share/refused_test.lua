@@ -13,8 +13,8 @@ local L = ns.L
 
 test("five refused HELLO rounds to the guild: unavailable, though group, whisper and bnet were never tried", function()
     advance(120 + 5 * 900) -- the first round after 60-120 s, then one every 10-15 minutes
-    eq(Comm.GetPaths().guild.disabled, true, "the guild is left out")
-    eq(Comm.GetPaths().bnet.disabled, false, "refused greetings do not leave Battle.net out")
+    eq(Comm.private.GetPaths().guild.disabled, true, "the guild is left out")
+    eq(Comm.private.GetPaths().bnet.disabled, false, "refused greetings do not leave Battle.net out")
     eq(Share.GetStatus().state, "unavailable", "state")
     eq(Share.StatusLine(), L["Exchange unavailable: the game refuses addon messages"], "status line")
     assert(Comm.GetPause() ~= "unavailable", "no pause: the paths not tried yet still may work")
@@ -30,7 +30,7 @@ test("a later success on a path not tried yet clears it for good", function()
         Comm.Send("w:Someone" .. i .. "-Realm", "Wab") -- one player counts once
     end
     advance(5)
-    eq(Comm.GetPaths().whisper.disabled, true, "whispers refused since")
+    eq(Comm.private.GetPaths().whisper.disabled, true, "whispers refused since")
     eq(Share.GetStatus().state, "alone", "still not unavailable: something went out this login")
     addon_send_result.default = nil
 end)

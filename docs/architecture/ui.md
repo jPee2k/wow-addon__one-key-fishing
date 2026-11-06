@@ -42,7 +42,8 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - an item the client does not know yet (`GetItemInfoInstant` nil when the row is drawn) gets the "Unknown item" text,
   a question mark icon (134400), no price, and one `C_Item.RequestLoadItemDataByID`; its tooltip says how many
   players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
-  `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (FR-017a of `specs/004-public-channel-sync`);
+  `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (FR-017a of
+  `specs/004-public-channel-sync`);
 - the miss line uses the view's `missRate` (weighted), and is left out under a water filter;
 - the Water button shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
 - a click on a known item row opens the catalog on it (`StatsFrame.OpenCatalog(itemID)`).
@@ -60,14 +61,13 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 - without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37);
 - state in memory only; `Tick` reads the catalog every second and redraws, keeping the scroll, when
   `Catalog.GetVersion()` moved; a `Show(arg)` while the index of the filter is still building keeps `arg` pending
-  (a text already fills the search) and `Tick` passes it on once the index is ready; the player's typing, the search's clear button and
-  hiding the page (a closed window, another tab) drop it;
+  (a text already fills the search) and `Tick` passes it on once the index is ready; the player's typing, the search's
+  clear button and hiding the page (a closed window, another tab) drop it;
 - the pin (research R6): a spot row with `spot.pin` gets a button (the atlas `Waypoint-MapPin-Untracked`, or a text
-  button); `CatalogTab.Pin` asks before replacing a waypoint that is not `OneKeyFishingCharDB.pin` (within 0.0005),
-  then `C_Map.SetUserWaypoint`, `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`, saves the pin, toasts (also with
-  catch notifications off: an answer to a click), and opens
-  the map with the global `OpenWorldMap` out of combat (`C_Map.OpenWorldMap` is restricted). The navigation CVar is
-  never touched.
+  button); its click calls `ns.MapPin.Set` (`Core/MapPin.lua`, the same pin as the next rank's): the question before
+  replacing a pin the player set, the waypoint and the arrow, the saved pin, and out of combat the map. The answer
+  comes through `MAP_PIN_SET` as a toast (`UI/Toast.lua`, also with catch notifications off: an answer to a
+  click). The navigation CVar is never touched.
 
 ## Other frames
 
@@ -75,8 +75,10 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`
   (item tooltip with the few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
-  a red "not bound"; the minimap tooltip, the settings key line and the indicator use it). The skill, source and water menus of the two catch pages are
-  `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
+  a red "not bound"; the minimap tooltip, the settings key line and the indicator use it), `ns.RangeLabel(min, max)`
+  (the skill range label of both catch pages: "0-74", "75-224", "300+") and `ns.UpdateScanButton(button, hint)`
+  (the auction scan button of the statistics window and the settings). The skill, source and water menus of the two
+  catch pages are `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`) and the map pin answers (`MAP_PIN_SET`).
   `ns.Toast(text, r, g, b, always)`: `always` shows it with catch notifications off, for an answer to the player's

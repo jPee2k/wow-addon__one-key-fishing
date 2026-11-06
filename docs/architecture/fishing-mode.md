@@ -56,9 +56,13 @@ Enter and exit fishing mode.
 
 Lures and fished containers.
 
-- `FindLure` takes the best lure in the bags (`LURES`, best first) that is usable and not on its own cooldown
-  (`C_Container.GetItemCooldown`, the global cooldown does not count); for lures passed over because of a cooldown
-  it fires `LURE_READY` when the soonest one is ready.
+- `FindLure` takes the best lure in the bags (`GameData.Lures` by `order`, best first) that is usable, not on its
+  own cooldown (`C_Container.GetItemCooldown`, the global cooldown does not count) and not above the Fishing skill.
+  It fires `LURE_READY` for lures passed over because of a cooldown, when the soonest one is ready.
+- The skill rule: a lure whose `skill` is above `Skill.Get()` (the base rank, without bonuses: `VERIFY(V44)`) is
+  never offered. Once the skill reaches it, the next `FindLure` offers it, in the same session. While the skill is
+  unknown, nothing is held back. The values come from the original game (`VERIFY(V43)`,
+  `specs/008-architecture-alignment/verification.md`). A lure not in `GameData.Lures` is never offered.
 - An attempt counts as failed only when, 8 s later, the pole has no lure and the lure is not on cooldown; a failed
   lure is skipped until fishing mode is entered again.
 - `Bags.DescribeLures` feeds the debug report.
@@ -71,13 +75,11 @@ Lures and fished containers.
   loot of a counted cast.
 - The bag iterator `ns.ForEachBagItem` is in Data.lua ([core.md](core.md)).
 
-## GameData/FishingRanks.lua
+## Game data
 
-Data only, no logic, no `L`: `ns.FishingRanks[cap]` (the next rank's spell, the skill and level it can be learned
-from, and where: trainer, book or quest with item / quest / NPC / area IDs, candidate uiMapIDs and the point,
-English fallback names), `ns.FishingRankSpells` (rank spell per cap) and `ns.NpcNames[npcID][clientLocale]`. Game
-data tables that are plain data belong in `GameData/`; the older ones (lures, containers, pole bonuses, spell and
-bobber IDs) move there in 1.2.0 (`docs/release-plan.md`).
+The game data fishing mode reads is the model `ns.GameData` ([game-data.md](game-data.md)): the Fishing spells and
+the rank steps with the NPC names (`Skill.lua`), the lures and fished containers (`Bags.lua`), the poles, the pole's
+item class and the equipment slots (`Gear.lua`, `Action.lua`), the bobber (`Core/Data.lua`).
 
 ## Fishing/Skill.lua
 
@@ -86,7 +88,7 @@ bobber IDs) move there in 1.2.0 (`docs/release-plan.md`).
   the where sentence, the pin target, where each name came from). It stores the session's starting rank.
 - Every game name is read by ID in the client's language (`C_Map.GetAreaInfo`, `C_Item.GetItemNameByID`,
   `C_QuestLog.GetTitleForQuestID`; the book and quest are requested at login), NPC names from a creature tooltip
-  (kept once the client gave it), then `ns.NpcNames`, then English.
+  (kept once the client gave it), then `ns.GameData.NpcNames`, then English.
 - Notices: "can learn" once per session per rank (chat and toast, waits for the character level), the cap with a
   raid warning the first time per session and a chat line on later fishing mode entries; the chat line carries a
   `worldmap:` link when a pin is possible (`Core/MapPin.lua`). Chat and the raid warning are here; the toast goes

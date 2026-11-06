@@ -16,3 +16,15 @@ test("an own record without its ID gets it back, keeps its catches, and the exch
     eq(ns.Share.Store.Units(ns.db.shared, {})[ID .. "@0"], 1, "offered, no error")
     eq(ns.db.shared.records[ID .. "@0"], nil, "nothing frozen under the own ID")
 end)
+
+test("CatchDB.OwnRecord, for the database and the exchange alike: nil for a missing or damaged own record", function()
+    local store = { myID = "abcdefgh", records = {} }
+    eq(ns.CatchDB.OwnRecord(store), nil, "missing")
+    store.records.abcdefgh = { id = "abcdefgh", epoch = 1, seq = "x", builds = {} }
+    eq(ns.CatchDB.OwnRecord(store), nil, "a seq that is no count")
+    store.records.abcdefgh.seq, store.records.abcdefgh.epoch = 3, -1
+    eq(ns.CatchDB.OwnRecord(store), nil, "an epoch that is no count")
+    store.records.abcdefgh.epoch = 1
+    eq(ns.CatchDB.OwnRecord(store), store.records.abcdefgh, "a sound record")
+    eq(ns.CatchDB.OwnRecord(), ns.db.shared.records[ns.db.shared.myID], "the account's own by default")
+end)

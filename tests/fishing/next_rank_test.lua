@@ -105,8 +105,8 @@ test("the book advice uses English names until the client has its own", function
 end)
 
 test("NPC names without a tooltip: the client language in the table, then English", function()
-    local saved = ns.NpcNames[2626].deDE
-    ns.NpcNames[2626].deDE = "Heming (table)"
+    local saved = ns.GameData.NpcNames[2626].deDE
+    ns.GameData.NpcNames[2626].deDE = "Heming (table)"
     CLIENT_LOCALE = "deDE"
     eq(Skill.GetNextRank().sources.npc, "table", "from the table")
     assert(Skill.GetNextRank().where:find("from Heming (table) in", 1, true), "table name in the sentence")
@@ -114,7 +114,7 @@ test("NPC names without a tooltip: the client language in the table, then Englis
     eq(Skill.GetNextRank().sources.npc, "english", "English for a client language the table lacks")
     assert(Skill.GetNextRank().where:find("from Old Man Heming in", 1, true), "English name in the sentence")
     CLIENT_LOCALE = "enUS"
-    ns.NpcNames[2626].deDE = saved
+    ns.GameData.NpcNames[2626].deDE = saved
 end)
 
 test("names come from the client when it has them", function()

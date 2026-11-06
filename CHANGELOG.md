@@ -51,6 +51,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 ### Changed
 
+- A lure your Fishing skill is too low for is no longer offered; it is used once your skill is high enough.
 - Auction prices: the average of the cheapest fifth of the pieces on sale instead of the cheapest lot, so one
   lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 different
   offers (prices) on sale the price is marked "(few lots)" and the catch value uses the vendor price.

@@ -30,9 +30,9 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 | Command | What it does |
 |---|---|
 | `npm install` | install the development tools (once) |
-| `npm run check` | Lua syntax, globals, line length, locale keys, TOC, packaging, seed, docs and version checks; lists open `VERIFY` markers |
+| `npm run check` | Lua syntax, globals, line length, the layers, data-only `GameData/`, private tables, test names, locale keys, TOC, packaging, seed, docs and version checks; lists open `VERIFY` markers |
 | `npm test` | run the tests in `tests/` (`npm test -- lures` runs only the matching files) |
-| `npm run harvest` | before a release: build the bundled catch database `OneKeyFishing/SeedData.lua` from the saved catch data of your accounts (and saved files given as arguments) |
+| `npm run harvest` | before a release: build the bundled catch database `OneKeyFishing/CatchDB/SeedData.lua` from the saved catch data of your accounts (and saved files given as arguments) |
 | `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: restart the game once, then changes show up after a `/reload` (a new file or a TOC change needs a restart) |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
@@ -52,13 +52,18 @@ a slash command is missing from the manual.
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | the rules that always apply, the module map, the messages; the entry point for Claude Code and for a new contributor |
 | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) | the project principles the rules come from |
+| [`docs/README.md`](docs/README.md) | the index of the developer documentation |
+| [`docs/development.md`](docs/development.md) | the tools, the test suite, packaging, the definition of done |
+| [`docs/architecture/`](docs/architecture/) | the modules in detail, one page per area (the game data model in `game-data.md`) |
+| [`docs/forever-api.md`](docs/forever-api.md) | the WoW Forever API: the facts verified in game, how to check a call, the open questions |
+| [`docs/tech-debt.md`](docs/tech-debt.md) | the known issues with their severity |
 | [`docs/publishing.md`](docs/publishing.md) | branches, release steps, Blizzard's add-on policy and CurseForge requirements |
 | [`docs/release-plan.md`](docs/release-plan.md) | what the next releases wait for (in-game checks after the launch of WoW Forever) |
 | [`docs/checklists/`](docs/checklists/README.md) | in-game checklists: the addon cannot be tested outside the game, so each feature has one |
 | [`docs/languages.md`](docs/languages.md) | the interface languages and the rules for translation files |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | what is not built yet |
 | [`docs/history/`](docs/history/) | finished plans, kept as a record |
-| `specs/<nnn>-<name>/` | one folder per feature: specification, plan, research, data model, contracts, tasks |
+| `specs/<nnn>-<name>/` | one folder per feature: specification, plan, research, data model, contracts, tasks, `verification.md` (the `VERIFY` ids) |
 
 ## Rules in short
 

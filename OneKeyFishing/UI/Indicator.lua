@@ -106,7 +106,7 @@ local function IdleState()
         local info = C_Container.GetContainerItemInfo(arg1, arg2)
         return kind, info and info.iconFileID
     end
-    return "cast", C_Spell.GetSpellTexture(ns.GetFishingSpellID() or ns.FISHING_SPELL_IDS[1])
+    return "cast", C_Spell.GetSpellTexture(ns.GetFishingSpellID() or ns.GameData.FishingSpells[1].spellID)
 end
 
 -- Channel start times (they identify the cast) of the cast whose bobber was targeted, and of the cast whose
@@ -232,3 +232,5 @@ ns.RegisterEvent("UNIT_INVENTORY_CHANGED", function(_, unit)
     end
 end)
 ns.On("LURE_READY", Indicator.Update) -- a lure came off cooldown
+-- The lure the key offers depends on the Fishing skill (Bags.FindLure): a skill-up may make one usable.
+ns.RegisterEvent("SKILL_LINES_CHANGED", function() Indicator.Update() end)

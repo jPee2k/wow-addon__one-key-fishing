@@ -1,4 +1,4 @@
--- Share.lua: the protocol node in the hidden public channel (specs/004-public-channel-sync, research R5,
+-- ShareProtocol.lua: the protocol node in the hidden public channel (specs/004-public-channel-sync, research R5,
 -- contracts/protocol.md "Announcements in the channel"): only HELLO from the channel, the chance to start, near peers
 -- first, the part 2 timing kept, the busy retry, cooldowns and the peer bound. Test nodes on a fake network; the
 -- addon's own game node does not start (the notice is never closed). The game node's channel rounds and
@@ -28,7 +28,7 @@ end
 
 local function OwnRecord(id, catches)
     local cell = catch_cell(catches, 1, { [FISH] = { catches, catches } })
-    return prove({ id = id, epoch = 0, seq = math.max(1, math.ceil(cell.t / ns.CatchDB.STEP_SECONDS)),
+    return prove({ id = id, epoch = 0, seq = math.max(1, math.ceil(cell.t / ns.CatchDB.private.STEP_SECONDS)),
         builds = { ["1.60.1"] = { ["1415:3:47"] = cell } } })
 end
 

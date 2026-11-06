@@ -7,10 +7,18 @@ in [publishing.md](publishing.md).
 
 The addon lives in `OneKeyFishing/`: exactly what goes into `Interface/AddOns` (the TOC, `Bindings.xml`, the player
 manual `README.md`, and the Lua files in one folder per area of `docs/architecture/`: `Core/`, `Locales/`,
-`GameData/` (data only), `Fishing/`, `Catch/`, `CatchDB/`, `Exchange/`, `Catalog/`, `UI/`; `Bindings.xml` stays at
-the root, the client loads it by name). The TOC lists the files with their folder (`Core\Core.lua`), grouped by
-area, in load order; the folders the tools name (`Locales/enUS.lua`, `CatchDB/SeedData.lua`, `Core/Commands.lua`)
-are constants of `tools/addon.mjs`.
+`GameData/` (the game data model, data only: [game-data.md](architecture/game-data.md)), `Fishing/`, `Catch/`,
+`CatchDB/`, `Exchange/`, `Catalog/`, `UI/`; `Bindings.xml` stays at the root, the client loads it by name). The TOC
+lists the files with their folder (`Core\Core.lua`), grouped by area, in load order; the folders the tools name
+(`Locales/enUS.lua`, `CatchDB/SeedData.lua`, `Core/Commands.lua`) are constants of `tools/addon.mjs`.
+
+- **File size.** A file over 600 lines is split along its seams when it holds more than one role; a file that is
+  one role stays whole. The files of one module share its internals through `<Module>.private` (`CatchDB/`, the
+  `Comm*.lua` and `Share*.lua` files of `Exchange/`), and the TOC lists them so that a file reads at load time only
+  what earlier files defined. Helpers several files of an area need go into one file of that area, not copies.
+- **Private tables.** What only the tests need (a value or function no addon file calls) lives in the module's
+  private table, not in its public table, so the public functions are the ones the addon uses.
+  `npm run check` reports a file of another folder that reads `<Module>.private`.
 
 `tools/`, `tests/`, `docs/`, `specs/` and project files stay in the repository root; the root `README.md` is the
 developer page.
@@ -34,6 +42,10 @@ Run it after every change. It checks:
 - every Lua file is listed in the TOC, and every TOC file is in one of the area folders;
 - the layers: a file names only the module tables of its own layer or below, and `CreateFrame` outside `UI/` only
   where `tools/addon.mjs` allows it ([core.md](architecture/core.md), Layers);
+- `GameData/` holds data only: its code (strings and comments left out) has no `function`, no call, no `L[...]` / `ns.L`
+  and no module but `ns.GameData` ([game-data.md](architecture/game-data.md));
+- a module's private table (`<Module>.private`) is read only by the files of its own folder (and the tests);
+- a test file names its subject, not a module of its area (below);
 - locale keys in sync;
 - the bundled seed `CatchDB/SeedData.lua` exists, is at most 1 MB, the `ns.SeedData` fields, place keys;
 - no packager keywords in addon Lua and XML (see Packaging);
@@ -62,18 +74,20 @@ stays at the root of `tests/`:
 | Folder | Area | Examples |
 |---|---|---|
 | `core/` | [core.md](architecture/core.md): loading, migrations, locales, commands, text folding, SHA-256 | `load_test.lua`, `migrations_test.lua`, `locale_test.lua`, `proof_test.lua` |
-| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua`, `skill_test.lua` |
-| `catch/` | [catch-and-stats.md](architecture/catch-and-stats.md) | `prices_test.lua`, `stats_test.lua` |
-| `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
-| `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `pin_test.lua`, `load_test.lua` |
+| `gamedata/` | [game-data.md](architecture/game-data.md): the shape of every entity, the load order | `shape_test.lua`, `load_order_test.lua` |
+| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua`, `lure_skill_test.lua`, `cap_warning_test.lua` |
+| `catch/` | [catch-and-stats.md](architecture/catch-and-stats.md) | `auction_price_test.lua`, `caught_test.lua` |
+| `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `map_views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
+| `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `spot_pin_test.lua`, `load_test.lua` |
 | `exchange/comm/`, `exchange/channel/`, `exchange/share/` | [exchange.md](architecture/exchange.md), one folder per module | `comm/transport_test.lua`, `channel/joining_test.lua`, `channel/sim_test.lua`, `share/protocol_test.lua` |
-| `ui/` | [ui.md](architecture/ui.md): the statistics window's tabs, settings, tooltips, the spike | `catchhere_test.lua`, `catalogtab_test.lua`, `settings_test.lua` |
-| `tools/` | the Node tests of `tools/` | `harvest_test.mjs` |
+| `ui/` | [ui.md](architecture/ui.md): the statistics window and its tabs, settings, the exchange's notice, tooltips, the spike | `stats_window_test.lua`, `here_page_test.lua`, `catalog_list_test.lua`, `shared_page_test.lua`, `notice_test.lua` |
+| `tools/` | the Node tests of `tools/` | `harvest_test.mjs`, `gamedata_check_test.mjs`, `test_names_test.mjs` |
 
 A new test goes into the folder of its area. The folder names the module, so the file names only what it tests
 (`exchange/channel/lock_test.lua`, not `channel_lock_test.lua`); the same short name in two folders is fine, the
 filter takes the path. A file about the module as a whole is named after its subject (`catchdb/recording_test.lua`,
-`exchange/comm/transport_test.lua`), not `<module>_test.lua`.
+`exchange/comm/transport_test.lua`), not `<module>_test.lua`: `npm run check` reports a test file whose name is the
+base name of a `.lua` file in its area's addon folder (`fishing/bags_test.lua` for `Fishing/Bags.lua`).
 
 - `tests/run.mjs` runs every `*_test.lua` in a fresh fengari state (`tests/lua.mjs` is the fengari wrapper) after
   `tests/wow.lua`, and then every `*_test.mjs`; the chunk name of a test is its path (`tests/core/load_test.lua`).
@@ -86,8 +100,8 @@ filter takes the path. A file about the module as a whole is named after its sub
   (`check_no_errors`, also run by `tests/run.mjs` after each file). A test that expects an error takes it with
   `take_errors()`.
 - Run it after every change. Add or extend a test when changing logic that can run without the game: every
-  module but the pure frame code has tests (Core, Bags, Catch, Stats, Prices, CatchDB, Comm, Channel, Share,
-  Catalog, the statistics window and its tabs, settings, tooltips, locales).
+  module but the pure frame code has tests (Core, the game data, Bags, Gear, Skill, Catch, Stats, Prices, CatchDB,
+  Comm, Channel, Share, Catalog, the map pin, the statistics window and its tabs, settings, tooltips, locales).
 - fengari is Lua 5.3, the game is 5.1: keep the addon free of 5.1/5.3 differences, and fix a test that fails only
   because of 5.3 in the test or the stub.
 
@@ -116,7 +130,8 @@ only after the author confirms the behaviour in game.
 ## `npm run harvest`
 
 Before a release, turns the catch data of every account under `WOW_ADDONS_DIR` (plus saved files given as
-arguments; they are parsed, never executed) into `OneKeyFishing/CatchDB/SeedData.lua`, the seed bundled with the release.
+arguments; they are parsed, never executed) into `OneKeyFishing/CatchDB/SeedData.lua`, the seed bundled with the
+release.
 
 - Accepted contributions are kept in `seed/contributions.json` (repository only) by `<id>@<epoch>`, so the same
   input never counts twice, and a run without new sums leaves the seed and its epoch alone.

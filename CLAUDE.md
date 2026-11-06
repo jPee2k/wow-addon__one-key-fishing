@@ -29,8 +29,8 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   [docs/languages.md](docs/languages.md).
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
-  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 002 to 006
-  have one); a marker is removed only after the author confirms the behaviour in game.
+  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006
+  and 008 have one); a marker is removed only after the author confirms the behaviour in game.
 
 ## Documents
 
@@ -77,7 +77,7 @@ area, the same areas as `docs/architecture/` and `tests/`. The layers, the rule 
 
 | Layer | Folders | May use the module tables (`ns.<Name>`) of |
 |---|---|---|
-| 0 Core | `Core/`, `Locales/` | nothing above: no module of an area |
+| 0 Core | `Core/`, `Locales/`, `GameData/` | nothing above: no module of an area |
 | 1 Game | `Fishing/`, `Catch/` | layers 0-1 |
 | 2 Data | `CatchDB/`, `Exchange/`, `Catalog/` | layers 0-2 |
 | 3 View | `UI/` | everything |
@@ -93,10 +93,10 @@ commands in `Core/Commands.lua`.
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
+| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `FishedContainers`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
-| `Core/Data.lua` | shared data and helpers (fishing IDs, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
-| `Core/MapPin.lua` | the game's map pin with the navigation arrow, and chat map links, for the next rank and the catalog | [core.md](docs/architecture/core.md) |
-| `GameData/FishingRanks.lua` | data only: the next rank's spell, skill, level and where it is learned; NPC names | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
+| `Core/MapPin.lua` | the game's map pin with the navigation arrow, and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
 | `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Mode.lua` | enter and exit fishing mode, restore after `/reload`, logout, crash | [fishing-mode.md](docs/architecture/fishing-mode.md) |
@@ -104,10 +104,10 @@ commands in `Core/Commands.lua`.
 | `Catch/Prices.lua`, `Catch/Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
-| `Exchange/Comm.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport; the hidden public channel; one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
-| `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots, tooltip lines, the pin target | [catalog.md](docs/architecture/catalog.md) |
-| `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/StatsFrame.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers, copy window, indicator, toast, the map pin, the statistics window and its tabs, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
+| `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
+| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel; one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
+| `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines | [catalog.md](docs/architecture/catalog.md) |
+| `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/StatsFrame.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers (also the skill range label and the scan button state), copy window, indicator, toast, the statistics window's tabs (what can be caught here, the catalog) and the window, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
 | `Core/Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before release 1.2.0 | [ui.md](docs/architecture/ui.md), [docs/checklists/spike.md](docs/checklists/spike.md) |
 | `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
@@ -126,8 +126,11 @@ Cross-module rules:
 - Sharing is switched by `Share.SetEnabled`, never by a direct write of `settings.shareDB` (it fires
   `SHARED_DATA_CHANGED`, which drops cached views). The public channel likewise by `Channel.SetEnabled`, never by a
   write of `settings.shareChannel` (it joins or leaves at once).
-- Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data
-  tables that are plain data belong in `GameData/` (no logic, no `L`).
+- Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data lives
+  in `ns.GameData` (`GameData/`, layer 0, one file per entity, data only: `npm run check` rejects a function, a call,
+  `L` or another module there; [game-data.md](docs/architecture/game-data.md)); addon tuning stays in its module.
+- A module split over several files shares its internals through `<Module>.private` (`CatchDB`, `Comm`, `Share`);
+  what only the tests need lives there too. No file of another folder reads it (`npm run check`).
 - The catalog follows the data through `CatchDB.MapStamp` (and `GetStampVersion`), not through a message; it sends
   none, and the tab polls `Catalog.GetVersion()` on the window's tick. Data written past `CatchDB`'s `Settle` needs a
   `SHARED_DATA_CHANGED` before the views see it.
@@ -136,7 +139,8 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 - `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed)
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
-- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast and every earlier one)
+- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast
+  and every earlier one)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `SKILL_WARNING` (text, loud: a next-rank notice of `Fishing/Skill.lua`, loud at the cap; the toast shows it even
   with catch notifications off), `MAP_PIN_SET` (placeName, or nil when the game refused the pin: `Core/MapPin.lua`

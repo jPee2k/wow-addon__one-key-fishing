@@ -26,17 +26,20 @@ exchange on for step 8.
    than 50 catches last with "Little data"; the skill span and the zone's catches; hovering a zone says how many
    players the numbers come from. Click "+": its spots appear indented, each named "Subzone (45, 72)" or "45, 72",
    and "-" folds them. "Back" returns to the list with the search kept.
-3. [ ] **The pin** (V30, V31, V32, SC-002): on a spot in the open world, press the pin button. Expected: the game's
-   map pin on the world map and the minimap at that place, the navigation arrow on screen pointing to it, the toast
-   "Map pin: <zone> - <spot>", and the world map opens at that zone. Count the actions from typing the name to the
-   pin: at most five (type, click the item, "+", the pin button). In combat, press another pin button: the pin and
-   the toast come, the map stays closed. Turn off "Show catch notifications" in the settings and press a pin button:
-   the toast still comes. Note whether the arrow shows; if not, note the CVar line of the spike.
+3. [ ] **The pin** (V30, R14, SC-002; since spec 008 the same pin as the next rank's, `Core/MapPin.lua`): on a
+   spot in the open world, press the pin button. Expected: the game's map pin on the world map and the minimap at
+   that place, the navigation arrow on screen pointing to it, the toast "Map pin: <zone> - <spot>", and the world
+   map opens at that zone. Count the actions from typing the name to the pin: at most five (type, click the item,
+   "+", the pin button). In combat, press another pin button: the pin and the toast come, the map stays closed. Turn off
+   "Show catch notifications" in the settings and press a pin button: the toast still comes. Note whether the arrow
+   shows; if not, note the CVar line of the spike.
 4. [ ] **The player's own pin** (FR-012): set a pin by hand on the world map, then press a pin button in the
    catalog. Expected: "Replace your map pin with this place?". "Cancel": your pin stays. Press again and "Replace":
-   the catalog's pin. Press another pin button: no question (the addon's own pin is replaced).
+   the catalog's pin. Press another pin button: no question (the addon's own pin is replaced). Press the pin
+   button of the place the pin already marks: no question either.
 5. [ ] **Caves and instances** (V33): expand a zone with a spot inside a cave (a zone name "Zone - Cave"): its pin
-   lands on the zone map where the cave is, or the spot has no pin button. A spot in an instance has no pin button.
+   lands on the zone map where the cave is (carried through the world position, `MapPin.Target`), or the spot has
+   no pin button. A spot in an instance has no pin button.
 6. [ ] **Another client language** (V34, SC-005): on the second client, after fishing a few casts at a named subzone
    on the first: the same zones, chances and catches; zone and subzone names in the second client's language. A
    spot fished only by the other client is named too.

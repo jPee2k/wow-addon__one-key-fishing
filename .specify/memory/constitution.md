@@ -78,9 +78,9 @@ silent failures that tests cannot catch.
 ### V. Checked and Tested Changes
 
 - `npm run check` and `npm test` MUST pass after every change and before every commit.
-- Logic that can run without the game (Core, Bags, Catch, Stats, Prices, CatchDB, Comm, Share,
-  statistics window logic) MUST get a new or extended test in `tests/` when it changes; stubs
-  live in `tests/wow.lua`.
+- Logic that can run without the game (Core, the game data, Bags, Skill, Catch, Stats, Prices,
+  CatchDB, Comm, Channel, Share, Catalog, statistics window logic) MUST get a new or extended
+  test in `tests/` when it changes; stubs live in `tests/wow.lua`.
 - Addon code MUST stay Lua 5.1 compatible and free of 5.1/5.3 differences; a failure caused only
   by fengari's Lua 5.3 is fixed in the test or the stub, not by bending the addon.
 
@@ -99,6 +99,11 @@ player sees the code.
 - The code is layered (Core, Game, Data, View; `CLAUDE.md` Architecture, `docs/architecture/core.md`
   "Layers"): a file MAY use the module tables of its own layer and the ones below, every frame
   lives in `UI/`, and a lower layer MUST NOT name a frame module; `npm run check` enforces it.
+- Game data (items, spells, objects, NPCs, places, slots by ID) lives in the layer 0 data model
+  `ns.GameData` under `GameData/`, one file per entity, data only: no logic, no `ns.L`, no other
+  module (`npm run check` enforces it); addon tuning stays in its module.
+- A module split over several files shares its internals through `<Module>.private`; no file
+  of another folder reads that table (`npm run check` enforces it).
 - Every new feature MUST be built inside this architecture: its data and rules in a module of its
   area, its frames in `UI/`, the two joined by messages and documented functions; a new area adds
   its folder, its `docs/architecture/` document and its `tests/` folder.
@@ -151,4 +156,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.5.1 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06
+**Version**: 1.5.2 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06

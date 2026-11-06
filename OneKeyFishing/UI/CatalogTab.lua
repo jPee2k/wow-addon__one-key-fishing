@@ -18,7 +18,6 @@ local BOTTOM = 40 -- the lists end above the status line
 local WINDOW_HEIGHT = 660 -- the statistics window (UI/StatsFrame.lua)
 local MAX_ROWS = 26 -- rows of the fixed list when the scroll templates are missing
 local INDENT = 16 -- spot rows under their zone
-local PIN_EPSILON = 0.0005 -- a waypoint this close to the addon's last pin is that pin
 local PIN_ATLAS = "Waypoint-MapPin-Untracked"
 -- The zone and spot rows: x and width inside a row, and the text alignment.
 local COLUMNS = {
@@ -32,7 +31,7 @@ local CreateText = ns.CreateText -- UI/Widgets.lua
 
 local page
 local search = ""
-local filter = { range = "all", source = "all", water = "all" }
+local filter = ns.Catalog.DefaultFilter()
 local chosen -- the item ID of the item page, or nil for the list
 local pending -- what Show was asked for while the index was still building; Tick passes it on once it is ready
 local expanded = {} -- map ID -> true: zones of the chosen item that show their spots
@@ -41,17 +40,7 @@ local dirty = false
 
 -- The span of skill an item was caught with ({ min, max } ranges): "0-74", "75-224", "300+", "75+".
 local function SpanLabel(ranges)
-    if not ranges then
-        return ""
-    end
-    if ranges.min == ranges.max then
-        return ns.CatchHere.RangeLabel(ranges.min)
-    end
-    local from = ranges.min * ns.CatchDB.RANGE_STEP
-    if ranges.max == ns.CatchDB.MAX_RANGE then
-        return from .. "+"
-    end
-    return from .. "-" .. ((ranges.max + 1) * ns.CatchDB.RANGE_STEP - 1)
+    return ranges and ns.RangeLabel(ranges.min, ranges.max) or ""
 end
 
 local function MarkDirty()
@@ -178,7 +167,7 @@ local function CreatePinButton(row)
     button:SetScript("OnLeave", function() GameTooltip:Hide() end)
     button:SetScript("OnClick", function()
         local element = row.element
-        CatalogTab.Pin(element.place.pin, element.zone .. " - " .. element.place.name)
+        ns.MapPin.Set(element.place.pin, element.zone .. " - " .. element.place.name) -- Core/MapPin.lua
     end)
     return button
 end
@@ -359,7 +348,7 @@ function CatalogTab.Refresh(retain)
         return
     end
     dirty = false
-    page.skillButton:SetText((L["Skill: %s"]):format(ns.CatchHere.RangeLabel(filter.range)))
+    page.skillButton:SetText((L["Skill: %s"]):format(ns.RangeLabel(filter.range)))
     page.sourceButton:SetText((L["Source: %s"]):format(ns.CatchHere.SourceLabel(filter.source)))
     local pools = ns.CatchDB.HasPoolData()
     if not pools then
@@ -430,42 +419,6 @@ function CatalogTab.Show(arg)
         chosen = nil
     end
     CatalogTab.Refresh()
-end
-
--- True when the waypoint on the map is the one the addon set last (same map, positions within PIN_EPSILON).
-local function IsOwnPin(point)
-    local pin = ns.charDB.pin
-    local position = point and point.position
-    if not (pin and position) then
-        return false
-    end
-    return point.uiMapID == pin.mapID and math.abs(position.x - pin.x) <= PIN_EPSILON
-        and math.abs(position.y - pin.y) <= PIN_EPSILON
-end
-
--- Sets the game's own map pin at target ({ mapID, x, y }) as Blizzard's /mappin does (research R6): the navigation
--- to it, a toast and, out of combat, the world map at that map. A pin the player set is replaced only after a
--- question (FR-012). Only on the player's click: nothing else acts (Principle I).
-function CatalogTab.Pin(target, placeName)
-    local function Apply()
-        if not C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)) then
-            ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4, true)
-            return
-        end
-        C_SuperTrack.SetSuperTrackedUserWaypoint(true)
-        ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
-        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1, true)
-        if not InCombatLockdown() then
-            -- VERIFY(V32): failed in game, docs/tech-debt.md: OpenWorldMap from addon code taints the map
-            OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted
-        end
-    end
-    if C_Map.HasUserWaypoint() and not IsOwnPin(C_Map.GetUserWaypoint()) then
-        ns.ShowPopup("ONEKEYFISHING_REPLACE_PIN", L["Replace your map pin with this place?"], Apply, L["Replace"],
-            L["Cancel"])
-    else
-        Apply()
-    end
 end
 
 function CatalogTab.SetSearch(text)

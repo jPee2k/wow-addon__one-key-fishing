@@ -312,7 +312,8 @@ end
 -- A, records about places the seed knows well, go first; then B, records no peer confirmed for long; then C; and D,
 -- records about places with little data in the seed, go last.
 local SATURATED_CATCHES = 1000 -- a place the seed holds this many catches of gains little from another record
-local RARE_CATCHES = 50 -- a place the seed holds fewer catches of (part 1's "little data"; no seed cell counts too)
+local RARE_CATCHES = ns.CatchDB.LITTLE_DATA -- a place the seed holds fewer catches of (part 1's "little data"; no
+-- seed cell counts too)
 local STALE_SECONDS = 60 * 86400 -- not confirmed by any peer for this long
 
 -- Shares of a record's places that are saturated and rare in the seed, once per stored table (a stored record never
@@ -397,12 +398,7 @@ function Store.Evict(store)
     return #removed
 end
 
-local function OwnRecord(store)
-    local own = store.records[store.myID]
-    if type(own) == "table" and IsCount(own.seq) and IsCount(own.epoch) then
-        return own
-    end
-end
+local OwnRecord = ns.CatchDB.OwnRecord -- the own record of a store, nil when missing or damaged
 
 -- Every unit held ("<id>@<epoch>" -> seq): the own record (when it has data) and those under "<id>@<epoch>" (other
 -- players' and the own frozen ones) the seed does not hold whole.

@@ -1,5 +1,6 @@
 -- Widgets: the frame helpers shared by the windows and pages of UI/: the panel button that grows to its text,
--- font strings, an item's link and icon, the item tooltip with the auction price, and radio menus.
+-- font strings, an item's link and icon, the item tooltip with the auction price, radio menus, the skill range label
+-- and the auction scan button's state.
 local _, ns = ...
 
 -- Widens a button to its text when the text is wider than the button's own width (translations are often
@@ -95,4 +96,28 @@ function ns.KeyText(binding, short, unbound, separator)
         return unbound or ("|cffff5555" .. ns.L["not bound"] .. "|r")
     end
     return table.concat(texts, separator or " / ")
+end
+
+-- The skill ranges min to max of CatchDB (whole ranges of RANGE_STEP points; max defaults to min): "0-74",
+-- "75-224", "300+", "75+"; "All skill levels" for "all".
+function ns.RangeLabel(min, max)
+    if min == "all" then
+        return ns.L["All skill levels"]
+    end
+    max = max or min
+    local step = ns.CatchDB.RANGE_STEP
+    local from = min * step
+    if max == ns.CatchDB.MAX_RANGE then
+        return from .. "+"
+    end
+    return from .. "-" .. ((max + 1) * step - 1)
+end
+
+-- The auction scan button: clickable while a scan can start; the hint (if any) shows while the auction house is
+-- closed.
+function ns.UpdateScanButton(button, hint)
+    button:SetEnabled(ns.Auction.CanScan())
+    if hint then
+        hint:SetShown(not ns.Auction.IsOpen())
+    end
 end

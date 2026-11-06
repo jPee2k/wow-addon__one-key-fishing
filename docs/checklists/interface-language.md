@@ -109,15 +109,16 @@ On a client in German (or another language with a translation), on the character
 
 With the addon in Ukrainian (or any other non-English language):
 
-- [x] Toggle fishing mode on and off; settings and gear are restored.
+- [ ] (re-run after spec 008) Toggle fishing mode on and off; settings and gear are restored.
 - [x] Cast, hook and loot with the fishing key.
-- [x] A lure is applied when the pole has none.
+- [ ] (re-run after spec 008) A lure is applied when the pole has none.
 - [ ] A fished clam or container is opened.
 - [x] The statistics count casts, catches and value.
 
 ## 10. Next rank (User Story 3)
 
-Closes the VERIFY marks of `GameData/FishingRanks.lua`, `Skill.lua` and `UI/MapPin.lua` (research R11, R12, R14).
+Closes the VERIFY marks of `GameData/FishingRanks.lua`, `GameData/NpcNames.lua` and `Core/MapPin.lua` (research R11,
+R12, R14; [verification.md](../../specs/001-interface-language/verification.md)).
 A low character helps for the first steps; the book and the quest need a trip to Booty Bay and Dustwallow Marsh.
 
 **Places and IDs** (write down what differs):
@@ -125,8 +126,8 @@ A low character helps for the first steps; the book and the quest need a trip to
 - [ ] Old Man Heming in Booty Bay sells "Expert Fishing - The Bass and You" (skill 125, level 20), and it teaches
   Expert Fishing: he sells it (item 16083, 2026-11-06); that it teaches Expert from skill 125 and level 20: ____
 - [ ] Nat Pagle in Dustwallow Marsh gives "Nat Pagle, Angler Extreme" (skill 225, level 35): ____
-- [x] Journeyman is taught by fishing trainers from skill 50, level 10: learned at a trainer at level 10
-  (2026-11-06); the skill 50 threshold itself needs a character with skill 50-74 at level 10 (open)
+- [ ] (re-run after spec 008) Journeyman is taught by fishing trainers from skill 50, level 10: learned at a trainer at
+  level 10 (2026-11-06); the skill 50 threshold itself needs a character with skill 50-74 at level 10 (open)
 - [ ] Next to Heming and next to Nat Pagle, with the NPC targeted, paste the map ID, the point and the GUID (the
   NPC ID is the second last number) of each:
   `/run local m=C_Map.GetBestMapForUnit("player") local p=C_Map.GetPlayerMapPosition(m,"player") print(m,UnitGUID("target"),p:GetXY())`
@@ -152,38 +153,41 @@ A low character helps for the first steps; the book and the quest need a trip to
   (run it twice: the first call may still be empty): the book `Expert Fishing - The Bass and You`, the quest
   **nil** (2026-11-05; open). Also nil 5 s after `C_QuestLog.RequestLoadQuestByID(6607)`;
   `C_QuestLog.GetQuestInfo(6607)` nil, `IsQuestFlaggedCompleted(6607)` false (level 1 character)
-- [x] `/run for _,s in ipairs({7620,7731,7732,18248}) do print(s, C_Spell.GetSpellSubtext(s)) end` prints the rank
-  names (Apprentice ... Artisan): Apprentice, Journeyman, Expert, Artisan
-- [x] `/okf debug`, section Fishing: the lines "next rank", "next rank names" (game / table / english for each
-  name) and "next rank pin": paste them (2026-11-05, skill 52/75, level 6): `next rank: <Journeyman in the
-  client's language> (game), state level, from skill 50 and level 10, reminders true`, `next rank names: trainer
-  (no game names)`, `next rank pin: none (trainer, no usable map, or pins disabled)`; at 75/75, level 6:
-  `state cap`, the rest the same
+- [ ] (re-run after spec 008) `/run for _,s in ipairs({7620,7731,7732,18248}) do print(s, C_Spell.GetSpellSubtext(s))
+  end` prints the rank names (Apprentice ... Artisan): Apprentice, Journeyman, Expert, Artisan
+- [ ] (re-run after spec 008) `/okf debug`, section Fishing: the lines "next rank", "next rank names" (game / table /
+  english for each name) and "next rank pin": paste them (2026-11-05, skill 52/75, level 6): `next rank: <Journeyman in
+  the client's language> (game), state level, from skill 50 and level 10, reminders true`, `next rank names: trainer (no
+  game names)`, `next rank pin: none (trainer, no usable map, or pins disabled)`; at 75/75, level 6: `state cap`, the
+  rest the same
 
 **Notices and the line:**
 
-- [x] At skill 50 (125, 225) with the level: one chat line and a notification "You can learn ... now." with the
-  where sentence; not again until the next login: at skill 50+ on reaching level 10 (2026-11-06); 125 / 225 later
-- [x] Below the level: no notice; the statistics window says "from character level N" (before the skill
-  threshold: "from skill X and character level N"); after the level-up the notice comes (the level-up part waits
-  for level 10).
-- [x] With "Show catch notifications" off, the rank notices still show their notification above the indicator
-  (2026-11-06).
-- [x] At the cap: a large on-screen message once; entering fishing mode again prints a chat line only.
-- [x] The statistics window shows the "Next rank" line under the prices line; the minimap tooltip shows it too.
+- [ ] (re-run after spec 008) At skill 50 (125, 225) with the level: one chat line and a notification "You can learn ...
+  now." with the where sentence; not again until the next login: at skill 50+ on reaching level 10 (2026-11-06); 125 /
+  225 later
+- [ ] (re-run after spec 008) Below the level: no notice; the statistics window says "from character level N" (before
+  the skill threshold: "from skill X and character level N"); after the level-up the notice comes (the level-up part
+  waits for level 10).
+- [ ] (re-run after spec 008) With "Show catch notifications" off, the rank notices still show their notification above
+  the indicator (2026-11-06).
+- [ ] (re-run after spec 008) At the cap: a large on-screen message once; entering fishing mode again prints a chat line
+  only.
+- [ ] (re-run after spec 008) The statistics window shows the "Next rank" line under the prices line; the minimap
+  tooltip shows it too.
 
 **Map pin** (Expert or Artisan advice):
 
-- [x] The **Pin** button in the statistics window and "Pin: next Fishing rank" in the minimap menu set the game's
-  pin and the navigation arrow on Heming or Nat Pagle and open the map: on Heming, map 1434 (2026-11-06). The map
-  opened by the addon then failed in a fight ("Interface action failed because of an AddOn", taint of
-  `OpenWorldMap`; without a pin no such line). Fix waits in `docs/tech-debt.md`; then re-check: Pin, a fight, the
-  map opened by hand (M): no such line: ____
-- [x] With a pin of your own on the map, a popup asks first; Cancel keeps your pin. The buttons are in the addon's
-  language (2026-11-06).
-- [x] The map link at the end of the chat notice sets the pin and opens the map (without a question): at the cap
-  150/150, level 10 (2026-11-06); a fight afterwards with the map opened by hand gave no blocked action (the
-  game's own link handler opens the map, not the addon).
+- [ ] (re-run after spec 008) The **Pin** button in the statistics window and "Pin: next Fishing rank" in the minimap
+  menu set the game's pin and the navigation arrow on Heming or Nat Pagle and open the map: on Heming, map 1434
+  (2026-11-06). The map opened by the addon then failed in a fight ("Interface action failed because of an AddOn", taint
+  of `OpenWorldMap`; without a pin no such line). Fix waits in `docs/tech-debt.md`; then re-check: Pin, a fight, the map
+  opened by hand (M): no such line: ____
+- [ ] (re-run after spec 008) With a pin of your own on the map, a popup asks first; Cancel keeps your pin. The buttons
+  are in the addon's language (2026-11-06).
+- [ ] (re-run after spec 008) The map link at the end of the chat notice sets the pin and opens the map (without a
+  question): at the cap 150/150, level 10 (2026-11-06); a fight afterwards with the map opened by hand gave no blocked
+  action (the game's own link handler opens the map, not the addon).
 
 **Languages:**
 
@@ -199,8 +203,8 @@ build after the code review (`1.0.0-dev+09cfb6b` or later; the minimap tooltip s
   the Language button the current choice, the checkboxes as set. Open Fishing gear first thing and hover the whole
   list: only your items (or "No items yet."), no Remove button without an item, no Lua error; switch pages a few
   times; close the panel, Alt+Click an item in the bags, reopen: the item is listed; remove it the same way.
-- [x] **US2, debug.** With no lure in the bags, `/okf debug`: the Gear section is complete ("next lure: nil", best
-  pole, chosen pole, pending restore), no `!! failed` line.
+- [ ] (re-run after spec 008) **US2, debug.** With no lure in the bags, `/okf debug`: the Gear section is complete
+  ("next lure: nil", best pole, chosen pole, pending restore), no `!! failed` line.
 - [x] **US3, popups.** Addon in Ukrainian on a non-English client: Reset session / Reset all in the statistics (then
   cancel) show both buttons in Ukrainian. The map pin replace popup waits for a rank advice with a place (level 10,
   section 10).

@@ -7,13 +7,15 @@ chain) and `specs/005-catch-catalog/` (views across maps, areas, the water filte
 [history/shared-db-plan.md](../history/shared-db-plan.md). The in-game checklist is
 [catch-database.md](../checklists/catch-database.md); the catalog built on the views is [catalog.md](catalog.md).
 
-One module, `ns.CatchDB`, in five files (TOC order): `SeedData.lua` (the seed, generated), `CatchDB.lua` (the
-module table, constants and change stamps, place keys, the seed accessors, the own record, its version chain, roll
-and settle), `Checks.lua` (the checks of other players' records, pure functions), `Views.lua` (sums, weights, the
-index of others' records, the queries, `Describe`) and `Events.lua` (the game's events: `ADDON_LOADED`, casts and
-catches, the index upkeep on `SHARED_DATA_CHANGED`, logout). The files share their internals through
-`CatchDB.private` (not an API): a name a later file re-binds into a local is never reassigned; the reassigned state
-(`version`, `ownItems`, `ownIndex`, `poolData`, `others`, `frozen`, `lastPool`) lives on that table as `P.<name>`.
+One module, `ns.CatchDB`, in six files (TOC order): `SeedData.lua` (the seed, generated), `CatchDB.lua` (the
+module table, constants and change stamps, place keys, the seed accessors, the own record (`CatchDB.OwnRecord`, also
+for the exchange), its version chain, roll and settle), `Checks.lua` (the checks of other players' records, pure
+functions), `Index.lua` (the indexes the views read: the seed's keys, the cells of others' records, the frozen own
+records, the own places and items), `Views.lua` (sums, weights, the queries, `Describe`) and `Events.lua` (the game's
+events: `ADDON_LOADED`, casts and catches, the index upkeep on `SHARED_DATA_CHANGED`, logout). The files share their
+internals through `CatchDB.private` (not an API): a name a later file re-binds into a local is never reassigned; the
+reassigned state (`version`, `ownItems`, `ownIndex`, `poolData`, `others`, `frozen`, `lastPool`) lives on that table as
+`P.<name>`.
 
 ## Places and recording
 
@@ -106,6 +108,6 @@ Each epoch of the own record has a chain of 4,096 links from a 26-character secr
 never shown): link 4,096 is `ns.ProofStep(secret)`, each lower link the step of the one above, and the record at seq
 `i` carries link `i` as `proof`. Only the owner can name a link above the newest one it published, so nobody can
 make up a newer version. Marks every 64 links are built in the background after a roll or a login
-(`CatchDB.OwnProofReady()`); a roll starts a new chain, and the seq reaching the top rolls too.
-`CatchDB.CheckVersion(held, incoming, steps, state)` steps the incoming proof down to the held seq (resumable) and
+(`CatchDB.private.OwnProofReady()`, read by the tests); a roll starts a new chain, and the seq reaching the top rolls
+too. `CatchDB.CheckVersion(held, incoming, steps, state)` steps the incoming proof down to the held seq (resumable) and
 compares; the seed carries the `proofs` of the versions it absorbed.

@@ -246,9 +246,7 @@ local function CreateMainPage()
     scanHint:SetPoint("TOPLEFT", resetButton, "BOTTOMLEFT", 2, -4)
     scanHint:SetWidth(560)
     local function UpdateScanButton()
-        local usable = ns.Auction.CanScan()
-        scanButton:SetEnabled(usable)
-        scanHint:SetShown(not ns.Auction.IsOpen())
+        ns.UpdateScanButton(scanButton, scanHint) -- UI/Widgets.lua
     end
     ns.On("AUCTION_STATE", UpdateScanButton)
 

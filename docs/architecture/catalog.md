@@ -1,14 +1,15 @@
 # Architecture: catch catalog
 
-`Catalog/Catalog.lua`: the catch database across every map, for the "Catch catalog" tab and the tooltips. The spec, model
-and contracts are in `specs/005-catch-catalog/` (`data-model.md` "Catalog", `contracts/api.md`); the tab itself is
+`Catalog/Catalog.lua`: the catch database across every map, for the "Catch catalog" tab and the tooltips. The spec,
+model and contracts are in `specs/005-catch-catalog/` (`data-model.md` "Catalog", `contracts/api.md`); the tab itself is
 in [ui.md](ui.md), the per-map views it is built from in [catch-db.md](catch-db.md); the in-game checklist is
 [catch-catalog.md](../checklists/catch-catalog.md). It owns no frames, so the tooltips use it without the window,
 and it sends no message: the tab polls `Catalog.GetVersion()` on the window's tick.
 
 ## The index
 
-- One index per filter key (`range|source|water`); the default filter (`all|all|all`) serves the tooltips. An
+- One index per filter key (`range|source|water`); the default filter (`all|all|all`; `Catalog.DefaultFilter()` gives
+  the tab a copy) serves the tooltips. An
   index maps item ID -> its places (one per map), made of `CatchDB.QueryMap` views.
 - Every read first brings the index up to date (`Freshen`): nothing to do while no `CatchDB.MapStamp` moved
   (`GetStampVersion` short-cuts the comparison); up to `SYNC_MAPS` (4) changed maps are recomputed by the read that
@@ -39,10 +40,9 @@ and it sends no message: the tab polls `Catalog.GetVersion()` on the window's ti
 - `Catalog.Spots(itemID, mapID, filter)`: the spots of an item on one map from `CatchDB.QueryCells`, `{ cell, name,
   point, area, chance, catches, itemCatches, players, littleData, ranges, pin }`; summed when a zone is expanded
   and kept for the session, until the map's stamp moves.
-- `Catalog.PinTarget(mapID, spot)`: where the game's map pin goes, `{ mapID, x, y }` on the spot's own map, or for
-  a Micro map (a cave, a building) on its zone's map through `C_Map.GetWorldPosFromMapPos` and
-  `GetMapPosFromWorldPos`; nil without a point (cell `"x"`), without the waypoint API, under the game rule
-  `WorldMapTrackingPinDisabled`, where `C_Map.CanSetUserWaypointOnMap` is false (instances) (V30, V33).
+- A spot's `pin` is `ns.MapPin.Target({ mapID }, x, y)` (`Core/MapPin.lua`, [core.md](core.md)): `{ mapID, x, y }`
+  on the spot's own map, or for a Micro map (a cave, a building) on its zone's map through the world position; nil
+  without a point (cell `"x"`), without the waypoint API, under the game rule, and in instances (V30, V33).
 - `Catalog.SpotName(spot)`: "Subzone (45, 72)" in the client's language from the cell's area ID
   (`C_Map.GetAreaInfo`), the coordinates alone without a known subzone, "No exact spot" for the cell without a
   position. `Catalog.ZoneName(mapID)`: "Zone - Inner map" for a map inside a zone, "Unknown zone (%d)" without map
@@ -59,5 +59,7 @@ and it sends no message: the tab polls `Catalog.GetVersion()` on the window's ti
 ## Tests
 
 `tests/catalog/index_test.lua` (items, search, order, places, spots, names, tooltips, the name queue),
-`tests/catalog/pin_test.lua` (`PinTarget` and the tab's pin flow), `tests/catalog/load_test.lua` (the largest
-database: every build step within its bound), `tests/core/fold_test.lua` (the text helpers), `tests/ui/tooltips_test.lua`.
+`tests/catalog/spot_pin_test.lua` (a spot's pin target and the pin button; the pin itself is tested in
+`tests/core/pin_target_test.lua` and `pin_set_test.lua`), `tests/catalog/load_test.lua` (the largest
+database: every build step within its bound), `tests/core/fold_test.lua` (the text helpers),
+`tests/ui/tooltips_test.lua`.

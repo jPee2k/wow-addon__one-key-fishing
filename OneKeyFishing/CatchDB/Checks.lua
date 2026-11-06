@@ -156,7 +156,7 @@ end
 -- only that much, and the limit needs no other version, so no copy can block the owner's next one.
 -- VERIFY(V26): a fishing cast lasts at most about 30 s in Forever, so no honest step reaches STEP_SECONDS
 local STEP_SECONDS = 180
-CatchDB.STEP_SECONDS = STEP_SECONDS
+P.STEP_SECONDS = STEP_SECONDS -- for the tests
 
 -- True, or false and the reason, for a record received from another player (the store refuses the own ID). An item
 -- this client does not know is accepted: WoW Forever reveals some items only when they are found (FR-017a).

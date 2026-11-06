@@ -1,21 +1,23 @@
 -- CatchDB/Views.lua: what the tabs, the catalog and the tooltips read: the sums of a place or a map over the
--- own tables, the seed and other players' records, with their weights; the index of others' records; the seed
--- info; the Describe lines of the debug report.
+-- own tables, the seed and other players' records, with their weights (over the indexes of CatchDB/Index.lua); the
+-- seed info; the Describe lines of the debug report.
 local _, ns = ...
 local CatchDB = ns.CatchDB
 local P = CatchDB.private
 local MAX_RANGE, SeedEpoch = CatchDB.MAX_RANGE, CatchDB.SeedEpoch
 local CountKeys = ns.CountKeys -- Data.lua
-local mapCache, MapRange, KeyMapRange, KeyMapID = P.mapCache, P.MapRange, P.KeyMapRange, P.KeyMapID
-local AddToOwnIndex, BuildKey, Seed, SeedField = P.AddToOwnIndex, P.BuildKey, P.Seed, P.SeedField
+local mapCache, MapRange, KeyMapID = P.mapCache, P.MapRange, P.KeyMapID
+local BuildKey, Seed, SeedField = P.BuildKey, P.Seed, P.SeedField
 local OlderBuild, OwnRecord = P.OlderBuild, P.OwnRecord
--- P.others: { byKey = { place -> { entry -> true } }, byPrefix = { prefix -> { entry -> true } }, byRecord }
--- P.frozen: the frozen own records; P.lastPool: what IsPoolLoot said about the last catch
+local SeedIndex, Others, Frozen, OwnIndex = P.SeedIndex, P.Others, P.Frozen, P.OwnIndex -- CatchDB/Index.lua
+local SeedItems, OwnItems = P.SeedItems, P.OwnItems
+-- P.lastPool: what IsPoolLoot said about the last catch
 
 ---------------------------------------------------------------------------
 -- Views
 ---------------------------------------------------------------------------
 local LITTLE_DATA = 50 -- catches a scope needs before chances are shown
+CatchDB.LITTLE_DATA = LITTLE_DATA -- also the exchange's "little data" (Share.lua)
 -- Weights (specs/004-public-channel-sync, research.md R7): from WEIGHT_FROM contributions on, no other player's
 -- contribution carries more than WEIGHT_SHARE of the weight in the shown numbers.
 local WEIGHT_FROM, WEIGHT_SHARE = 5, 1 / 5
@@ -128,129 +130,6 @@ local function AddCell(sum, cell, source, range)
     if source.seed and tonumber(cell.r) then
         sum.seedUnweighted = sum.seedUnweighted + math.max(0, tonumber(cell.r) - (tonumber(cell.c) or 0))
     end
-end
-
--- The seed's keys per "<mapID>:<range>", built once per seed (the seed is large and never changes in place).
-local seedIndex, indexedSeed
-
-local function SeedIndex(cells)
-    if indexedSeed ~= cells then
-        seedIndex, indexedSeed = {}, cells
-        for key in pairs(cells) do
-            local prefix = KeyMapRange(key)
-            if prefix then
-                seedIndex[prefix] = seedIndex[prefix] or {}
-                table.insert(seedIndex[prefix], key)
-            end
-        end
-    end
-    return seedIndex
-end
-
--- Every cell of the other players' records (Share.lua) as an entry { cell, id, build, place, prefix }, in sets by
--- place key and by "<mapID>:<range>": one index for all of them, so a query does not walk every record. Built on
--- the first query; SHARED_DATA_CHANGED with the changed keys updates only those records, without the keys it is
--- built anew; an own catch leaves it alone.
-
-local function AddToSet(sets, name, entry)
-    sets[name] = sets[name] or {}
-    sets[name][entry] = true
-end
-
--- Which records under "<id>@<epoch>" count: "own" for one the own record left on a roll (Sources counts those
--- with sharing off too), "other" for another player's, nil for a unit the seed holds in part (its first part is in
--- the seed; the store deletes those it holds whole) or anything malformed.
-local function CountedUnit(key, record)
-    if CatchDB.IsOtherKey(key) and type(record) == "table" and type(record.builds) == "table"
-        and not CatchDB.AbsorbedSeq(record.id, record.epoch) then
-        return record.id == ns.db.shared.myID and "own" or "other"
-    end
-end
-
-local function IndexRecord(key)
-    local record = ns.db.shared.records[key]
-    if CountedUnit(key, record) ~= "other" then
-        return
-    end
-    local entries = {}
-    for build, cells in pairs(record.builds) do
-        for place, cell in pairs(type(cells) == "table" and cells or {}) do
-            local prefix = KeyMapRange(place)
-            if prefix then
-                local entry = { cell = cell, id = record.id, build = build, place = place, prefix = prefix,
-                    other = true, mapID = KeyMapID(prefix), range = tonumber(prefix:match(":(%d)$")) }
-                AddToSet(P.others.byKey, place, entry)
-                AddToSet(P.others.byPrefix, prefix, entry)
-                table.insert(entries, entry)
-            end
-        end
-    end
-    P.others.byRecord[key] = entries
-end
-
-local function RemoveFromSet(sets, name, entry)
-    local set = sets[name]
-    set[entry] = nil
-    if next(set) == nil then
-        sets[name] = nil
-    end
-end
-
-local function UnindexRecord(key)
-    for _, entry in ipairs(P.others.byRecord[key] or {}) do
-        RemoveFromSet(P.others.byKey, entry.place, entry)
-        RemoveFromSet(P.others.byPrefix, entry.prefix, entry)
-    end
-    P.others.byRecord[key] = nil
-end
-
--- The own records frozen by a roll that the seed does not hold yet: they count like the live one.
-
-local function Frozen()
-    if not P.frozen then
-        P.frozen = {}
-        for key, record in pairs(ns.db.shared.records) do
-            if CountedUnit(key, record) == "own" then
-                table.insert(P.frozen, record)
-            end
-        end
-    end
-    return P.frozen
-end
-
-local function Others()
-    if not P.others then
-        P.others = { byKey = {}, byPrefix = {}, byRecord = {} }
-        for key in pairs(ns.db.shared.records) do
-            IndexRecord(key)
-        end
-    end
-    return P.others
-end
-
--- True for a record key of the own ID: the live record, or one a roll froze under "<myID>@<epoch>".
-local function IsOwnKey(key)
-    local myID = ns.db.shared.myID
-    return key == myID or (CatchDB.IsOtherKey(key) and CatchDB.ParseUnit(key) == myID)
-end
-
-local function OwnIndex()
-    if not P.ownIndex then
-        P.ownIndex = {}
-        for key in pairs(ns.db.shared.mine) do
-            AddToOwnIndex(key)
-        end
-        for key, record in pairs(ns.db.shared.records) do
-            if IsOwnKey(key) and type(record) == "table" and type(record.builds) == "table" then
-                for _, cells in pairs(record.builds) do
-                    for place in pairs(type(cells) == "table" and cells or {}) do
-                        AddToOwnIndex(place)
-                    end
-                end
-            end
-        end
-    end
-    return P.ownIndex
 end
 
 -- What a source sums for a map. "all": the seed, the own record and, with sharing on, the other players'
@@ -425,47 +304,6 @@ local function WeightFactors(sum, players, amount)
         end
     end
     return factors
-end
-
--- Adds the item IDs of every cell to `set` (item ID -> true).
-local function AddItemsOf(set, cells)
-    for _, cell in pairs(type(cells) == "table" and cells or {}) do
-        if type(cell) == "table" and type(cell.i) == "table" then
-            for itemID in pairs(cell.i) do
-                set[itemID] = true
-            end
-        end
-    end
-end
-
--- Item ID -> true for every item of the seed, built once per seed.
-local seedItems, seedItemsOf
-
-local function SeedItems()
-    local cells = Seed().cells
-    if seedItemsOf ~= cells then
-        seedItems, seedItemsOf = {}, cells
-        AddItemsOf(seedItems, cells)
-    end
-    return seedItems
-end
-
--- Item ID -> true for every item of the own catch (shared.mine and the records of the own ID), built once and grown
--- by catches (ownItems is declared at the top: Settle grows it).
-local function OwnItems()
-    if not P.ownItems then
-        P.ownItems = {}
-        AddItemsOf(P.ownItems, ns.db.shared.mine)
-        for key, record in pairs(ns.db.shared.records) do
-            if type(record) == "table" and record.id == ns.db.shared.myID and type(record.builds) == "table"
-                and (key == record.id or CatchDB.IsOtherKey(key)) then
-                for _, cells in pairs(record.builds) do
-                    AddItemsOf(P.ownItems, cells)
-                end
-            end
-        end
-    end
-    return P.ownItems
 end
 
 -- Item ID -> the number of other players' contributions that report it anywhere on the map, in any range
@@ -715,7 +553,6 @@ function CatchDB.HasSeed()
     return next(Seed().cells) ~= nil
 end
 
-
 -- Lines for /okf debug; never the anonymous ID (the report goes into public bug reports).
 function CatchDB.Describe()
     local lines = {}
@@ -727,6 +564,3 @@ function CatchDB.Describe()
     table.insert(lines, "game version key " .. BuildKey())
     return lines
 end
-
--- Shared with CatchDB/Events.lua through CatchDB.private.
-P.IsOwnKey, P.IndexRecord, P.UnindexRecord = IsOwnKey, IndexRecord, UnindexRecord

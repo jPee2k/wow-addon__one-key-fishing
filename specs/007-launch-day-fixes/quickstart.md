@@ -2,8 +2,8 @@
 
 ## Before the game
 
-1. `npm run check` and `npm test` pass; the new tests (`debug_test`, `settings_gear_test`, `keys_test`,
-   `popup_test`, the extended `stats_test`) are among them.
+1. `npm run check` and `npm test` pass; the new tests (`core/report_sections_test`, `ui/gear_page_test`, `keys_test`,
+   `popup_test`, the extended `ui/stats_window_test`; renamed in spec 008) are among them.
 2. `npm run install-addon`, then restart the game (no file is added to the TOC by these fixes, so `/reload` is
    enough when the addon was already installed, but a restart is the safe default).
 3. `/console scriptErrors 1`.

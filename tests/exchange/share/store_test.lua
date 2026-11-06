@@ -14,7 +14,7 @@ local changes = 0
 ns.On("SHARED_DATA_CHANGED", function() changes = changes + 1 end)
 
 -- A record with one cell (`places` cells on map 3000 + i when given), with at least as many casts as its seq; a big
--- one gets the seq its casting needs (never more than CatchDB.STEP_SECONDS per step).
+-- one gets the seq its casting needs (never more than CatchDB.private.STEP_SECONDS per step).
 local function rec(id, epoch, seq, places)
     local cells = { ["1415:3:47"] = catch_cell(math.max(2, seq), 1, { [FISH] = { 2, 2 } }) }
     local seconds = cells["1415:3:47"].t
@@ -22,7 +22,7 @@ local function rec(id, epoch, seq, places)
         cells[(3000 + i) .. ":0:x"] = catch_cell(1, 0)
         seconds = seconds + cells[(3000 + i) .. ":0:x"].t
     end
-    seq = math.max(seq, math.ceil(seconds / ns.CatchDB.STEP_SECONDS))
+    seq = math.max(seq, math.ceil(seconds / ns.CatchDB.private.STEP_SECONDS))
     return prove({ id = id, epoch = epoch, seq = seq, builds = { ["1.60.1"] = cells } }, nil, 4096)
 end
 

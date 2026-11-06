@@ -192,3 +192,11 @@ test("with pool data the Water button shows, and Open water builds its own index
     end
     ns.CatalogTab.SetWater("all")
 end)
+
+test("the skill range labels of both tabs come from one helper (UI/Widgets.lua)", function()
+    eq(ns.RangeLabel(0), "0-74", "one range")
+    eq(ns.RangeLabel(1, 2), "75-224", "a span")
+    eq(ns.RangeLabel(4), "300+", "the top range")
+    eq(ns.RangeLabel(1, 4), "75+", "a span to the top")
+    eq(ns.RangeLabel("all"), ns.L["All skill levels"], "all")
+end)

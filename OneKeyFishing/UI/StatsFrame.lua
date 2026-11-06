@@ -388,7 +388,7 @@ local function IsShown()
 end
 
 local function UpdateScanButton()
-    frame.scan:SetEnabled(ns.Auction.CanScan())
+    ns.UpdateScanButton(frame.scan) -- UI/Widgets.lua
 end
 
 -- The column contexts for ROWS; values come from the last full refresh.
@@ -570,9 +570,12 @@ ns.RegisterEvent("CHAT_MSG_SKILL", MarkDirty)
 -- book, the quest and the rank spells, which the client loads later. Other items, quests and spells are ignored.
 ns.RegisterEvent("PLAYER_LEVEL_UP", function() C_Timer.After(1, MarkDirty) end)
 local function MarkDirtyForAdvice(_, id)
-    for cap, step in pairs(ns.FishingRanks) do
-        if id == step.source.itemID or id == step.source.questID or id == step.next
-            or id == ns.FishingRankSpells[cap] then
+    if ns.IsFishingSpell(id) then -- a rank spell
+        MarkDirty()
+        return
+    end
+    for _, step in pairs(ns.GameData.FishingRanks) do
+        if id == step.source.itemID or id == step.source.questID then
             MarkDirty()
             return
         end

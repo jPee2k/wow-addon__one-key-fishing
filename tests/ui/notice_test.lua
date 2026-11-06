@@ -1,4 +1,5 @@
--- Share.lua: the one-time popup about the exchange. The first login lands in combat; nothing is exchanged before
+-- UI/ShareNotice.lua and Exchange/ShareGame.lua:
+-- the one-time popup about the exchange. The first login lands in combat; nothing is exchanged before
 -- the popup is closed. The tests run in order and share one login.
 
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"

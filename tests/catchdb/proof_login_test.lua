@@ -16,5 +16,5 @@ test("the record keeps its epoch and seq and gets a chain; its proof comes with 
     eq(record.proof, nil, "no proof before the marks")
     advance(0)
     assert(record.proof and #record.proof == 16, "a proof once the marks are there")
-    eq(ns.CatchDB.OwnProofReady(), true, "offered from now on")
+    eq(ns.CatchDB.private.OwnProofReady(), true, "offered from now on")
 end)

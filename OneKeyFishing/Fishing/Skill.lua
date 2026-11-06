@@ -1,5 +1,6 @@
 -- Skill: the Fishing skill, and the advice for the next rank (spec 001, User Story 3): when it can be learned,
--- where, and a notice when that moment comes and at the cap. The rank data is in GameData/FishingRanks.lua; every
+-- where, and a notice when that moment comes and at the cap. The rank data is game data (GameData/FishingSpells.lua,
+-- GameData/FishingRanks.lua, GameData/NpcNames.lua); every
 -- game name in the advice is read from the client in its language, with English as the fallback.
 local _, ns = ...
 local L = ns.L
@@ -7,18 +8,30 @@ local L = ns.L
 local Skill = {}
 ns.Skill = Skill
 
--- The addon's own rank names, for a client that gives no spell subtext. Built on first use: the texts need the
--- language, which is set after the files load.
+local SPELLS = ns.GameData.FishingSpells -- lowest rank first
+local RANKS = ns.GameData.FishingRanks
+
+-- The addon's own rank names, in the order of the Fishing spells, for a client that gives no spell subtext. Built on
+-- first use: the texts need the language, which is set after the files load.
 local fallbackRankNames
 
 local function FallbackRankName(spellID)
-    fallbackRankNames = fallbackRankNames or {
-        [7620] = L["Apprentice"],
-        [7731] = L["Journeyman"],
-        [7732] = L["Expert"],
-        [18248] = L["Artisan"],
-    }
-    return fallbackRankNames[spellID] or ""
+    fallbackRankNames = fallbackRankNames or { L["Apprentice"], L["Journeyman"], L["Expert"], L["Artisan"] }
+    for i, spell in ipairs(SPELLS) do
+        if spell.spellID == spellID then
+            return fallbackRankNames[i] or ""
+        end
+    end
+    return ""
+end
+
+-- The Fishing spell of the rank whose skill cap is cap, or nil.
+local function SpellOfCap(cap)
+    for _, spell in ipairs(SPELLS) do
+        if spell.cap == cap then
+            return spell.spellID
+        end
+    end
 end
 
 -- warned[cap] = { now = true, cap = true }: the notices already shown this session.
@@ -55,7 +68,7 @@ end
 
 -- The name of the rank whose skill cap is maxRank.
 function Skill.GetRankName(maxRank)
-    local spellID = ns.FishingRankSpells[maxRank]
+    local spellID = SpellOfCap(maxRank)
     return spellID and (RankNameBySpell(spellID)) or ""
 end
 
@@ -101,7 +114,7 @@ local function NpcName(npcID)
             return name, "game"
         end
     end
-    local names = ns.NpcNames[npcID] or {}
+    local names = ns.GameData.NpcNames[npcID] or {}
     local name = NonEmpty(names[GetLocale()])
     if name then
         return name, "table"
@@ -134,7 +147,7 @@ end
 -- "level": the skill is enough but the character level is not. At the cap, levelLow says the level is missing.
 function Skill.GetNextRank()
     local rank, maxRank = Skill.Get()
-    local step = rank and ns.FishingRanks[maxRank]
+    local step = rank and RANKS[maxRank]
     if not step then
         return nil
     end
@@ -213,7 +226,7 @@ local function Check(modeEntry)
     end
 
     -- Cheap checks first: SKILL_LINES_CHANGED fires for every skill, and the advice reads names and a tooltip.
-    local step = ns.FishingRanks[maxRank]
+    local step = RANKS[maxRank]
     if not (step and ns.db.settings.skillCapWarning) or rank < step.learnAt then
         return
     end
@@ -256,11 +269,11 @@ end
 -- subtext is the rank name) once at login.
 local function RequestNames()
     if C_Spell and type(C_Spell.RequestLoadSpellData) == "function" then
-        for _, spellID in pairs(ns.FishingRankSpells) do
-            C_Spell.RequestLoadSpellData(spellID)
+        for _, spell in ipairs(SPELLS) do
+            C_Spell.RequestLoadSpellData(spell.spellID)
         end
     end
-    for _, step in pairs(ns.FishingRanks) do
+    for _, step in pairs(RANKS) do
         local source = step.source
         if source.itemID and type(C_Item.RequestLoadItemDataByID) == "function" then
             C_Item.RequestLoadItemDataByID(source.itemID)

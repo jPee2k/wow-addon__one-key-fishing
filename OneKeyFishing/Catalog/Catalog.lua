@@ -17,6 +17,11 @@ local DEFAULT_INDEX_DELAY = 10 -- seconds after the session's first loading scre
 
 local DEFAULT_FILTER = { range = "all", source = "all", water = "all" }
 
+-- A fresh copy of the default filter, for the tab to change (UI/CatalogTab.lua).
+function Catalog.DefaultFilter()
+    return { range = DEFAULT_FILTER.range, source = DEFAULT_FILTER.source, water = DEFAULT_FILTER.water }
+end
+
 local version = 0
 
 local function Bump()
@@ -336,7 +341,8 @@ function Catalog.Spots(itemID, mapID, filter)
                     catches = view.catches, itemCatches = item.catches, players = view.players,
                     littleData = view.littleData, ranges = item.ranges, order = view.cell }
                 row.name = Catalog.SpotName(row)
-                row.pin = Catalog.PinTarget(mapID, row)
+                -- The game's map pin for the spot (Core/MapPin.lua): none for a cell without a point.
+                row.pin = row.point and ns.MapPin.Target({ mapID }, row.point.x, row.point.y)
                 table.insert(rows, row)
             end
         end
@@ -344,44 +350,6 @@ function Catalog.Spots(itemID, mapID, filter)
     table.sort(rows, PlaceBefore)
     spots[key] = { cells = cells, rows = rows }
     return rows
-end
-
--- Where the game's map pin for a spot goes (research R6, data-model.md "Pin target"): { mapID, x, y } on the
--- spot's own map, or for a cave or a building on its zone's map; nil without a point, without the waypoint API,
--- under the game rule that turns pins off, and in instances.
-function Catalog.PinTarget(mapID, spot)
-    if not (spot and spot.point) or type(C_Map.SetUserWaypoint) ~= "function"
-        or type(C_Map.CanSetUserWaypointOnMap) ~= "function" then
-        return nil
-    end
-    -- VERIFY(V30): CanSetUserWaypointOnMap answers per map, open world true, instances false, and the game rule
-    -- is not active
-    local rule = Enum.GameRule and Enum.GameRule.WorldMapTrackingPinDisabled
-    if rule and C_GameRules and type(C_GameRules.IsGameRuleActive) == "function"
-        and C_GameRules.IsGameRuleActive(rule) then
-        return nil
-    end
-    local x, y = spot.point.x, spot.point.y
-    if C_Map.CanSetUserWaypointOnMap(mapID) then
-        return { mapID = mapID, x = x, y = y }
-    end
-    local info = C_Map.GetMapInfo(mapID)
-    local parent = info and info.parentMapID
-    if not (info and Enum.UIMapType and info.mapType == Enum.UIMapType.Micro and parent and parent ~= 0
-        and C_Map.CanSetUserWaypointOnMap(parent)) then
-        return nil -- dungeons and other maps never fall back: their zone is the wrong water
-    end
-    -- VERIFY(V33): a Micro map converts to its parent zone through the world position
-    local continent, world = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(x, y))
-    if not world then
-        return nil
-    end
-    local onMap, position = C_Map.GetMapPosFromWorldPos(continent, world, parent)
-    local px, py = position and position.x, position and position.y
-    if onMap ~= parent or not (px and py) or px < 0 or px > 1 or py < 0 or py > 1 then
-        return nil
-    end
-    return { mapID = parent, x = px, y = py }
 end
 
 -- "45, 72": a spot's point in whole percent of the map, as the game's map coordinates read.

@@ -18,7 +18,7 @@ function ns.IsPoolLoot()
         local sources = { GetLootSourceInfo(slot) }
         for i = 1, #sources, 2 do
             local objectID = ns.GameObjectID(sources[i])
-            if objectID and objectID ~= ns.BOBBER_OBJECT_ID then
+            if objectID and objectID ~= ns.GameData.Bobber.objectID then
                 return true
             end
             fromBobber = fromBobber or objectID ~= nil

@@ -42,12 +42,20 @@ Locales\koKR.lua
 Locales\ptBR.lua
 Locales\zhTW.lua
 Locales\zhCN.lua
+# Game data (data only, ns.GameData): first, so every module may read it while the files load
+GameData\FishingSpells.lua
+GameData\FishingRanks.lua
+GameData\NpcNames.lua
+GameData\Bobber.lua
+GameData\Lures.lua
+GameData\FishedContainers.lua
+GameData\FishingPoles.lua
+GameData\EquipSlots.lua
+GameData\Icons.lua
 # Core: events, the message bus, saved variables, shared data
 Core\Core.lua
 Core\Data.lua
 Core\MapPin.lua
-# Game data (data only)
-GameData\FishingRanks.lua
 # Fishing mode
 Fishing\Gear.lua
 Fishing\Bags.lua
@@ -64,10 +72,12 @@ Catch\Stats.lua
 CatchDB\SeedData.lua
 CatchDB\CatchDB.lua
 CatchDB\Checks.lua
+CatchDB\Index.lua
 CatchDB\Views.lua
 CatchDB\Events.lua
 # Catch exchange
 Exchange\Comm.lua
+Exchange\CommReceive.lua
 Exchange\Channel.lua
 Exchange\Share.lua
 Exchange\ShareNode.lua

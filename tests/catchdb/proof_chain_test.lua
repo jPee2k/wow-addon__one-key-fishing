@@ -62,7 +62,7 @@ test("a new account gets a chain for its record; the marks are built in frame st
     eq(chain.epoch, own().epoch, "the live record's epoch")
     eq(chain.top, CatchDB.CHAIN_LENGTH, "top")
     assert(chain.secret:find("^[a-z2-7]+$") and #chain.secret == 26, "26 base32 characters: " .. chain.secret)
-    eq(CatchDB.OwnProofReady(), false, "not ready before the marks")
+    eq(CatchDB.private.OwnProofReady(), false, "not ready before the marks")
     eq(CatchDB.ChainState(), "0 of 4096, marks building", "debug line")
     advance(0)
     local marks = 0
@@ -72,7 +72,7 @@ test("a new account gets a chain for its record; the marks are built in frame st
     end
     eq(marks, 64, "every 64th link from the top down")
     eq(chain.marks[4096], ns.ProofStep(chain.secret), "the top link is the step of the secret")
-    eq(CatchDB.OwnProofReady(), true, "ready")
+    eq(CatchDB.private.OwnProofReady(), true, "ready")
     eq(own().proof, walk(chain.marks[64], 64), "seq 0 carries link 0")
 end)
 
@@ -151,7 +151,7 @@ test("the seed's proof anchors a unit the seed holds in part", function()
 end)
 
 test("no record holds more than STEP_SECONDS of casting per step of its seq", function()
-    local limit = CatchDB.STEP_SECONDS
+    local limit = CatchDB.private.STEP_SECONDS
     eq(limit, 180, "180 s per step")
     local record = other(2, 36) -- 36 casts of 10 s: exactly 2 x 180
     eq((CatchDB.CheckRecord(record)), true, "at the limit")

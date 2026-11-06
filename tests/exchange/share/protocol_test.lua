@@ -32,10 +32,10 @@ local function Deliver(from, to, fromAddress, via, text)
     C_Timer.After(net.delay, function() to.node:Receive(fromAddress, via, text) end)
 end
 
--- An own record of `catches` catches and a miss at `key`, at the seq its casting needs (CatchDB.STEP_SECONDS).
+-- An own record of `catches` catches and a miss at `key`, at the seq its casting needs (CatchDB.private.STEP_SECONDS).
 local function OwnRecord(id, key, catches)
     local cell = catch_cell(catches, 1, { [FISH] = { catches, catches } })
-    return prove({ id = id, epoch = 0, seq = math.max(1, math.ceil(cell.t / ns.CatchDB.STEP_SECONDS)),
+    return prove({ id = id, epoch = 0, seq = math.max(1, math.ceil(cell.t / ns.CatchDB.private.STEP_SECONDS)),
         builds = { ["1.60.1"] = { [key] = cell } } })
 end
 
@@ -223,7 +223,7 @@ local function BigRecord(id, places)
     for i = 1, places do
         cells[(4000 + i) .. ":2:x"] = catch_cell(3, 1, { [FISH] = { 3, 3 } })
     end
-    return prove({ id = id, epoch = 0, seq = math.ceil(places * cells["4001:2:x"].t / ns.CatchDB.STEP_SECONDS),
+    return prove({ id = id, epoch = 0, seq = math.ceil(places * cells["4001:2:x"].t / ns.CatchDB.private.STEP_SECONDS),
         builds = { ["1.60.1"] = cells } }, nil, 4096)
 end
 

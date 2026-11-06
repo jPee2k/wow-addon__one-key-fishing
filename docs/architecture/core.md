@@ -15,7 +15,7 @@ frame.
 
 | Layer | Folders | May use the module tables (`ns.<Name>`) of |
 |---|---|---|
-| 0 Core | `Core/` (Localization, Core, Data), `Locales/` | nothing above |
+| 0 Core | `Core/` (Localization, Core, Data, MapPin), `Locales/`, `GameData/` (the game data model, [game-data.md](game-data.md)) | nothing above |
 | 1 Game | `Fishing/`, `Catch/`: the game's state and actions | layers 0-1 |
 | 2 Data | `CatchDB/`, `Exchange/`, `Catalog/`: the catch data, its exchange and index | layers 0-2 |
 | 3 View | `UI/`: every frame | everything |
@@ -72,9 +72,12 @@ frame.
   `ADDON_LOADED` the log lives in memory; the load drops saved entries of another addon version and adds the ones in
   memory (specs/006-error-log).
 - Helpers: `ns.ShowPopup` (two-button popups; the default buttons are the addon's `L["Yes"]` / `L["No"]`, never
-  the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix), `ns.ReportSection` (a titled block
-  of the debug report). The frame helpers (`ns.CreateButton`, `ns.CreateText`, `ns.ItemDisplay`,
-  `ns.ShowItemTooltip`, `ns.OpenRadioMenu`, `ns.KeyText`) are the view's, in `UI/Widgets.lua` ([ui.md](ui.md)).
+  the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix). `ns.ReportSection` (a titled block of
+  the debug report) is in `Core/Debug.lua`, used only by the spike. The frame helpers (`ns.CreateButton`,
+  `ns.CreateText`, `ns.ItemDisplay`, `ns.ShowItemTooltip`, `ns.OpenRadioMenu`, `ns.KeyText`) are the view's, in
+  `UI/Widgets.lua` ([ui.md](ui.md)).
+- The slash command dispatcher and help (`/okf` and `/onekeyfishing`; the commands themselves are in
+  Commands.lua), `ns.version` from the TOC, and binding labels.
 - `ns.FormatDecimal(value, digits)`: the client's `DECIMAL_SEPERATOR`, the same as gold amounts.
 - `ns.TallGlyphs()`: the addon is in Korean or Chinese on a client in another language. The minimap and Language
   tooltips then do not wrap and end with a blank line, because the game measures the lines with the client's
@@ -82,17 +85,17 @@ frame.
 
 ## Core/MapPin.lua
 
-The game's own map pin (user waypoint) with the navigation arrow, set on the player's click. In Core because
-`Fishing/Skill.lua` (the next rank) and the catch catalog use it; it makes no frame, and its toasts are the UI's
-(`MAP_PIN_SET`, `UI/Toast.lua`).
+The game's own map pin (user waypoint) with the navigation arrow, set on the player's click. Every pin of the addon
+goes through it: `Fishing/Skill.lua` (the next rank) and the catch catalog (`Catalog.Spots`, `UI/CatalogTab.lua`).
+In Core because both use it; it makes no frame, and its toasts are the UI's (`MAP_PIN_SET`, `UI/Toast.lua`).
 
-- `MapPin.Target(maps, x, y)`: the first candidate map the client knows and allows pins on, none under the game
-  rule that turns pins off.
+- `MapPin.Target(maps, x, y)`: the first candidate map the client knows and allows pins on (V30); else, when the
+  first candidate (the point's own map) is a Micro map (a cave, a building), the same place on its zone's map through
+  the world position (V33); none without the waypoint API, under the game rule that turns pins off, or in instances.
 - `MapPin.Set(target, placeName)`: the game's pin, the navigation arrow, `charDB.pin`, a popup before replacing a
-  pin the player set; out of combat the world map opens at that map.
+  pin the player set (none for the addon's own pin or a pin already at the place); out of combat the world map
+  opens at that map (R14).
 - `MapPin.Link(target, text)`: a chat map link (`worldmap:`), which the game handles itself.
-- The slash command dispatcher and help (`/okf` and `/onekeyfishing`; the commands themselves are in
-  Commands.lua), `ns.version` from the TOC, and binding labels.
 
 ### Saved variables
 
@@ -104,8 +107,8 @@ new field only needs a default.
 
 | Field | Holds | Written by |
 |---|---|---|
-| `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `auctionPrices`, `camera`, `minimapButton`, `tooltipChances`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`) | UI/Settings.lua |
-| `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Share.lua |
+| `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `auctionPrices`, `camera`, `minimapButton`, `tooltipChances`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`) | UI/Settings.lua; also Core.lua (`languageHintShown`), Fishing/Camera.lua (`cameraDistance`), Exchange/ShareGame.lua (`shareDB`), Exchange/Channel.lua (`shareChannel`) |
+| `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Exchange/ShareGame.lua |
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
 | `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
@@ -121,7 +124,8 @@ new field only needs a default.
 | `gearSwap`, the CVar and camera snapshots, `resumeMode` | what fishing mode changed, stored *before* the change so that exit, logout, `/reload` and crashes restore it ([fishing-mode.md](fishing-mode.md)) | Mode.lua, Gear.lua, Camera.lua |
 | `savedCameraZoom` | the zoom before fishing mode; survives a `/reload`, dropped on a real login | Camera.lua |
 | `stats`, `countedCast` | the statistics buckets and the cast running across a `/reload` | Stats.lua |
-| `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | Core/MapPin.lua, UI/CatalogTab.lua |
+| `session` | the current fishing session (its counts and times; `skillStart`, the Fishing rank it began with, read by Fishing/Skill.lua) | Catch/Stats.lua, Fishing/Skill.lua (`skillStart`) |
+| `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | Core/MapPin.lua |
 | `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks) | Channel.lua |
 
 ## Core/Commands.lua (loaded last)
@@ -135,12 +139,11 @@ player manual `OneKeyFishing/README.md` (`npm run check`), except a temporary on
 
 ## Core/Data.lua
 
-Shared data and helpers:
+Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-data.md)):
 
-- Fishing: `ns.FISHING_SPELL_IDS` (the four rank spells), `ns.FISHING_SKILL_LINE` (356), `ns.IsFishingSpell`,
-  `ns.GetFishingSpellID` (the highest rank learned), `ns.BOBBER_OBJECT_ID` (35591), `ns.GameObjectID(guid)` (the
-  object ID of a game object GUID; Forever scrambles the spawn part) and `ns.IsBobberTargeted()` (the soft
-  interact target is the bobber).
+- Fishing: `ns.IsFishingSpell`, `ns.GetFishingSpellID` (the highest rank learned, from `GameData.FishingSpells`),
+  `ns.GameObjectID(guid)` (the object ID of a game object GUID; Forever scrambles the spawn part) and
+  `ns.IsBobberTargeted()` (the soft interact target is `GameData.Bobber`).
 - Bags: `ns.ForEachBagItem`, the shared bag iterator.
 - Names: `ns.WithRealm(name)` and `ns.SameCharacter(a, b)` (character names with their realm, as the exchange
   addresses them); `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as whole percent); `ns.ItemIDFromLink(text)`

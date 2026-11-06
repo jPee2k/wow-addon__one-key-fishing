@@ -4,7 +4,8 @@
 -- shape: shared.mine (this account's catches, never reset) and the account's contribution record (what the
 -- harvest reads; split by game version). See specs/002-local-catch-db/data-model.md.
 -- The module spans the CatchDB/ folder: this file (places, the seed, the own record, its chain, roll and settle),
--- Checks.lua (other players' records), Views.lua (sums and queries) and Events.lua (the game's events).
+-- Checks.lua (other players' records), Index.lua (the indexes the views read), Views.lua (sums and queries) and
+-- Events.lua (the game's events).
 local _, ns = ...
 
 local CatchDB = {}
@@ -13,6 +14,9 @@ local P = {}
 CatchDB.private = P -- internals shared by the CatchDB/*.lua files (not an API); exported at the end
 
 local GRID = 10 -- cells per map side
+-- The skill ranges follow the Fishing ranks (75 points each, as the caps of GameData/FishingSpells.lua; a test holds
+-- them equal). They are part of the saved format: the place keys, the seed, other players' records, the harvest
+-- (tools/harvest.mjs) and the key checks (Checks.lua, ranges 0-4) all read them, so they never change.
 local RANGE_STEP = 75 -- skill points per range
 local MAX_RANGE = 4 -- 300 and above
 local MAX_PIECES = 20 -- pieces counted per catch and item, against bogus quantities
@@ -34,12 +38,12 @@ end
 
 -- State shared by the CatchDB/*.lua files lives on P (reassigned, so never re-bound into a local):
 --   P.version   grows with every change the views must see (GetVersion)
---   P.ownItems  item ID -> true: the items of the own catch, for the views (Views.lua OwnItems)
+--   P.ownItems  item ID -> true: the items of the own catch, for the views (Index.lua OwnItems)
 --   P.ownIndex  "<mapID>:<range>" -> { place key -> true }: the keys of the own tables (mine, the own record and
---               the frozen own records), so a map's sum does not walk every own cell (Views.lua OwnIndex). Built on
+--               the frozen own records), so a map's sum does not walk every own cell (Index.lua OwnIndex). Built on
 --               first use, grown by Settle.
 --   P.poolData  CatchDB.HasPoolData's answer: nil until read, false until a pool part shows up
---   P.others, P.frozen, P.lastPool: Views.lua
+--   P.others, P.frozen: Index.lua; P.lastPool: Events.lua
 P.version = 0
 local lastSeqBump -- GetTime() of the last seq bump
 local seqWaiting = false -- a change since the last bump
@@ -162,7 +166,6 @@ end
 
 -- The game version the data is recorded under.
 local function BuildKey()
-    -- VERIFY(V7): GetBuildInfo returns the version as "1.60.1"-style text
     local build = GetBuildInfo()
     if type(build) ~= "string" or build == "" then
         return "unknown"
@@ -274,10 +277,16 @@ local function OlderBuild(build, than)
     return a3 < b3
 end
 
-local function OwnRecord()
-    local shared = ns.db.shared
-    return shared.records[shared.myID]
+-- The own record of a store (the account's shared data by default), or nil when it is missing or damaged (a seq or
+-- epoch that is no count). The login check in Events.lua starts a damaged one over. The exchange reads it too.
+function CatchDB.OwnRecord(store)
+    store = store or ns.db.shared
+    local own = store.records[store.myID]
+    if type(own) == "table" and CatchDB.IsCount(own.seq) and CatchDB.IsCount(own.epoch) then -- IsCount: Checks.lua
+        return own
+    end
 end
+local OwnRecord = CatchDB.OwnRecord
 
 ---------------------------------------------------------------------------
 -- The own record's version chain (specs/004-public-channel-sync/data-model.md "The version chain")
@@ -391,8 +400,9 @@ local function NewChain(epoch)
     StartMarks()
 end
 
--- False while the marks are still being built after a roll or a login: the own record is not offered then.
-function CatchDB.OwnProofReady()
+-- False while the marks are still being built after a roll or a login: the own record is not offered then. For the
+-- tests (CatchDB.private).
+local function OwnProofReady()
     local own = OwnRecord()
     local chain = OwnChain(own)
     return chain ~= nil and chain.marks[MARK_STEP] ~= nil and own.proof ~= nil
@@ -599,4 +609,4 @@ P.MAX_PIECES, P.MAX_AREAS, P.mapCache = MAX_PIECES, MAX_AREAS, mapCache
 P.BumpMap, P.BumpAll, P.MapRange, P.KeyMapRange, P.KeyMapID = BumpMap, BumpAll, MapRange, KeyMapRange, KeyMapID
 P.AddToOwnIndex, P.BuildKey, P.Seed, P.SeedField, P.OlderBuild = AddToOwnIndex, BuildKey, Seed, SeedField, OlderBuild
 P.OwnRecord, P.OwnChain, P.StartMarks, P.NewChain, P.Roll = OwnRecord, OwnChain, StartMarks, NewChain, Roll
-P.CatchItems, P.Settle = CatchItems, Settle
+P.CatchItems, P.Settle, P.OwnProofReady = CatchItems, Settle, OwnProofReady

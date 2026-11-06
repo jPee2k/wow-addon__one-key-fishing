@@ -1,13 +1,16 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
-//   ASCII-only Lua, TOC and XML files (translations and GameData/ strings excepted), the addon folder holds
-//   only packaged files, the repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
+//   ASCII-only Lua, TOC and XML files (translations and GameData/ strings excepted), GameData/ holds data only,
+//   private tables stay in their folder, test files name their subject, the addon folder holds only packaged
+//   files, the repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
 //   package.json vs CHANGELOG.md, every slash command in the player manual, and no Cyrillic in the docs.
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
 import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
-  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, parseToc } from "./addon.mjs";
+  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems,
+  parseToc, privateProblems, testNameProblem }
+  from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
 // --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
@@ -177,6 +180,13 @@ for (const file of files) {
   });
 }
 
+// GameData/ holds data only: no function, no L lookup, no module but ns.GameData (tools/addon.mjs gameDataProblems).
+for (const file of files.filter((f) => f.endsWith(".lua") && isGameData(f))) {
+  for (const found of gameDataProblems(fs.readFileSync(file, "utf8"))) {
+    problem(`${rel(file)}:${found.line}`, found.message);
+  }
+}
+
 // TOC: every listed file exists, the addon folder holds nothing that is not packaged, the version is filled
 // in at build time.
 const tocName = `${ADDON}/${TOC}`;
@@ -297,6 +307,26 @@ for (const [file, source] of sources) {
   }
   if (!relAddon(file).startsWith("UI/") && !FRAMES_OUTSIDE_UI.includes(relAddon(file)) && /\bCreateFrame\s*\(/.test(source)) {
     problem(rel(file), "CreateFrame outside UI/ (frames are the view's; tools/addon.mjs FRAMES_OUTSIDE_UI lists the exceptions)");
+  }
+}
+
+// A module's private table is read only by the files of its own folder (and by the tests).
+const folderOfModule = (name) => definedIn.has(name) ? relAddon(definedIn.get(name).file).split("/")[0] : undefined;
+for (const [file, source] of sources) {
+  for (const found of privateProblems(source, relAddon(file).split("/")[0], folderOfModule)) {
+    problem(`${rel(file)}:${found.line}`, found.message);
+  }
+}
+
+// Test files name their subject, not a module of their area (tools/addon.mjs testNameProblem).
+const moduleFiles = (folder) => {
+  const dir = path.join(ADDON_DIR, folder);
+  return fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".lua")).map((f) => f.slice(0, -4)) : [];
+};
+for (const file of files.filter((f) => f.endsWith("_test.lua") && inTests(f))) {
+  const found = testNameProblem(rel(file).slice("tests/".length), moduleFiles);
+  if (found) {
+    problem(rel(file), found);
   }
 }
 

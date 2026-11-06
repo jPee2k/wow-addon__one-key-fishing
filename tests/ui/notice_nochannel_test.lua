@@ -1,4 +1,5 @@
--- Share.lua: the one-time popup in a release without the public channel (Channel.AVAILABLE false, FR-026): the
+-- UI/ShareNotice.lua and Exchange/ShareGame.lua:
+-- the one-time popup in a release without the public channel (Channel.AVAILABLE false, FR-026): the
 -- part 2 text, and only the part 2 flag is set. One login.
 
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"

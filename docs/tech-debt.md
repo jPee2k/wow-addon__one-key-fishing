@@ -19,10 +19,11 @@ cleanup, no wrong behaviour.
   combat because of taint from OneKeyFishing - Button:SetPassThroughButtons()" while the map adds its quest pins
   (`QuestDataProvider.lua:194`). The field is written by `OpenWorldMap(mapID)` called from addon code. The pin
   (`C_Map.SetUserWaypoint`) and the arrow (`C_SuperTrack.SetSuperTrackedUserWaypoint`) do not show in the log.
-- **Where**: `Core/MapPin.lua` `MapPin.Set` (the next-rank Pin button and minimap menu entry, released in 1.1.0)
-  and `UI/CatalogTab.lua` `CatalogTab.Pin` (the catalog, not released); markers `VERIFY(R14)` and `VERIFY(V32)`.
+- **Where**: `Core/MapPin.lua` `MapPin.Set`, every pin of the addon: the next-rank Pin button and minimap menu
+  entry (released in 1.1.0) and the catalog's pin buttons (not released, through `MapPin` since spec 008); marker
+  `VERIFY(R14)`.
 - **Direction**: the fallback of V32: set the pin and the arrow, do not open the map; the toast and the manual say
-  to open the map to see the pin. Tests: no `OpenWorldMap` call from either pin. Then the manual, `CHANGELOG.md`
+  to open the map to see the pin. Tests: no `OpenWorldMap` call from `MapPin.Set`. Then the manual, `CHANGELOG.md`
   (Fixed), FR-022 of spec 001 and FR-011 of spec 005, and a 1.1.x patch for the release.
 
 ### Leaving fishing mode in a fight raises "Interface action failed" (medium)
@@ -33,8 +34,8 @@ cleanup, no wrong behaviour.
 - **Cause**: `taint.log`: "An action was blocked in combat because of taint from OneKeyFishing - EquipItemByName()"
   from `Gear.lua` `RestoreSlots` <- `RestoreWeapons` <- `Mode.Exit` (`InCombatLockdown()` branch) <-
   `OneKeyFishing_ToggleMode`. `C_Item.EquipItemByName` is protected in combat, weapons too; the swap on an attack
-  works only because `PLAYER_REGEN_DISABLED` runs before the lockdown. CLAUDE.md and `fishing-mode.md` say weapons
-  can be swapped in combat: wrong.
+  works only because `PLAYER_REGEN_DISABLED` runs before the lockdown. The constitution (Principle III,
+  "weapons return at once") and `fishing-mode.md` say weapons can be swapped in combat: wrong.
 - **Where**: `Fishing/Mode.lua` `Mode.Exit`, `Fishing/Gear.lua` `RestoreWeapons` / `RestoreSlots`.
 - **Direction**: in the lockdown only set the pending exit and say so; no `EquipItemByName` until
   `PLAYER_REGEN_ENABLED`. Test: `Mode.Exit` with `in_combat` calls no equip. Fix the docs' claim.
@@ -50,19 +51,6 @@ cleanup, no wrong behaviour.
 - **Direction**: find why `ClearBindings` in `_onstate-combat` does not drop the overrides (owner, timing); a test
   of the state handler if the stubs allow it.
 
-### A lure above the Fishing skill is offered until it fails (low)
-
-- **Found**: in game, 2026-11-06, release 1.1.0 (the author): a lure in the bags that needs more Fishing skill
-  is offered by the indicator and the key for a few seconds (up to 5), the game refuses it, and only then is it
-  skipped (until fishing mode is entered again). The checklist step "Lure too high" passed this way.
-- **Cause**: `Fishing/Bags.lua` `FindLure` treats a lure as usable when `C_Item.IsUsableItem` says so, and that is
-  true for a lure above the skill; the attempt is only counted as failed later (`LURE_FAIL_DELAY`).
-- **Direction** (the author's wish): never offer a lure until the character's Fishing skill reaches the lure's
-  requirement. Keep the required skill per lure by ID with the lure list (it moves to `GameData/` in 1.2.0,
-  `docs/release-plan.md`), take the values from the original game and mark them `VERIFY` until each is seen in
-  game, and let `FindLure` skip a lure above `Skill.Get()`. The failure path stays for anything the table misses.
-  Tests: a lure above the skill is never offered; one at the skill is.
-
 ### No chat line when an attack ends fishing mode (low)
 
 - **Found**: in game, 2026-11-06: with "Leave fishing mode when attacked" on, an attack swaps the weapons back
@@ -70,6 +58,34 @@ cleanup, no wrong behaviour.
   line comes only when a key is pressed.
 - **Direction**: print "Leaving fishing mode after combat." once on the attack (and test it), or change the
   checklist's expectation. The author decides.
+
+### A fishing pole above the Fishing skill may be chosen (low)
+
+- **Found**: specs/008-architecture-alignment research R5 (2026-11-06), not seen in game. The best pole is chosen
+  by its Fishing bonus (`Fishing/Gear.lua` `Gear.FindBestPole`), whatever skill it needs (Strong Fishing Pole 10,
+  Darkwood 50, Big Iron 100, Nat Pagle's 100, Arcanite 300).
+- **Direction**: `GameData/FishingPoles.lua` already records each pole's `skill`; let the choice pass over a pole
+  above `Skill.Get()` like the lures (`Fishing/Bags.lua` `FindLure`), with a test, once a player meets it.
+
+### A lure the game refused stays skipped after a skill-up (low)
+
+- **Found**: the spec 008 review, round 3 (2026-11-06), from the code; not seen in game.
+- **Cause**: `Fishing/Bags.lua`. A lure the game refuses goes into `skippedLures` until fishing mode is entered again.
+  With the skill rule of spec 008 a known lure is offered only once the skill reaches `GameData.Lures[id].skill`,
+  so a refusal can still happen only when that value or V44 (base skill, not skill with bonuses) is wrong. Then the
+  lure stays skipped after the skill rises, until the mode is entered again.
+- **Direction**: when V43 / V44 are checked in game. If either fails, fix the value in `GameData/Lures.lua`. If
+  refusals still happen, drop the skipped entries of lures whose requirement is met on `SKILL_LINES_CHANGED`. Test: a
+  refused lure is offered again after a skill-up past its requirement.
+
+### The private-table check reads only the plain form (low)
+
+- **Found**: the spec 008 review, round 3 (2026-11-06).
+- **Cause**: `tools/addon.mjs` `privateProblems` finds `<Module>.private` by the module's own name, as every file
+  of the addon writes it today. It does not see an alias (`local C = ns.CatchDB; C.private`) or `ns["CatchDB"].private`.
+  It also cuts a line at `--` even inside a string, so a read after such a string is missed.
+- **Direction**: read the code with luaparse (already a dependency of the checks) and follow the locals bound to
+  `ns.<Module>`, if a file ever needs an alias. Test: an aliased read from another folder is reported.
 
 ## History
 
@@ -95,3 +111,18 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
   order is V41, the delays are milliseconds, and nobody joins a fallback name or gets `YOU_CHANGED` by hand).
 - 2026-11-01, batch E (the catalog): a `CatalogTab.Show` while the index is still building waits for it and
   `Tick` makes the choice once it is ready; the map pin's answers show with catch notifications off.
+- 2026-11-06, spec 008 (architecture alignment), three review-and-fix rounds of the working tree. Fixed with tests:
+  - the login check of the own record follows `CatchDB.OwnRecord`;
+  - the indicator redraws on a skill change;
+  - the catch database's range constants stay literals, held equal to the ranks by a test;
+  - the CVars of fishing mode come from one table;
+  - the GameData check finds calls, also without brackets;
+  - the cave fallback of the map pin uses only the point's own map.
+
+  Also cleaned: dead locals, a dead branch, a dead stub, stale names in docs and comments. Two low items stay
+  above. Dropped as cases that do not come up:
+  - a fifth Fishing rank (Forever has none above 300);
+  - a record whose `id` differs from its key;
+  - an own record damaged during a session;
+  - the per-row pin lookups of a spot list (cached with the rows);
+  - the lure `order` field, held 1..n by the shape test.

@@ -43,7 +43,7 @@ One fishing round:
 ## What the addon does
 
 - **One key** for everything: cast, hook, loot. The same key applies a lure (the best one that is not on
-  cooldown) and opens fished clams when needed.
+  cooldown and that your Fishing skill is high enough for) and opens fished clams when needed.
 - **Fishing mode**: one toggle that sets everything up (auto loot, the interact icon over the bobber, gear,
   camera) and puts it all back afterwards, also after a `/reload`, a disconnect or a crash.
 - **Gear swap**: the best pole in your bags (or the one you chose) plus your fishing items. On exit only the slots
@@ -149,9 +149,9 @@ and, with the shared catch database on, what other players reported.
   data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
   named after its subzone in your language (or shows its coordinates), with its own chance and catches.
 - **Map pin**: the pin button of a spot sets the game's own map pin there, turns on the game's navigation to it,
-  says so in a short message (even with catch notifications off) and opens the world map at that zone (not in combat). If you already have a pin that
-  the addon did not set, it asks before replacing it. The arrow on screen depends on the game's navigation
-  setting. Instances and spots without a position have no pin button.
+  says so in a short message (even with catch notifications off) and opens the world map at that zone (not in combat).
+  If you already have a pin that the addon did not set, it asks before replacing it. The arrow on screen depends on the
+  game's navigation setting. Instances and spots without a position have no pin button.
 - The tab follows new catches and new data from other players while it is open, keeping your search, the chosen
   item and the open zones. `/okf catalog` opens it; `/okf catalog <name>` searches, and an item link (shift-click an
   item into the line) opens that item.
@@ -311,9 +311,10 @@ Typing commands is optional: everything is also available from the menus. `/onek
   letter, number, F-key or mouse button (see [Quick start](#quick-start)).
 - **The indicator shows "No bobber"**: the bobber is in the water but not soft-targeted (or still not after
   3 seconds). Turn the camera towards the bobber.
-- **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon skips it until you turn fishing mode on
-  again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the lure is offered
-  again when its cooldown ends.
+- **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon knows the skill each lure needs and
+  does not offer a lure before your skill reaches it; if the game still refuses one, the addon skips it until you
+  turn fishing mode on again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the
+  lure is offered again when its cooldown ends.
 - **"Cannot open ..."**: the container is locked. The addon skips it for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the
   key opens it again.

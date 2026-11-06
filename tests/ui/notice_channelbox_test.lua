@@ -1,4 +1,5 @@
--- Share.lua and Channel.lua: the channel's setting changed while the notice is owed (specs/003-guild-group-sync,
+-- UI/ShareNotice.lua, Exchange/ShareGame.lua and Channel.lua:
+-- the channel's setting changed while the notice is owed (specs/003-guild-group-sync,
 -- data-model.md: a setting changed on the page that says what is shared counts as reading the notice). One login.
 
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"

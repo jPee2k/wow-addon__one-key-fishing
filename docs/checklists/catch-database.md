@@ -32,7 +32,7 @@ auction house for step 7.
 8. [ ] **Across a reload** (V9): `/reload` while the bobber is out, then catch: the catch is counted once.
 9. [ ] **Load test** (V8): `npm run harvest -- --synthetic 3000`, `npm run install-addon`, restart the game. Login
    takes no noticeable extra time; opening "What can be caught here" and fishing show no stutter. Afterwards
-   restore the real seed: `git checkout OneKeyFishing/SeedData.lua` and install again.
+   restore the real seed: `git checkout OneKeyFishing/CatchDB/SeedData.lua` and install again.
 10. [ ] **Debug report** (V9): `/okf debug` has a "Catch database" section with the seed epoch, the places and the
     current place key, and no anonymous ID.
 

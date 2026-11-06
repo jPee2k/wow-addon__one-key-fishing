@@ -56,6 +56,68 @@ export function findMarkers(text) {
   return markers;
 }
 
+// GameData/ holds data only (docs/architecture/game-data.md): its code has no function, no call, no L lookup and
+// names no module but ns.GameData. Only the code is read: string literals and comments (line and block) are left out, so
+// official names and explanations may say anything. Returns { line, message } per offending line.
+const GAMEDATA_MESSAGE = "GameData/ holds data only (no function, no call, no ns.L, no other module)";
+const LUA_TOKEN = /--\[(=*)\[[\s\S]*?\]\1\]|--[^\n]*|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|\[(=*)\[[\s\S]*?\]\2\]/g;
+const LUA_KEYWORDS = new Set(["and", "or", "not", "return", "in", "then", "do", "else", "elseif", "until", "local"]);
+export function gameDataProblems(text) {
+  // Blank every comment and string, keeping the line breaks so the line numbers stay.
+  const code = text.replace(LUA_TOKEN, (token) =>
+    token.startsWith("--") ? token.replace(/[^\n]/g, " ") : `""${token.replace(/[^\n]/g, "")}`);
+  const problems = [];
+  code.split(/\r?\n/).forEach((line, index) => {
+    const modules = [...line.matchAll(/\bns\.([A-Za-z_]\w*)/g)].map((match) => match[1]);
+    // A call: a name, a field or a closing bracket followed by "(", or by a table or a string (Lua's calls without
+    // brackets: f{...}, f"x"), or a method (a:b). Data puts "=" or "," before every table and string.
+    const call = [...line.matchAll(/([A-Za-z_]\w*|[\])])\s*(?:[({]|"")/g)].some((m) => !LUA_KEYWORDS.has(m[1]))
+      || /\w\s*:\s*[A-Za-z_]/.test(line);
+    if (/\bfunction\b/.test(line) || call || /(^|[^\w.])L\s*\[/.test(line) || /\bns\s*\[/.test(line)
+      || modules.some((name) => name !== "GameData")) {
+      problems.push({ line: index + 1, message: GAMEDATA_MESSAGE });
+    }
+  });
+  return problems;
+}
+
+// A module's private table (`<Module>.private`) holds what the files of that module share and what only the tests
+// read (docs/development.md); no file of another folder reads it. folderOf(name) gives the folder that defines the
+// module `ns.<name>`, or undefined. Returns { line, message } per offending use; comments are not read.
+export function privateProblems(text, folder, folderOf) {
+  const problems = [];
+  text.split(/\r?\n/).forEach((line, index) => {
+    const code = line.replace(/--.*$/, "");
+    for (const match of code.matchAll(/\b([A-Z]\w*)\.private\b/g)) {
+      const owner = folderOf(match[1]);
+      if (owner !== undefined && owner !== folder) {
+        problems.push({ line: index + 1,
+          message: `reads ${match[1]}.private of ${owner}/ (a module's private table is not an API)` });
+      }
+    }
+  });
+  return problems;
+}
+
+// The tests are grouped by area (docs/development.md): a test folder names its addon folder, and a test file names
+// its subject, never a module of that folder (`fishing/lure_skill_test.lua`, not `fishing/bags_test.lua`).
+export const TEST_FOLDERS = {
+  core: "Core", fishing: "Fishing", catch: "Catch", catchdb: "CatchDB", catalog: "Catalog", exchange: "Exchange",
+  ui: "UI", gamedata: "GameData",
+};
+const TEST_NAME_MESSAGE = "test named after a module of its area; name its subject (docs/development.md)";
+// testPath: relative to tests/ with forward slashes; moduleFiles(folder): the .lua base names of an addon folder.
+// Returns the problem text or null.
+export function testNameProblem(testPath, moduleFiles) {
+  const match = testPath.match(/^([^/]+)\/(?:.*\/)?([^/]+)_test\.lua$/);
+  const folder = match && TEST_FOLDERS[match[1]];
+  if (!folder) {
+    return null;
+  }
+  const name = match[2].toLowerCase();
+  return moduleFiles(folder).some((file) => file.toLowerCase() === name) ? TEST_NAME_MESSAGE : null;
+}
+
 // Parses a TOC: `## Key: Value` metadata and the list of files (as forward-slash paths).
 export function parseToc(text) {
   const fields = {};

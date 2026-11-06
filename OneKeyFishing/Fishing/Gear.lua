@@ -9,48 +9,19 @@ local L = ns.L
 local Gear = {}
 ns.Gear = Gear
 
-local FIRST_SLOT = INVSLOT_FIRST_EQUIPPED or 1
-local LAST_SLOT = INVSLOT_LAST_EQUIPPED or 19
-local MAINHAND_SLOT = INVSLOT_MAINHAND or 16
-local OFFHAND_SLOT = INVSLOT_OFFHAND or 17
+-- The slots, the equip locations and the pole's item class are game data (GameData/EquipSlots.lua,
+-- GameData/FishingPoles.lua).
+local EQUIP_SLOTS = ns.GameData.EquipSlots
+local FIRST_SLOT, LAST_SLOT = EQUIP_SLOTS.first, EQUIP_SLOTS.last
+local MAINHAND_SLOT, OFFHAND_SLOT = EQUIP_SLOTS.mainHand, EQUIP_SLOTS.offHand
 local WEAPON_SLOTS = {
-    [MAINHAND_SLOT] = true,
-    [OFFHAND_SLOT] = true,
-    [INVSLOT_RANGED or 18] = true,
+    [EQUIP_SLOTS.mainHand] = true,
+    [EQUIP_SLOTS.offHand] = true,
+    [EQUIP_SLOTS.ranged] = true,
 }
-
-local FISHING_POLE_CLASS = 2 -- Enum.ItemClass.Weapon
-local FISHING_POLE_SUBCLASS = 20 -- Enum.ItemWeaponSubclass.Fishingpole
-
--- Fallback bonuses for when the tooltip cannot be read.
-local KNOWN_POLE_BONUS = {
-    [6256] = 0, -- Fishing Pole
-    [12225] = 3, -- Blump Family Fishing Pole
-    [6365] = 5, -- Strong Fishing Pole
-    [6366] = 15, -- Darkwood Fishing Pole
-    [6367] = 20, -- Big Iron Fishing Pole
-    [19022] = 25, -- Nat Pagle's Extreme Angler FC-5000
-    [19970] = 35, -- Arcanite Fishing Pole
-}
-
--- Slots an extra item can go to. Weapons are excluded: the pole takes both hands.
-local SLOTS_BY_EQUIP_LOC = {
-    INVTYPE_HEAD = { 1 },
-    INVTYPE_NECK = { 2 },
-    INVTYPE_SHOULDER = { 3 },
-    INVTYPE_BODY = { 4 },
-    INVTYPE_CHEST = { 5 },
-    INVTYPE_ROBE = { 5 },
-    INVTYPE_WAIST = { 6 },
-    INVTYPE_LEGS = { 7 },
-    INVTYPE_FEET = { 8 },
-    INVTYPE_WRIST = { 9 },
-    INVTYPE_HAND = { 10 },
-    INVTYPE_FINGER = { 11, 12 },
-    INVTYPE_TRINKET = { 13, 14 },
-    INVTYPE_CLOAK = { 15 },
-    INVTYPE_TABARD = { 19 },
-}
+-- Slots an extra item can go to, by its equip location. Weapons are left out: the pole takes both hands.
+local BY_EQUIP_LOC = EQUIP_SLOTS.byEquipLoc
+local POLE_CLASS = ns.GameData.FishingPoleClass
 
 local GetItemCount = (C_Item and C_Item.GetItemCount) or GetItemCount
 
@@ -64,7 +35,7 @@ function ns.IsFishingPole(itemID)
         return false
     end
     local _, _, _, _, _, classID, subclassID = C_Item.GetItemInfoInstant(itemID)
-    return classID == FISHING_POLE_CLASS and subclassID == FISHING_POLE_SUBCLASS
+    return classID == POLE_CLASS.classID and subclassID == POLE_CLASS.subclassID
 end
 
 function ns.IsFishingPoleEquipped()
@@ -79,7 +50,7 @@ end
 local fishingNameKey
 local function FishingNameKey()
     if not fishingNameKey then
-        local name = C_Spell.GetSpellName(ns.FISHING_SPELL_IDS[1])
+        local name = C_Spell.GetSpellName(ns.GameData.FishingSpells[1].spellID)
         if name then
             fishingNameKey = name:match("^[%z\1-\127\194-\244][\128-\191]*(.+)$")
         end
@@ -127,7 +98,8 @@ function ns.GetFishingBonus(itemID)
             end
         end
     end
-    bonus = bonus or KNOWN_POLE_BONUS[itemID] or 0
+    local pole = ns.GameData.FishingPoles[itemID]
+    bonus = bonus or (pole and pole.bonus) or 0
     -- An uncached item gives an empty or "Retrieving item information" tooltip; do not remember that result.
     local cached = not C_Item.IsItemDataCachedByID or C_Item.IsItemDataCachedByID(itemID)
     if cached and #lines > 0 then
@@ -202,7 +174,7 @@ function Gear.AddItem(itemID)
         ns.Fire("GEAR_LIST_CHANGED")
         return true, L["Fishing pole set."]
     end
-    if not SLOTS_BY_EQUIP_LOC[GetEquipLoc(itemID) or ""] then
+    if not BY_EQUIP_LOC[GetEquipLoc(itemID) or ""] then
         return false, L["This item cannot be used as fishing gear."]
     end
     if HasItem(itemID) then
@@ -245,7 +217,7 @@ function Gear.AddFishingItemsFromBags()
     local added = 0
     local function Consider(itemID)
         if itemID and not ns.IsFishingPole(itemID) and not Gear.IsFishingGear(itemID)
-            and SLOTS_BY_EQUIP_LOC[GetEquipLoc(itemID) or ""] and ns.GetFishingBonus(itemID) > 0 then
+            and BY_EQUIP_LOC[GetEquipLoc(itemID) or ""] and ns.GetFishingBonus(itemID) > 0 then
             table.insert(ns.charDB.gear.items, itemID)
             added = added + 1
         end
@@ -282,7 +254,7 @@ local function BuildPlan()
     end
     local missing = 0
     for _, itemID in ipairs(ns.charDB.gear.items) do
-        local slots = SLOTS_BY_EQUIP_LOC[GetEquipLoc(itemID) or ""]
+        local slots = BY_EQUIP_LOC[GetEquipLoc(itemID) or ""]
         if not slots or GetItemCount(itemID) == 0 then
             missing = missing + 1
         else

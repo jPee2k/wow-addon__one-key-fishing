@@ -58,7 +58,7 @@ button:SetScript("PreClick", function(self)
     if kind == "lure" then
         self:SetAttribute("type", "item")
         self:SetAttribute("item", "item:" .. arg1)
-        self:SetAttribute("target-slot", INVSLOT_MAINHAND or 16)
+        self:SetAttribute("target-slot", ns.GameData.EquipSlots.mainHand)
         ns.Bags.NoteLureAttempt(arg1)
     elseif kind == "open" then
         self:SetAttribute("type", "item")

@@ -1,4 +1,5 @@
--- Share.lua: the one-time popup when the game has no free dialog frame at first (other addons' prompts at login).
+-- UI/ShareNotice.lua and Exchange/ShareGame.lua:
+-- the one-time popup when the game has no free dialog frame at first (other addons' prompts at login).
 -- The tests run in order and share one login.
 
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"

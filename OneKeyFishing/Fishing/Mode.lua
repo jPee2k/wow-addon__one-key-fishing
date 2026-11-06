@@ -11,16 +11,27 @@ local active = false
 local pendingExit = false
 local restoreAfterCombat = false -- the mode could not resume in combat: only the weapons came back
 
+-- Every CVar fishing mode may change, with its value and the setting that asks for it (none: always). Soft-target
+-- interact must work with keyboard and mouse (3) for the hook key to find the bobber.
+local CVARS = {
+    { name = "SoftTargetInteract", value = "3" },
+    { name = "autoLootDefault", value = "1", setting = "autoLoot" },
+    { name = "SoftTargetIconGameObject", value = "1", setting = "bobberIcon" },
+    { name = "SoftTargetIconInteract", value = "1", setting = "bobberIcon" },
+}
+-- Their names, for the debug report (Core/Debug.lua).
+Mode.CVAR_NAMES = {}
+for _, cvar in ipairs(CVARS) do
+    table.insert(Mode.CVAR_NAMES, cvar.name)
+end
+
 local function DesiredCVars()
     local settings = ns.db.settings
-    -- Soft-target interact must work with keyboard and mouse (3) for the hook key to find the bobber.
-    local cvars = { SoftTargetInteract = "3" }
-    if settings.autoLoot then
-        cvars.autoLootDefault = "1"
-    end
-    if settings.bobberIcon then
-        cvars.SoftTargetIconGameObject = "1"
-        cvars.SoftTargetIconInteract = "1"
+    local cvars = {}
+    for _, cvar in ipairs(CVARS) do
+        if not cvar.setting or settings[cvar.setting] then
+            cvars[cvar.name] = cvar.value
+        end
     end
     return cvars
 end

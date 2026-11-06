@@ -8,7 +8,6 @@ local Debug = {}
 ns.Debug = Debug
 
 local STAMP = "%Y-%m-%d %H:%M:%S" -- the times of the Errors section
-local REPORT_CVARS = { "autoLootDefault", "SoftTargetInteract", "SoftTargetIconGameObject", "SoftTargetIconInteract" }
 
 local function Section(lines, title, fn)
     table.insert(lines, "")
@@ -51,6 +50,9 @@ local function BuildReport()
         tostring(build), tostring(interface), tostring(WOW_PROJECT_ID), GetLocale()))
     table.insert(lines, ("Language: %s (in use: %s)"):format(tostring(ns.db.settings.language),
         tostring(ns.language)))
+    -- Keys looked up while the files loaded stay in English (docs/architecture/core.md): none is the rule.
+    table.insert(lines, ("  early L lookups: %s"):format(#ns.earlyLookups > 0 and table.concat(ns.earlyLookups, ", ")
+        or "none"))
 
     Section(lines, "Mode", function()
         add("fishing mode: %s, leaving after combat: %s, channeling: %s, in combat: %s",
@@ -86,7 +88,7 @@ local function BuildReport()
     end)
 
     Section(lines, "Gear", function()
-        local mainHand = GetInventoryItemID("player", INVSLOT_MAINHAND or 16)
+        local mainHand = GetInventoryItemID("player", ns.GameData.EquipSlots.mainHand)
         add("main hand: %s, fishing pole: %s, fishing bonus: %s", ItemText(mainHand),
             Value(ns.IsFishingPole(mainHand)), tostring(mainHand and ns.GetFishingBonus(mainHand)))
         local hasLure, expiration = GetWeaponEnchantInfo()
@@ -150,7 +152,7 @@ local function BuildReport()
     end)
 
     Section(lines, "Game settings", function()
-        for _, name in ipairs(REPORT_CVARS) do
+        for _, name in ipairs(ns.Mode.CVAR_NAMES) do -- Fishing/Mode.lua
             add("%s = %s", name, Value(C_CVar.GetCVar(name)))
         end
         add("saved by the addon: CVars %s, camera zoom %s", tostring(ns.charDB.savedCVars ~= nil),

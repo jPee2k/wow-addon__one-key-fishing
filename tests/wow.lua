@@ -842,7 +842,6 @@ weapon_enchant = false
 in_combat = false
 
 WOW_PROJECT_ID = 18
-INVSLOT_MAINHAND = 16
 NUM_BAG_SLOTS = 4
 
 addon_version = "1.0.0-test" -- the TOC's "## Version:" field
@@ -864,8 +863,9 @@ C_CVar = {
     end,
 }
 
--- Maps and the game's map pin (UI/MapPin.lua and the catch catalog): map_info_missing, waypoint_maps,
--- user_waypoint, game_rules, super_tracked, world_maps_opened and area_names, described at the top of this file.
+-- Maps and the game's map pin (Core/MapPin.lua, for the next rank and the catch catalog): map_info_missing,
+-- waypoint_maps, user_waypoint, game_rules, super_tracked, world_maps_opened and area_names, described at the top
+-- of this file.
 player_map_id = 1
 map_names = {}
 player_map_position = nil

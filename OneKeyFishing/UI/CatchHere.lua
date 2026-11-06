@@ -33,14 +33,7 @@ local dirty = false
 -- them the page follows the player's cell with one position lookup per second.
 local placeChanged = true
 
--- "0-74", ..., "300+" from CatchDB's ranges; "All skill levels" for "all".
-local function RangeLabel(range)
-    if range == "all" then
-        return L["All skill levels"]
-    end
-    local from = range * ns.CatchDB.RANGE_STEP
-    return range == ns.CatchDB.MAX_RANGE and (from .. "+") or (from .. "-" .. (from + ns.CatchDB.RANGE_STEP - 1))
-end
+local RangeLabel = ns.RangeLabel -- UI/Widgets.lua: "0-74", ..., "300+"; "All skill levels" for "all"
 
 local function SourceLabel(value)
     return value == "mine" and L["Only mine"] or L["All"]
@@ -50,7 +43,7 @@ local function WaterLabel(value)
     return value == "pool" and L["Pools"] or (value == "open" and L["Open water"] or L["Everywhere"])
 end
 -- The catalog's buttons read the same.
-CatchHere.RangeLabel, CatchHere.SourceLabel, CatchHere.WaterLabel = RangeLabel, SourceLabel, WaterLabel
+CatchHere.SourceLabel, CatchHere.WaterLabel = SourceLabel, WaterLabel
 
 -- The Water filter's menu: choose(value) runs on a click (also the catalog's).
 function CatchHere.OpenWaterMenu(owner, current, choose)
@@ -195,7 +188,6 @@ function CatchHere.Create(parent)
     return page
 end
 
-local UNKNOWN_ICON = 134400 -- INV_Misc_QuestionMark: an item the client does not know yet
 local loadAsked = {} -- item IDs asked from the game this session
 
 local function FillRow(row, item, littleData)
@@ -211,7 +203,7 @@ local function FillRow(row, item, littleData)
         row.unknown = item
         -- VERIFY(V27): GetItemInfoInstant returns nothing for an item the client does not know yet, the question mark
         -- icon exists, and asking the game may make the item known
-        row.icon:SetTexture(UNKNOWN_ICON)
+        row.icon:SetTexture(ns.GameData.Icons.unknownItem)
         row.name:SetText(L["Unknown item"])
         row.price:SetText("")
         if not loadAsked[item.itemID] and C_Item.RequestLoadItemDataByID then

@@ -102,7 +102,7 @@ local function OwnRecord(id, places, seq)
         cells[("%d:3:%02d"):format(1400 + math.floor(n / 100), n % 100)] = cell
         seconds = seconds + cell.t
     end
-    local record = { id = id, epoch = 0, seq = math.max(seq or 1, math.ceil(seconds / ns.CatchDB.STEP_SECONDS)),
+    local record = { id = id, epoch = 0, seq = math.max(seq or 1, math.ceil(seconds / ns.CatchDB.private.STEP_SECONDS)),
         builds = { ["1.60.1"] = cells } }
     return prove(record)
 end

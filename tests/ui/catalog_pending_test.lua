@@ -77,11 +77,11 @@ end
 
 test("the pin answers with catch notifications off; catches stay quiet", function()
     ns.db.settings.toasts = false
-    ns.CatalogTab.Pin({ mapID = 1415, x = 0.45, y = 0.72 }, "Here")
+    ns.MapPin.Set({ mapID = 1415, x = 0.45, y = 0.72 }, "Here")
     assert(shown((L["Map pin: %s"]):format("Here")), "the pin's name")
     local toasts = find_frame((L["Map pin: %s"]):format("Here")).parent -- the toast lines' frame
     ns.charDB.pin, user_waypoint, waypoint_result = nil, nil, false
-    ns.CatalogTab.Pin({ mapID = 1415, x = 0.45, y = 0.72 }, "Here")
+    ns.MapPin.Set({ mapID = 1415, x = 0.45, y = 0.72 }, "Here")
     assert(shown(L["The game did not accept the map pin."]), "the refusal")
     waypoint_result = nil
     ns.Fire("FISH_MISSED", 1)

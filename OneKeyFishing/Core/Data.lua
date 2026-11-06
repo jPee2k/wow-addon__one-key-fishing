@@ -1,13 +1,8 @@
--- Data: static game data. The client can run in any language, so everything is matched by ID, never by name.
+-- Data: shared helpers. The game data itself is in GameData/ (ns.GameData, docs/architecture/game-data.md); the
+-- client can run in any language, so everything is matched by ID, never by name.
 local _, ns = ...
 
--- Fishing spell ranks, lowest to highest: Apprentice, Journeyman, Expert, Artisan.
-ns.FISHING_SPELL_IDS = { 7620, 7731, 7732, 18248 }
-
-ns.FISHING_SKILL_LINE = 356
-
--- Game object entry of the fishing bobber, as seen in its GUID (the "softinteract" unit, fishing loot sources).
-ns.BOBBER_OBJECT_ID = "35591"
+local FISHING_SPELLS = ns.GameData.FishingSpells -- lowest rank first
 
 -- The object ID (entry) of a game object GUID, or nil for any other GUID. Forever scrambles the spawn part of
 -- GUIDs, so the object ID is the part to compare.
@@ -244,12 +239,12 @@ end
 -- True when the interact key would hit the bobber (not some other object nearby).
 -- The bobber has no nameplate and UnitExists is false for it, but its name and GUID are readable.
 function ns.IsBobberTargeted()
-    return ns.GameObjectID(UnitGUID("softinteract")) == ns.BOBBER_OBJECT_ID
+    return ns.GameObjectID(UnitGUID("softinteract")) == ns.GameData.Bobber.objectID
 end
 
 local fishingSpellLookup = {}
-for _, id in ipairs(ns.FISHING_SPELL_IDS) do
-    fishingSpellLookup[id] = true
+for _, spell in ipairs(FISHING_SPELLS) do
+    fishingSpellLookup[spell.spellID] = true
 end
 
 function ns.IsFishingSpell(spellID)
@@ -265,8 +260,8 @@ end
 
 -- Highest known Fishing rank, or nil if Fishing is not learned.
 function ns.GetFishingSpellID()
-    for i = #ns.FISHING_SPELL_IDS, 1, -1 do
-        local id = ns.FISHING_SPELL_IDS[i]
+    for i = #FISHING_SPELLS, 1, -1 do
+        local id = FISHING_SPELLS[i].spellID
         if IsSpellKnown(id) then
             return id
         end

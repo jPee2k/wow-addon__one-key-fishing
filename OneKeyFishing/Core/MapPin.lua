@@ -1,8 +1,7 @@
 -- MapPin: the game's own map pin (user waypoint) with the navigation arrow, set on the player's click
--- (spec 001, User Story 3, FR-022; research R14). Taken over from the catch catalog of 002-shared-db
--- (Catalog.PinTarget, CatalogTab.Pin) with the same saved field and texts, so the catalog can use this module.
--- In Core: Fishing/Skill.lua and the catalog use it; it makes no frame, and its toasts are the UI's
--- (MAP_PIN_SET, UI/Toast.lua).
+-- (spec 001, User Story 3, FR-022; research R14). Every pin of the addon goes through it: the next rank
+-- (Fishing/Skill.lua) and the catch catalog (Catalog.Spots, UI/CatalogTab.lua; spec 008). In Core: it makes no
+-- frame, and its toasts are the UI's (MAP_PIN_SET, UI/Toast.lua).
 local _, ns = ...
 local L = ns.L
 
@@ -25,19 +24,47 @@ local function PinsDisabled()
         and C_GameRules.IsGameRuleActive(rule) == true
 end
 
--- Where a pin for a point can go: { mapID, x, y } on the first of `maps` (uiMapIDs, best first) that the client
--- knows and allows pins on; nil without the waypoint API, under the game rule and when no candidate fits.
+-- The point on a Micro map (a cave, a building) that allows no pin, carried through the world position to its
+-- parent zone: { mapID, x, y }, or nil. Dungeons and other maps never fall back: their zone is the wrong water.
+local function OnParentMap(mapID, info, x, y)
+    local parent = info.parentMapID
+    if not (Enum.UIMapType and info.mapType == Enum.UIMapType.Micro and parent and parent ~= 0
+        and C_Map.CanSetUserWaypointOnMap(parent)) or type(C_Map.GetWorldPosFromMapPos) ~= "function"
+        or type(C_Map.GetMapPosFromWorldPos) ~= "function" then
+        return nil
+    end
+    -- VERIFY(V33): a Micro map converts to its parent zone through the world position
+    local continent, world = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(x, y))
+    if not world then
+        return nil
+    end
+    local onMap, position = C_Map.GetMapPosFromWorldPos(continent, world, parent)
+    local px, py = position and position.x, position and position.y
+    if onMap ~= parent or not (px and py) or px < 0 or px > 1 or py < 0 or py > 1 then
+        return nil
+    end
+    return { mapID = parent, x = px, y = py }
+end
+
+-- Where a pin for a point can go: { mapID, x, y } on the first of `maps` (uiMapIDs, best first, the point is on the
+-- first) that the client knows and allows pins on; else, when the first candidate (the point's own map) is a cave or a
+-- building the client knows, the same place on its zone's map; nil without the waypoint API, under the game rule and
+-- when nothing fits.
 -- The Forever client uses the Classic uiMapIDs (1434 for Stranglethorn Vale, seen in game).
 function MapPin.Target(maps, x, y)
     if not (maps and x and y) or not HasWaypointAPI() or PinsDisabled() then
         return nil
     end
     for _, mapID in ipairs(maps) do
-        if C_Map.GetMapInfo(mapID) and C_Map.CanSetUserWaypointOnMap(mapID) then
+        local info = C_Map.GetMapInfo(mapID)
+        -- VERIFY(V30): CanSetUserWaypointOnMap answers per map, open world true, instances false
+        if info and C_Map.CanSetUserWaypointOnMap(mapID) then
             return { mapID = mapID, x = x, y = y }
         end
     end
-    return nil
+    -- The point is on the first candidate, so only that map can carry it to its parent.
+    local first = C_Map.GetMapInfo(maps[1])
+    return first and OnParentMap(maps[1], first, x, y)
 end
 
 -- True when the waypoint on the map is at pin ({ mapID, x, y }): same map, positions within PIN_EPSILON.

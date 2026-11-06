@@ -1,4 +1,5 @@
--- Share.lua: the one-time popup when the player turned sharing off on the settings page before it showed.
+-- UI/ShareNotice.lua and Exchange/ShareGame.lua:
+-- the one-time popup when the player turned sharing off on the settings page before it showed.
 
 reset_popup()
 load_addon()
