@@ -8,12 +8,15 @@ about 1.2.0, which is built but not verified in game yet. It is deleted once 1.2
 
 1.1.0 went out with the steps below still open in the checklists; a finding goes into a 1.1.x patch.
 
-- [checklists/fishing-mode.md](checklists/fishing-mode.md): leaving the mode when attacked, the best of two
-  poles, a lure on cooldown, clams and locked containers, the rank notices from character level 10.
-- [checklists/interface-language.md](checklists/interface-language.md) section 10: the Journeyman notice and the
-  map pin (level 10), Old Man Heming and the book (level 20), Nat Pagle and the quest ID (level 35, quest 6607
-  has no title on Forever yet); their results go into `specs/001-interface-language/research.md` R11 / R12 and
-  remove the remaining `VERIFY` marks.
+- [checklists/fishing-mode.md](checklists/fishing-mode.md) (2026-11-06: the rank notices of level 10 and a fished
+  chest are done; Nightcrawlers and Shiny Bauble have no cooldown): the best of two poles, a lure that has a
+  cooldown, a locked container, a clam with full bags. Combat raised three items in `tech-debt.md`.
+- [checklists/interface-language.md](checklists/interface-language.md) section 10 (2026-11-06: level 10, the notice,
+  the pin, the replace popup, the chat map link, Heming's place and merchant list are done): the map that the Pin
+  button opens fails in a later fight (fix in `tech-debt.md`, then re-check); that the book teaches Expert from skill
+  125 and level 20, the debug report after Expert, Nat Pagle and the quest ID (level 35, quest 6607 has no title on
+  Forever yet), the German Heming name. Their results go into `specs/001-interface-language/research.md` R11 / R12 /
+  R14 and remove the remaining `VERIFY` marks.
 - Korean and Chinese on a client in another language: deferred until a player reports it
   (`specs/007-launch-day-fixes/research.md` R9).
 

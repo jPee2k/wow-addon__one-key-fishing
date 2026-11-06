@@ -9,7 +9,67 @@ cleanup, no wrong behaviour.
 
 ## Open items
 
-None.
+### The map pin opens the world map, and the map then fails in a fight (high)
+
+- **Found**: in game, 2026-11-06, release 1.1.0, enUS client: `/okf stats` -> Pin (the map opens), close the map,
+  a fight, open the map with M: "Interface action failed because of an AddOn". Without pressing Pin first, no
+  such line.
+- **Cause**: `Logs/taint.log` (`/console taintLog 1`): "Execution tainted by OneKeyFishing while reading field
+  targetScrollY" (`Blizzard_MapCanvas/MapCanvas_ScrollContainerMixin.lua:445`), then "An action was blocked in
+  combat because of taint from OneKeyFishing - Button:SetPassThroughButtons()" while the map adds its quest pins
+  (`QuestDataProvider.lua:194`). The field is written by `OpenWorldMap(mapID)` called from addon code. The pin
+  (`C_Map.SetUserWaypoint`) and the arrow (`C_SuperTrack.SetSuperTrackedUserWaypoint`) do not show in the log.
+- **Where**: `Core/MapPin.lua` `MapPin.Set` (the next-rank Pin button and minimap menu entry, released in 1.1.0)
+  and `UI/CatalogTab.lua` `CatalogTab.Pin` (the catalog, not released); markers `VERIFY(R14)` and `VERIFY(V32)`.
+- **Direction**: the fallback of V32: set the pin and the arrow, do not open the map; the toast and the manual say
+  to open the map to see the pin. Tests: no `OpenWorldMap` call from either pin. Then the manual, `CHANGELOG.md`
+  (Fixed), FR-022 of spec 001 and FR-011 of spec 005, and a 1.1.x patch for the release.
+
+### Leaving fishing mode in a fight raises "Interface action failed" (medium)
+
+- **Found**: in game, 2026-11-06, release 1.1.0: in the mode, a fight, the toggle key: "Interface action failed
+  because of an AddOn" and "Leaving fishing mode after combat."; after the fight the mode ends and the gear comes
+  back.
+- **Cause**: `taint.log`: "An action was blocked in combat because of taint from OneKeyFishing - EquipItemByName()"
+  from `Gear.lua` `RestoreSlots` <- `RestoreWeapons` <- `Mode.Exit` (`InCombatLockdown()` branch) <-
+  `OneKeyFishing_ToggleMode`. `C_Item.EquipItemByName` is protected in combat, weapons too; the swap on an attack
+  works only because `PLAYER_REGEN_DISABLED` runs before the lockdown. CLAUDE.md and `fishing-mode.md` say weapons
+  can be swapped in combat: wrong.
+- **Where**: `Fishing/Mode.lua` `Mode.Exit`, `Fishing/Gear.lua` `RestoreWeapons` / `RestoreSlots`.
+- **Direction**: in the lockdown only set the pending exit and say so; no `EquipItemByName` until
+  `PLAYER_REGEN_ENABLED`. Test: `Mode.Exit` with `in_combat` calls no equip. Fix the docs' claim.
+
+### The fishing key keeps its cast in a fight (low)
+
+- **Found**: in game, 2026-11-06, release 1.1.0, "Leave fishing mode when attacked" off: the fishing key pressed in
+  a fight gives the game's "can't do that in combat" and no "The fishing key is paused in combat." line.
+- **Cause (to confirm)**: the `[combat]` state driver of `Fishing/Action.lua` should clear the override bindings, so
+  the key falls back to its own binding (`OneKeyFishing_ActionKeyIdle`); the game's message says the key still
+  clicked the secure cast button. Nothing wrong happens (the game refuses the cast), only the addon's line is
+  missing. Check in game with `/run print(GetBindingAction("<key>", true))` in a fight.
+- **Direction**: find why `ClearBindings` in `_onstate-combat` does not drop the overrides (owner, timing); a test
+  of the state handler if the stubs allow it.
+
+### A lure above the Fishing skill is offered until it fails (low)
+
+- **Found**: in game, 2026-11-06, release 1.1.0 (the author): a lure in the bags that needs more Fishing skill
+  is offered by the indicator and the key for a few seconds (up to 5), the game refuses it, and only then is it
+  skipped (until fishing mode is entered again). The checklist step "Lure too high" passed this way.
+- **Cause**: `Fishing/Bags.lua` `FindLure` treats a lure as usable when `C_Item.IsUsableItem` says so, and that is
+  true for a lure above the skill; the attempt is only counted as failed later (`LURE_FAIL_DELAY`).
+- **Direction** (the author's wish): never offer a lure until the character's Fishing skill reaches the lure's
+  requirement. Keep the required skill per lure by ID with the lure list (it moves to `GameData/` in 1.2.0,
+  `docs/release-plan.md`), take the values from the original game and mark them `VERIFY` until each is seen in
+  game, and let `FindLure` skip a lure above `Skill.Get()`. The failure path stays for anything the table misses.
+  Tests: a lure above the skill is never offered; one at the skill is.
+
+### No chat line when an attack ends fishing mode (low)
+
+- **Found**: in game, 2026-11-06: with "Leave fishing mode when attacked" on, an attack swaps the weapons back
+  without any line; the checklist expected one. `PLAYER_REGEN_DISABLED` in `Fishing/Mode.lua` prints nothing; the
+  line comes only when a key is pressed.
+- **Direction**: print "Leaving fishing mode after combat." once on the attack (and test it), or change the
+  checklist's expectation. The author decides.
 
 ## History
 

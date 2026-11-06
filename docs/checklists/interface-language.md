@@ -123,19 +123,25 @@ A low character helps for the first steps; the book and the quest need a trip to
 **Places and IDs** (write down what differs):
 
 - [ ] Old Man Heming in Booty Bay sells "Expert Fishing - The Bass and You" (skill 125, level 20), and it teaches
-  Expert Fishing: ____
+  Expert Fishing: he sells it (item 16083, 2026-11-06); that it teaches Expert from skill 125 and level 20: ____
 - [ ] Nat Pagle in Dustwallow Marsh gives "Nat Pagle, Angler Extreme" (skill 225, level 35): ____
-- [ ] Journeyman is taught by fishing trainers from skill 50, level 10: ____
+- [x] Journeyman is taught by fishing trainers from skill 50, level 10: learned at a trainer at level 10
+  (2026-11-06); the skill 50 threshold itself needs a character with skill 50-74 at level 10 (open)
 - [ ] Next to Heming and next to Nat Pagle, with the NPC targeted, paste the map ID, the point and the GUID (the
   NPC ID is the second last number) of each:
-  `/run local m=C_Map.GetBestMapForUnit("player") local p=C_Map.GetPlayerMapPosition(m,"player") print(m,p:GetXY(),UnitGUID("target"))`
-  Heming: ____ Nat Pagle: ____
-- [ ] With Heming's merchant window open, the book is item 16083:
-  `/run for i=1,GetMerchantNumItems() do print(i,GetMerchantItemID(i),GetMerchantItemLink(i)) end`: ____
+  `/run local m=C_Map.GetBestMapForUnit("player") local p=C_Map.GetPlayerMapPosition(m,"player") print(m,UnitGUID("target"),p:GetXY())`
+  Heming (2026-11-06, release 1.1.0): map 1434, 0.2745 / 0.7719, `Creature-0-6865-0-8-2626-52F4FE9F06` (NPC 2626)
+  Nat Pagle: ____
+- [x] With Heming's merchant window open, the book is item 16083:
+  `/run for i=1,GetMerchantNumItems() do print(i,GetMerchantItemID(i),GetMerchantItemLink(i)) end`: 1 6256 Fishing
+  Pole, 2 6529 Shiny Bauble, 3 6530 Nightcrawlers, 4 6532 Bright Baubles, 5 273636 Chef's Knife, 6 16083 Expert
+  Fishing - The Bass and You (2026-11-06)
 - [ ] With Nat Pagle's quest dialog open, the quest ID on Forever and the title of 6607:
   `/run print(GetQuestID(), C_QuestLog.GetTitleForQuestID(6607))`: ____
 - [ ] `/okf debug` right after learning Journeyman and again after Expert: "next rank names" and "next rank pin"
-  for the book and the quest: ____
+  for the book and the quest: after Journeyman (2026-11-06, enUS client, skill 103/150, level 10)
+  `next rank names: item game, npc game, area game, zone game`, `next rank pin: map 1434 at 0.274, 0.770`;
+  after Expert: ____
 
 **Names from the game** (on an English client, then on another client language if you can):
 
@@ -156,26 +162,33 @@ A low character helps for the first steps; the book and the quest need a trip to
 
 **Notices and the line:**
 
-- [ ] At skill 50 (125, 225) with the level: one chat line and a notification "You can learn ... now." with the
-  where sentence; not again until the next login.
+- [x] At skill 50 (125, 225) with the level: one chat line and a notification "You can learn ... now." with the
+  where sentence; not again until the next login: at skill 50+ on reaching level 10 (2026-11-06); 125 / 225 later
 - [x] Below the level: no notice; the statistics window says "from character level N" (before the skill
   threshold: "from skill X and character level N"); after the level-up the notice comes (the level-up part waits
   for level 10).
-- [ ] With "Show catch notifications" off, the rank notices still show their notification above the indicator.
+- [x] With "Show catch notifications" off, the rank notices still show their notification above the indicator
+  (2026-11-06).
 - [x] At the cap: a large on-screen message once; entering fishing mode again prints a chat line only.
 - [x] The statistics window shows the "Next rank" line under the prices line; the minimap tooltip shows it too.
 
 **Map pin** (Expert or Artisan advice):
 
-- [ ] The **Pin** button in the statistics window and "Pin: next Fishing rank" in the minimap menu set the game's
-  pin and the navigation arrow on Heming or Nat Pagle and open the map.
-- [ ] With a pin of your own on the map, a popup asks first; Cancel keeps your pin.
-- [ ] The map link at the end of the chat notice sets the pin and opens the map (without a question).
+- [x] The **Pin** button in the statistics window and "Pin: next Fishing rank" in the minimap menu set the game's
+  pin and the navigation arrow on Heming or Nat Pagle and open the map: on Heming, map 1434 (2026-11-06). The map
+  opened by the addon then failed in a fight ("Interface action failed because of an AddOn", taint of
+  `OpenWorldMap`; without a pin no such line). Fix waits in `docs/tech-debt.md`; then re-check: Pin, a fight, the
+  map opened by hand (M): no such line: ____
+- [x] With a pin of your own on the map, a popup asks first; Cancel keeps your pin. The buttons are in the addon's
+  language (2026-11-06).
+- [x] The map link at the end of the chat notice sets the pin and opens the map (without a question): at the cap
+  150/150, level 10 (2026-11-06); a fight afterwards with the map opened by hand gave no blocked action (the
+  game's own link handler opens the map, not the addon).
 
 **Languages:**
 
-- [ ] With the addon in Ukrainian on an English client: the sentences are Ukrainian, the book, quest, places and
-  ranks read exactly as the English client names them.
+- [x] With the addon in Ukrainian on an English client: the sentences are Ukrainian, the book, quest, places and
+  ranks read exactly as the English client names them (2026-11-06; the quest still waits for Nat Pagle).
 
 ## 11. Launch day fixes (spec 007)
 
@@ -207,6 +220,13 @@ build after the code review (`1.0.0-dev+09cfb6b` or later; the minimap tooltip s
 - Date, build, client language: 2026-11-05, game 1.60.1 (70790), EU realm, client ruRU, addon
   1.0.0-dev+1dbac37, then 1.0.0-dev+212927b; Fishing learned at level 5, skill 52/75 at level 6 (run in
   progress: the rank steps from level 10, Heming, Nat Pagle and the containers are open).
+- 2026-11-06, release 1.1.0, an English client (also with the addon in Ukrainian): level 10, Journeyman learned
+  at a trainer, skill 103/150. The "can learn" notice (also with catch notifications off), the Expert advice with
+  every name from the game (the book, Heming through his creature tooltip, Booty Bay, Stranglethorn Vale), the pin
+  on map 1434 with the navigation arrow and the replace popup work. Open: the chat map link (skill 125 at level
+  20, or the cap 150), Heming's merchant list and point, Nat Pagle and the quest ID, the debug report after Expert,
+  the German Heming name. Found: the map that the pin opened (`OpenWorldMap`) was blocked in a later fight
+  ("Interface action failed because of an AddOn"); the fix is in `docs/tech-debt.md`.
 - Fonts missing: `ARHei.ttf` and `blei00d.ttf`; the language menu still draws every language name readably.
 - Next rank: map IDs and points, names, what differs from the original game: area, book and rank names come in
   the client's language; the quest title of 6607 stays nil, also after `RequestLoadQuestByID` (open: check at

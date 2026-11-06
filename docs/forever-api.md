@@ -64,7 +64,8 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   restriction flag beyond the default; Blizzard's `/mappin` uses this sequence (`WaypointLocationDataProvider.lua`).
   `Enum.GameRule.WorldMapTrackingPinDisabled` gates the pin UI through `C_GameRules.IsGameRuleActive`.
 - `C_Map.OpenWorldMap` is `HasRestrictions`; the global `OpenWorldMap(mapID)` is plain FrameXML
-  (`Blizzard_WorldMap.lua`), gated only by `Enum.GameRule.WorldMapDisabled`.
+  (`Blizzard_WorldMap.lua`), gated only by `Enum.GameRule.WorldMapDisabled`, but called from addon code it taints
+  the map ("Verified in game").
 - Forever hides the "Show In-Game Navigation" checkbox (CVar `showInGameNavigation`, `Camelot/InterfaceOverrides.lua`).
 - `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapPosFromWorldPos(continentID, pos, overrideMapID)` convert a point
   between maps.
@@ -98,6 +99,29 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing);
     the tests did not catch it (`Debug.lua:84`), so wrap such calls as `tostring((f()))`.
   - `YES`, `NO` and `CANCEL` are the client's language, not the addon's.
+- Release 1.1.0 at level 10 (EU realm, enUS client, 2026-11-06):
+  - Forever uses the Classic uiMapIDs: `C_Map.GetMapInfo(1434)` (Stranglethorn Vale) answers and
+    `C_Map.CanSetUserWaypointOnMap(1434)` is true, so the pin for Booty Bay goes on map 1434, not on 224.
+  - `C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(...))` from addon code sets the pin, and
+    `C_SuperTrack.SetSuperTrackedUserWaypoint(true)` turns on the navigation arrow (the hidden CVar
+    `showInGameNavigation` is on by default).
+  - The global `OpenWorldMap(mapID)` called from addon code opens the map but taints it: the field
+    `targetScrollY` of the map canvas (`MapCanvas_ScrollContainerMixin.lua:445`) counts as the addon's, and in a
+    later fight the map's quest pins are blocked (`Button:SetPassThroughButtons()`, "Interface action failed
+    because of an AddOn", `Logs/taint.log` with `/console taintLog 1`). The pins still call it: `docs/tech-debt.md`.
+  - `C_TooltipInfo.GetHyperlink("unit:Creature-0-0-0-0-2626-0000000000")` gives Old Man Heming's name in line 1.
+  - Journeyman Fishing is learned at a trainer at character level 10.
+  - Old Man Heming (NPC 2626) stands in Booty Bay at 0.2745 / 0.7719 of map 1434 and sells item 16083, "Expert
+    Fishing - The Bass and You" (also 6256 Fishing Pole, 6529, 6530, 6532 lures and 273636 Chef's Knife).
+  - A chat link `|Hworldmap:<mapID>:<x*10000>:<y*10000>|h[...]|h` built by an addon works: a click sets the pin and
+    opens the map through the game's own handler, with no taint (a fight afterwards is clean).
+  - Nightcrawlers (6530) and Shiny Bauble (6529) have no item cooldown: right after a 6530 was applied,
+    `C_Container.GetItemCooldown` gives 0 for both (the other lures are not checked yet).
+  - `C_Item.IsUsableItem` is true for a lure that needs more Fishing skill than the character has: the game
+    refuses it only when it is applied.
+  - `C_Item.EquipItemByName` from addon code is blocked in combat ("An action was blocked in combat because of
+    taint from OneKeyFishing - EquipItemByName()", `taint.log`), also for weapons; in the `PLAYER_REGEN_DISABLED`
+    handler, before the lockdown, it still swaps them.
 - `INTERACTTARGET` exists. The bobber is readable as unit `softinteract` (name and GUID), but it has **no
   nameplate** and `UnitExists` is false, so nothing can be anchored to it.
 - Fishing rank spells are 7620 / 7731 / 7732 / 18248. The skill comes from `GetProfessions()` →
@@ -125,6 +149,5 @@ move to "Verified in game":
   skill ranges of the place key can go.
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
-- Is the hidden CVar `showInGameNavigation` on by default, so the navigation arrow points to a map pin? (V31)
 - Does the server answer every `LeaveChannelByName` with one `YOU_LEFT` of that name, also a leave made before the
   join is confirmed, and before the answer to a later join of the same name? (V41)

@@ -452,12 +452,11 @@ function CatalogTab.Pin(target, placeName)
             ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4, true)
             return
         end
-        -- VERIFY(V31): super tracking the user waypoint shows the navigation arrow
         C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
         ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1, true)
         if not InCombatLockdown() then
-            -- VERIFY(V32): OpenWorldMap from addon code opens the map without taint
+            -- VERIFY(V32): failed in game, docs/tech-debt.md: OpenWorldMap from addon code taints the map
             OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted
         end
     end

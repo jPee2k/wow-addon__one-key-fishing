@@ -40,7 +40,15 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   the gear and the CVars are restored; the camera stays as the game left it.
 - [ ] **Out of combat only.** Turn the mode on, let a mob attack you. Expected: the weapons come back at once, the
   chat says the key is paused; after the fight the rest of the gear comes back and the mode is off (with "Leave
-  fishing mode when attacked" on).
+  fishing mode when attacked" on). In game 2026-11-06 (release 1.1.0), three findings in `docs/tech-debt.md`:
+  - attacked with the setting on: the weapons at once, the rest and the mode off after the fight, as expected; but
+    no chat line at all (the addon prints none on an attack, only when a key is pressed);
+  - with the setting off, the fishing key pressed in a fight: the game's "can't do that in combat", no line from
+    the addon, so the key still clicks the cast button (the overrides were not dropped); after the fight fishing
+    goes on, as expected;
+  - the toggle key pressed in a fight: "Interface action failed because of an AddOn" (`taint.log`: `EquipItemByName()`
+    blocked, from `Gear.RestoreWeapons`), the chat line "Leaving fishing mode after combat."; after the fight the
+    mode is off and the gear is back.
 
 ## 2. The key
 
@@ -81,10 +89,14 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [x] **Lure.** With a lure in the bags and none on the pole, press the action key. Expected: the indicator shows
   `Apply lure`, the key applies it (a 5 second cast), the next press casts.
 - [ ] **Lure on cooldown.** Right after a lure was applied and removed (or with a second lure type), check the
-  indicator. Expected: a lure on cooldown is skipped; the next one is offered, or a cast.
+  indicator. Expected: a lure on cooldown is skipped; the next one is offered, or a cast. In game 2026-11-06
+  (release 1.1.0): Nightcrawlers (6530) and Shiny Bauble (6529) have no item cooldown (`cooldown: 0 s` for both
+  right after a 6530 was applied), so they are never skipped; the other lures are not checked yet. While a lure
+  is on the pole no new one is offered, as expected.
 - [x] **Lure too high.** With only a lure above your skill, press the key. Expected: "Cannot apply ..." once; the
   lure is skipped until the mode is entered again.
-- [ ] **Clam.** Catch or carry a clam. Expected: the indicator shows `Open`, the key opens it, the loot is taken.
+- [x] **Clam.** Catch or carry a clam. Expected: the indicator shows `Open`, the key opens it, the loot is taken.
+  In game 2026-11-06 (release 1.1.0): a fished chest opened this way.
 - [ ] **Unknown container** (V27). If you fish up a container the game showed nothing about before (a new Forever item).
   Expected: the key opens it like a clam, and the auction scan includes it.
 - [ ] **Locked container.** With a locked box in the bags. Expected: "Cannot open ..." once, then it is skipped.
@@ -128,12 +140,13 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 The full check (names, places, pins) is the "Next rank" section of
 [interface-language.md](interface-language.md); here only the behaviour.
 
-- [ ] **Can learn.** At skill 50 (or 125 / 225) with the character level 10 (20 / 35). Expected: one chat line and
-  a notification that the next rank can be learned and where; not again in this session.
-- [ ] **At the cap.** On a character whose Fishing rank is at its cap (75, 150 or 225). Expected: a large
+- [x] **Can learn.** At skill 50 (or 125 / 225) with the character level 10 (20 / 35). Expected: one chat line and
+  a notification that the next rank can be learned and where; not again in this session. In game 2026-11-06 at
+  level 10, also with catch notifications off.
+- [x] **At the cap.** On a character whose Fishing rank is at its cap (75, 150 or 225). Expected: a large
   on-screen message the first time in a session; entering fishing mode again prints only a chat line; it stops
   after the next rank is learned. In game 2026-11-05 (cap 75 at level 6): the message and the chat line as
-  expected; the stop after learning Journeyman waits for level 10.
+  expected; after Journeyman was learned (2026-11-06) the notices stopped and the advice moved to Expert.
 - [x] **Off.** Turn "Remind me about the next Fishing rank" off. Expected: no notices; the "Next rank" line in the
   statistics window stays.
 
@@ -169,7 +182,7 @@ The full check (names, places, pins) is the "Next rank" section of
 
 - Date, build, client language: 2026-11-05, game 1.60.1 (70790), EU realm, client ruRU, addon
   1.0.0-dev+1dbac37, then 1.0.0-dev+212927b with the addon in Ukrainian; a new character, Fishing learned at
-  level 5, skill 52/75 at level 6 (run in progress: combat, two poles, lure cooldown, containers and the
-  rank steps from level 10 are open).
+  level 5, skill 52/75 at level 6. 2026-11-06, release 1.1.0: level 10, Journeyman learned, the rank steps of
+  level 10 done. Open: combat, two poles, lure cooldown, containers.
 - Problems found: see the Results of [interface-language.md](interface-language.md) (gear page, debug report,
   popups, minimap key text).

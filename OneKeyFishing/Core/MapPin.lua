@@ -27,7 +27,7 @@ end
 
 -- Where a pin for a point can go: { mapID, x, y } on the first of `maps` (uiMapIDs, best first) that the client
 -- knows and allows pins on; nil without the waypoint API, under the game rule and when no candidate fits.
--- VERIFY(R11): which uiMapIDs the Forever client uses (Classic 1434 / 1445 or modern 224 / 70)
+-- The Forever client uses the Classic uiMapIDs (1434 for Stranglethorn Vale, seen in game).
 function MapPin.Target(maps, x, y)
     if not (maps and x and y) or not HasWaypointAPI() or PinsDisabled() then
         return nil
@@ -58,13 +58,13 @@ function MapPin.Set(target, placeName)
             ns.Fire("MAP_PIN_SET", nil)
             return
         end
-        -- VERIFY(R14): super tracking the user waypoint shows the navigation arrow
+        -- Super tracking the user waypoint shows the navigation arrow (seen in game).
         if C_SuperTrack and type(C_SuperTrack.SetSuperTrackedUserWaypoint) == "function" then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
         ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
         ns.Fire("MAP_PIN_SET", placeName)
-        -- VERIFY(R14): OpenWorldMap from addon code opens the map without taint (no blocked action later in combat)
+        -- VERIFY(R14): failed in game, docs/tech-debt.md: OpenWorldMap from addon code taints the map for a later fight
         if not InCombatLockdown() and type(OpenWorldMap) == "function" then
             OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted
         end
@@ -80,7 +80,7 @@ end
 
 -- A chat link to a point, as the game's own map links read ("worldmap:<uiMapID>:<x * 10000>:<y * 10000>"). The game
 -- handles the click itself: it sets the pin and opens the map, without the addon's question or arrow (FR-022).
--- VERIFY(R14): the Forever client accepts a worldmap link built by an addon
+-- The Forever client accepts a worldmap link built by an addon, and the map it opens stays clean (seen in game).
 function MapPin.Link(target, text)
     return ("|cffffff00|Hworldmap:%d:%d:%d|h[%s]|h|r"):format(target.mapID, math.floor(target.x * 10000 + 0.5),
         math.floor(target.y * 10000 + 0.5), text)

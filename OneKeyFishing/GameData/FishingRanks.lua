@@ -17,7 +17,7 @@ ns.FishingRanks = {
     [75] = {
         next = SPELLS[2], -- Journeyman
         learnAt = 50, -- VERIFY(R11)
-        level = 10, -- VERIFY(R11)
+        level = 10,
         source = { kind = "trainer" },
     },
     [150] = {
@@ -26,13 +26,13 @@ ns.FishingRanks = {
         level = 20, -- VERIFY(R11)
         source = {
             kind = "book",
-            itemID = 16083, -- Expert Fishing - The Bass and You; VERIFY(R11)
-            npcID = 2626, -- Old Man Heming, sells it; VERIFY(R11)
+            itemID = 16083, -- Expert Fishing - The Bass and You (Heming sells it, seen in game)
+            npcID = 2626, -- Old Man Heming, sells it (seen in Booty Bay)
             areaID = 35, -- Booty Bay
             zoneAreaID = 33, -- Stranglethorn Vale
-            maps = { 1434, 224 }, -- VERIFY(R11)
-            x = 0.274, -- VERIFY(R11)
-            y = 0.770, -- VERIFY(R11)
+            maps = { 1434, 224 }, -- Forever uses the Classic map (seen in game)
+            x = 0.274,
+            y = 0.770,
         },
         fallback = {
             item = "Expert Fishing - The Bass and You",

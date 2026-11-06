@@ -84,7 +84,7 @@ end
 -- An NPC's name: the first line of its creature tooltip (no API reads an NPC name by ID; it works only for a
 -- creature the client has cached), else the official name for the client's language, else English.
 -- name, "game" | "table" | "english"
--- VERIFY(R12): a creature hyperlink gives a tooltip on Forever
+-- A creature hyperlink gives that tooltip on Forever (seen in game).
 local gameNpcNames = {} -- npcID -> the name the client gave once: no new tooltip on every refresh
 
 local function NpcName(npcID)
