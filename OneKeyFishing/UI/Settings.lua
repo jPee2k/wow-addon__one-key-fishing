@@ -535,11 +535,12 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     end
     -- The panel shows a page with SetParent + Show (Blizzard_SettingsPanel.lua DisplayLayout). A frame is created
     -- shown, so that Show would change nothing and send no OnShow, which fills the pages: they start hidden.
-    local mainPage, gearPage = CreateMainPage(), CreateGearPage()
+    local mainPage, gearPage, sharePage = CreateMainPage(), CreateGearPage(), CreateSharePage()
     mainPage:Hide()
     gearPage:Hide()
+    sharePage:Hide()
     mainCategory = Settings.RegisterCanvasLayoutCategory(mainPage, "OneKeyFishing")
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, gearPage, L["Fishing gear"])
-    shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, CreateSharePage(), L["Shared database"])
+    shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, sharePage, L["Shared database"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)
