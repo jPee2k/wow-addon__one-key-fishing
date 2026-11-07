@@ -115,8 +115,8 @@ end
 -- failing code, and reads the context of the innermost ns.Safe running.
 local safeContext
 local function OnSafeError(err)
-    -- VERIFY(V42): with the error stack height set like Blizzard's CallErrorHandler, the game's handler shows the
-    -- failing code's stack, once
+    -- With the error stack height set like Blizzard's CallErrorHandler, the game's handler shows the failing code's
+    -- stack, once (V42, seen in game)
     pcall(RecordError, safeContext, err, debugstack(2, ERROR_STACK_LINES, 0)) -- never hides the error itself
     SetErrorCallstackHeight(GetCallstackHeight() - 1) -- the stack from the failure, as CallErrorHandler does
     geterrorhandler()(err) -- the game's handler returns nothing

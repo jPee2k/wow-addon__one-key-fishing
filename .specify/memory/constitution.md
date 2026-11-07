@@ -53,7 +53,9 @@ settings and the gear back, and the camera whenever the mode ends in the same se
   on). After a real login it stays off, and the CVars and the gear come back.
 - Only what the addon changed is restored, and only while it still holds what the addon put
   there.
-- Combat rules MUST be honoured: protected changes wait until combat ends; weapons return at once.
+- Combat rules MUST be honoured: protected changes wait until combat ends. Equipping is protected
+  in combat, weapons too: the weapons return when the fight starts, before the combat lockdown
+  (`PLAYER_REGEN_DISABLED`), and everything else after it ends.
 - A renamed, moved or reshaped saved field MUST bump `DB_SCHEMA` with a migration; defaults fill
   missing keys without overwriting player data.
 
@@ -156,4 +158,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.5.2 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-06
+**Version**: 1.5.3 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-07

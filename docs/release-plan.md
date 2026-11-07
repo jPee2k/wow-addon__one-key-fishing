@@ -8,6 +8,7 @@ about 1.2.0, which is built but not verified in game yet. It is deleted once 1.2
 
 1.1.0 went out with the steps below still open in the checklists; a finding goes into a 1.1.x patch.
 
+- [tech-debt.md](tech-debt.md) "Fix batches" 3 (the map pin) and 4 (fishing mode in a fight): the 1.1.x patch.
 - [checklists/fishing-mode.md](checklists/fishing-mode.md) (2026-11-06: the rank notices of level 10 and a fished
   chest are done; Nightcrawlers and Shiny Bauble have no cooldown): the best of two poles, a lure that has a
   cooldown, a locked container, a clam with full bags. Combat raised three items in `tech-debt.md`.
@@ -35,7 +36,11 @@ catalog's pin through `ns.MapPin`) is settled by `specs/008-architecture-alignme
 The steps:
 
 1. Run [checklists/spike.md](checklists/spike.md) once, in one session, with a second player: the game facts of all
-   four parts and the error log (`/okf spike`). Paste the reports.
+   four parts and the error log (`/okf spike`). Paste the reports. **2026-11-06/07: the solo parts are done** (the
+   answers in `forever-api.md` and the five `verification.md`; V19, V11, V3 failed, V26 too slow, V34 partly);
+   left for a second player: N1 (guild), N3, C2 (B's view), C6, C7. The findings are grouped in
+   [tech-debt.md](tech-debt.md) "Fix batches": batches 1 and 2 are built here (next spec 009) before the feature
+   checklists with a second player; batches 3 and 4 go to `develop` as a 1.1.x patch.
 2. Record the answers in [forever-api.md](forever-api.md) "Verified in game"; fix the code where an assumption was
    wrong, with tests; remove the `VERIFY` markers of the closed ids and tick them in the five `verification.md`
    files (002 to 006). If V19 failed, set `Channel.AVAILABLE = false` in `OneKeyFishing/Exchange/Channel.lua` and

@@ -36,7 +36,9 @@ for step 7. Steps marked "B" are done on the second client.
    appears in A's chat.
 9. [ ] **Debug** (V17, V18): `/okf debug` has the "Shared database" section, with no names and no anonymous ID. Note
    the line "own record offered: yes, N bytes encoded for P places" after fishing at several places: N / P times
-   500 stays under 24 KB (otherwise lower `ROLL_PLACES` in `CatchDB.lua`). Value: ____
+   500 stays under 24 KB (otherwise lower `ROLL_PLACES` in `CatchDB.lua`). Value: 2026-11-06, one place: the section
+   has no names and no ID; "156 bytes encoded for 1 places" (one place is mostly the record's fixed part, so no
+   estimate yet: read it again after fishing at many places).
 10. [ ] **Performance** (V16): watch the frame rate while a session runs and while the tab is open. For a load
     test, copy many records into the saved data (or use `tests/exchange/share/load_test.lua` as a model); login takes no
     noticeable extra time, and the longest merge step in `/okf debug` stays under 5 ms. Value: ____

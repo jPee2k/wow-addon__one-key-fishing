@@ -180,7 +180,7 @@ end
 -- A tab per page below the window: the game's panel tabs, or plain buttons for all of them when the client
 -- lacks the template or its functions (one look for every tab).
 local function CreateTabs(f)
-    -- VERIFY(V6): PanelTabButtonTemplate and PanelTemplates_* render tabs in Forever
+    -- PanelTabButtonTemplate and PanelTemplates_* render tabs in Forever (V6, seen in game 2026-11-06)
     local tabs = {}
     if PanelTemplates_SetNumTabs and PanelTemplates_SetTab and PanelTemplates_TabResize then
         for index, page in ipairs(pages) do

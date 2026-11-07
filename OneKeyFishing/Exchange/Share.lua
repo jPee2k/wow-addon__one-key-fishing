@@ -493,7 +493,7 @@ end
 ---------------------------------------------------------------------------
 -- Encoding (research R4)
 ---------------------------------------------------------------------------
--- VERIFY(V15): C_EncodingUtil round-trips a record, and the Base64 text holds only Base64 characters
+-- C_EncodingUtil round-trips a record, and the Base64 text holds only Base64 characters (V15, seen in game)
 function Share.Encode(record)
     local ok, text = pcall(function()
         local util = C_EncodingUtil

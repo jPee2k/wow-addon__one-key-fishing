@@ -116,7 +116,7 @@ end
 
 -- cell, x, y of the player on map mapID (x, y in 0..1); "x" without a position.
 function CatchDB.GetCell(mapID)
-    -- VERIFY(V1): a position while fishing in the open world and in cities, nil in instances
+    -- A position while fishing in the open world, in cities and caves; nil in instances (V1, seen in game)
     local position = C_Map.GetPlayerMapPosition(mapID, "player")
     local x, y
     if position then
@@ -134,7 +134,7 @@ end
 -- or a map.
 function CatchDB.GetCurrentPlace()
     local rank = ns.Skill.Get()
-    -- VERIFY(V2): the map the game reports for the player is a stable place per fishing spot
+    -- The map the game reports is stable per fishing spot; a cave reports the continent (V2, docs/tech-debt.md)
     local mapID = C_Map.GetBestMapForUnit("player")
     if not (rank and mapID) then
         return nil

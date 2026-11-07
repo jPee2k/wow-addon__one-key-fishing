@@ -41,7 +41,7 @@ local function AddCatchLines(tooltip, itemID)
     end
 end
 
--- VERIFY(V38): the item post call fires for bags, the auction house, chat links and the addon's rows
+-- The item post call fires for bags, the auction house, chat links and the addon's rows (V38, seen in game)
 local function OnItemTooltip(tooltip, data)
     if (tooltip ~= GameTooltip and tooltip ~= ItemRefTooltip) or not data or not data.id or not ns.charDB then
         return

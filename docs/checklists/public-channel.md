@@ -11,6 +11,10 @@ addon data.
 **If the spike failed V19** (addon messages in a custom channel do not work): `Channel.AVAILABLE` is `false`, the
 release ships without the channel; skip steps 1-8 and 10 and run only steps 9 and 11 (the protections).
 
+**Status 2026-11-07**: the spike showed V19 failing (the server answers `NOT_ALLOWED_IN_CHANNEL` to every addon
+message in a custom channel; `docs/tech-debt.md`). Unless C6 with a second player shows B receiving anything, the
+fix sets `Channel.AVAILABLE = false` and only steps 9 and 11 stay.
+
 ## Setup
 
 1. Install the build on every client (`npm run install-addon`), or link the working folder once (`npm run link`);

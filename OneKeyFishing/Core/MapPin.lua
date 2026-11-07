@@ -57,7 +57,7 @@ function MapPin.Target(maps, x, y)
     end
     for _, mapID in ipairs(maps) do
         local info = C_Map.GetMapInfo(mapID)
-        -- VERIFY(V30): CanSetUserWaypointOnMap answers per map, open world true, instances false
+        -- CanSetUserWaypointOnMap answers per map, open world true; an instance has no map (V30, seen in game)
         if info and C_Map.CanSetUserWaypointOnMap(mapID) then
             return { mapID = mapID, x = x, y = y }
         end

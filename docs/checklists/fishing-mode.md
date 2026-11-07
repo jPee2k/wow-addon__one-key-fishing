@@ -15,17 +15,20 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 0. The folder layout (once, after the files moved into one folder per area)
 
-- [ ] **Clean install.** Delete `Interface/AddOns/OneKeyFishing` and install the build (or link), then restart the
+- [x] **Clean install.** Delete `Interface/AddOns/OneKeyFishing` and install the build (or link), then restart the
   game completely (the TOC changed). Expected: the addon is in the AddOn list, no error on login, `/okf` lists the
-  commands, both keys are still bound (`Bindings.xml` stayed at the root).
-- [ ] **Reports.** `/okf debug` and `/okf spike` open the copy window with the report (now built by `Core/Debug.lua`
-  and shown by `Core/Commands.lua`).
+  commands, both keys are still bound (`Bindings.xml` stayed at the root). In game 2026-11-06 (`002-shared-db`,
+  linked, version `dev`): in the list, no error, `/okf` lists the eight commands, both keys of each action bound.
+- [x] **Reports.** `/okf debug` and `/okf spike` open the copy window with the report (now built by `Core/Debug.lua`
+  and shown by `Core/Commands.lua`). In game 2026-11-06: both open it.
 - [ ] **The views that moved.** Open the auction house: the "Scan fish prices" button is there and counts while
   scanning (`UI/AuctionButton.lua`). Enter fishing mode at a capped rank: the warning shows as a toast too
   (`SKILL_WARNING`). On a fresh account the one-time popup about the exchange shows and its Settings button opens
-  the "Shared database" page (`UI/ShareNotice.lua`).
+  the "Shared database" page (`UI/ShareNotice.lua`). Partly 2026-11-06: the scan button is there and counts. Open: the toast at
+  a capped rank, the popup on a fresh account.
 - [ ] **Update over an old install.** Copy the build over the 1.0.0 folder without deleting it. Expected: the old
-  root `*.lua` files stay but are not loaded (the TOC no longer lists them); everything above still works.
+  root `*.lua` files stay but are not loaded (the TOC no longer lists them); everything above still works. Skipped 2026-11-06: the build is linked; run it with
+  `npm run install-addon` before the release.
 
 ## 1. Fishing mode
 
@@ -174,14 +177,18 @@ The full check (names, places, pins) is the "Next rank" section of
 
 ## 10. Debug report
 
-- [ ] `/okf debug` (re-run after spec 008) opens the copy window with the versions, the locale, the line `early L
+- [x] `/okf debug` (re-run after spec 008) opens the copy window with the versions, the locale, the line `early L
   lookups: none`, the mode state and keys, the Fishing spell and skill, gear, lure (each lure line with `needs: N`),
-  pending restore, fished items and settings; Ctrl+A, Ctrl+C copies it. No Lua errors during the whole run.
-- [ ] **Debug report from the menu and the settings.** The minimap right-click menu and the "Debug report" button on
+  pending restore, fished items and settings; Ctrl+A, Ctrl+C copies it. No Lua errors during the whole run. In game
+  2026-11-06 (`002-shared-db`, enUS): every section there, also Catch database, Catch catalog, Shared database and
+  Errors (`none`); no lure in the bags, so no lure lines.
+- [x] **Debug report from the menu and the settings.** The minimap right-click menu and the "Debug report" button on
   the settings page open the same copy window as `/okf debug` (a dangling call there was fixed in the simplify pass).
-- [ ] **Catch pages after the shared-menu change.** On "What can be caught here" and on the catalog tab the "Skill" and
+  In game 2026-11-06 (`002-shared-db`): both open it, no error.
+- [x] **Catch pages after the shared-menu change.** On "What can be caught here" and on the catalog tab the "Skill" and
   "Source" menus open, mark the chosen entry and change the list; the chance column and the spot tooltip read as
-  before; the catalog list does not flicker while a fishing session adds catches.
+  before; the catalog list does not flicker while a fishing session adds catches. In game 2026-11-07: as expected, no
+  flicker while catches came in, no error.
 
 ## Results
 

@@ -320,7 +320,7 @@ end
 -- Clears a password on a channel this client owns (an addon client undoing a lock, as Total RP 3 does).
 local function SelfHeal()
     if current then
-        -- VERIFY(V24): an addon client that owns the channel can clear its password
+        -- An addon client that owns the channel can clear its password (V24, seen in game)
         pcall(SetChannelPassword, Channel.NAMES[current], "")
         selfHeals = selfHeals + 1
     end

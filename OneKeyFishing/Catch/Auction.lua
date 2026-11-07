@@ -203,8 +203,8 @@ end)
 -- The results are sorted here: their order is not documented. While the game says more results exist, the next
 -- page is asked for (up to MAX_MORE_REQUESTS, each with its own wait, only when the server takes requests); the
 -- price uses all pages, or what came when a wait times out. The first results come as UPDATED, later pages as ADDED.
--- VERIFY(V4): each result has unitPrice and quantity; GetCommoditySearchResultsQuantity is the total listed;
--- HasFullCommoditySearchResults / RequestMoreCommoditySearchResults page the results
+-- Each result has unitPrice and quantity; GetCommoditySearchResultsQuantity is the total listed;
+-- HasFullCommoditySearchResults / RequestMoreCommoditySearchResults page the results (V4, seen in game)
 local function OnCommodityResults(_, itemID)
     if itemID ~= current then
         return

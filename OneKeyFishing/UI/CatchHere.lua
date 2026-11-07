@@ -201,8 +201,8 @@ local function FillRow(row, item, littleData)
         row.price:SetText(ns.Prices.FormatValue(item.itemID))
     else
         row.unknown = item
-        -- VERIFY(V27): GetItemInfoInstant returns nothing for an item the client does not know yet, the question mark
-        -- icon exists, and asking the game may make the item known
+        -- GetItemInfoInstant returns nothing for an item the client does not know yet, the question mark icon exists,
+        -- and asking the game may make the item known (V27, seen in game)
         row.icon:SetTexture(ns.GameData.Icons.unknownItem)
         row.name:SetText(L["Unknown item"])
         row.price:SetText("")

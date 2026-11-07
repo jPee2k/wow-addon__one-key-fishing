@@ -38,7 +38,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 |---|---|
 | Players | `OneKeyFishing/README.md` (the player manual, shipped in the package), `CHANGELOG.md` |
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
-| Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues; remove an item once it is fixed with a test) |
+| Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
 | Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the checks left after 1.1.0 and what 1.2.0 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
@@ -166,8 +166,17 @@ go there.
 - `YES`, `NO` and `CANCEL` are in the client's language, not the addon's: popups use `L["Yes"]` / `L["No"]`.
 - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing); the
   tests do not catch it, so wrap such calls as `tostring((f()))`.
-- `C_Map.OpenWorldMap` is restricted: open the map with the global `OpenWorldMap(mapID)`; a map pin follows
-  Blizzard's `/mappin`. The subzone of a cast comes from the explored areas at the player's position matched
+- `C_Map.OpenWorldMap` is restricted, and the global `OpenWorldMap(mapID)` from addon code taints the map for a
+  later fight (`docs/tech-debt.md`); a map pin follows Blizzard's `/mappin`. The subzone of a cast comes from the explored areas at the player's position matched
   against `GetSubZoneText()`.
 - Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
   window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).
+- The server refuses addon messages in a custom chat channel (`NOT_ALLOWED_IN_CHANNEL`, though the send returns 0);
+  `PARTY` and `WHISPER` arrive (Battle.net game data returns 0; its arrival is not seen yet).
+- Character names are "First Last" with a space. `UnitName` / `UnitFullName` return the first and the last name as
+  two values (not a realm); the full name is `GetUnitName(unit, true)`. A whisper goes to "First Last" (no realm);
+  `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name.
+- Places: a cave reports the continent map, an instance no map; pool loot comes from the bobber (35591), like open
+  water; `GetExploredAreaIDsAtPosition` gives map regions, often not the subzone.
+- `C_Item.EquipItemByName` is protected in combat, weapons too (only `PLAYER_REGEN_DISABLED` runs before the
+  lockdown).

@@ -94,8 +94,8 @@ end
 ---------------------------------------------------------------------------
 -- Pause
 ---------------------------------------------------------------------------
--- VERIFY(V14): the open world out of combat has no active restriction, and these turn true where addon chat is
--- blocked
+-- The open world out of combat has no active restriction, and these turn true where addon chat is blocked (V14,
+-- seen in game: Map in an instance)
 local function Restricted()
     local types = Enum.AddOnRestrictionType
     if C_RestrictedActions and C_RestrictedActions.IsAddOnRestrictionActive and types then
@@ -447,7 +447,7 @@ function Comm.ForEachFriend(fn)
             fn("w:" .. ns.WithRealm(info.name)) -- the address the friend's own messages arrive from
         end
     end
-    -- VERIFY(V13): Battle.net friends playing Forever have clientProgram BNET_CLIENT_WOW and our WOW_PROJECT_ID
+    -- Battle.net friends playing Forever have clientProgram BNET_CLIENT_WOW and our WOW_PROJECT_ID (V13, seen in game)
     for i = 1, BNGetNumFriends() or 0 do
         for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) or 0 do
             local account = C_BattleNet.GetFriendGameAccountInfo(i, j)

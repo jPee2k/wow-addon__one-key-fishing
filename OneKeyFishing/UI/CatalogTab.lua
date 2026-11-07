@@ -52,7 +52,7 @@ end
 ---------------------------------------------------------------------------
 local function CreateList(parent, top, initialize)
     local list = { initialize = initialize }
-    -- VERIFY(V37): the scroll list, the scroll bar and the search box render inside the statistics window
+    -- The scroll list, the scroll bar and the search box render inside the statistics window (V37, seen in game)
     local ok = pcall(function()
         local box = CreateFrame("Frame", nil, parent, "WowScrollBoxList")
         box:SetPoint("TOPLEFT", LABEL_X, top)

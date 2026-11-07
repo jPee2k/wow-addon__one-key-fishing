@@ -7,7 +7,156 @@ feature that takes it on.
 Severity: **high** loses data or cuts off honest players; **medium** wrong state or wasted traffic; **low**
 cleanup, no wrong behaviour.
 
+## Fix batches
+
+The open items grouped into fixes that can be taken in one go (one spec or one patch each, `/speckit-specify` with
+the batch as its description). Each batch says where it is built, what it closes and what the game still has to
+show. The facts behind them: `docs/forever-api.md` "Verified in game" (2026-11-06/07) and the `verification.md` of
+specs 002 to 006.
+
+### Batch 1: the exchange in Forever (1.2.0, branch `002-shared-db`, next spec 009)
+
+What the spike showed about the network; without it the exchange reaches nobody but the group and the guild.
+
+- "Whispers to friends go to an address that does not exist" (high; V11)
+- "Addon messages in the public channel are refused" (high; V19, closes V20-V25 as not shipped)
+- "A proof step costs about 0.3 ms in the game" (medium; V26)
+- "A whisper to an offline player is not told by its result" (low; V12)
+
+Then: spike N1 (guild), N3, C6 with a second player; the `catch-exchange` checklist. Markers to close with it: V11,
+V19-V25, V26, V41, V12 (`npm run check` lists them).
+
+### Batch 2: where a catch is recorded (1.2.0, branch `002-shared-db`, before the first real harvest)
+
+What the spike showed about places; every catch recorded before the fix keeps the wrong place, so it goes in before
+`npm run harvest` builds the first seed.
+
+- "Pool catches are written as open water" (medium; V3)
+- "Catches in a cave go to the continent map" (medium; V2, V33)
+- "The subzone of a cast is often not found" (medium; V34; needs a `/run` check of an ID-based source first)
+
+Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
+
+### Batch 3: the map pin (1.1.x patch on `develop`, then rebased into `002-shared-db`)
+
+Released in 1.1.0 (the next-rank pin), so it ships as a patch.
+
+- "The map pin opens the world map, and the map then fails in a fight" (high; R14 / V32; the toast under the map)
+- "The manual promises a navigation arrow on screen" (low; V31)
+
+Then: `interface-language.md` section 10 (the pin, then a fight) and `catch-catalog` step 3. Marker: R14.
+
+### Batch 4: fishing mode in a fight (1.1.x patch on `develop`)
+
+- Leaving fishing mode in a fight raises "Interface action failed" (medium)
+- "The fishing key keeps its cast in a fight" (low; first the `/run` check it names)
+- "No chat line when an attack ends fishing mode" (low; the author decides the expectation)
+
+Then: `fishing-mode.md` section 1 "Out of combat only". Constitution Principle III was corrected on 2026-11-07
+(1.5.3): weapons can be swapped only before the lockdown.
+
+### Batch 5: small items (any time, with any of the above)
+
+- "1 catches" (low; nine translations)
+- "A fishing pole above the Fishing skill may be chosen" (low)
+- "A lure the game refused stays skipped after a skill-up" (low; waits for V43 / V44)
+- "The private-table check reads only the plain form" (low; tooling)
+
 ## Open items
+
+### Catches in a cave go to the continent map (medium)
+
+- **Found**: in game, 2026-11-06 (V2, spike): in the cave before Wailing Caverns `C_Map.GetBestMapForUnit` gives
+  Kalimdor 1414 (type 2, Continent), not The Barrens or a cave map.
+- **Cause**: Forever has no map for the cave, and the best map falls back to the continent.
+- **Where**: `CatchDB/CatchDB.lua` (the place key of a cast), the catalog and "What can be caught here" (a zone named
+  "Kalimdor", a 100x100 cell grid over the whole continent).
+- **Direction**: when the best map is of type Continent (or above), convert the position through
+  `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapInfoAtPosition` / `GetMapPosFromWorldPos` to the zone map under it,
+  checked in game first; or leave such casts out. Test: a continent map is never a place key.
+
+### Pool catches are written as open water (medium)
+
+- **Found**: in game, 2026-11-06 (V3, spike at Ratchet): a catch from an Oily Blackmouth School, the bobber in the
+  pool, has the bobber (object 35591) as its loot source, like an open-water catch.
+- **Cause**: `ns.IsPoolLoot` (`Catch/Catch.lua`) returns false (open water) when the source is the bobber; the
+  assumed difference (the pool's own object ID) does not exist in Forever.
+- **Where**: `Catch/Catch.lua` `ns.IsPoolLoot`, the pool counters of the catch database, the "Water" filter of
+  "What can be caught here" and the catalog (catch-catalog step 9), the debug line "last catch from a pool".
+- **Direction**: the fallback of V3: `ns.IsPoolLoot` returns nil always (no pool counters), the "Water" button stays
+  hidden; drop the pool split from the record format later. Test: a bobber source gives nil.
+
+### Addon messages in the public channel are refused (high)
+
+- **Found**: in game, 2026-11-06 (V19, spike and `/run` tests, full account): a typed line in the channel shows, but
+  every `SendAddonMessage` to a custom channel (`OneKeyFishingShare` and a test channel) returns `0` and the server
+  answers `NOT_ALLOWED_IN_CHANNEL` ("That operation is not permitted in this channel."); no echo comes back.
+- **Cause**: Forever's server does not allow addon messages in custom chat channels (not known whether always, or
+  for some accounts or levels; `AreOutgoingAddonChatMessagesRestricted()` is `true`).
+- **Where**: `Exchange/Channel.lua` (the join, a chat slot taken), `Exchange/Comm.lua` (HELLOs to the channel count
+  as sent: `send results 0=...`, while the server refuses them), the "Public channel: in use" status, the manual.
+- **Direction**: the plan's own fallback: `Channel.AVAILABLE = false`, V20-V25 closed as "not shipped" in
+  `specs/004-public-channel-sync/verification.md`, the public-channel checklist keeps its protection steps
+  (`docs/checklists/spike.md`, part 3). Before that, C6 with a second player: whether B receives anything. Also
+  count a `NOT_ALLOWED_IN_CHANNEL` as a failed send, so a refused path is left out (V10 fallback).
+
+### Whispers to friends go to an address that does not exist (high)
+
+- **Found**: in game, 2026-11-06 (V11, `/run` tests on one realm): Forever names are "First Last" with a space and
+  the realm from `GetNormalizedRealmName()` is internal (`CAMWOWEU4Realm4PvP`). `UnitName("player")` returns
+  "First" and "Last" as two values, not the name and a realm. A whisper to "First Last" arrives,
+  with the sender "First Last" in `CHAT_MSG_ADDON`; a whisper to "First Last-Realm" returns `0` but prints "No
+  player named ..." and never arrives.
+- **Cause**: `ns.WithRealm` appends `-<GetNormalizedRealmName()>` to a name without a dash, assuming the Retail
+  "Name-Realm" form.
+- **Where**: `Exchange/Comm.lua` `Comm.ForEachFriend` (`"w:" .. ns.WithRealm(info.name)`): every HELLO to a
+  character friend goes nowhere, may print "No player named ..." (the filter hides it only within its window), and
+  the address differs from the one the friend's own messages come from ("w:First Last"), so one friend can count
+  as two peers. `ns.SameCharacter` (`Core/Data.lua`, used by `Exchange/Channel.lua` and `Exchange/ShareGame.lua`)
+  compares through the same form. `Exchange/Channel.lua` `IsMe` takes `UnitName("player")`, the first name alone, so
+  a channel notice about the player ("First Last") is not taken as the player's own (V24: an own password or owner
+  change looks like a stranger's). The spike's "WHISPER to self" (`Core/Spike.lua`) sends to the first name alone.
+  Guild, group and channel peers are addressed by the sender as it came, which
+  works.
+- **Direction**: keep names as the game gives them; take the own name from `GetUnitName("player", true)` ("First
+  Last", one string), never from `UnitName` / `UnitFullName`; add a realm only when the game gave one (another
+  realm), and compare names without one. The character friends list was empty in the test (Forever's friends
+  window shows Battle.net friends), so the shape of `C_FriendList` names is still to be seen. Check a sender from another realm in game first (spike N1 with a second player).
+  Tests: a friend's address equals the address of the friend's own messages.
+
+### A whisper to an offline player is not told by its result (low)
+
+- **Found**: in game, 2026-11-06 (V12, spike N2): `SendAddonMessage` `WHISPER` to a name nobody plays returns `0`
+  (Success), not 12 (`TargetOffline`); the game prints "No player named '<name>' is currently playing." afterwards.
+- **Where**: `Exchange/Comm.lua` (the `TargetOffline` branch never runs; the offline handlers only see the
+  `CHAT_MSG_SYSTEM` line, which the filter hides).
+- **Direction**: take the "No player named" line the filter hides as the offline signal for that address (it
+  already knows the address), so a session to a peer that logged out ends at once; or rely on the session timeout
+  and drop the branch. Test: the hidden line ends the session to its address.
+
+### A proof step costs about 0.3 ms in the game (medium)
+
+- **Found**: in game, 2026-11-06, `/okf spike` (V26) three times: 64 proof steps took 19.8, 19.0 and 17.8 ms; the
+  verification assumed under 5 ms.
+- **Cause**: `ns.ProofStep` hashes with `ns.SHA256` in Lua over the `bit` library; the game's Lua is slower than
+  assumed.
+- **Where**: `Exchange/Share.lua` `PROOF_STEPS = 32` (links per frame step while a received record is checked), so
+  a frame step takes about 10 ms; the version chain marks and the chain checks in `CatchDB/Checks.lua`.
+- **Direction**: lower `PROOF_STEPS` to 8 (about 2.5 ms a step) or budget the steps by `debugprofilestop`; check
+  that a long chain is still checked in time (the chain is up to 4096 links). Test: the step count per frame step.
+
+### The subzone of a cast is often not found (medium)
+
+- **Found**: in game, 2026-11-06, `/okf spike` (V34): at Stonebull Lake (Mulgore, map 1412) `GetSubZoneText()` is
+  "Stonebull Lake", but `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` at the player's position returns
+  nothing at one spot and area 222 "Bloodhoof Village" a few steps away; in Thunder Bluff nothing. At Ratchet it
+  works (area 392 "Ratchet", kept).
+- **Cause**: the call returns the map's explored overlay regions (a region can be named after a nearby village),
+  not the subzone the game shows, so the name never matches `GetSubZoneText()`.
+- **Where**: `CatchDB/CatchDB.lua` (the area of a cast), the catalog's spot names ("Subzone (45, 72)").
+- **Direction**: spots keep their coordinates (the fallback of FR-015, works today). Find an ID-based source of
+  the area at a position (`C_Map.GetMapInfoAtPosition`, the area IDs of the map's explored overlays,
+  `C_MapExplorationInfo.GetExploredMapTextures`), checked in game before any change.
 
 ### The map pin opens the world map, and the map then fails in a fight (high)
 
@@ -22,7 +171,9 @@ cleanup, no wrong behaviour.
 - **Where**: `Core/MapPin.lua` `MapPin.Set`, every pin of the addon: the next-rank Pin button and minimap menu
   entry (released in 1.1.0) and the catalog's pin buttons (not released, through `MapPin` since spec 008); marker
   `VERIFY(R14)`.
-- **Direction**: the fallback of V32: set the pin and the arrow, do not open the map; the toast and the manual say
+- **Also**: the toast "Map pin: ..." shows above the indicator, where the world map the pin opens covers it
+  (in game 2026-11-07).
+- **Direction**: the fallback of V32: set the pin and the arrow, do not open the map (the toast is then seen too); the toast and the manual say
   to open the map to see the pin. Tests: no `OpenWorldMap` call from `MapPin.Set`. Then the manual, `CHANGELOG.md`
   (Fixed), FR-022 of spec 001 and FR-011 of spec 005, and a 1.1.x patch for the release.
 
@@ -34,8 +185,9 @@ cleanup, no wrong behaviour.
 - **Cause**: `taint.log`: "An action was blocked in combat because of taint from OneKeyFishing - EquipItemByName()"
   from `Gear.lua` `RestoreSlots` <- `RestoreWeapons` <- `Mode.Exit` (`InCombatLockdown()` branch) <-
   `OneKeyFishing_ToggleMode`. `C_Item.EquipItemByName` is protected in combat, weapons too; the swap on an attack
-  works only because `PLAYER_REGEN_DISABLED` runs before the lockdown. The constitution (Principle III,
-  "weapons return at once") and `fishing-mode.md` say weapons can be swapped in combat: wrong.
+  works only because `PLAYER_REGEN_DISABLED` runs before the lockdown. The constitution said "weapons return at
+  once" (corrected in 1.5.3, 2026-11-07); `docs/architecture/fishing-mode.md` ("Leaving in combat") describes
+  the current behaviour and changes with the fix.
 - **Where**: `Fishing/Mode.lua` `Mode.Exit`, `Fishing/Gear.lua` `RestoreWeapons` / `RestoreSlots`.
 - **Direction**: in the lockdown only set the pending exit and say so; no `EquipItemByName` until
   `PLAYER_REGEN_ENABLED`. Test: `Mode.Exit` with `in_combat` calls no equip. Fix the docs' claim.
@@ -86,6 +238,24 @@ cleanup, no wrong behaviour.
   It also cuts a line at `--` even inside a string, so a read after such a string is missed.
 - **Direction**: read the code with luaparse (already a dependency of the checks) and follow the locals bound to
   `ns.<Module>`, if a file ever needs an alias. Test: an aliased read from another folder is reported.
+
+### The manual promises a navigation arrow on screen (low)
+
+- **Found**: in game, 2026-11-07 (V31): a pin shows on the world map and the minimap (with the minimap's edge arrow),
+  but no arrow on screen; the hidden CVar `showInGameNavigation` is `0`.
+- **Where**: `OneKeyFishing/README.md` (the next-rank part: "the game's map pin and navigation arrow point at the
+  seller"), `CHANGELOG.md` 1.1.0 ("A map pin with the game's navigation arrow"), FR-022 of spec 001; the catalog
+  part of the manual already says the arrow depends on the game's setting.
+- **Direction**: say "map pin (and the minimap arrow)" in the manual; the CVar stays untouched (constitution: the
+  addon changes no setting it does not restore).
+
+### "1 catches" (low)
+
+- **Found**: in game, 2026-11-07, "What can be caught here" on a map with one catch: "1 catches".
+- **Cause**: one key `"%d catches"` for every count (`Catalog/Catalog.lua` `L["%d catches"]` and `"%d catches from
+  %d players"`, `UI/StatsFrame.lua` `"%d catches, %s"`).
+- **Direction**: a key for one (`"1 catch"`) beside the plural one, with its nine translations (the languages with
+  more plural forms keep their own word order); or a neutral form ("Catches: %d").
 
 ## History
 

@@ -137,6 +137,100 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   - The Addon Compartment exists (the addon's entry shows and works).
   - A settings page frame that is created shown gets no `OnShow` on its first view in a session (spec 007): create
     it hidden.
+- The shared catch database build (`002-shared-db`, EU realm, enUS client, 2026-11-06), the quick run before the
+  spike:
+  - `PanelTabButtonTemplate` with `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab` / `PanelTemplates_TabResize`
+    draws the statistics window's three tabs in the game's tab look (closes V6).
+  - `JoinTemporaryChannel` called from addon code at login, with no key press, joins the hidden channel
+    `OneKeyFishingShare` (`/okf share`: "Public channel: in use"; V19 in part, the messages are not seen yet).
+- The first spike report (`/okf spike`, Thunder Bluff, out of combat, not fishing, 2026-11-06):
+  - Thunder Bluff has its own map 1456 of type 3 (Zone), parent Kalimdor 1414, and `GetPlayerMapPosition` gives a
+    position there; `CanSetUserWaypointOnMap` is true for 1456 and 1414. At the pond no explored area is at the
+    position and `GetSubZoneText()` is empty (V1, V2, V30, V34 in part).
+  - An open-water catch has the loot source `GameObject-...-35591-...` (the bobber), `ns.IsPoolLoot()` false (V3 in
+    part).
+  - `RegisterAddonMessagePrefix` gives 0; `SendAddonMessage` `WHISPER` to self and to a made-up name both give `0`
+    (Success, not `TargetOffline`), and the made-up one prints "No player named '<name>' is currently playing."
+    (V12 in part).
+  - `BNET_CLIENT_WOW` is `WoW`, `WOW_PROJECT_ID` 18; Battle.net game accounts of Forever friends have
+    `clientProgram` WoW and `wowProjectID` 18; `C_BattleNet.SendGameData` returns 0 (V13 in part).
+  - Out of combat in a capital no `C_RestrictedActions` restriction is active, `InChatMessagingLockdown()` is
+    false, `AreOutgoingAddonChatMessagesRestricted()` true (V14 in part).
+  - `C_EncodingUtil` CBOR, Deflate and Base64 round-trip a record (closes V15).
+  - `MaxChatChannels` is 20; the limit text is "You can only be in 20 channels at a time." (V23 in part).
+  - `bit` exists with unsigned results (`bnot(0)` = `band(-1, 4294967295)` = 4294967295); `ns.SHA256("abc")` is the
+    known digest; 64 proof steps took 19.8 ms (V26 in part).
+  - `CaseAccentInsensitiveParse` on an enUS client folds letter case (Latin and Cyrillic) but keeps accents
+    ("Ab", E acute, Cyrillic capital Shcha -> "ab", e acute, small shcha); `strcmputf8i("b", "A")` is 1 (V36 in part).
+  - `WowScrollBoxList`, `MinimalScrollBar` and `SearchBoxTemplate` can be created, `CreateScrollBoxListLinearView`,
+    `ScrollUtil.InitScrollBoxListWithScrollBar`, `CreateDataProvider` and the atlas `Waypoint-MapPin-Untracked`
+    exist (V37, the API side).
+  - The CVar `showInGameNavigation` reads `0`, although the arrow showed for the 1.1.0 pin (V31).
+- The second spike report (Mulgore at Stonebull Lake, 2026-11-06):
+  - Mulgore is map 1412 of type 3 with a position. `GetSubZoneText()` is "Stonebull Lake", yet
+    `C_MapExplorationInfo.GetExploredAreaIDsAtPosition(1412, position)` returns nothing (V34 fails in part).
+  - 64 proof steps took 19.0 ms again: a SHA-256 step costs about 0.3 ms in the game (V26).
+  - The error path of `ns.Safe`: the `scriptErrors` popup shows the error once with the failing function as its
+    first Lua line, and the error log keeps the same stack and count (closes V42).
+  - A whisper (`SendAddonMessage` `WHISPER`) to `UnitName("player")` gives `0` but prints "No player named
+    '<first name>' is currently playing." and never echoes: `UnitName` gives the first name and the last name as two
+    values, so the target was the first name alone (V11).
+- The third spike report (Stonebull Lake, the bobber out, 2026-11-06):
+  - `C_Map.GetPlayerMapPosition` gives a position while Fishing is channeled (`UnitChannelInfo` spell 7731) (V1).
+  - `GetExploredAreaIDsAtPosition(1412, position)` gives area 222 "Bloodhoof Village" where `GetSubZoneText()` is
+    "Stonebull Lake": the exploration areas are the map's overlay regions, not the subzone (V34).
+  - The test channel, from the previous report's checks: `NOT_ALLOWED_IN_CHANNEL` (argument the channel name) after
+    the addon message to it, no echo of that message; `CHANNEL_OWNER` names the player (who joined first);
+    `PASSWORD_CHANGED` once for setting and once for clearing a password, with the player's name; one `YOU_LEFT`
+    for the leave; the channel numbers after the leave equal those before the join (V19, V22, V24, V41).
+- Pool loot (Ratchet, 2026-11-06): a catch from an Oily Blackmouth School, with the bobber in the pool, has the
+  loot source `GameObject-...-35591-...`: the bobber, as in open water, so `GetLootSourceInfo` does not tell a
+  pool catch apart (V3 fails).
+- In a group, `SendAddonMessage` `PARTY` returns 0 and echoes, with the sender "First Last" (no realm) (V10, V11).
+- In the cave before Wailing Caverns (subzone "Wailing Caverns", 2026-11-06) `C_Map.GetBestMapForUnit("player")`
+  is the continent Kalimdor 1414 (type 2), with a position on it; no cave map; `GetExploredAreaIDsAtPosition`
+  gives nothing (V2, V33, V34).
+- `TooltipDataProcessor` item post calls fire for item tooltips in bags, the auction house list, a chat link's
+  `ItemRefTooltip` and an addon's own rows (`GameTooltip:SetItemByID`) (V38, 2026-11-07).
+- The navigation arrow (2026-11-07): with `showInGameNavigation` at `0`, `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`
+  after a pin gives the minimap's edge arrow but no arrow on screen (V31).
+- Items (spike with a synthetic seed, 2026-11-06): of item IDs 6000-6899, 36 are unknown to
+  `C_Item.GetItemInfoInstant` while `C_Item.DoesItemExistByID` reports every one as existing;
+  `C_Item.RequestLoadItemDataByID` of such an item brings `ITEM_DATA_LOAD_RESULT` with `false`, and it stays without
+  a name, quality or instant info (V27, V35). `GetChannelName(name)` gives the number, the name, 0 and false for a
+  channel the player is in, 0 otherwise; `IsDisplayChannelOwner()` is true for a channel the player created.
+- Channel commands in one macro (2026-11-06): only the first `/join` or `/leave` of a channel takes effect; a
+  `/leave X` then `/join X` gives one `YOU_LEFT` and the player stays out, a `/join X`, `/leave X`, `/join X` while
+  out gives one `YOU_CHANGED`. A join, typed or from addon code, always brings `YOU_CHANGED` ("Changed Channel:"),
+  never `YOU_JOINED` (V41).
+- The auction house (Orgrimmar, 2026-11-06): a commodity search (Raw Brilliant Smallfish, 6291) gives 31 results
+  with `unitPrice` and `quantity` in ascending price order, `GetCommoditySearchResultsQuantity` 1592 (later 1662, as the auction house list shows) and
+  `HasFullCommoditySearchResults` true (V4); an item search (Spiked Club of Power, 4564) gives results with
+  `buyoutAmount` and `quantity` 1 (V5 in part). An item with no listing gives 0 results.
+- Inside the Wailing Caverns instance (2026-11-06): `C_Map.GetBestMapForUnit("player")` is nil, no position,
+  `C_RestrictedActions.GetAddOnRestrictionState(Enum.AddOnRestrictionType.Map)` is 2 and the `Map` restriction is
+  active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).
+- At Ratchet (The Barrens 1413, 2026-11-06) `GetExploredAreaIDsAtPosition` gives area 392 "Ratchet", the same as
+  `GetSubZoneText()` (V34 works there).
+- Addon messages in a custom channel (`/run` tests, 2026-11-06, full account, level 11): typed text in a temporary
+  channel shows, but `C_ChatInfo.SendAddonMessage(prefix, text, "CHANNEL", n)` returns `0` (Success) and the server
+  then sends `CHAT_MSG_CHANNEL_NOTICE` `NOT_ALLOWED_IN_CHANNEL` with the channel name (`CHAT_NOT_ALLOWED_IN_CHANNEL_NOTICE`
+  "[%s] That operation is not permitted in this channel."); no `CHAT_MSG_ADDON` echo comes back. The same for a
+  channel the player owns and for `OneKeyFishingShare` (V19 fails). A send to channel number 0 returns 7
+  (`InvalidChannel`).
+- Character names (`/run` tests, 2026-11-06): a Forever character has a first and a last name, written with a space
+  ("Drog Earthshaker"); players whisper with `/w First Last`, and chat shows "[First Last]". `UnitName("player")`
+  returns two values, the first name and the last name ("Drog", "Earthshaker"; the second is not a realm), so
+  `print(UnitName(...))` looks like the full name and a call that passes `UnitName(...)` as its last argument sends
+  the first name alone. `UnitFullName` does the same (two values, no realm). `GetUnitName(unit, true)` gives one
+  string, "First Last" (also for a target: "Cadiee Druid"). `GetNormalizedRealmName()` gives an internal name
+  (`CAMWOWEU4Realm4PvP`).
+- Forever's friends window lists Battle.net friends with their Forever character ("Showtime Stormbringer, Lvl 10");
+  with no character friend added, `C_FriendList.GetNumFriends()` is 0 (2026-11-06). `SendAddonMessage` `WHISPER` to "First Last" arrives, and `CHAT_MSG_ADDON` names the
+  sender "First Last" (no realm); to "First Last-Realm" or "First-Realm" it returns `0` but the game prints "No
+  player named ..." (showing "First-Realm" as "First Realm") and nothing arrives (V11 fails, V12 in part).
+  - Joining a temporary channel from addon code brings the notice `YOU_CHANGED` only (no `YOU_JOINED`), no chat
+    window lists the channel, and `SendAddonMessage` to it gives `0` (V19, V21 in part).
 - `INTERACTTARGET` exists. The bobber is readable as unit `softinteract` (name and GUID), but it has **no
   nameplate** and `UnitExists` is false, so nothing can be anchored to it.
 - Fishing rank spells are 7620 / 7731 / 7732 / 18248. The skill comes from `GetProfessions()` →
@@ -157,12 +251,16 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 Answered only by the game; the spike ([docs/checklists/spike.md](checklists/spike.md)) asks them, and the answers
 move to "Verified in game":
 
-- Do `CHANNEL` addon messages and `JoinTemporaryChannel` from an addon work in Forever, and how far does a custom
-  channel reach: the whole game mode, one faction, one layer? (V19, V20; decides whether the public channel ships)
-- Does `GetLootSourceInfo` tell a fishing pool from the bobber, so pool catches can be counted apart? (V3)
+- Does a custom channel carry addon messages for anyone (a second player, C6)? For one player the server refuses
+  them (`NOT_ALLOWED_IN_CHANNEL`, V19); how far a channel reaches (faction, layer, V20) matters only if it does.
+- Does a sender from another realm come as "First Last-Realm", and what do `C_FriendList` names look like (V11)?
+- Does `C_BattleNet.SendGameData` reach another Forever client with the addon (V13)?
 - Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the
   skill ranges of the place key can go.
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
-- Does the server answer every `LeaveChannelByName` with one `YOU_LEFT` of that name, also a leave made before the
-  join is confirmed, and before the answer to a later join of the same name? (V41)
+- Which ID-based call names the subzone at a position, where `GetExploredAreaIDsAtPosition` gives a map region
+  (V34)?
+
+Answered on 2026-11-06/07 (see "Verified in game"): pool loot is not told apart (V3); one `YOU_LEFT` per leave, and
+in one macro only the first `/join` or `/leave` of a channel takes effect (V41).

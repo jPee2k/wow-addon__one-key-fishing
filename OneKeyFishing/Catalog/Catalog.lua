@@ -60,7 +60,7 @@ local function SendNames()
         if not itemID then
             break
         end
-        -- VERIFY(V35): item names load in batches of NAME_REQUESTS_PER_STEP without errors
+        -- Item names load in batches of NAME_REQUESTS_PER_STEP without errors (V35, seen in game)
         C_Item.RequestLoadItemDataByID(itemID)
         sent = sent + 1
     end
