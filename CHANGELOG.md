@@ -63,6 +63,16 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 - Items your game client does not know yet are counted in the statistics and in your catch data, and fished
   containers of that kind are remembered like the others, so the key opens them and the auction scan includes them.
+- After setting a map pin, the world map no longer fails in a fight ("Interface action failed because of an
+  AddOn"): the pin no longer opens the map, and its message says to open it.
+- Leaving fishing mode in a fight no longer raises "Interface action failed"; the gear comes back when the fight
+  ends.
+- In a fight the fishing key now pauses and says so, instead of trying to cast, and the indicator shows "Paused in
+  combat". The pause also covers the hook: a bobber still out when a fight starts can no longer be hooked until it
+  ends.
+- An attack in fishing mode (with "Leave fishing mode when attacked" on) now says that the mode ends after the
+  fight.
+- The manual no longer promises a navigation arrow on screen for the next-rank pin.
 
 ## [1.1.0] - 2026-11-05
 

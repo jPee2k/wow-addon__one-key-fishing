@@ -31,6 +31,15 @@
 --   known_items = { [itemID] = true }   C_Item.GetItemInfoInstant knows only these item IDs (nil: every ID)
 --   settings_pages[name] = frame        the canvas pages registered as settings subcategories (read only)
 --   popup_frames_busy = true            StaticPopup_Show shows nothing and returns nil (every dialog frame taken)
+-- Fishing mode in a fight (specs/009-pin-combat-fixes):
+--   equip_calls                         C_Item.EquipItemByName calls, { item, slot } (read)
+--   inventory[slot] = itemID            GetInventoryItemID("player", slot)
+--   override_bindings[owner][key]       SetOverrideBinding / SetOverrideBindingClick ("CLICK <button>:<mouse>"),
+--                                       emptied by ClearOverrideBindings (read)
+--   channel_info = { name, ... }        UnitChannelInfo("player") returns these values (nil: not channeling)
+--   known_spells[spellID] = true        C_SpellBook.IsSpellKnown and IsSpellKnown
+--   Frame:SetAttribute / GetAttribute   stored per frame (a secure snippet can be read back)
+-- Helpers: enter_fishing_mode(), owe_gear(), equipped_slots(), chat_count(text).
 -- The catch exchange (Comm.lua, Share.lua):
 --   addon_prefixes[prefix] = true       prefixes registered with C_ChatInfo.RegisterAddonMessagePrefix (read)
 --   addon_sent                          C_ChatInfo.SendAddonMessage calls, { prefix, text, chatType, target, at }
@@ -307,13 +316,19 @@ end
 -- Chat lines printed by the addon (ns.Print), oldest first.
 chat = {}
 
-function chat_contains(text)
+-- The number of chat lines that contain text (each line starts with the addon's prefix).
+function chat_count(text)
+    local count = 0
     for _, line in ipairs(chat) do
         if line:find(text, 1, true) then
-            return true
+            count = count + 1
         end
     end
-    return false
+    return count
+end
+
+function chat_contains(text)
+    return chat_count(text) > 0
 end
 
 ---------------------------------------------------------------------------
@@ -1676,7 +1691,12 @@ loot_sources = {}
 function GetLootSourceInfo(slot)
     return loot_sources[slot]
 end
-function UnitChannelInfo() end
+function UnitChannelInfo(unit)
+    local info = rawget(_G, "channel_info")
+    if unit == "player" and info then
+        return unpack(info)
+    end
+end
 function UnitCastingInfo() end
 
 function GetWeaponEnchantInfo()
@@ -1861,6 +1881,91 @@ function load_translation(code)
     return name, texts
 end
 
+---------------------------------------------------------------------------
+-- Fishing mode in a fight (specs/009-pin-combat-fixes): equipping, bindings, frame attributes
+---------------------------------------------------------------------------
+equip_calls = {}
+inventory = {}
+override_bindings = {}
+known_spells = {}
+
+C_Item.EquipItemByName = function(item, slot)
+    table.insert(equip_calls, { item = item, slot = slot })
+end
+
+function GetInventoryItemID(unit, slot)
+    if unit == "player" then
+        return inventory[slot]
+    end
+end
+
+function IsSpellKnown(spellID)
+    return known_spells[spellID] == true
+end
+C_SpellBook = C_SpellBook or {}
+C_SpellBook.IsSpellKnown = IsSpellKnown
+
+function Frame:SetAttribute(name, value)
+    self.attributes = self.attributes or {}
+    self.attributes[name] = value
+end
+
+function Frame:GetAttribute(name)
+    return self.attributes and self.attributes[name]
+end
+
+local function OwnerBindings(owner)
+    override_bindings[owner] = override_bindings[owner] or {}
+    return override_bindings[owner]
+end
+
+function SetOverrideBinding(owner, _, key, action)
+    OwnerBindings(owner)[key] = action
+end
+
+function SetOverrideBindingClick(owner, _, key, buttonName, mouseButton)
+    OwnerBindings(owner)[key] = "CLICK " .. buttonName .. ":" .. (mouseButton or "LeftButton")
+end
+
+function ClearOverrideBindings(owner)
+    override_bindings[owner] = {}
+end
+
+-- Turns fishing mode on out of combat without a gear swap or a camera zoom (Fishing is known, a key is bound),
+-- then starts the equip and chat records afresh.
+function enter_fishing_mode()
+    known_spells[7620] = true
+    bindings["ONEKEYFISHING_ACTION"] = { "`" }
+    ns.db.settings.gear, ns.db.settings.camera = false, false
+    in_combat = false
+    ns.Mode.Enter()
+    assert(ns.Mode.IsActive(), "fishing mode did not turn on")
+    equip_calls, chat = {}, {}
+end
+
+-- The equip calls per slot since the last reset of equip_calls: { [slot] = count }.
+function equipped_slots()
+    local slots = {}
+    for _, call in ipairs(equip_calls) do
+        slots[call.slot] = (slots[call.slot] or 0) + 1
+    end
+    return slots
+end
+
+-- Gear the addon owes the player: its swap in both weapon slots and the head, each slot still holding what the
+-- addon put there. Returns the slots.
+function owe_gear()
+    local slots = ns.GameData.EquipSlots
+    local head = slots.byEquipLoc.INVTYPE_HEAD[1]
+    local swap = {}
+    for i, slot in ipairs({ slots.mainHand, slots.offHand, head }) do
+        swap[slot] = { previous = 100 + i, equipped = 200 + i }
+        inventory[slot] = 200 + i
+    end
+    ns.charDB.gearSwap = swap
+    return { slots.mainHand, slots.offHand, head }
+end
+
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.
 -- beforeLogin runs between the two, e.g. to replace the bundled seed (ns.SeedData) the files just set.
 function load_addon(beforeLogin)
@@ -1905,7 +2010,8 @@ local stubs = {}
 -- Game data the tests set that may be nil on purpose (see the top of this file): nil, not a stub.
 local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
     group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
-    explored_areas = true, profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true }
+    explored_areas = true, profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
+    channel_info = true }
 setmetatable(_G, {
     __index = function(_, key)
         if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then

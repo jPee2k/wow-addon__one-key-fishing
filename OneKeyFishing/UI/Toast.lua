@@ -98,7 +98,7 @@ end)
 -- Core/MapPin.lua set the game's map pin at placeName, or the game refused it (nil): the answer to a click.
 ns.On("MAP_PIN_SET", function(placeName)
     if placeName then
-        ns.Toast((L["Map pin: %s"]):format(placeName), 1, 1, 1, true)
+        ns.Toast((L["Map pin: %s. Open the world map to see it."]):format(placeName), 1, 1, 1, true)
     else
         ns.Toast(L["The game did not accept the map pin."], 1, 0.4, 0.4, true)
     end

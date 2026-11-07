@@ -39,9 +39,10 @@ exchange on for step 8.
    "Show catch notifications" in the settings and press a pin button: the toast still comes. Note whether the arrow
    shows; if not, note the CVar line of the spike.
    Partly 2026-11-07: 4 actions to the pin; the pin on the world map and the minimap (edge arrow), the map opens at
-   the zone, no error; no arrow on screen (`showInGameNavigation` 0, V31). Combat: see the map taint in
-   `docs/tech-debt.md` (checked 2026-11-06). The toast shows above the indicator, also with catch notifications off,
-   but the world map the pin opens covers it.
+   the zone, no error; no arrow on screen (`showInGameNavigation` 0, V31). Combat: the map taint of R14
+   (`specs/001-interface-language/verification.md`, checked 2026-11-06). The toast shows above the indicator, also
+   with catch notifications off, but the world map the pin opens covers it. Since spec 009 the pin no longer opens
+   the map; checked through the next-rank pin (`interface-language.md` section 10), the same `MapPin.Set`.
 4. [x] **The player's own pin** (FR-012): set a pin by hand on the world map, then press a pin button in the
    catalog. Expected: "Replace your map pin with this place?". "Cancel": your pin stays. Press again and "Replace":
    the catalog's pin. Press another pin button: no question (the addon's own pin is replaced). Press the pin

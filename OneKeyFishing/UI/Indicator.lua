@@ -144,6 +144,17 @@ function Indicator.Update()
         frame:Hide()
         return
     end
+    if ns.Action.IsPaused() then
+        -- In a fight the key is paused (its overrides are dropped): no "Cast" or "Hook!" to offer.
+        pulse:Stop()
+        bar:Hide()
+        frame.icon:SetTexture(select(2, IdleState()))
+        frame.icon:SetAlpha(0.5)
+        frame.label:SetText("|cffffd100" .. L["Paused in combat"] .. "|r")
+        frame.key:SetText("")
+        frame:Show()
+        return
+    end
     local kind, icon
     if ns.Action.IsChanneling() then
         kind, icon = "hook", HOOK_ICON
@@ -151,6 +162,7 @@ function Indicator.Update()
         kind, icon = IdleState()
     end
     frame.icon:SetTexture(icon)
+    frame.icon:SetAlpha(1) -- the paused state dims it; the hook's pulse animates from this base
     if kind == "hook" and ShowNoBobber() then
         -- The key would interact with something else (or nothing): warn instead of "Hook!".
         frame.label:SetText("|cffff4444" .. L["No bobber"] .. "|r")
@@ -165,7 +177,6 @@ function Indicator.Update()
         bar:Show()
     else
         pulse:Stop()
-        frame.icon:SetAlpha(1)
         bar:Hide()
     end
     frame:Show()

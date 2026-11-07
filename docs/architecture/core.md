@@ -85,16 +85,17 @@ frame.
 
 ## Core/MapPin.lua
 
-The game's own map pin (user waypoint) with the navigation arrow, set on the player's click. Every pin of the addon
+The game's own map pin (user waypoint) with its tracking (the minimap's arrow), set on the player's click. Every pin of the addon
 goes through it: `Fishing/Skill.lua` (the next rank) and the catch catalog (`Catalog.Spots`, `UI/CatalogTab.lua`).
 In Core because both use it; it makes no frame, and its toasts are the UI's (`MAP_PIN_SET`, `UI/Toast.lua`).
 
 - `MapPin.Target(maps, x, y)`: the first candidate map the client knows and allows pins on (V30); else, when the
   first candidate (the point's own map) is a Micro map (a cave, a building), the same place on its zone's map through
   the world position (V33); none without the waypoint API, under the game rule that turns pins off, or in instances.
-- `MapPin.Set(target, placeName)`: the game's pin, the navigation arrow, `charDB.pin`, a popup before replacing a
-  pin the player set (none for the addon's own pin or a pin already at the place); out of combat the world map
-  opens at that map (R14).
+- `MapPin.Set(target, placeName)`: the game's pin, its tracking, `charDB.pin`, a popup before replacing a pin the
+  player set (none for the addon's own pin or a pin already at the place). It never opens the world map: a map
+  opened from addon code is tainted for a later fight (spec 009, R14). The arrow on screen depends on the game's
+  hidden navigation setting, which the addon leaves alone (V31).
 - `MapPin.Link(target, text)`: a chat map link (`worldmap:`), which the game handles itself.
 
 ### Saved variables

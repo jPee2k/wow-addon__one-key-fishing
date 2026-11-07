@@ -1,6 +1,8 @@
 -- Core/MapPin.lua MapPin.Set: setting the game's map pin on the player's click, for the next rank and the catch
 -- catalog alike, and its answer through MAP_PIN_SET (spec 001 User Story 3, FR-022; specs/005-catch-catalog FR-012;
--- specs/008-architecture-alignment US3). The tests run in order and share one login.
+-- specs/008-architecture-alignment US3). Since spec 009 (research R5, contract P4) no pin opens the world map, in or
+-- out of a fight: a map opened from addon code was tainted for a later fight. The tests run in order and share one
+-- login.
 
 load_addon()
 
@@ -11,7 +13,8 @@ local TARGET = { mapID = 1415, x = 0.45, y = 0.72 }
 local toasts = {}
 ns.Toast = function(text) table.insert(toasts, text) end -- UI/Toast.lua calls it at runtime
 
-test("no waypoint: the pin, the arrow, the saved pin, one toast and the map", function()
+test("no waypoint: the pin, the tracking, the saved pin, one toast; the map stays closed", function()
+    world_maps_opened = {}
     MapPin.Set(TARGET, "Test Zone - Crystal Lake (45, 72)")
     eq(#waypoint_sets, 1, "set")
     eq(user_waypoint.uiMapID, 1415, "on the map")
@@ -19,8 +22,9 @@ test("no waypoint: the pin, the arrow, the saved pin, one toast and the map", fu
     eq(super_tracked, true, "navigation arrow")
     eq(ns.charDB.pin.mapID, 1415, "saved as the addon's pin")
     eq(#toasts, 1, "one toast, through MAP_PIN_SET")
-    eq(toasts[1], (L["Map pin: %s"]):format("Test Zone - Crystal Lake (45, 72)"), "toast")
-    eq(world_maps_opened[#world_maps_opened], 1415, "the map opened")
+    eq(toasts[1], (L["Map pin: %s. Open the world map to see it."]):format("Test Zone - Crystal Lake (45, 72)"),
+        "toast")
+    eq(#world_maps_opened, 0, "the map stays closed")
 end)
 
 test("the addon's own pin is replaced without asking; in combat the map stays closed", function()
@@ -58,9 +62,11 @@ test("a pin the player set: the question; Cancel keeps everything, Replace sets 
     eq(user_waypoint.uiMapID, 1429, "the player's pin stays")
     eq(ns.charDB.pin.mapID, 1415, "the saved pin stays")
     MapPin.Set({ mapID = 1445, x = 0.586, y = 0.602 }, "There")
+    world_maps_opened = {}
     accept_popup()
     eq(user_waypoint.uiMapID, 1445, "replaced")
     eq(ns.charDB.pin.mapID, 1445, "saved")
+    eq(#world_maps_opened, 0, "no map after Replace")
 end)
 
 test("a pin the game refuses toasts and keeps nothing", function()

@@ -18,14 +18,18 @@ button:RegisterForClicks("AnyUp", "AnyDown")
 button:SetAttribute("type", "spell")
 
 local owner = CreateFrame("Frame", OWNER_NAME, UIParent, "SecureHandlerStateTemplate")
+-- The state driver passes the state as a number ("[combat] 1; 0" gives 1): SecureStateDriver's resolveDriver applies
+-- tonumber, so a string comparison never matched (spec 009, research R1).
+-- Seen in game (V45, 2026-11-07): in a fight the key's binding is ONEKEYFISHING_ACTION, so it runs its own binding.
 owner:SetAttribute("_onstate-combat", [[
-    if newstate == "1" then
+    if tonumber(newstate) == 1 then
         self:ClearBindings()
     end
 ]])
 RegisterStateDriver(owner, "combat", "[combat] 1; 0")
 
 local enabled = false
+local paused = false -- in a fight the secure handler has dropped the key's overrides (spec 009)
 local channeling = false
 local fishingSpellID
 local keys = {}
@@ -146,6 +150,7 @@ end
 -- `channeling` is not reset here: CHANNEL_STOP of a cast that is still running must still fire FISHING_CAST_STOP.
 function Action.Disable()
     enabled = false
+    paused = false
     if not InCombatLockdown() then
         ClearOverrideBindings(owner)
     end
@@ -182,6 +187,24 @@ end)
 function Action.IsChanneling()
     return channeling
 end
+
+-- True while a fight keeps the key paused: the secure [combat] handler cleared its overrides, so the key runs its own
+-- binding (OneKeyFishing_ActionKeyIdle) until the fight ends.
+function Action.IsPaused()
+    return paused
+end
+
+ns.RegisterEvent("PLAYER_REGEN_DISABLED", function()
+    if enabled then
+        paused = true
+        ns.Fire("ACTION_STATE", "paused")
+    end
+end)
+
+-- Runs before Mode's handler (TOC order), which rebinds the key or leaves the mode; both fire ACTION_STATE again.
+ns.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+    paused = false
+end)
 
 ns.RegisterEvent("UNIT_SPELLCAST_CHANNEL_START", function(_, unit, _, spellID)
     if unit ~= "player" or not enabled or not ns.IsFishingSpell(spellID) then

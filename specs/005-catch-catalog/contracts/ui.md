@@ -58,7 +58,7 @@ the scroll (FR-028).
 | Step | What the player sees |
 | --- | --- |
 | Another pin is on the map | the popup `L["Replace your map pin with this place?"]`, buttons `L["Replace"]` / `L["Cancel"]`; Cancel changes nothing |
-| The pin is set | the game's pin on the world map and the minimap, the navigation arrow (V31), the toast `L["Map pin: %s"]` with the zone and spot name, the world map opened at that map (not in combat) |
+| The pin is set | the game's pin on the world map and the minimap, its tracking (the minimap's arrow; the arrow on screen depends on the game, V31), the toast `L["Map pin: %s. Open the world map to see it."]` with the zone and spot name; the world map stays closed (changed by spec 009) |
 | The game refuses | the toast `L["The game did not accept the map pin."]` |
 
 ## Item tooltips (`UI/ItemHooks.lua`)

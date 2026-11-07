@@ -78,8 +78,9 @@ end
 test("the pin answers with catch notifications off; catches stay quiet", function()
     ns.db.settings.toasts = false
     ns.MapPin.Set({ mapID = 1415, x = 0.45, y = 0.72 }, "Here")
-    assert(shown((L["Map pin: %s"]):format("Here")), "the pin's name")
-    local toasts = find_frame((L["Map pin: %s"]):format("Here")).parent -- the toast lines' frame
+    local pinText = (L["Map pin: %s. Open the world map to see it."]):format("Here")
+    assert(shown(pinText), "the pin's name")
+    local toasts = find_frame(pinText).parent -- the toast lines' frame
     ns.charDB.pin, user_waypoint, waypoint_result = nil, nil, false
     ns.MapPin.Set({ mapID = 1415, x = 0.45, y = 0.72 }, "Here")
     assert(shown(L["The game did not accept the map pin."]), "the refusal")

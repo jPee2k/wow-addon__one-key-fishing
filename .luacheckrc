@@ -38,7 +38,7 @@ read_globals = {
 
     -- Namespaced APIs
     "C_AddOns", "C_CVar", "C_Spell", "C_SpellBook", "C_Item", "C_Container", "C_AuctionHouse", "C_Map",
-    "C_Timer", "C_TooltipInfo", "C_QuestLog", "C_SuperTrack", "C_GameRules", "UiMapPoint", "OpenWorldMap",
+    "C_Timer", "C_TooltipInfo", "C_QuestLog", "C_SuperTrack", "C_GameRules", "UiMapPoint",
     "C_RestrictedActions",
     "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_EncodingUtil", "C_MapExplorationInfo",
     "C_Texture",

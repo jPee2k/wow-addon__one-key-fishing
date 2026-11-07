@@ -80,6 +80,7 @@ L["Hook!"] = true
 L["Apply lure"] = true
 L["Open"] = true
 L["No bobber"] = true
+L["Paused in combat"] = true
 L["Drag to move. Lock it in the settings."] = true
 
 -- UI/Toast.lua
@@ -88,7 +89,7 @@ L["Nothing caught"] = true
 
 -- Core/MapPin.lua and its toasts in UI/Toast.lua
 L["The game did not accept the map pin."] = true
-L["Map pin: %s"] = true
+L["Map pin: %s. Open the world map to see it."] = true
 L["Replace your map pin with this place?"] = true
 L["Replace"] = true
 

@@ -9,7 +9,13 @@ ns.Mode = Mode
 
 local active = false
 local pendingExit = false
-local restoreAfterCombat = false -- the mode could not resume in combat: only the weapons came back
+-- The last key hint or combat line and its GetTime(): the same line waits 5 s before the key hint repeats it.
+local lastHint, lastHintText = 0, nil
+
+local function PrintHint(message)
+    lastHint, lastHintText = GetTime(), message
+    ns.Print(message)
+end
 
 -- Every CVar fishing mode may change, with its value and the setting that asks for it (none: always). Soft-target
 -- interact must work with keyboard and mouse (3) for the hook key to find the bobber.
@@ -94,12 +100,12 @@ function Mode.Exit()
     if not active then
         return
     end
-    -- Bindings are already dropped by the secure combat handler; finish the rest after combat.
+    -- Bindings are already dropped by the secure combat handler. Equipping is protected in the lockdown, weapons
+    -- too (constitution III): the gear and the rest come back when the fight ends (spec 009).
     if InCombatLockdown() then
         if not pendingExit then
             pendingExit = true
-            ns.Gear.RestoreWeapons()
-            ns.Print(L["Leaving fishing mode after combat."])
+            PrintHint(L["Leaving fishing mode after combat."])
         end
         return
     end
@@ -124,8 +130,9 @@ end
 ns.RegisterEvent("PLAYER_REGEN_DISABLED", function()
     if active and ns.db.settings.exitOnCombat then
         pendingExit = true
-        -- Weapons can be swapped in combat; the rest of the gear waits until combat ends.
+        -- Weapons can be swapped here, before the combat lockdown; the rest of the gear waits until combat ends.
         ns.Gear.RestoreWeapons()
+        PrintHint(L["Leaving fishing mode after combat."])
     end
 end)
 
@@ -134,9 +141,6 @@ ns.RegisterEvent("PLAYER_REGEN_ENABLED", function()
         Mode.Exit()
     elseif active then
         ns.Action.Rebind()
-    elseif restoreAfterCombat then
-        restoreAfterCombat = false
-        ns.Gear.Restore()
     end
 end)
 
@@ -174,12 +178,7 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
             -- Logged out or crashed in fishing gear, or the mode could not resume (e.g. in combat):
             -- put the normal gear and camera back.
             if ns.Gear.HasPendingRestore() then
-                if InCombatLockdown() then
-                    ns.Gear.RestoreWeapons()
-                    restoreAfterCombat = true
-                else
-                    ns.Gear.Restore()
-                end
+                ns.Gear.Restore() -- in combat Gear waits for the fight's end
             end
             ns.Camera.Restore()
         end
@@ -192,7 +191,6 @@ function OneKeyFishing_ToggleMode()
 end
 
 -- The action key only does something while the mode is on; outside of it, explain why.
-local lastHint = 0
 function OneKeyFishing_ActionKeyIdle()
     local message
     if not active then
@@ -202,8 +200,7 @@ function OneKeyFishing_ActionKeyIdle()
     elseif InCombatLockdown() then
         message = L["The fishing key is paused in combat."] -- combat dropped the key's bindings
     end
-    if message and GetTime() - lastHint > 5 then
-        lastHint = GetTime()
-        ns.Print(message)
+    if message and (message ~= lastHintText or GetTime() - lastHint > 5) then
+        PrintHint(message)
     end
 end

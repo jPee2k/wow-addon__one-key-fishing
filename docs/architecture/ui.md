@@ -5,7 +5,8 @@ The frames in `UI/` and the temporary `Core/Spike.lua`.
 ## Indicator
 
 Next action, cast bar, session timer. "No bobber" when the soft interact GUID is not game object 35591; while the
-bobber is still flying, up to 3 s after the channel start, no warning.
+bobber is still flying, up to 3 s after the channel start, no warning. In a fight (`Action.IsPaused()`, spec 009)
+it shows "Paused in combat" instead of the next action, with no pulse, bar or key; the fight's end redraws it.
 
 ## Settings
 
@@ -65,8 +66,8 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   clear button and hiding the page (a closed window, another tab) drop it;
 - the pin (research R6): a spot row with `spot.pin` gets a button (the atlas `Waypoint-MapPin-Untracked`, or a text
   button); its click calls `ns.MapPin.Set` (`Core/MapPin.lua`, the same pin as the next rank's): the question before
-  replacing a pin the player set, the waypoint and the arrow, the saved pin, and out of combat the map. The answer
-  comes through `MAP_PIN_SET` as a toast (`UI/Toast.lua`, also with catch notifications off: an answer to a
+  replacing a pin the player set, the waypoint and its tracking, the saved pin; the map stays closed. The answer
+  comes through `MAP_PIN_SET` as a toast that names the place and says to open the world map (`UI/Toast.lua`, also with catch notifications off: an answer to a
   click). The navigation CVar is never touched.
 
 ## Other frames

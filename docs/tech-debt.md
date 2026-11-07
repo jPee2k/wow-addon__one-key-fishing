@@ -12,9 +12,9 @@ cleanup, no wrong behaviour.
 The open items grouped into fixes that can be taken in one go (one spec or one patch each, `/speckit-specify` with
 the batch as its description). Each batch says where it is built, what it closes and what the game still has to
 show. The facts behind them: `docs/forever-api.md` "Verified in game" (2026-11-06/07) and the `verification.md` of
-specs 002 to 006.
+specs 002 to 006. Batches 3 and 4 were fixed by spec 009 on `002-shared-db` (release 1.2.0).
 
-### Batch 1: the exchange in Forever (1.2.0, branch `002-shared-db`, next spec 009)
+### Batch 1: the exchange in Forever (1.2.0, branch `002-shared-db`, next spec 010)
 
 What the spike showed about the network; without it the exchange reaches nobody but the group and the guild.
 
@@ -36,24 +36,6 @@ What the spike showed about places; every catch recorded before the fix keeps th
 - "The subzone of a cast is often not found" (medium; V34; needs a `/run` check of an ID-based source first)
 
 Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
-
-### Batch 3: the map pin (1.1.x patch on `develop`, then rebased into `002-shared-db`)
-
-Released in 1.1.0 (the next-rank pin), so it ships as a patch.
-
-- "The map pin opens the world map, and the map then fails in a fight" (high; R14 / V32; the toast under the map)
-- "The manual promises a navigation arrow on screen" (low; V31)
-
-Then: `interface-language.md` section 10 (the pin, then a fight) and `catch-catalog` step 3. Marker: R14.
-
-### Batch 4: fishing mode in a fight (1.1.x patch on `develop`)
-
-- Leaving fishing mode in a fight raises "Interface action failed" (medium)
-- "The fishing key keeps its cast in a fight" (low; first the `/run` check it names)
-- "No chat line when an attack ends fishing mode" (low; the author decides the expectation)
-
-Then: `fishing-mode.md` section 1 "Out of combat only". Constitution Principle III was corrected on 2026-11-07
-(1.5.3): weapons can be swapped only before the lockdown.
 
 ### Batch 5: small items (any time, with any of the above)
 
@@ -158,59 +140,6 @@ Then: `fishing-mode.md` section 1 "Out of combat only". Constitution Principle I
   the area at a position (`C_Map.GetMapInfoAtPosition`, the area IDs of the map's explored overlays,
   `C_MapExplorationInfo.GetExploredMapTextures`), checked in game before any change.
 
-### The map pin opens the world map, and the map then fails in a fight (high)
-
-- **Found**: in game, 2026-11-06, release 1.1.0, enUS client: `/okf stats` -> Pin (the map opens), close the map,
-  a fight, open the map with M: "Interface action failed because of an AddOn". Without pressing Pin first, no
-  such line.
-- **Cause**: `Logs/taint.log` (`/console taintLog 1`): "Execution tainted by OneKeyFishing while reading field
-  targetScrollY" (`Blizzard_MapCanvas/MapCanvas_ScrollContainerMixin.lua:445`), then "An action was blocked in
-  combat because of taint from OneKeyFishing - Button:SetPassThroughButtons()" while the map adds its quest pins
-  (`QuestDataProvider.lua:194`). The field is written by `OpenWorldMap(mapID)` called from addon code. The pin
-  (`C_Map.SetUserWaypoint`) and the arrow (`C_SuperTrack.SetSuperTrackedUserWaypoint`) do not show in the log.
-- **Where**: `Core/MapPin.lua` `MapPin.Set`, every pin of the addon: the next-rank Pin button and minimap menu
-  entry (released in 1.1.0) and the catalog's pin buttons (not released, through `MapPin` since spec 008); marker
-  `VERIFY(R14)`.
-- **Also**: the toast "Map pin: ..." shows above the indicator, where the world map the pin opens covers it
-  (in game 2026-11-07).
-- **Direction**: the fallback of V32: set the pin and the arrow, do not open the map (the toast is then seen too); the toast and the manual say
-  to open the map to see the pin. Tests: no `OpenWorldMap` call from `MapPin.Set`. Then the manual, `CHANGELOG.md`
-  (Fixed), FR-022 of spec 001 and FR-011 of spec 005, and a 1.1.x patch for the release.
-
-### Leaving fishing mode in a fight raises "Interface action failed" (medium)
-
-- **Found**: in game, 2026-11-06, release 1.1.0: in the mode, a fight, the toggle key: "Interface action failed
-  because of an AddOn" and "Leaving fishing mode after combat."; after the fight the mode ends and the gear comes
-  back.
-- **Cause**: `taint.log`: "An action was blocked in combat because of taint from OneKeyFishing - EquipItemByName()"
-  from `Gear.lua` `RestoreSlots` <- `RestoreWeapons` <- `Mode.Exit` (`InCombatLockdown()` branch) <-
-  `OneKeyFishing_ToggleMode`. `C_Item.EquipItemByName` is protected in combat, weapons too; the swap on an attack
-  works only because `PLAYER_REGEN_DISABLED` runs before the lockdown. The constitution said "weapons return at
-  once" (corrected in 1.5.3, 2026-11-07); `docs/architecture/fishing-mode.md` ("Leaving in combat") describes
-  the current behaviour and changes with the fix.
-- **Where**: `Fishing/Mode.lua` `Mode.Exit`, `Fishing/Gear.lua` `RestoreWeapons` / `RestoreSlots`.
-- **Direction**: in the lockdown only set the pending exit and say so; no `EquipItemByName` until
-  `PLAYER_REGEN_ENABLED`. Test: `Mode.Exit` with `in_combat` calls no equip. Fix the docs' claim.
-
-### The fishing key keeps its cast in a fight (low)
-
-- **Found**: in game, 2026-11-06, release 1.1.0, "Leave fishing mode when attacked" off: the fishing key pressed in
-  a fight gives the game's "can't do that in combat" and no "The fishing key is paused in combat." line.
-- **Cause (to confirm)**: the `[combat]` state driver of `Fishing/Action.lua` should clear the override bindings, so
-  the key falls back to its own binding (`OneKeyFishing_ActionKeyIdle`); the game's message says the key still
-  clicked the secure cast button. Nothing wrong happens (the game refuses the cast), only the addon's line is
-  missing. Check in game with `/run print(GetBindingAction("<key>", true))` in a fight.
-- **Direction**: find why `ClearBindings` in `_onstate-combat` does not drop the overrides (owner, timing); a test
-  of the state handler if the stubs allow it.
-
-### No chat line when an attack ends fishing mode (low)
-
-- **Found**: in game, 2026-11-06: with "Leave fishing mode when attacked" on, an attack swaps the weapons back
-  without any line; the checklist expected one. `PLAYER_REGEN_DISABLED` in `Fishing/Mode.lua` prints nothing; the
-  line comes only when a key is pressed.
-- **Direction**: print "Leaving fishing mode after combat." once on the attack (and test it), or change the
-  checklist's expectation. The author decides.
-
 ### A fishing pole above the Fishing skill may be chosen (low)
 
 - **Found**: specs/008-architecture-alignment research R5 (2026-11-06), not seen in game. The best pole is chosen
@@ -238,16 +167,6 @@ Then: `fishing-mode.md` section 1 "Out of combat only". Constitution Principle I
   It also cuts a line at `--` even inside a string, so a read after such a string is missed.
 - **Direction**: read the code with luaparse (already a dependency of the checks) and follow the locals bound to
   `ns.<Module>`, if a file ever needs an alias. Test: an aliased read from another folder is reported.
-
-### The manual promises a navigation arrow on screen (low)
-
-- **Found**: in game, 2026-11-07 (V31): a pin shows on the world map and the minimap (with the minimap's edge arrow),
-  but no arrow on screen; the hidden CVar `showInGameNavigation` is `0`.
-- **Where**: `OneKeyFishing/README.md` (the next-rank part: "the game's map pin and navigation arrow point at the
-  seller"), `CHANGELOG.md` 1.1.0 ("A map pin with the game's navigation arrow"), FR-022 of spec 001; the catalog
-  part of the manual already says the arrow depends on the game's setting.
-- **Direction**: say "map pin (and the minimap arrow)" in the manual; the CVar stays untouched (constitution: the
-  addon changes no setting it does not restore).
 
 ### "1 catches" (low)
 
@@ -296,3 +215,6 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
   - an own record damaged during a session;
   - the per-row pin lookups of a spot list (cached with the rows);
   - the lure `order` field, held 1..n by the shape test.
+- 2026-11-07, spec 009: batches 3 and 4 fixed with tests (the map pin no longer opens the map; no equip call in
+  the combat lockdown; the attack line; the combat state handler compares the number the driver sends); R14 and
+  V45 confirmed in game the same day.

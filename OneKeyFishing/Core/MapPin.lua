@@ -1,7 +1,7 @@
--- MapPin: the game's own map pin (user waypoint) with the navigation arrow, set on the player's click
--- (spec 001, User Story 3, FR-022; research R14). Every pin of the addon goes through it: the next rank
--- (Fishing/Skill.lua) and the catch catalog (Catalog.Spots, UI/CatalogTab.lua; spec 008). In Core: it makes no
--- frame, and its toasts are the UI's (MAP_PIN_SET, UI/Toast.lua).
+-- MapPin: the game's own map pin (user waypoint) with the game's tracking (the minimap's arrow), set on the player's
+-- click (spec 001, User Story 3, FR-022; research R14; spec 009: the world map stays closed). Every pin of the addon
+-- goes through it: the next rank (Fishing/Skill.lua) and the catch catalog (Catalog.Spots, UI/CatalogTab.lua; spec
+-- 008). In Core: it makes no frame, and its toasts are the UI's (MAP_PIN_SET, UI/Toast.lua).
 local _, ns = ...
 local L = ns.L
 
@@ -77,24 +77,24 @@ local function IsAt(point, pin)
         and math.abs(position.y - pin.y) <= PIN_EPSILON
 end
 
--- Sets the game's map pin at target ({ mapID, x, y }) with the navigation arrow, a toast and, out of combat, the
--- world map at that map. A pin the player set is replaced only after a question. Only on the player's click.
+-- Sets the game's map pin at target ({ mapID, x, y }) with the game's tracking (the minimap's arrow) and a toast; the
+-- world map stays closed (research R5 of spec 009). A pin the player set is replaced only after a question. Only on
+-- the player's click.
 function MapPin.Set(target, placeName)
     local function Apply()
+        -- A pin set without opening the map leaves the map untainted for a later fight (R14, seen in game 2026-11-07).
         if not C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)) then
             ns.Fire("MAP_PIN_SET", nil)
             return
         end
-        -- Super tracking the user waypoint shows the navigation arrow (seen in game).
+        -- Super tracking the user waypoint gives the minimap's edge arrow; the arrow on screen depends on the game's
+        -- hidden navigation setting, which the addon leaves alone (V31, seen in game).
         if C_SuperTrack and type(C_SuperTrack.SetSuperTrackedUserWaypoint) == "function" then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
         ns.charDB.pin = { mapID = target.mapID, x = target.x, y = target.y }
         ns.Fire("MAP_PIN_SET", placeName)
-        -- VERIFY(R14): failed in game, docs/tech-debt.md: OpenWorldMap from addon code taints the map for a later fight
-        if not InCombatLockdown() and type(OpenWorldMap) == "function" then
-            OpenWorldMap(target.mapID) -- the global, not C_Map.OpenWorldMap: that one is restricted
-        end
+        -- No OpenWorldMap: a map opened from addon code is tainted and fails in a later fight (seen in game).
     end
     -- Replaced without asking: the addon's last pin, or a pin already at this place (set through the chat link).
     local current = C_Map.HasUserWaypoint() and C_Map.GetUserWaypoint()

@@ -338,14 +338,28 @@ end
 
 -- Slots waiting for the current cast to end: true (all) or a set of slots.
 local deferredSlots
+-- A restore the combat lockdown refused: it is done when the fight ends. Only that one: gear owed for another reason
+-- (full bags, an item gone) waits for the next exit or login, not for every fight (spec 009 review).
+local restoreAfterCombat = false
 
 local function IsCasting()
     return UnitChannelInfo("player") ~= nil or UnitCastingInfo("player") ~= nil
 end
 
--- `onlySlots` limits restoring to a subset (weapons during combat).
+-- `onlySlots` limits restoring to a subset (the weapons as a fight starts).
 local function RestoreSlots(onlySlots)
     local swap = ns.charDB.gearSwap
+    -- Equipping is protected in combat, weapons too (constitution III): in the lockdown nothing is equipped, and the
+    -- whole restore waits for the fight's end. Only the moment the fight starts (PLAYER_REGEN_DISABLED) comes before
+    -- the lockdown.
+    if InCombatLockdown() then
+        restoreAfterCombat = restoreAfterCombat or swap ~= nil
+        return
+    end
+    -- A full restore settles the wait, also when nothing is left to restore.
+    if not onlySlots then
+        restoreAfterCombat = false
+    end
     if not swap then
         return
     end
@@ -356,7 +370,6 @@ local function RestoreSlots(onlySlots)
         end
         return
     end
-    local inCombat = InCombatLockdown()
     local reserved = {}
     for slot = FIRST_SLOT, LAST_SLOT do
         local entry = swap[slot]
@@ -377,7 +390,7 @@ local function RestoreSlots(onlySlots)
                 C_Item.EquipItemByName(entry.previous, slot)
             elseif not current then
                 swap[slot] = nil
-            elseif not inCombat and UnequipToBags(slot, reserved) then
+            elseif UnequipToBags(slot, reserved) then
                 swap[slot] = nil
             end
         end
@@ -390,9 +403,7 @@ function Gear.RestoreWeapons()
 end
 
 function Gear.Restore()
-    if not InCombatLockdown() then
-        RestoreSlots(nil)
-    end
+    RestoreSlots(nil)
 end
 
 function Gear.HasPendingRestore()
@@ -427,16 +438,20 @@ local function OnCastEnd(_, unit)
         if Staying() then
             return
         end
-        if InCombatLockdown() then
-            RestoreSlots(WEAPON_SLOTS) -- the rest follows when the pending exit finishes after combat
-        else
-            RestoreSlots(slots ~= true and slots or nil)
-        end
+        RestoreSlots(slots ~= true and slots or nil) -- in the lockdown it waits for the fight's end
     end)
 end
 ns.RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP", OnCastEnd)
 ns.RegisterEvent("UNIT_SPELLCAST_STOP", OnCastEnd)
 ns.RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", OnCastEnd)
+
+-- The end of a fight finishes a restore the lockdown refused, unless fishing mode is on or leaving: then Mode's own
+-- PLAYER_REGEN_ENABLED handler owns it (Mode.Exit, or the mode keeps its gear).
+ns.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+    if restoreAfterCombat and not ns.Mode.IsActive() then
+        RestoreSlots(nil)
+    end
+end)
 
 -- Parses a link, an item ID or an item name typed by the player.
 function ns.ParseItem(text)

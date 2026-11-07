@@ -112,22 +112,22 @@ expands into its spots with subzone names in the client's language, and that the
 ### User Story 2 - Go to the spot (Priority: P2)
 
 Having found the spot, the player presses its pin button. The game's own map pin, the same one a player sets by hand
-on the world map, appears at the spot's average catch point; the game's navigation arrow points to it; a short toast
-names the place; and the world map opens at that zone so the player sees where it is. The player walks or flies
-there themselves. Spots on maps where the game allows no pins, such as instances, have no pin button.
+on the world map, appears at the spot's average catch point; the game tracks it (the minimap's arrow); and a short
+toast names the place and says to open the world map to see it (changed by spec 009: the addon no longer opens the
+map). The player walks or flies there themselves. Spots on maps where the game allows no pins, such as instances, have no pin button.
 
 **Why this priority**: knowing the zone is half the way; the pin turns the catalog into a route, but the catalog is
 useful without it.
 
 **Independent Test**: choose a spot in an open-world zone and press its pin button: the pin shows on the world map
-and the minimap, the arrow points to it, the toast names the place and the map opens; put a pin by hand, press another
+and the minimap, the minimap's arrow points to it, the toast names the place and the map stays closed; put a pin by hand, press another
 spot's pin button and check the confirmation; check that a spot inside an instance has no pin button.
 
 **Acceptance Scenarios**:
 
 1. **Given** a spot on a map the game allows pins on, **When** the player presses its pin button, **Then** the
-   game's map pin is set at the spot's average catch point, the navigation arrow points to it, a toast names the
-   place, and the world map opens at that zone.
+   game's map pin is set at the spot's average catch point, the minimap's arrow points to it, and a toast names the
+   place and says to open the world map; the world map does not open (changed by spec 009).
 2. **Given** the player is in combat, **When** they press a pin button, **Then** the pin, the arrow and the toast
    come as usual, and the world map does not open.
 3. **Given** the player set a pin by hand (or another addon did), **When** they press a pin button, **Then** the
@@ -279,10 +279,9 @@ with no pool data at all, check that the filter is not there.
   map pin on its map. Where the spot's own map allows none but the enclosing zone's map does, the pin MUST go to the
   same spot on the zone's map. Instances, spots without a position and maps where the game turns pins off MUST have
   no button.
-- **FR-011**: Pressing a pin button MUST set the game's own map pin (the one a player sets by hand on the world map)
-  at the spot's average catch point, turn on the game's navigation to it, show a short toast naming the place, and
-  open the world map at that zone. In combat the world map MUST NOT open; the pin, the navigation and the toast come
-  as usual.
+- **FR-011** (changed by spec 009): Pressing a pin button MUST set the game's own map pin (the one a player sets by
+  hand on the world map) at the spot's average catch point, track it (the minimap's arrow), and show a short toast
+  naming the place. The world map MUST NOT open; the toast says to open it.
 - **FR-012**: When a map pin that the addon did not set is on the map, the addon MUST ask before replacing it;
   "Cancel" MUST leave everything unchanged. A pin the addon set earlier MUST be replaced without asking.
 - **FR-013**: The pin MUST only mark a place: setting it MUST NOT move the character or start any game action, and

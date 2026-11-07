@@ -81,6 +81,7 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Apply lure"] = "上鱼饵"
     L["Open"] = "打开"
     L["No bobber"] = "无鱼漂"
+    L["Paused in combat"] = "战斗中暂停"
     L["Drag to move. Lock it in the settings."] = "拖动以移动。可在设置中锁定。"
 
     -- UI/Toast.lua
@@ -89,7 +90,7 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
 
     -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "游戏未接受地图标记。"
-    L["Map pin: %s"] = "地图标记：%s"
+    L["Map pin: %s. Open the world map to see it."] = "地图标记：%s。请打开世界地图查看。"
     L["Replace your map pin with this place?"] = "用此地点替换你的地图标记？"
     L["Replace"] = "替换"
 

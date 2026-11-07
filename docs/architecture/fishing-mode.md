@@ -12,7 +12,10 @@ The single fishing key.
   `PreClick` resolves the action by priority: apply lure, then open a fished container, then cast Fishing.
 - While channeling Fishing, the key is bound to `INTERACTTARGET` (soft-target interact hooks the bobber).
 - The overrides are owned by a `SecureHandlerStateTemplate` frame whose `[combat]` state driver clears them inside
-  combat.
+  combat. The driver passes the state as a number, so the handler compares `tonumber(newstate) == 1` (spec 009,
+  research R1; V45). The hook (`INTERACTTARGET`) goes too, so a bobber still out cannot be hooked in a fight.
+  `Action.IsPaused()` is true from `PLAYER_REGEN_DISABLED` to `PLAYER_REGEN_ENABLED` while the key is enabled, and
+  the start fires `ACTION_STATE("paused")` for the indicator.
 - `Action.Enable` picks up a Fishing channel that is already running (`UnitChannelInfo`), because no
   `CHANNEL_START` comes for a cast begun before a `/reload` or before the mode was switched on.
 - The keys are re-read on `UPDATE_BINDINGS` and after combat; our own overrides fire that event too, so it rebinds
@@ -29,9 +32,11 @@ Enter and exit fishing mode.
   logout, crash or disconnect in fishing mode the previous zoom is not restored.
 - `PLAYER_LOGOUT` with the mode on restores the CVars and sets `resumeMode`; `PLAYER_ENTERING_WORLD` resumes only
   when `isReloadingUi` is true too, after a 1 second delay, because bindings and the spellbook are not ready then.
-  If it cannot resume (combat), the camera and the weapons come back at once and the rest of the gear after
-  combat.
-- Leaving in combat only sets a pending exit (weapons back at once, the rest after combat).
+  If it cannot resume (combat), the camera comes back at once and the gear after combat.
+- Leaving in combat only sets a pending exit and says "Leaving fishing mode after combat." once; nothing is equipped
+  in the lockdown, and the whole exit (gear, camera, CVars) runs on `PLAYER_REGEN_ENABLED`.
+- An attack with "Leave fishing mode when attacked" on (`PLAYER_REGEN_DISABLED`, before the lockdown) swaps the
+  weapons back, sets the pending exit and prints the same line once; the key hint waits 5 s before repeating it.
 - While the mode is on, the plain binding body of the action key only runs when combat dropped the overrides, so
   `OneKeyFishing_ActionKeyIdle` says why the key does nothing.
 
@@ -42,7 +47,10 @@ Enter and exit fishing mode.
   what the addon put there.
 - The fishing bonus is parsed from tooltip lines that contain the client's localized Fishing spell name minus its
   first UTF-8 character (tooltips may lowercase it, and `string.lower` only handles ASCII).
-- Weapons return immediately in combat; the rest waits until combat ends.
+- Weapons return only before the combat lockdown (`PLAYER_REGEN_DISABLED`); a restore asked for in the lockdown
+  waits for `PLAYER_REGEN_ENABLED` (Gear's `restoreAfterCombat`: only a restore the lockdown refused, done there when fishing mode is off; Mode's exit
+  does it otherwise). An attack during a cast defers the swap past that moment, so the weapons come back after the
+  fight: the game's limit, not covered by constitution III's "weapons at once".
 - `C_Item.EquipItemByName` fails silently while casting or channeling ([forever-api.md](../forever-api.md)).
 
 ## Fishing/Camera.lua

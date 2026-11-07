@@ -178,11 +178,12 @@ A low character helps for the first steps; the book and the quest need a trip to
 
 **Map pin** (Expert or Artisan advice):
 
-- [ ] (re-run after spec 008) The **Pin** button in the statistics window and "Pin: next Fishing rank" in the minimap
-  menu set the game's pin and the navigation arrow on Heming or Nat Pagle and open the map: on Heming, map 1434
-  (2026-11-06). The map opened by the addon then failed in a fight ("Interface action failed because of an AddOn", taint
-  of `OpenWorldMap`; without a pin no such line). Fix waits in `docs/tech-debt.md`; then re-check: Pin, a fight, the map
-  opened by hand (M): no such line: ____
+- [x] (re-run after spec 009) The **Pin** button in the statistics window or "Pin: next Fishing rank" in the minimap
+  menu: the map stays closed; the notification above the indicator names the place and says to open the world map;
+  open the map: the pin is there; a fight; the map opened with M gives no "Interface action failed because of an
+  AddOn". Closes R14: as expected (2026-11-07)
+  Confirmed and not repeated: the pin and the minimap's arrow on Heming, map 1434 (2026-11-06). History: the map that
+  the addon opened failed in a later fight (taint of `OpenWorldMap`, 2026-11-06), fixed by spec 009.
 - [ ] (re-run after spec 008) With a pin of your own on the map, a popup asks first; Cancel keeps your pin. The buttons
   are in the addon's language (2026-11-06).
 - [ ] (re-run after spec 008) The map link at the end of the chat notice sets the pin and opens the map (without a

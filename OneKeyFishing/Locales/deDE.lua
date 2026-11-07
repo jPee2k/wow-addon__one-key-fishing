@@ -89,6 +89,7 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Apply lure"] = "Köder anbringen"
     L["Open"] = "Öffnen"
     L["No bobber"] = "Kein Schwimmer"
+    L["Paused in combat"] = "Im Kampf pausiert"
     L["Drag to move. Lock it in the settings."] = "Ziehen zum Verschieben. In den Einstellungen fixierbar."
 
     -- UI/Toast.lua
@@ -97,7 +98,7 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
 
     -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "Das Spiel hat die Kartenmarkierung nicht angenommen."
-    L["Map pin: %s"] = "Kartenmarkierung: %s"
+    L["Map pin: %s. Open the world map to see it."] = "Kartenmarkierung: %s. Öffne die Weltkarte, um sie zu sehen."
     L["Replace your map pin with this place?"] = "Deine Kartenmarkierung durch diesen Ort ersetzen?"
     L["Replace"] = "Ersetzen"
 

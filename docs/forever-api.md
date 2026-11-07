@@ -66,6 +66,12 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 - `C_Map.OpenWorldMap` is `HasRestrictions`; the global `OpenWorldMap(mapID)` is plain FrameXML
   (`Blizzard_WorldMap.lua`), gated only by `Enum.GameRule.WorldMapDisabled`, but called from addon code it taints
   the map ("Verified in game").
+- A state driver's value reaches the `_onstate-<name>` snippet as a number when it reads as one:
+  `SecureStateDriver.lua` `resolveDriver` applies `tonumber`, and `SecureHandler_StateOnAttributeChanged` passes it
+  unchanged, so `"[combat] 1; 0"` gives `1`, never `"1"`. `HANDLE:ClearBindings()` is
+  `ClearOverrideBindings(frame)` (`RestrictedFrames.lua`), so it also clears overrides the insecure code set with
+  that owner (spec 009 research R1). Seen in game 2026-11-07 (V45): with `tonumber(newstate) == 1` the key's
+  binding in a fight is `ONEKEYFISHING_ACTION`.
 - Forever hides the "Show In-Game Navigation" checkbox (CVar `showInGameNavigation`, `Camelot/InterfaceOverrides.lua`).
 - `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapPosFromWorldPos(continentID, pos, overrideMapID)` convert a point
   between maps.
@@ -103,12 +109,13 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   - Forever uses the Classic uiMapIDs: `C_Map.GetMapInfo(1434)` (Stranglethorn Vale) answers and
     `C_Map.CanSetUserWaypointOnMap(1434)` is true, so the pin for Booty Bay goes on map 1434, not on 224.
   - `C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(...))` from addon code sets the pin, and
-    `C_SuperTrack.SetSuperTrackedUserWaypoint(true)` turns on the navigation arrow (the hidden CVar
-    `showInGameNavigation` is on by default).
+    `C_SuperTrack.SetSuperTrackedUserWaypoint(true)` tracks it: the minimap's edge arrow (the arrow on screen
+    needs the hidden CVar `showInGameNavigation`, which reads `0`; V31, below).
   - The global `OpenWorldMap(mapID)` called from addon code opens the map but taints it: the field
     `targetScrollY` of the map canvas (`MapCanvas_ScrollContainerMixin.lua:445`) counts as the addon's, and in a
     later fight the map's quest pins are blocked (`Button:SetPassThroughButtons()`, "Interface action failed
-    because of an AddOn", `Logs/taint.log` with `/console taintLog 1`). The pins still call it: `docs/tech-debt.md`.
+    because of an AddOn", `Logs/taint.log` with `/console taintLog 1`). The addon no longer calls it (spec 009); a
+    pin leaves the map closed, and the map works in a later fight (R14, seen 2026-11-07).
   - `C_TooltipInfo.GetHyperlink("unit:Creature-0-0-0-0-2626-0000000000")` gives Old Man Heming's name in line 1.
   - Journeyman Fishing is learned at a trainer at character level 10.
   - Old Man Heming (NPC 2626) stands in Booty Bay at 0.2745 / 0.7719 of map 1434 and sells item 16083, "Expert

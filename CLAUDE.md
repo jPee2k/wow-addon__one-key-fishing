@@ -29,8 +29,8 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   [docs/languages.md](docs/languages.md).
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
-  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006
-  and 008 have one); a marker is removed only after the author confirms the behaviour in game.
+  confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
+  008 and 009 have one); a marker is removed only after the author confirms the behaviour in game.
 
 ## Documents
 
@@ -96,7 +96,7 @@ commands in `Core/Commands.lua`.
 | `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `FishedContainers`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
-| `Core/MapPin.lua` | the game's map pin with the navigation arrow, and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
+| `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
 | `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Mode.lua` | enter and exit fishing mode, restore after `/reload`, logout, crash | [fishing-mode.md](docs/architecture/fishing-mode.md) |
@@ -137,7 +137,7 @@ Cross-module rules:
 
 Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
-- `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed)
+- `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed, or `"paused"`: a fight dropped it, `Action.IsPaused()`)
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
 - `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast
   and every earlier one)
@@ -167,8 +167,10 @@ go there.
 - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing); the
   tests do not catch it, so wrap such calls as `tostring((f()))`.
 - `C_Map.OpenWorldMap` is restricted, and the global `OpenWorldMap(mapID)` from addon code taints the map for a
-  later fight (`docs/tech-debt.md`); a map pin follows Blizzard's `/mappin`. The subzone of a cast comes from the explored areas at the player's position matched
-  against `GetSubZoneText()`.
+  later fight; a map pin follows Blizzard's `/mappin`, and the addon never opens the world map. The subzone of a
+  cast comes from the explored areas at the player's position matched against `GetSubZoneText()`.
+- A state driver's value reaches `_onstate-*` as a number (`[combat] 1; 0` gives `1`): compare with
+  `tonumber(newstate) == 1`, never `== "1"`.
 - Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
   window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).
 - The server refuses addon messages in a custom chat channel (`NOT_ALLOWED_IN_CHANNEL`, though the send returns 0);

@@ -61,7 +61,9 @@ One fishing round:
   off.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
-- **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
+- **Safe in combat**: when attacked with "Leave fishing mode when attacked" on, the weapons come back at once
+  (unless you are casting: then with the rest of the gear after the fight) and fishing mode ends after the fight; in
+  a fight the fishing key pauses.
 - **Minimap button** with a menu: every action is available without typing a command.
 
 ## Fishing gear
@@ -148,10 +150,11 @@ and, with the shared catch database on, what other players reported.
   of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
   data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
   named after its subzone in your language (or shows its coordinates), with its own chance and catches.
-- **Map pin**: the pin button of a spot sets the game's own map pin there, turns on the game's navigation to it,
-  says so in a short message (even with catch notifications off) and opens the world map at that zone (not in combat).
-  If you already have a pin that the addon did not set, it asks before replacing it. The arrow on screen depends on the
-  game's navigation setting. Instances and spots without a position have no pin button.
+- **Map pin**: the pin button of a spot sets the game's own map pin there: it shows on the world map and the minimap
+  (with the minimap's arrow). A short message says so and tells you to open the world map to see it (even with catch
+  notifications off); the addon does not open the map itself. If you already have a pin that the addon did not set,
+  it asks before replacing it. The arrow on screen depends on the game's navigation setting. Instances and spots
+  without a position have no pin button.
 - The tab follows new catches and new data from other players while it is open, keeping your search, the chosen
   item and the open zones. `/okf catalog` opens it; `/okf catalog <name>` searches, and an item link (shift-click an
   item into the line) opens that item.
@@ -217,8 +220,10 @@ Players who fish together see each other's catches right away, without waiting f
 - The names of the book, the quest, the places and the ranks are the ones your game client shows, in its language,
   whatever language the addon is in.
 - For the book and the quest, the chat line ends with a map link, and the statistics window and the minimap menu
-  have a pin button: the game's map pin and navigation arrow point at the seller or the quest giver. A pin you set
-  yourself is replaced only after you confirm (the chat link works like any map link and sets the pin at once).
+  have a pin button: the game's map pin marks the seller or the quest giver on the world map and the minimap (with
+  the minimap's arrow); open the world map to see it. The arrow on screen depends on the game's navigation setting.
+  A pin you set yourself is replaced only after you confirm (the chat link works like any map link: it sets the pin
+  at once and opens the map).
 - Turn the reminders off with "Remind me about the next Fishing rank"; the line in the statistics window stays.
 
 ## Auction prices
@@ -304,8 +309,13 @@ Typing commands is optional: everything is also available from the menus. `/onek
 
 - **"No key is bound to 'Fishing action'"**: bind it in Options → Keybindings → AddOns → OneKeyFishing.
 - **"Fishing mode is off"**: the action key only works in fishing mode. Press your toggle key first.
-- **"The fishing key is paused in combat"**: the mode is on, but the game does not let addons keep the key bound
-  in combat. It works again when the fight ends.
+- **"The fishing key is paused in combat"** (the indicator shows "Paused in combat"): the mode is on, but the game
+  does not let addons keep the key bound in combat, so it neither casts nor hooks a bobber that is still out. It
+  works again when the fight ends.
+- **"Leaving fishing mode after combat."**: an attack (with "Leave fishing mode when attacked" on) or the toggle key
+  in a fight. The game lets an addon swap weapons only as the fight starts. If the attack comes while you are
+  casting, or you leave the mode during the fight, the weapons come back with the rest of the gear when the fight
+  ends; the pole stays in your hands until then.
 - **The key stops working after switching the keyboard language**: it is a punctuation key, which WoW names by
   the current language. Bind it in the second slot of the same binding while the other language is on, or use a
   letter, number, F-key or mouse button (see [Quick start](#quick-start)).

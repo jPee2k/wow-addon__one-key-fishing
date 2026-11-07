@@ -42,9 +42,21 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   the gear and the camera as they were in the mode.
 - [ ] **Relog in the mode.** (re-run after spec 008) Turn the mode on, log out to the character screen, log in.
   Expected: the mode is off, the gear and the CVars are restored; the camera stays as the game left it.
-- [ ] **Out of combat only.** Turn the mode on, let a mob attack you. Expected: the weapons come back at once, the
-  chat says the key is paused; after the fight the rest of the gear comes back and the mode is off (with "Leave
-  fishing mode when attacked" on). In game 2026-11-06 (release 1.1.0), three findings in `docs/tech-debt.md`:
+- [x] **Out of combat only.** (re-run after spec 009) Only what spec 009 changed; confirmed 2026-11-06 and not
+  repeated: with the setting on, the weapons come back at once on an attack and the rest of the gear and the mode
+  off follow after the fight; with the setting off, fishing goes on after the fight. Three sub-steps, in this order:
+  1. The setting "Leave fishing mode when attacked" off, the mode on, a fight. Run
+     `/run print(GetBindingAction("<key>", true))` with your fishing key (for example `` ` ``): it prints
+     `ONEKEYFISHING_ACTION` (V45). The fishing key gives "The fishing key is paused in combat.", not the game's
+     "can't do that in combat"; the indicator shows "Paused in combat" and, after the fight, "Cast" again: as
+     expected (2026-11-07, `ONEKEYFISHING_ACTION`, the indicator label in Ukrainian)
+  2. The setting on, the mode on, let a mob attack: "Leaving fishing mode after combat." exactly once: as
+     expected (2026-11-07)
+  3. The setting off, `/console taintLog 1`, the mode on, the toggle key in a fight: that line once and no
+     "Interface action failed"; `Logs/taint.log` has no `EquipItemByName`. After the fight the mode is off and the
+     gear is back: as expected (2026-11-07)
+
+  History, in game 2026-11-06 (release 1.1.0), three findings, fixed by spec 009:
   - attacked with the setting on: the weapons at once, the rest and the mode off after the fight, as expected; but
     no chat line at all (the addon prints none on an attack, only when a key is pressed);
   - with the setting off, the fishing key pressed in a fight: the game's "can't do that in combat", no line from

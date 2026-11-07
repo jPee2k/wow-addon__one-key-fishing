@@ -87,6 +87,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Apply lure"] = "Наживка"
     L["Open"] = "Відкрити"
     L["No bobber"] = "Немає поплавця"
+    L["Paused in combat"] = "Пауза в бою"
     L["Drag to move. Lock it in the settings."] = "Перетягніть, щоб перемістити. Закріпити можна в налаштуваннях."
 
     -- UI/Toast.lua
@@ -95,7 +96,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
 
     -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "Гра не прийняла мітку на карті."
-    L["Map pin: %s"] = "Мітка на карті: %s"
+    L["Map pin: %s. Open the world map to see it."] = "Мітка на карті: %s. Відкрийте карту світу, щоб її побачити."
     L["Replace your map pin with this place?"] = "Замінити вашу мітку на карті цим місцем?"
     L["Replace"] = "Замінити"
 

@@ -82,6 +82,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Apply lure"] = "미끼 사용"
     L["Open"] = "열기"
     L["No bobber"] = "찌 없음"
+    L["Paused in combat"] = "전투 중 일시 정지"
     L["Drag to move. Lock it in the settings."] = "끌어서 이동합니다. 설정에서 고정할 수 있습니다."
 
     -- UI/Toast.lua
@@ -90,7 +91,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "게임이 지도 핀을 받아들이지 않았습니다."
-    L["Map pin: %s"] = "지도 핀: %s"
+    L["Map pin: %s. Open the world map to see it."] = "지도 핀: %s. 세계 지도를 열어 확인하세요."
     L["Replace your map pin with this place?"] = "지도 핀을 이 장소로 바꾸시겠습니까?"
     L["Replace"] = "바꾸기"
 
