@@ -2,8 +2,8 @@
 -- ns.ForgetErrors in Core.lua with its test, which only this file uses)
 -- Spike: /okf spike prints the game facts still open (spec 010 trimmed the answered ones): the network of the catch
 -- exchange (specs/003-guild-group-sync/verification.md, V10-V15), the proof step timing (specs/004-public-channel-
--- sync/verification.md, V26), the areas at the position and the game's text folding (specs/005-catch-catalog/
--- verification.md, V34, V36) and the last auction search (specs/002-local-catch-db/verification.md, V5).
+-- sync/verification.md, V26), the game's text folding (specs/005-catch-catalog/verification.md, V36) and the last
+-- auction search (specs/002-local-catch-db/verification.md, V5).
 -- English like the debug report; counts and patterns only, never names.
 local _, ns = ...
 
@@ -240,52 +240,9 @@ local function HashLines(out)
 end
 
 ---------------------------------------------------------------------------
--- Areas and folding (specs/005-catch-catalog/research.md R13): reads only; each part runs on its own, so one
--- failing call leaves the others.
+-- Folding (specs/005-catch-catalog/research.md R13): reads only. The areas section went with spec 011 (V34 answered:
+-- the area is found by its name, specs/011-catch-place-fixes research R3).
 ---------------------------------------------------------------------------
--- The result of api[name](...) as text: "missing" without the function, or the error it raised.
-local function TryApi(api, name, ...)
-    local fn = type(api) == "table" and api[name] or nil
-    if fn == nil then
-        return "missing"
-    end
-    return Try(fn, ...)
-end
-
--- The player's map and position (x, y in 0..1), or nil.
-local function PlayerPosition()
-    local mapID = C_Map.GetBestMapForUnit("player")
-    local position = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
-    if position then
-        local x, y = position:GetXY()
-        return mapID, x, y
-    end
-    return mapID
-end
-
-local function AreaLines(out)
-    local mapID, x, y = PlayerPosition()
-    if not x then
-        table.insert(out, "  no position")
-        return
-    end
-    local ok, ids = pcall(function()
-        return C_MapExplorationInfo.GetExploredAreaIDsAtPosition(mapID, CreateVector2D(x, y))
-    end)
-    if not ok then
-        table.insert(out, "  GetExploredAreaIDsAtPosition failed: " .. tostring(ids))
-    elseif type(ids) ~= "table" or #ids == 0 then
-        table.insert(out, "  GetExploredAreaIDsAtPosition: none")
-    else
-        for _, areaID in ipairs(ids) do
-            table.insert(out, ("  area %s: %s"):format(tostring(areaID), TryApi(C_Map, "GetAreaInfo", areaID)))
-        end
-    end
-    table.insert(out, "  GetSubZoneText: " .. Try(GetSubZoneText))
-    table.insert(out, "  the area the addon keeps: "
-        .. Try(ns.CatchDB.GetArea, mapID, x, y))
-end
-
 local FOLD_SAMPLE = "Ab\195\137 \208\169" -- A, b, E acute, a space, Cyrillic Shcha
 
 local function FoldLines(out)
@@ -309,7 +266,6 @@ local function BuildReport()
     local lines = { "OneKeyFishing spike report " .. tostring(ns.version) }
     Section(lines, "Network (V10-V15)", NetworkSection)
     Section(lines, "Proof steps (V26)", Part(HashLines))
-    Section(lines, "Areas (V34)", Part(AreaLines))
     Section(lines, "Folding (V36)", Part(FoldLines))
     Section(lines, "Last auction search (V5)", function(out)
         for _, line in ipairs(lastSearch or { "  none yet" }) do

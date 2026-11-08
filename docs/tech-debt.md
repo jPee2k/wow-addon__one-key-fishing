@@ -12,27 +12,10 @@ cleanup, no wrong behaviour.
 The open items grouped into fixes that can be taken in one go (one spec or one patch each, `/speckit-specify` with
 the batch as its description). Each batch says where it is built, what it closes and what the game still has to
 show. The facts behind them: `docs/forever-api.md` "Verified in game" (2026-11-06/07) and the `verification.md` of
-specs 002 to 006. Batches 3 and 4 were fixed by spec 009 and batch 1 by spec 010 on `002-shared-db` (release
-1.2.0).
+specs 002 to 006. Batches 3 and 4 were fixed by spec 009, batch 1 by spec 010, and batches 2 and 6 with the pole
+item of batch 5 by spec 011, on `002-shared-db` (release 1.2.0).
 
 The batches are in the order to take them: the top one first.
-
-### Batch 6: an error in a fight (now; 1.2.0 or a 1.1.x patch)
-
-Players of the released 1.1.0 see a Lua error in instance fights; a small fix in one file.
-
-- "The next-rank advice reads a secret NPC name in a fight" (medium)
-
-### Batch 2: where a catch is recorded (1.2.0, branch `002-shared-db`, before the first real harvest)
-
-What the spike showed about places; every catch recorded before the fix keeps the wrong place, so it goes in before
-`npm run harvest` builds the first seed.
-
-- "Pool catches are written as open water" (medium; V3)
-- "Catches in a cave go to the continent map" (medium; V2, V33)
-- "The subzone of a cast is often not found" (medium; V34; needs a `/run` check of an ID-based source first)
-
-Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
 
 ### Batch 7: the minimap tooltip (any time; reproduce in game first)
 
@@ -42,9 +25,8 @@ Cosmetic, no wrong data; the fix waits for a way to make it happen on purpose.
 
 ### Batch 5: gear choices (when a player meets them)
 
-Seen only in the code; each waits for a case in game.
+Seen only in the code; waits for a case in game.
 
-- "A fishing pole above the Fishing skill may be chosen" (low)
 - "A lure the game refused stays skipped after a skill-up" (low; waits for V43 / V44)
 
 ### Batch 8: tooling (when a file needs an alias)
@@ -52,61 +34,6 @@ Seen only in the code; each waits for a case in game.
 - "The private-table check reads only the plain form" (low)
 
 ## Open items
-
-### The next-rank advice reads a secret NPC name in a fight (medium)
-
-- **Found**: in game, 2026-11-08, in a group in an instance, in a fight: a Lua error now and then (count 2)
-  "Fishing/Skill.lua:54: attempt to compare local 'text' (a secret string value, while execution tainted by
-  'OneKeyFishing')". Stack: the `CHAT_MSG_SKILL` handler, then `Check`, `Skill.GetNextRank`, `Where`, `NpcName`
-  (line 111), then `NonEmpty` (line 54).
-- **Cause**: `NpcName` reads the trainer's name from the first line of a creature tooltip
-  (`C_TooltipInfo.GetHyperlink`). In a fight in an instance the client gives `leftText` as a secret value:
-  `type` is `"string"`, but `text ~= ""` raises an error. The skill events of a fight (weapon and defense skill-ups
-  fire `CHAT_MSG_SKILL` and `SKILL_LINES_CHANGED`) reach `Skill.GetNextRank`. That happens on every event while the
-  "can learn" notice is not said yet: the skill is past `learnAt` but the character level is too low, so
-  `done.now` stays unset. The name is cached only when it was read, so every such event reads the tooltip again.
-- **Where**: `Fishing/Skill.lua` `NonEmpty`, `NpcName`, `Check`. The same `Skill.GetNextRank` runs for the minimap
-  tooltip and the statistics window.
-- **Direction**: `NonEmpty` returns nil for a secret value (`issecretvalue`, like the chat handlers of
-  `Exchange/`). The advice then falls back to the name table for that call and reads the tooltip again later. Also
-  `Check` can skip the advice in a fight (`InCombatLockdown()`): a notice is not needed there, and
-  `PLAYER_REGEN_ENABLED` or the next skill event says it after the fight. Test: a secret `leftText` in the stub
-  (`secret_values`) gives the table's name and no error; a skill event in a fight reads no tooltip.
-
-### Pool catches are written as open water (medium)
-
-- **Found**: in game, 2026-11-06 (V3, spike at Ratchet): a catch from an Oily Blackmouth School, the bobber in the
-  pool, has the bobber (object 35591) as its loot source, like an open-water catch.
-- **Cause**: `ns.IsPoolLoot` (`Catch/Catch.lua`) returns false (open water) when the source is the bobber; the
-  assumed difference (the pool's own object ID) does not exist in Forever.
-- **Where**: `Catch/Catch.lua` `ns.IsPoolLoot`, the pool counters of the catch database, the "Water" filter of
-  "What can be caught here" and the catalog (catch-catalog step 9), the debug line "last catch from a pool".
-- **Direction**: the fallback of V3: `ns.IsPoolLoot` returns nil always (no pool counters), the "Water" button stays
-  hidden; drop the pool split from the record format later. Test: a bobber source gives nil.
-
-### Catches in a cave go to the continent map (medium)
-
-- **Found**: in game, 2026-11-06 (V2, spike): in the cave before Wailing Caverns `C_Map.GetBestMapForUnit` gives
-  Kalimdor 1414 (type 2, Continent), not The Barrens or a cave map.
-- **Cause**: Forever has no map for the cave, and the best map falls back to the continent.
-- **Where**: `CatchDB/CatchDB.lua` (the place key of a cast), the catalog and "What can be caught here" (a zone named
-  "Kalimdor", a 100x100 cell grid over the whole continent).
-- **Direction**: when the best map is of type Continent (or above), convert the position through
-  `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapInfoAtPosition` / `GetMapPosFromWorldPos` to the zone map under it,
-  checked in game first; or leave such casts out. Test: a continent map is never a place key.
-
-### The subzone of a cast is often not found (medium)
-
-- **Found**: in game, 2026-11-06, `/okf spike` (V34): at Stonebull Lake (Mulgore, map 1412) `GetSubZoneText()` is
-  "Stonebull Lake", but `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` at the player's position returns
-  nothing at one spot and area 222 "Bloodhoof Village" a few steps away; in Thunder Bluff nothing. At Ratchet it
-  works (area 392 "Ratchet", kept).
-- **Cause**: the call returns the map's explored overlay regions (a region can be named after a nearby village),
-  not the subzone the game shows, so the name never matches `GetSubZoneText()`.
-- **Where**: `CatchDB/CatchDB.lua` (the area of a cast), the catalog's spot names ("Subzone (45, 72)").
-- **Direction**: spots keep their coordinates (the fallback of FR-015, works today). Find an ID-based source of
-  the area at a position (`C_Map.GetMapInfoAtPosition`, the area IDs of the map's explored overlays,
-  `C_MapExplorationInfo.GetExploredMapTextures`), checked in game before any change.
 
 ### The minimap tooltip loses its colours (low)
 
@@ -126,14 +53,6 @@ Seen only in the code; each waits for a case in game.
   the language, and whether `GameTooltip:GetTooltipData()` is still set when the lines are added. Then clear the
   tooltip's data before the lines (`GameTooltip:ClearLines()` after `SetOwner`), or colour the text with colour
   codes as the "ON" state does. Cosmetic: no wrong data.
-
-### A fishing pole above the Fishing skill may be chosen (low)
-
-- **Found**: specs/008-architecture-alignment research R5 (2026-11-06), not seen in game. The best pole is chosen
-  by its Fishing bonus (`Fishing/Gear.lua` `Gear.FindBestPole`), whatever skill it needs (Strong Fishing Pole 10,
-  Darkwood 50, Big Iron 100, Nat Pagle's 100, Arcanite 300).
-- **Direction**: `GameData/FishingPoles.lua` already records each pole's `skill`; let the choice pass over a pole
-  above `Skill.Get()` like the lures (`Fishing/Bags.lua` `FindLure`), with a test, once a player meets it.
 
 ### A lure the game refused stays skipped after a skill-up (low)
 
@@ -200,3 +119,8 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
 - 2026-11-07, spec 010: batch 1 and "1 catches" fixed with tests (names as the game gives them, the public channel
   off, the proof step budget, the hidden "No player named" line as the offline signal, the singular texts; the
   spike trimmed); V11 (friends list, other realm), V12 and V26 wait for the game.
+- 2026-11-08, spec 011: batch 2, batch 6 and the pole item of batch 5 fixed with tests (a cave's continent map
+  becomes the zone under the point; the subzone found by its name among the game's area names, walked over frames;
+  the loot source of a catch is unknown, no pool part written; a secret name in a fight counts as missing and the
+  skill check waits for the fight's end; the best pole within the Fishing skill). The `/run` checks before the code
+  confirmed the zone under the cave and the area names (`docs/forever-api.md`).

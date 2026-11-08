@@ -14,23 +14,29 @@ functions), `Index.lua` (the indexes the views read: the seed's keys, the cells 
 records, the own places and items), `Views.lua` (sums, weights, the queries, `Describe`) and `Events.lua` (the game's
 events: `ADDON_LOADED`, casts and catches, the index upkeep on `SHARED_DATA_CHANGED`, logout). The files share their
 internals through `CatchDB.private` (not an API): a name a later file re-binds into a local is never reassigned; the
-reassigned state (`version`, `ownItems`, `ownIndex`, `poolData`, `others`, `frozen`, `lastPool`) lives on that table as
+reassigned state (`version`, `ownItems`, `ownIndex`, `poolData`, `others`, `frozen`) lives on that table as
 `P.<name>`.
 
 ## Places and recording
 
 - A place is `<mapID>:<range>:<cell>`: the map as `C_Map.GetBestMapForUnit` returns it,
   `min(4, floor(base rank / 75))`, and a 10x10 grid cell (`"x"` without a position).
+- A continent is never a place (spec 011): where the game reports a map of type Continent or above (a cave, such
+  as the one before Wailing Caverns, gives Kalimdor 1414), `CatchDB.GetCurrentPlace` takes the zone under the
+  player's point (`C_Map.GetMapInfoAtPosition`, The Barrens 1413) and reads the cell and position on it. Without a
+  zone there, or without a position on it, there is no place and the cast is not recorded.
 - The place is read at every `FISHING_CAST_START` under Catch.lua's cast number (`ns.GetFishingCastID()`), and the
   cast that `FISH_CAUGHT` or `FISH_MISSED` names is settled.
 - Every catch and miss goes into `OneKeyFishingDB.shared.mine` (lifetime, never reset) and the account's
   contribution record `shared.records[myID]` (split by game version, read by the harvest).
 - `myID` is 8 random base32 characters and never appears in the debug report.
-- The subzone (`specs/005-catch-catalog` research R4): at `FISHING_CAST_START`, with a position,
-  `CatchDB.GetArea(mapID, x, y)` keeps the explored area at the player's position
-  (`C_MapExplorationInfo.GetExploredAreaIDsAtPosition`) whose `C_Map.GetAreaInfo` name equals `GetSubZoneText()`,
-  both folded with `ns.FoldCase` (Principle II). Settling the cast adds 1 to the cell's `a[areaID]` (at most 8
-  areas; a ninth is not added; never for cell `"x"`). Only the ID is stored; every client names it in its own
+- The subzone (`specs/011-catch-place-fixes` research R3): at `FISHING_CAST_START`, with a position,
+  `CatchDB.LookupArea(done)` gives the lowest area ID whose `C_Map.GetAreaInfo` name equals `GetSubZoneText()`,
+  both folded with `ns.FoldCase` (Principle II). The answer (an ID, or none) is cached per subzone text for the
+  session; the first cast in a subzone walks the IDs 1 to 20000 (`P.MAX_AREA_ID`) in steps of 2000
+  (`P.AREA_CHUNK`, one per frame through `C_Timer.After(0)`), and the cast gets its area when the walk ends (a
+  lookup for another subzone during a walk gets none). Settling the cast adds 1 to the cell's `a[areaID]` (at most
+  8 areas; a ninth is not added; never for cell `"x"`). Only the ID is stored; every client names it in its own
   language.
 
 ## The seed
@@ -89,7 +95,9 @@ For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):
 - The water filter: `filter.water` (`"all"` by default, `"open"`, `"pool"`) reads each cell through its pool part
   `p`: pools `p.c` and `p.i`, open water the rest, both without misses, so `missRate` is nil under them; players
   and the 50-catch rule count the filtered catches. `CatchDB.HasPoolData()` is true once any held cell has a pool
-  part (a false answer is read again after `SHARED_DATA_CHANGED`).
+  part (a false answer is read again after `SHARED_DATA_CHANGED`). Since spec 011 no own catch writes a pool part:
+  in Forever a pool catch has the bobber as its loot source, so the source of a catch is not known (V3). A pool part
+  from an older build is still accepted and read, so the filter shows only with such data.
 
 ## Checking a received record
 

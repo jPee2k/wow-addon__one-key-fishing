@@ -102,7 +102,7 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 
 Carries `VERIFY(spike)`. `Spike.Report()` returns the window title and the text that `/okf spike` shows in the
 copy window: the game facts still open (spec 010 removed the answered parts): the network APIs (V10-V15), the proof
-step timing (V26), the areas at the position (V34), the game's text folding (V36) and the last auction search (V5),
+step timing (V26), the game's text folding (V36) and the last auction search (V5) (spec 011 removed the areas, V34),
 for the checks of [docs/checklists/spike.md](../checklists/spike.md) and the `verification.md` of each part. At login
 it drops the saved entries of its old deliberate test error from the error log (`ns.ForgetErrors`).
 The file, its TOC line, its Commands.lua entry and `tests/ui/spike_test.lua` go before the release, since

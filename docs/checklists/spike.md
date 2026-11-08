@@ -90,6 +90,7 @@ section "Proof steps (V26)" now.
 ## Part 4: map pins and areas (V30-V37), section "Map pins and areas"
 
 Spec 010 kept P2 and P4 as the sections "Areas (V34)" and "Folding (V36)"; P1, P3 and P5 are closed and removed.
+Spec 011 closed P2 (the area is found by its name, `/run` 2026-11-08) and removed its section.
 Run the section at three waters: an open zone, a named subzone (a lake with its own name) and a city; once more
 inside a cave (a map of type 5, Micro) and, if reachable, in an instance. Run it twice at the first place: the
 items part shows the names before and after the game was asked for them.
@@ -98,7 +99,7 @@ items part shows the names before and after the game was asked for them.
   rule `WorldMapTrackingPinDisabled`, the CVar `showInGameNavigation` and the current waypoint, at each place.
   Expected: true on zone maps, false in the instance; the cave converts to a point on its zone map. Report: 2026-11-06: true on Mulgore 1412, The Barrens 1413, Thunder Bluff 1456 and their parent Kalimdor 1414; the cave reports Kalimdor itself (no Micro map, V33 not met); the instance has no map; the rule not active; `showInGameNavigation` 0; no waypoint. Closed; removed from the spike (spec 010).
 - [x] **P2. Areas** (V34): at each water the area IDs at the position with their names, `GetSubZoneText()` and the
-  area the addon keeps. Expected: one area's name equals the subzone text. Report: 2026-11-06: Ratchet: area 392 = "Ratchet", kept; Stonebull Lake: none, or 222 "Bloodhoof Village"; Thunder Bluff and the cave: none (V34 partly failed, `docs/tech-debt.md`).
+  area the addon keeps. Expected: one area's name equals the subzone text. Report: 2026-11-06: Ratchet: area 392 = "Ratchet", kept; Stonebull Lake: none, or 222 "Bloodhoof Village"; Thunder Bluff and the cave: none (V34 partly failed). Closed by spec 011: the name lookup finds Ratchet 392 and Stonebull Lake 223; removed from the spike.
 - [x] **P3. Item names** (V35): the load state of three catalog items before and after the game was asked for them.
   Expected: known after the request, or "unknown" for an item Forever hides. Report: 2026-11-06 (synthetic seed): items 6000, 6004, 6008 stay without a name after the request (the client cannot load them). Closed; removed from the spike (spec 010).
 - [x] **P4. Folding and order** (V36): `CaseAccentInsensitiveParse` of the sample and the `strcmputf8i` order on

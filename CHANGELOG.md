@@ -10,9 +10,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 - "What can be caught here", a second tab in the statistics window: the items of the spot you stand at, with
   their chance, pieces per catch and price, the number of catches behind them and the share of casts that catch
-  nothing. Few catches at a spot: the whole map; few on the map too: "Little data". Filters for the skill range,
-  for the source (all, or only your own catches) and, once there are catches from fish pools, for the water
-  (everywhere, open water, pools).
+  nothing. Few catches at a spot: the whole map; few on the map too: "Little data". Filters for the skill range
+  and for the source (all, or only your own catches). Catches in a cave count for the zone around it.
 - A catch database bundled with every release, so the tab has numbers from the first login. Your own catches
   are recorded for it per map, grid cell and skill range, under a random ID (no names; per cell only the average
   spot you fished from and the game's number of the subzone, so spots get a name in every client language).
@@ -67,6 +66,9 @@ All notable changes to OneKeyFishing are listed here. The format follows
   ends.
 - An attack in fishing mode (with "Leave fishing mode when attacked" on) now says that the mode ends after the
   fight.
+- No more Lua error in dungeon fights ("attempt to compare ... a secret string value") from the next Fishing rank
+  advice; its "can learn" notice now waits for the end of a fight.
+- Fishing mode no longer picks a pole your Fishing skill is too low for; it takes the best one you can use.
 - The manual no longer promises a navigation arrow on screen for the next-rank pin.
 - One catch reads "1 catch" instead of "1 catches" in the zone list of the statistics window and the session line
   of the minimap tooltip.

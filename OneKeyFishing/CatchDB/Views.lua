@@ -11,7 +11,6 @@ local BuildKey, Seed, SeedField = P.BuildKey, P.Seed, P.SeedField
 local OlderBuild, OwnRecord = P.OlderBuild, P.OwnRecord
 local SeedIndex, Others, Frozen, OwnIndex = P.SeedIndex, P.Others, P.Frozen, P.OwnIndex -- CatchDB/Index.lua
 local SeedItems, OwnItems = P.SeedItems, P.OwnItems
--- P.lastPool: what IsPoolLoot said about the last catch
 
 ---------------------------------------------------------------------------
 -- Views
@@ -515,7 +514,8 @@ function CatchDB.Maps(filter)
 end
 
 -- True once any held cell has a pool part (research R5): the "Water" filter shows only then. A false answer is kept
--- until the stored data changes (SHARED_DATA_CHANGED); a pool catch sets it.
+-- until the stored data changes (SHARED_DATA_CHANGED). No own catch writes one since spec 011 (the source is not
+-- known); only data from older builds can have it.
 
 local function AnyPool(cells)
     for _, cell in pairs(type(cells) == "table" and cells or {}) do
@@ -560,7 +560,6 @@ function CatchDB.Describe()
     table.insert(lines, ("own places %d"):format(CountKeys(ns.db.shared.mine)))
     local mapID, range, cell = CatchDB.GetCurrentPlace()
     table.insert(lines, "current place " .. (mapID and CatchDB.PlaceKey(mapID, range, cell) or "none"))
-    table.insert(lines, "last catch from a pool: " .. tostring(P.lastPool))
     table.insert(lines, "game version key " .. BuildKey())
     return lines
 end

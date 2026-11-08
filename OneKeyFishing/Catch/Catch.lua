@@ -1,6 +1,7 @@
 -- Catch: turns casts and fishing loot into FISH_CAUGHT / FISH_MISSED messages.
--- Casts are numbered: FISH_CAUGHT (items, fromPool, castID) and FISH_MISSED (castID) name the cast they
--- settle, and every earlier cast is settled with it (no message comes for those).
+-- Casts are numbered: FISH_CAUGHT (items, castID) and FISH_MISSED (castID) name the cast they settle, and every
+-- earlier cast is settled with it (no message comes for those). Whether a catch came from a pool is not known: in
+-- Forever a pool catch has the bobber (35591) as its loot source, like open water (V3, seen 2026-11-06).
 local _, ns = ...
 
 -- How long after the channel ends fishing loot may still arrive.
@@ -8,26 +9,6 @@ local LOOT_GRACE = 1
 
 local castID = 0
 local caughtCastID = 0 -- the last cast settled as caught or missed; casts up to it take no more loot
-
--- True when the open fishing loot came from a fishing pool, false when it came from the bobber (open water),
--- nil when the game names no source.
--- VERIFY(V3): pool loot comes from the pool's GameObject GUID, open water from the bobber (35591)
-function ns.IsPoolLoot()
-    local fromBobber = false
-    for slot = 1, GetNumLootItems() do
-        local sources = { GetLootSourceInfo(slot) }
-        for i = 1, #sources, 2 do
-            local objectID = ns.GameObjectID(sources[i])
-            if objectID and objectID ~= ns.GameData.Bobber.objectID then
-                return true
-            end
-            fromBobber = fromBobber or objectID ~= nil
-        end
-    end
-    if fromBobber then
-        return false
-    end
-end
 
 ns.On("FISHING_CAST_START", function()
     castID = castID + 1
@@ -54,7 +35,7 @@ ns.RegisterEvent("LOOT_READY", function()
             table.insert(items, { link = link, itemID = ns.ItemIDFromLink(link), quantity = quantity or 1 })
         end
     end
-    ns.Fire("FISH_CAUGHT", items, ns.IsPoolLoot(), castID)
+    ns.Fire("FISH_CAUGHT", items, castID)
 end)
 
 ns.On("FISHING_CAST_STOP", function()

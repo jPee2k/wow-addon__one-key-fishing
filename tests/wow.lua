@@ -82,6 +82,8 @@
 --   map_types[mapID] = Enum.UIMapType.X  mapType of C_Map.GetMapInfo (default 3, Zone)
 --   map_parents[mapID] = parentID       parentMapID of C_Map.GetMapInfo (default 0)
 --   map_info_missing[mapID] = true      C_Map.GetMapInfo returns nil
+--   map_at_position[mapID] = { mapID = 1413, mapType = 3 }  C_Map.GetMapInfoAtPosition on that map (nil: none)
+--   player_map_positions[mapID] = { x, y }  C_Map.GetPlayerMapPosition on that map (else player_map_position)
 --   waypoint_maps[mapID] = true         C_Map.CanSetUserWaypointOnMap is true (default false)
 --   user_waypoint                       the user waypoint (C_Map.Get/Has/Clear/SetUserWaypoint; nil: none)
 --   waypoint_sets                       every point passed to C_Map.SetUserWaypoint (read)
@@ -93,8 +95,6 @@
 --   world_maps_opened                   map IDs passed to OpenWorldMap (read)
 --   sub_zone = "Crystal Lake"           GetSubZoneText (default "")
 --   area_names[areaID] = "Crystal Lake" C_Map.GetAreaInfo
---   explored_areas = { 10, 20 }         C_MapExplorationInfo.GetExploredAreaIDsAtPosition (nil: none)
---   area_lookups                        { mapID, x, y } of each GetExploredAreaIDsAtPosition call (read)
 --   item_names[itemID] = "Trout"        C_Item.GetItemNameByID (default "Item <id>"; nil for unknown_items)
 --   item_qualities[itemID] = n          C_Item.GetItemQualityByID (default 1; nil for unknown_items)
 --   missing_atlases[name] = true        C_Texture.GetAtlasInfo returns nil for that atlas (default: every atlas)
@@ -887,8 +887,8 @@ player_map_id = 1
 map_names = {}
 player_map_position = nil
 map_types, map_parents, map_info_missing = {}, {}, {}
-waypoint_maps, waypoint_sets, map_world, area_names, area_lookups = {}, {}, {}, {}, {}
-user_waypoint, waypoint_result, explored_areas = nil, nil, nil
+waypoint_maps, waypoint_sets, map_world, area_names = {}, {}, {}, {}
+user_waypoint, waypoint_result = nil, nil
 
 function CreateVector2D(x, y)
     return { x = x, y = y, GetXY = function(self) return self.x, self.y end }
@@ -948,8 +948,14 @@ C_Map = {
             return overrideMapID, CreateVector2D((worldPos.x - world[2]) / world[4], (worldPos.y - world[3]) / world[5])
         end
     end,
-    GetPlayerMapPosition = function(_, unit)
-        local position = player_map_position
+    GetMapInfoAtPosition = function(mapID)
+        local found = map_at_position and map_at_position[mapID]
+        if found then
+            return { mapID = found.mapID, name = map_names[found.mapID] or "Test Zone", mapType = found.mapType }
+        end
+    end,
+    GetPlayerMapPosition = function(mapID, unit)
+        local position = player_map_positions and player_map_positions[mapID] or player_map_position
         if unit == "player" and position then
             return { GetXY = function() return position[1], position[2] end }
         end
@@ -1104,14 +1110,6 @@ C_Texture = {
         if not missing_atlases[atlas] then
             return { file = 0, width = 16, height = 16 }
         end
-    end,
-}
-
--- The explored areas at a position (research R4).
-C_MapExplorationInfo = {
-    GetExploredAreaIDsAtPosition = function(mapID, pos)
-        table.insert(area_lookups, { mapID, pos.x, pos.y })
-        return rawget(_G, "explored_areas")
     end,
 }
 
@@ -1675,7 +1673,7 @@ end
 for _, name in ipairs({ "C_AddOns", "C_CVar", "C_Map", "C_Item", "C_Container", "C_AuctionHouse", "C_Timer",
     "Settings", "UiMapPoint", "C_SuperTrack", "C_GameRules", "C_QuestLog", "C_Spell", "C_TooltipInfo",
     "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_RestrictedActions", "ChatFrameUtil", "C_EncodingUtil",
-    "C_MapExplorationInfo", "ScrollUtil", "TooltipDataProcessor", "C_Texture" }) do
+    "ScrollUtil", "TooltipDataProcessor", "C_Texture" }) do
     WithStubFallback(name, _G[name])
 end
 
@@ -2021,8 +2019,9 @@ local stubs = {}
 -- Game data the tests set that may be nil on purpose (see the top of this file): nil, not a stub.
 local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
     group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
-    explored_areas = true, profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
-    channel_info = true, channel_on = true, player_full_name = true }
+    profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
+    channel_info = true, channel_on = true, player_full_name = true, map_at_position = true,
+    player_map_positions = true }
 setmetatable(_G, {
     __index = function(_, key)
         if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then

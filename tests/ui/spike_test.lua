@@ -33,12 +33,12 @@ end)
 test("the report has the sections still open, and none of the closed ones (spec 010, contracts S2)", function()
     local text = report()
     assert(text:find("OneKeyFishing spike report", 1, true), "the version header")
-    for _, title in ipairs({ "Network (V10-V15)", "Proof steps (V26)", "Areas (V34)", "Folding (V36)",
+    for _, title in ipairs({ "Network (V10-V15)", "Proof steps (V26)", "Folding (V36)",
         "Last auction search (V5)" }) do
         assert(text:find("-- " .. title .. " --", 1, true), title)
     end
     for _, title in ipairs({ "Build", "Map (V1", "Last fishing loot", "Tabs", "Chat channel", "Map pins",
-        "Error log" }) do
+        "Error log", "Areas" }) do
         assert(not text:find("-- " .. title, 1, true), "removed: " .. title)
     end
     eq(#channel_joins, 0, "no test channel joined")
@@ -82,34 +82,23 @@ test("a failing send shows a failure line, not a Lua error", function()
 end)
 
 ---------------------------------------------------------------------------
--- Areas and folding (specs/005-catch-catalog, research R13)
+-- Folding (specs/005-catch-catalog, research R13)
 ---------------------------------------------------------------------------
-test("the areas and folding sections read the areas at the position, the subzone and the fold, setting nothing",
-    function()
-    explored_areas = { 10, 20 }
-    area_names = { [10] = "Elwynn Forest", [20] = "Crystal Lake" }
-    sub_zone = "Crystal Lake"
+test("the folding section reads the fold and the order function, setting nothing", function()
     local text = report()
-    assert(text:find("area 20: Crystal Lake", 1, true), "an area with its name")
-    assert(text:find("GetSubZoneText: Crystal Lake", 1, true), "the subzone")
-    assert(text:find("the area the addon keeps: ", 1, true), "the kept area")
     assert(text:find("CaseAccentInsensitiveParse false: -", 1, true), "no game fold here")
     assert(text:find("strcmputf8i(b, A): missing", 1, true), "no order function here")
     eq(#waypoint_sets, 0, "no waypoint set")
     eq(#world_maps_opened, 0, "no map opened")
 end)
 
-test("the areas and folding sections survive every call failing", function()
+test("the folding section survives every call failing", function()
     local function boom()
         error("boom")
     end
-    local area, explored, vector = C_Map.GetAreaInfo, C_MapExplorationInfo.GetExploredAreaIDsAtPosition, CreateVector2D
-    C_Map.GetAreaInfo, C_MapExplorationInfo.GetExploredAreaIDsAtPosition = boom, boom
-    CreateVector2D, CaseAccentInsensitiveParse, strcmputf8i = boom, boom, boom
+    CaseAccentInsensitiveParse, strcmputf8i = boom, boom
     local text = report()
-    C_Map.GetAreaInfo, C_MapExplorationInfo.GetExploredAreaIDsAtPosition = area, explored
-    CreateVector2D, CaseAccentInsensitiveParse, strcmputf8i = vector, nil, nil
-    assert(text:find("GetExploredAreaIDsAtPosition failed: ", 1, true), "areas")
+    CaseAccentInsensitiveParse, strcmputf8i = nil, nil
     assert(text:find("strcmputf8i(b, A): failed: ", 1, true), "order")
     assert(not text:find("!! failed", 1, true), text:match("!! failed[^\n]*") or "")
 end)

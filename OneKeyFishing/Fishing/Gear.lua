@@ -114,9 +114,17 @@ end
 -- Best pole in bags or in hand: itemID, fishing bonus.
 function Gear.FindBestPole()
     local bestID, bestScore, bestBonus
-    local function Consider(itemID)
+    -- A pole above the Fishing skill cannot be equipped: passed over; an unknown skill, or a pole the addon does not
+    -- list, holds nothing back.
+    -- VERIFY(V44): the game compares the base skill (GetProfessionInfo rank), as for lures
+    local rank = ns.Skill.Get()
+    local function Consider(itemID, equipped)
         if not ns.IsFishingPole(itemID) then
             return
+        end
+        local pole = ns.GameData.FishingPoles[itemID]
+        if not equipped and rank and pole and pole.skill > rank then
+            return -- a pole in the main hand is usable already
         end
         local bonus = ns.GetFishingBonus(itemID)
         local _, _, _, itemLevel = C_Item.GetItemInfo(itemID)
@@ -125,7 +133,7 @@ function Gear.FindBestPole()
             bestID, bestScore, bestBonus = itemID, score, bonus
         end
     end
-    Consider(GetInventoryItemID("player", MAINHAND_SLOT))
+    Consider(GetInventoryItemID("player", MAINHAND_SLOT), true)
     ns.ForEachBagItem(function(info)
         Consider(info.itemID)
     end)

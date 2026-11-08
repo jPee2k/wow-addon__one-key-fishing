@@ -219,6 +219,15 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).
 - At Ratchet (The Barrens 1413, 2026-11-06) `GetExploredAreaIDsAtPosition` gives area 392 "Ratchet", the same as
   `GetSubZoneText()` (V34 works there).
+- Places by `/run` (2026-11-08, before spec 011):
+  - In the cave before Wailing Caverns the reported map is Kalimdor 1414 with the position (0.519, 0.551), and
+    `C_Map.GetMapInfoAtPosition(1414, x, y)` gives 1413 "The Barrens", `mapType` 3 (Zone): the zone under a point
+    of the continent is found (V2, V33). `C_Map.GetPlayerMapPosition(1413, "player")` gives a position there too
+    (x 0.461).
+  - `C_Map.GetAreaInfo(id)` over the IDs 1 to 20000, compared with `GetSubZoneText()`, finds exactly one area at
+    Ratchet (392) and at Stonebull Lake (223, where the explored regions gave nothing or 222); at the Thunder
+    Bluff pond `GetSubZoneText()` is empty. The walk costs 4.3 to 4.7 ms; the highest area ID with a name is 17853
+    (V34).
 - Addon messages in a custom channel (`/run` tests, 2026-11-06, full account, level 11): typed text in a temporary
   channel shows, but `C_ChatInfo.SendAddonMessage(prefix, text, "CHANNEL", n)` returns `0` (Success) and the server
   then sends `CHAT_MSG_CHANNEL_NOTICE` `NOT_ALLOWED_IN_CHANNEL` with the channel name (`CHAT_NOT_ALLOWED_IN_CHANNEL_NOTICE`
@@ -265,8 +274,8 @@ move to "Verified in game":
   skill ranges of the place key can go.
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
-- Which ID-based call names the subzone at a position, where `GetExploredAreaIDsAtPosition` gives a map region
-  (V34)?
 
+Answered on 2026-11-08 (`/run`, see "Verified in game"): the subzone's area ID is found by `GetSubZoneText()`
+among the `C_Map.GetAreaInfo` names (V34), and a cave's continent map gives the zone under the point (V2, V33).
 Answered on 2026-11-06/07 (see "Verified in game"): pool loot is not told apart (V3); one `YOU_LEFT` per leave, and
 in one macro only the first `/join` or `/leave` of a channel takes effect (V41).

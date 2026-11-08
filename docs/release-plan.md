@@ -40,9 +40,10 @@ The steps:
    four parts and the error log (`/okf spike`). Paste the reports. **2026-11-06/07: the solo parts are done** (the
    answers in `forever-api.md` and the five `verification.md`; V19, V11, V3 failed, V26 too slow, V34 partly);
    left for a second player: N1 (guild), N3, C2 (B's view), C6, C7. The findings are grouped in
-   [tech-debt.md](tech-debt.md) "Fix batches": batch 1 is built by spec 010 and batch 2 is spec 011, both before the
-   feature checklists with a second player; batches 3 and 4 are built here by spec 009 and ship in 1.2.0 (no 1.1.x
-   patch).
+   [tech-debt.md](tech-debt.md) "Fix batches": batch 1 is built by spec 010, batch 2 (where a catch is recorded)
+   with batch 6 (the fight error of the next-rank advice) and the pole item by spec 011 (2026-11-08), both before
+   the feature checklists with a second player; batches 3 and 4 are built here by spec 009. All ship in 1.2.0 (no
+   1.1.x patch).
 2. Record the answers in [forever-api.md](forever-api.md) "Verified in game"; fix the code where an assumption was
    wrong, with tests; remove the `VERIFY` markers of the closed ids and tick them in the five `verification.md`
    files (002 to 006). V19 failed: the channel is off (`Channel.AVAILABLE = false`, spec 010), and V20-V25 and V41

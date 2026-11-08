@@ -139,7 +139,7 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 - `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed, or `"paused"`: a fight dropped it, `Action.IsPaused()`)
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
-- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, fromPool, castID) / `FISH_MISSED` (castID; each settles that cast
+- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, castID) / `FISH_MISSED` (castID; each settles that cast
   and every earlier one)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `SKILL_WARNING` (text, loud: a next-rank notice of `Fishing/Skill.lua`, loud at the cap; the toast shows it even
@@ -180,7 +180,9 @@ go there.
   two values (not a realm); the full name is `GetUnitName(unit, true)`. A whisper goes to "First Last" (no realm);
   `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name. The addon keeps names
   as the game gives them; its own name is `ns.PlayerName()`.
-- Places: a cave reports the continent map, an instance no map; pool loot comes from the bobber (35591), like open
+- Places: a cave reports the continent map (`C_Map.GetMapInfoAtPosition` on it gives the zone under the point), an
+  instance no map; the subzone's area ID is found by `GetSubZoneText()` among `C_Map.GetAreaInfo` names (IDs up
+  to 17853); pool loot comes from the bobber (35591), like open
   water; `GetExploredAreaIDsAtPosition` gives map regions, often not the subzone.
 - `C_Item.EquipItemByName` is protected in combat, weapons too (only `PLAYER_REGEN_DISABLED` runs before the
   lockdown).

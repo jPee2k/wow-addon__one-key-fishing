@@ -55,8 +55,12 @@ end)
 ns.On("FISHING_CAST_START", function()
     local mapID, range, cell, x, y = CatchDB.GetCurrentPlace()
     if mapID then
-        casts[ns.GetFishingCastID()] = { key = CatchDB.PlaceKey(mapID, range, cell), x = x, y = y,
-            area = x and CatchDB.GetArea(mapID, x, y), start = GetTime() }
+        local entry = { key = CatchDB.PlaceKey(mapID, range, cell), x = x, y = y, start = GetTime() }
+        casts[ns.GetFishingCastID()] = entry
+        if x then
+            -- The area may come a few frame steps later (the first cast in a subzone walks the area names).
+            CatchDB.LookupArea(function(areaID) entry.area = areaID end)
+        end
     end
 end)
 
@@ -78,11 +82,10 @@ local function TakeCast(castID)
     return cast
 end
 
-ns.On("FISH_CAUGHT", function(items, fromPool, castID)
-    P.lastPool = fromPool
+ns.On("FISH_CAUGHT", function(items, castID)
     local cast = TakeCast(castID)
     if cast then
-        Settle(cast, CatchItems(items), fromPool)
+        Settle(cast, CatchItems(items))
     end
 end)
 

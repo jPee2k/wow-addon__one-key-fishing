@@ -43,7 +43,7 @@ end
 --               the frozen own records), so a map's sum does not walk every own cell (Index.lua OwnIndex). Built on
 --               first use, grown by Settle.
 --   P.poolData  CatchDB.HasPoolData's answer: nil until read, false until a pool part shows up
---   P.others, P.frozen: Index.lua; P.lastPool: Events.lua
+--   P.others, P.frozen: Index.lua
 P.version = 0
 local lastSeqBump -- GetTime() of the last seq bump
 local seqWaiting = false -- a change since the last bump
@@ -130,38 +130,106 @@ function CatchDB.GetCell(mapID)
     return Digit(x) .. Digit(y), x, y
 end
 
+-- Enum.UIMapType: Cosmic 0, World 1, Continent 2, Zone 3; deeper maps count higher.
+local MAP_TYPES = Enum and Enum.UIMapType or {}
+local CONTINENT, ZONE = MAP_TYPES.Continent or 2, MAP_TYPES.Zone or 3
+
+-- The zone map under the player's point on a continent map, or nil. A cave can report the continent: in the cave
+-- before Wailing Caverns the game gives Kalimdor 1414, and C_Map.GetMapInfoAtPosition there gives The Barrens 1413
+-- with a position on it (seen 2026-11-08, docs/forever-api.md).
+local function ZoneUnder(mapID)
+    local _, x, y = CatchDB.GetCell(mapID)
+    local info = x and C_Map.GetMapInfoAtPosition(mapID, x, y)
+    return info and info.mapType and info.mapType >= ZONE and info.mapID or nil
+end
+
 -- mapID, range, cell, x, y of the player now (cell "x" and no x, y without a position), or nil without Fishing
--- or a map.
+-- or a map. A continent is never a place: a cast there goes to the zone under the point, or nowhere.
 function CatchDB.GetCurrentPlace()
     local rank = ns.Skill.Get()
-    -- The map the game reports is stable per fishing spot; a cave reports the continent (V2, docs/tech-debt.md)
+    -- The map the game reports is stable per fishing spot (V2)
     local mapID = C_Map.GetBestMapForUnit("player")
     if not (rank and mapID) then
         return nil
     end
-    return mapID, math.min(MAX_RANGE, math.floor(rank / RANGE_STEP)), CatchDB.GetCell(mapID)
-end
-
--- The game's area ID of the player's subzone at a position of map mapID (research R4 of specs/005-catch-catalog),
--- or nil. Of the explored areas there it keeps the one the game names as GetSubZoneText does. Principle II: matching
--- against localized text must tolerate case changes in non-ASCII text, so both names are folded (ns.FoldCase); the
--- needle is the client's own text and only the ID is kept.
-function CatchDB.GetArea(mapID, x, y)
-    local subzone = GetSubZoneText and GetSubZoneText()
-    if type(subzone) ~= "string" or subzone == "" or not (C_MapExplorationInfo and CreateVector2D and x and y) then
-        return nil
-    end
-    -- VERIFY(V34): the explored areas at the player's own position include the subzone, named as GetSubZoneText
-    -- shows it
-    local areas = C_MapExplorationInfo.GetExploredAreaIDsAtPosition(mapID, CreateVector2D(x, y))
-    local wanted = ns.FoldCase(subzone)
-    for _, areaID in ipairs(type(areas) == "table" and areas or {}) do
-        local name = C_Map.GetAreaInfo(areaID)
-        if type(name) == "string" and ns.FoldCase(name) == wanted then
-            return areaID
+    local info = C_Map.GetMapInfo(mapID)
+    local onContinent = info and info.mapType and info.mapType <= CONTINENT
+    if onContinent then
+        mapID = ZoneUnder(mapID)
+        if not mapID then
+            return nil
         end
     end
-    return nil
+    local cell, x, y = CatchDB.GetCell(mapID)
+    if onContinent and not x then
+        return nil
+    end
+    return mapID, math.min(MAX_RANGE, math.floor(rank / RANGE_STEP)), cell, x, y
+end
+
+-- The game's area ID of the player's subzone (research R3 of specs/011-catch-place-fixes): the lowest area ID whose
+-- name is the subzone text the game shows. The map's explored regions miss most subzones, but the names of the
+-- game's areas match it: Ratchet 392, Stonebull Lake 223 (seen 2026-11-08, docs/forever-api.md). Principle II: the
+-- needle is the client's own text, both names are folded (ns.FoldCase), and only the ID is kept.
+-- The area IDs end at 17853 (seen); a walk over all of them costs about 4.5 ms in the game, so it runs over frame
+-- steps, once per subzone and session.
+P.MAX_AREA_ID, P.AREA_CHUNK = 20000, 2000 -- read through P, so the tests can shorten the walk
+local areaByName = {} -- folded subzone text -> area ID, or false when no area has that name
+local walk -- { needle, next, waiting = { done, ... } }: the walk in progress, one at a time
+
+function P.ResetAreas()
+    areaByName, walk = {}, nil
+end
+
+local function WalkStep()
+    local current = walk
+    local last = math.min(current.next + P.AREA_CHUNK - 1, P.MAX_AREA_ID)
+    local found
+    for areaID = current.next, last do
+        local name = C_Map.GetAreaInfo(areaID)
+        -- Folding keeps the byte length: a name of another length cannot match, and is not folded.
+        if type(name) == "string" and #name == #current.needle and ns.FoldCase(name) == current.needle then
+            found = areaID -- the IDs go up: the first match is the lowest
+            break
+        end
+    end
+    if not found and last < P.MAX_AREA_ID then
+        current.next = last + 1
+        C_Timer.After(0, WalkStep)
+        return
+    end
+    areaByName[current.needle] = found or false
+    walk = nil
+    if found then
+        for _, done in ipairs(current.waiting) do
+            done(found)
+        end
+    end
+end
+
+-- Calls done(areaID) with the area of the subzone the game shows now: at once when it is known, else at the end of
+-- a walk. Not called without a subzone, without a matching area, or while a walk for another subzone runs.
+function CatchDB.LookupArea(done)
+    local subzone = GetSubZoneText and GetSubZoneText()
+    if (issecretvalue and issecretvalue(subzone)) or type(subzone) ~= "string" or subzone == "" then
+        return
+    end
+    local needle = ns.FoldCase(subzone)
+    local known = areaByName[needle]
+    if known ~= nil then
+        if known then
+            done(known)
+        end
+        return
+    end
+    if walk then
+        if walk.needle == needle then
+            table.insert(walk.waiting, done)
+        end
+        return
+    end
+    walk = { needle = needle, next = 1, waiting = { done } }
+    WalkStep()
 end
 
 -- The game version the data is recorded under.
@@ -560,7 +628,8 @@ local function AddItems(target, pieces)
 end
 
 -- Adds a settled cast (caught: item ID -> pieces, or nil for a miss) to both tables.
-local function Settle(cast, caught, fromPool)
+-- No catch writes a pool part: the source is not known (V3); a received pool part is still read.
+local function Settle(cast, caught)
     local seconds = math.max(1, math.floor((cast.stop or GetTime()) - cast.start + 0.5))
     local cells, build = TargetCells(cast.key)
     for _, cell in ipairs(cells) do
@@ -576,12 +645,6 @@ local function Settle(cast, caught, fromPool)
         if caught then
             cell.c = cell.c + 1
             AddItems(cell, caught)
-            if fromPool then
-                P.poolData = true
-                cell.p = cell.p or { c = 0, i = {} } -- catches only: a miss has no loot source
-                cell.p.c = cell.p.c + 1
-                AddItems(cell.p, caught)
-            end
         else
             cell.m = cell.m + 1
         end
@@ -604,7 +667,7 @@ end
 
 -- Shared with the other CatchDB/*.lua files through CatchDB.private; the names a later file re-binds are never
 -- reassigned here. The reassigned state lives on P itself (P.version, P.ownItems, P.ownIndex, P.poolData, P.others,
--- P.frozen, P.lastPool).
+-- P.frozen).
 P.MAX_PIECES, P.MAX_AREAS, P.mapCache = MAX_PIECES, MAX_AREAS, mapCache
 P.BumpMap, P.BumpAll, P.MapRange, P.KeyMapRange, P.KeyMapID = BumpMap, BumpAll, MapRange, KeyMapRange, KeyMapID
 P.AddToOwnIndex, P.BuildKey, P.Seed, P.SeedField, P.OlderBuild = AddToOwnIndex, BuildKey, Seed, SeedField, OlderBuild

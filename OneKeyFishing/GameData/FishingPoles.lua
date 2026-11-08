@@ -1,6 +1,6 @@
 -- GameData/FishingPoles: the fishing poles and the item class of any pole (docs/architecture/game-data.md). Data
 -- only: no logic and no L lookup. bonus: the Fishing bonus, the fallback when the tooltip cannot be read (Gear.lua);
--- skill: the Fishing skill the pole needs (recorded, not used yet: docs/tech-debt.md). Source: the original game
+-- skill: the Fishing skill the pole needs (Gear.FindBestPole passes over a pole above it). Source: the original game
 -- (Wowhead Classic tooltips, 2026-11-06).
 local _, ns = ...
 local GameData = ns.GameData or {}

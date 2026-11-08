@@ -67,7 +67,8 @@ One fishing round:
 
 ## Fishing gear
 
-By default the addon equips the **best pole in your bags** (by fishing bonus, then by item level).
+By default the addon equips the **best pole in your bags** that your Fishing skill allows (by fishing bonus, then
+by item level).
 
 To choose your own items:
 
@@ -118,9 +119,7 @@ The second tab of the statistics window lists what the spot you stand at gives:
 - **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
   you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from 3
   players");
-- **Water**: once the database holds catches from fish pools, a third button splits them into **Everywhere**,
-  **Open water** and **Pools**. Under the last two the share of casts that catch nothing is not shown, since a
-  cast that catches nothing comes from no pool;
+- WoW Forever does not tell a catch from a fish pool apart from open water, so the numbers count both together;
 - an item your game client does not know yet (some items in WoW Forever stay unknown until you find one) shows as
   **Unknown item** with a question mark icon; its tooltip says how many players reported it on this map, whether the
   bundled data has it, and its item ID. Once the game knows the item, its name and icon appear;
@@ -143,8 +142,8 @@ and, with the shared catch database on, what other players reported.
 - **Search**: type part of an item name, in your game client's language and in any letter case; the list narrows
   with every letter. Grey items only show when you search for them. An item your game client does not know yet
   stays out of the list until the game loads it.
-- **Filters**: **Skill** (all ranges by default), **Source** (**All** or **Only mine**) and, when there is pool
-  data, **Water**, as on the "What can be caught here" tab.
+- **Filters**: **Skill** (all ranges by default) and **Source** (**All** or **Only mine**), as on the "What can be
+  caught here" tab.
 - **An item**: click it to see the zones it was caught in, with its chance there, the zone's catches and the span
   of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
   data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is

@@ -198,34 +198,18 @@ end)
 ---------------------------------------------------------------------------
 -- Pools
 ---------------------------------------------------------------------------
-test("pool loot also goes into the pool part", function()
-    cast({ { FISH, 2 } }, 10, { [1] = POOL_GUID })
-    local pool = own().p
-    assert(pool, "pool part")
-    eq(pool.c, 1, "pool catches")
-    eq(pool.i[FISH][1], 1, "pool catches with the fish")
-    eq(pool.i[FISH][2], 2, "pool pieces")
-end)
-
-test("bobber loot and loot without a source have no pool part", function()
+-- In Forever a pool catch's loot source is the bobber (V3, seen 2026-11-06), so the source is not known: no catch
+-- writes a pool part any more (spec 011, research R4). A received pool part is still accepted (CheckRecord below).
+test("loot from a pool object, the bobber or no source writes no pool part", function()
     local cell = "1415:3:55"
     player_map_position = { 0.55, 0.55 }
+    cast({ { FISH, 2 } }, 10, { [1] = POOL_GUID })
     cast({ { FISH, 1 } }, 10, { [1] = BOBBER_GUID })
     cast({ { FISH, 1 } })
-    eq(own(cell).c, 2, "both counted")
+    eq(own(cell).c, 3, "all counted")
     eq(own(cell).p, nil, "no pool part")
+    eq(CatchDB.HasPoolData(), false, "no pool data")
     player_map_position = { 0.43, 0.78 }
-end)
-
-test("IsPoolLoot tells the pool, the bobber and no source apart", function()
-    loot = { fishing = true, items = { { FISH, 1 } } }
-    loot_sources = { [1] = POOL_GUID }
-    eq(ns.IsPoolLoot(), true, "pool")
-    loot_sources = { [1] = BOBBER_GUID }
-    eq(ns.IsPoolLoot(), false, "bobber")
-    loot_sources = {}
-    eq(ns.IsPoolLoot(), nil, "no source")
-    loot = nil
 end)
 
 ---------------------------------------------------------------------------

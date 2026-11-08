@@ -42,7 +42,10 @@ Enter and exit fishing mode.
 
 ## Fishing/Gear.lua
 
-- Equips the chosen pole (or the best pole by fishing bonus) plus user-picked extra items.
+- Equips the chosen pole (or the best pole by fishing bonus) plus user-picked extra items. The best pole passes
+  over a pole whose `GameData.FishingPoles[id].skill` is above the Fishing skill (an unknown skill, or a pole not
+  listed, holds nothing back; the pole already in the main hand is usable, so it is never passed over); a pole
+  chosen by hand is kept.
 - It records only the slots it changed (`charDB.gearSwap`). On exit a slot is restored only if it still holds
   what the addon put there.
 - The fishing bonus is parsed from tooltip lines that contain the client's localized Fishing spell name minus its
@@ -100,6 +103,9 @@ item class and the equipment slots (`Gear.lua`, `Action.lua`), the bobber (`Core
 - Notices: "can learn" once per session per rank (chat and toast, waits for the character level), the cap with a
   raid warning the first time per session and a chat line on later fishing mode entries; the chat line carries a
   `worldmap:` link when a pin is possible (`Core/MapPin.lua`). Chat and the raid warning are here; the toast goes
-  through `SKILL_WARNING`, shown by `UI/Toast.lua`. It checks on skill events, a level-up, after login and on
-  entering fishing mode.
+  through `SKILL_WARNING`, shown by `UI/Toast.lua`. It checks on skill events, a level-up, after login, on
+  entering fishing mode and at the end of a fight (`PLAYER_REGEN_ENABLED`). In a fight (`InCombatLockdown()`) the
+  check does nothing: weapon skill-ups fire the skill events there, and a notice owed then comes after the fight.
+- A name the game gives as a secret value (a creature tooltip line in an instance fight, seen 2026-11-08) counts
+  as missing: the fallback name is used and nothing is cached.
 - `Skill.DescribeNextRank` is the line of the statistics window and the minimap tooltip.

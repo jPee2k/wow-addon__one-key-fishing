@@ -50,7 +50,12 @@ function Skill.Get()
     return rank, maxRank
 end
 
+-- A name read from the game, or nil. In an instance fight the game gives a creature's tooltip name as a secret value
+-- (seen 2026-11-08): comparing it raises an error, so a secret value counts as missing.
 local function NonEmpty(text)
+    if issecretvalue and issecretvalue(text) then
+        return nil
+    end
     return type(text) == "string" and text ~= "" and text or nil
 end
 
@@ -216,6 +221,11 @@ end
 -- level allow; at the cap the raid-warning message the first time (naming a missing level), and on later entries
 -- into fishing mode (`modeEntry`) a chat line. A cap reached before the level still gets "can learn" at the level.
 local function Check(modeEntry)
+    -- Weapon and defense skill-ups fire the skill events in every fight; the advice reads names and a tooltip, and a
+    -- notice is not wanted there. PLAYER_REGEN_ENABLED checks again after the fight.
+    if InCombatLockdown and InCombatLockdown() then
+        return
+    end
     local rank, maxRank = Skill.Get()
     if not rank then
         return
@@ -286,6 +296,8 @@ end
 
 ns.RegisterEvent("SKILL_LINES_CHANGED", function() Check(false) end)
 ns.RegisterEvent("CHAT_MSG_SKILL", function() Check(false) end)
+-- A notice that came due in a fight is shown once after it.
+ns.RegisterEvent("PLAYER_REGEN_ENABLED", function() Check(false) end)
 -- UnitLevel can still return the old level while PLAYER_LEVEL_UP runs: check a moment later.
 ns.RegisterEvent("PLAYER_LEVEL_UP", function() C_Timer.After(1, function() Check(false) end) end)
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isLogin, isReload)

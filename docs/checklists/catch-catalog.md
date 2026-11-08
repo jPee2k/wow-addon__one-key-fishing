@@ -51,10 +51,14 @@ exchange on for step 8.
    lands on the zone map where the cave is (carried through the world position, `MapPin.Target`), or the spot has
    no pin button. A spot in an instance has no pin button. Partly 2026-11-07: the cave before Wailing Caverns has
    no map of its own, so its spot "52, 55" sits under the zone "Kalimdor" (the continent) with a pin button there
-   (`docs/tech-debt.md`, caves); inside the instance no place is written, so no spot.
+   (`docs/tech-debt.md`, caves); inside the instance no place is written, so no spot. Since spec 011 a cast there
+   is recorded on the zone under the point: after a few new casts in that cave the spot shows under "The Barrens",
+   in the cave's point, with its pin on The Barrens; no "Kalimdor" zone for new casts.
 6. [ ] **Another client language** (V34, SC-005): on the second client, after fishing a few casts at a named subzone
    on the first: the same zones, chances and catches; zone and subzone names in the second client's language. A
-   spot fished only by the other client is named too.
+   spot fished only by the other client is named too. Since spec 011 the subzone is found by its name among the
+   game's areas: a few casts at Stonebull Lake and at Ratchet give the spots "Stonebull Lake (x, y)" and
+   "Ratchet (x, y)"; at the Thunder Bluff pond (no subzone text) coordinates only.
 7. [x] **Tooltips** (V38, FR-017, FR-018, FR-019): hover a fish in the bags, at the auction house and in a chat
    link: "Caught in:" with up to three zones and the chance, "(N players)" from 2 on. An item outside the database
    (a sword): no line. Enter fishing mode and hover the minimap button and the addon's compartment entry: "Likely
@@ -67,7 +71,8 @@ exchange on for step 8.
 9. [x] **Pools** (V3 of part 1): only when the spike showed that pool catches are told apart: both tabs show
    "Water: Everywhere"; the catches under "Open water" and "Pools" add up to those under "Everywhere", and the line
    "Nothing caught" is gone under the two. Without pool data the button does not show. In game 2026-11-07: V3
-   failed (no pool data), and neither tab shows the button; pool catches count as open water (`docs/tech-debt.md`).
+   failed (no pool data), and neither tab shows the button; pool catches count as open water. Spec 011 keeps it so:
+   no catch is split by water, and the button stays hidden.
 10. [ ] **The ways in** (FR-024, FR-025): on "What can be caught here" click a known item: the catalog on that item.
     `/okf catalog trout` fills the search; `/okf catalog` with a shift-clicked item link opens that item. Right after
     a login, while the catalog still says "Counting the catch...", click a known item on "What can be caught here":
