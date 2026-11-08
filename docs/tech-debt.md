@@ -15,6 +15,14 @@ show. The facts behind them: `docs/forever-api.md` "Verified in game" (2026-11-0
 specs 002 to 006. Batches 3 and 4 were fixed by spec 009 and batch 1 by spec 010 on `002-shared-db` (release
 1.2.0).
 
+The batches are in the order to take them: the top one first.
+
+### Batch 6: an error in a fight (now; 1.2.0 or a 1.1.x patch)
+
+Players of the released 1.1.0 see a Lua error in instance fights; a small fix in one file.
+
+- "The next-rank advice reads a secret NPC name in a fight" (medium)
+
 ### Batch 2: where a catch is recorded (1.2.0, branch `002-shared-db`, before the first real harvest)
 
 What the spike showed about places; every catch recorded before the fix keeps the wrong place, so it goes in before
@@ -26,49 +34,24 @@ What the spike showed about places; every catch recorded before the fix keeps th
 
 Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
 
-### Batch 5: small items (any time, with any of the above)
+### Batch 7: the minimap tooltip (any time; reproduce in game first)
 
-- "The next-rank advice reads a secret NPC name in a fight" (medium; a Lua error in instance fights)
+Cosmetic, no wrong data; the fix waits for a way to make it happen on purpose.
+
+- "The minimap tooltip loses its colours" (low)
+
+### Batch 5: gear choices (when a player meets them)
+
+Seen only in the code; each waits for a case in game.
+
 - "A fishing pole above the Fishing skill may be chosen" (low)
 - "A lure the game refused stays skipped after a skill-up" (low; waits for V43 / V44)
-- "The private-table check reads only the plain form" (low; tooling)
+
+### Batch 8: tooling (when a file needs an alias)
+
+- "The private-table check reads only the plain form" (low)
 
 ## Open items
-
-### Catches in a cave go to the continent map (medium)
-
-- **Found**: in game, 2026-11-06 (V2, spike): in the cave before Wailing Caverns `C_Map.GetBestMapForUnit` gives
-  Kalimdor 1414 (type 2, Continent), not The Barrens or a cave map.
-- **Cause**: Forever has no map for the cave, and the best map falls back to the continent.
-- **Where**: `CatchDB/CatchDB.lua` (the place key of a cast), the catalog and "What can be caught here" (a zone named
-  "Kalimdor", a 100x100 cell grid over the whole continent).
-- **Direction**: when the best map is of type Continent (or above), convert the position through
-  `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapInfoAtPosition` / `GetMapPosFromWorldPos` to the zone map under it,
-  checked in game first; or leave such casts out. Test: a continent map is never a place key.
-
-### Pool catches are written as open water (medium)
-
-- **Found**: in game, 2026-11-06 (V3, spike at Ratchet): a catch from an Oily Blackmouth School, the bobber in the
-  pool, has the bobber (object 35591) as its loot source, like an open-water catch.
-- **Cause**: `ns.IsPoolLoot` (`Catch/Catch.lua`) returns false (open water) when the source is the bobber; the
-  assumed difference (the pool's own object ID) does not exist in Forever.
-- **Where**: `Catch/Catch.lua` `ns.IsPoolLoot`, the pool counters of the catch database, the "Water" filter of
-  "What can be caught here" and the catalog (catch-catalog step 9), the debug line "last catch from a pool".
-- **Direction**: the fallback of V3: `ns.IsPoolLoot` returns nil always (no pool counters), the "Water" button stays
-  hidden; drop the pool split from the record format later. Test: a bobber source gives nil.
-
-### The subzone of a cast is often not found (medium)
-
-- **Found**: in game, 2026-11-06, `/okf spike` (V34): at Stonebull Lake (Mulgore, map 1412) `GetSubZoneText()` is
-  "Stonebull Lake", but `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` at the player's position returns
-  nothing at one spot and area 222 "Bloodhoof Village" a few steps away; in Thunder Bluff nothing. At Ratchet it
-  works (area 392 "Ratchet", kept).
-- **Cause**: the call returns the map's explored overlay regions (a region can be named after a nearby village),
-  not the subzone the game shows, so the name never matches `GetSubZoneText()`.
-- **Where**: `CatchDB/CatchDB.lua` (the area of a cast), the catalog's spot names ("Subzone (45, 72)").
-- **Direction**: spots keep their coordinates (the fallback of FR-015, works today). Find an ID-based source of
-  the area at a position (`C_Map.GetMapInfoAtPosition`, the area IDs of the map's explored overlays,
-  `C_MapExplorationInfo.GetExploredMapTextures`), checked in game before any change.
 
 ### The next-rank advice reads a secret NPC name in a fight (medium)
 
@@ -89,6 +72,60 @@ Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
   `Check` can skip the advice in a fight (`InCombatLockdown()`): a notice is not needed there, and
   `PLAYER_REGEN_ENABLED` or the next skill event says it after the fight. Test: a secret `leftText` in the stub
   (`secret_values`) gives the table's name and no error; a skill event in a fight reads no tooltip.
+
+### Pool catches are written as open water (medium)
+
+- **Found**: in game, 2026-11-06 (V3, spike at Ratchet): a catch from an Oily Blackmouth School, the bobber in the
+  pool, has the bobber (object 35591) as its loot source, like an open-water catch.
+- **Cause**: `ns.IsPoolLoot` (`Catch/Catch.lua`) returns false (open water) when the source is the bobber; the
+  assumed difference (the pool's own object ID) does not exist in Forever.
+- **Where**: `Catch/Catch.lua` `ns.IsPoolLoot`, the pool counters of the catch database, the "Water" filter of
+  "What can be caught here" and the catalog (catch-catalog step 9), the debug line "last catch from a pool".
+- **Direction**: the fallback of V3: `ns.IsPoolLoot` returns nil always (no pool counters), the "Water" button stays
+  hidden; drop the pool split from the record format later. Test: a bobber source gives nil.
+
+### Catches in a cave go to the continent map (medium)
+
+- **Found**: in game, 2026-11-06 (V2, spike): in the cave before Wailing Caverns `C_Map.GetBestMapForUnit` gives
+  Kalimdor 1414 (type 2, Continent), not The Barrens or a cave map.
+- **Cause**: Forever has no map for the cave, and the best map falls back to the continent.
+- **Where**: `CatchDB/CatchDB.lua` (the place key of a cast), the catalog and "What can be caught here" (a zone named
+  "Kalimdor", a 100x100 cell grid over the whole continent).
+- **Direction**: when the best map is of type Continent (or above), convert the position through
+  `C_Map.GetWorldPosFromMapPos` and `C_Map.GetMapInfoAtPosition` / `GetMapPosFromWorldPos` to the zone map under it,
+  checked in game first; or leave such casts out. Test: a continent map is never a place key.
+
+### The subzone of a cast is often not found (medium)
+
+- **Found**: in game, 2026-11-06, `/okf spike` (V34): at Stonebull Lake (Mulgore, map 1412) `GetSubZoneText()` is
+  "Stonebull Lake", but `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` at the player's position returns
+  nothing at one spot and area 222 "Bloodhoof Village" a few steps away; in Thunder Bluff nothing. At Ratchet it
+  works (area 392 "Ratchet", kept).
+- **Cause**: the call returns the map's explored overlay regions (a region can be named after a nearby village),
+  not the subzone the game shows, so the name never matches `GetSubZoneText()`.
+- **Where**: `CatchDB/CatchDB.lua` (the area of a cast), the catalog's spot names ("Subzone (45, 72)").
+- **Direction**: spots keep their coordinates (the fallback of FR-015, works today). Find an ID-based source of
+  the area at a position (`C_Map.GetMapInfoAtPosition`, the area IDs of the map's explored overlays,
+  `C_MapExplorationInfo.GetExploredMapTextures`), checked in game before any change.
+
+### The minimap tooltip loses its colours (low)
+
+- **Found**: in game, 2026-11-08, English client, the addon in Ukrainian, fishing mode on, the statistics window
+  open: on one hover every line of the minimap button's tooltip was white. The gold next-rank line and key labels,
+  the grey help lines and the green click lines all lost their colour. Only colour codes inside the text survived
+  (the green "ON", the grey version). On a later hover the colours were right again. This came back: spec 007
+  research R9 (2026-11-05) saw the same white tooltip on every second hover, then only with the addon in Korean or
+  Chinese, and left it for an issue from players.
+- **Cause**: not known. `UI/Minimap.lua` `ShowTooltip` passes the colour on every `AddLine` / `AddDoubleLine`, so
+  something resets the line colours of the shared `GameTooltip` after the lines are added or before they are drawn.
+  Candidates: a tooltip-data refresh of the game (`TooltipDataProcessor`) left from an item tooltip shown just
+  before (the statistics window's item rows, the item hooks); the font's colour once a line wraps
+  (`ns.TallGlyphs()` was on in R9).
+- **Where**: `UI/Minimap.lua` `ShowTooltip`, the shared `GameTooltip`.
+- **Direction**: reproduce first: the hover order (an item row of the statistics window, then the minimap button),
+  the language, and whether `GameTooltip:GetTooltipData()` is still set when the lines are added. Then clear the
+  tooltip's data before the lines (`GameTooltip:ClearLines()` after `SetOwner`), or colour the text with colour
+  codes as the "ON" state does. Cosmetic: no wrong data.
 
 ### A fishing pole above the Fishing skill may be chosen (low)
 
