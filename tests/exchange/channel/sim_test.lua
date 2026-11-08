@@ -20,6 +20,8 @@
 -- a lock a move 10-20 s later with a HELLO 5-30 s after it. Comm's budget rule is modelled too: a message other than
 -- BYE does not go out when the last hour's bytes and 255 more would pass the budget.
 
+channel_on = true
+
 load_addon()
 math.randomseed(2026)
 

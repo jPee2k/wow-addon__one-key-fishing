@@ -1,5 +1,7 @@
 -- UI/Settings.lua: the "Shared database" page, and the popup's Settings button that opens it.
 
+channel_on = true
+
 reset_popup()
 load_addon()
 

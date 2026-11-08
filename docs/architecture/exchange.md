@@ -26,7 +26,8 @@ within the buffer limits, parts nobody asked for dropped, a flooding sender repo
 
 - Prefix `OKF1` (the digit is the protocol version). `C_ChatInfo.SendAddonMessage` to `GUILD`, `PARTY`/`RAID`
   (home group) and `WHISPER`; `C_BattleNet.SendGameData` to Battle.net friends playing Forever. Addresses
-  `w:<name>` and `b:<gameAccountID>`.
+  `w:<name>` and `b:<gameAccountID>`. A name is kept as the game gives it ("First Last" on Forever, a realm only when
+  the game adds one): a character friend is `"w:" .. info.name`, the address the friend's own messages come from.
 - Messages over 255 bytes go in parts `<type><sid>#<msg>.<part>.<total> <chunk>` (joined in any order, 64 KB per
   sender, dropped 15 s after the last part).
 - One queue: broadcasts 2 s apart, whispers 0.5 s, 50 KB per hour (`Comm.BUDGET`; `CanSend` counts the queued
@@ -47,14 +48,16 @@ within the buffer limits, parts nobody asked for dropped, a flooding sender repo
   (`InChatMessagingLockdown`; not `AreOutgoingAddonChatMessagesRestricted`, which is about chat messages by addons
   and true on a normal realm), the lockdown back-off. While paused nothing is sent or received.
 - A `CHAT_MSG_SYSTEM` filter (`ChatFrameUtil.AddMessageEventFilter`) hides "No player named" for names whispered
-  in the last 10 s.
+  in the last 10 s. On Forever a whisper to an offline player returns 0, so that hidden line is the offline signal:
+  it ends the session to that address and drops what is queued to it (the offline handlers), once per line.
 - Names live only in the queue, the part buffers and that list.
 - The channel path: `Comm.ChannelBroadcast` queues a `HELLO` with chat type `CHANNEL` only while
   Channel.lua is in its channel, at the broadcast pace; the channel's number is read when the message goes out. A
   `CHANNEL` message counts only from one of `Channel.NAMES` (the `name` argument, else `target`), as
   `via = "channel"`. Two refusals in a row (`InvalidChannel`, `GeneralError`, any result but a success, a
-  throttle or a lockdown) call `Channel.OnRefused()` (the next channel); the channel path never counts toward
-  "every path left out", since it carries `HELLO` only.
+  throttle or a lockdown) call `Channel.OnRefused()` (the next channel), through `Comm.ChannelRefused()`, which the
+  server's `NOT_ALLOWED_IN_CHANNEL` notice calls too; the channel path never counts toward "every path left out",
+  since it carries `HELLO` only.
 - Parts: never from the channel, and only from an address the part filter takes (`Comm.SetPartFilter`: Share's
   session peer); at most 128 KB of parts over all senders (the buffer that got its last part longest ago goes first).
   More refused parts from one sender in 10 minutes than an honest client's whole hourly budget carries (402) call
@@ -63,7 +66,10 @@ within the buffer limits, parts nobody asked for dropped, a flooding sender repo
 
 ## Exchange/Channel.lua
 
-The hidden public channel; it knows nothing about records.
+The hidden public channel; it knows nothing about records. **Off since spec 010** (`Channel.AVAILABLE = false`): the
+server refuses addon messages in a custom chat channel (V19). The code stays behind the switch; while it is off, a
+channel of ours an earlier build left joined is left once at `PLAYER_ENTERING_WORLD`, out of the chat windows and
+with no chat line. Its tests switch it on with the stub flag `channel_on`.
 
 - Names: `OneKeyFishingShare`, then `OneKeyFishingShare2`..`6`, walked in this order by every client. The switch
   `Channel.AVAILABLE` takes the channel out of a release whose spike failed (V19).
@@ -103,11 +109,13 @@ The hidden public channel; it knows nothing about records.
   and the store, so a protocol node's cached summary (versioned per store) and CatchDB (only the game's store) know
   whose data changed.
 - A record needs a proof (`CatchDB.CheckRecord`), and a newer version of a held unit must continue its chain
-  (`CatchDB.CheckVersion`, walked in steps of 32 links by the merge, or at once with `verified` unset). A record of
+  (`CatchDB.CheckVersion`, walked by the merge in chunks of `PROOF_CHUNK` (4) links until `PROOF_BUDGET_MS` (4 ms)
+  of the frame step are spent, at least one chunk and exactly one without a clock; or at once with `verified`
+  unset). A record of
   an ID in the seed's `blocked` is refused without blame, deleted at login, not wanted and not offered; the own
   blocked record still counts locally. Eviction goes by class (half the places saturated in the seed, stale over 60
   days, the rest, mostly rare places), then by `seen`. The seed's chain proofs of units it holds in part are checked
-  in the background after login.
+  in the background after login, with the same chunks and budget (`Store.CheckSeedStep`).
 
 ## Exchange/ShareNode.lua and ShareProtocol.lua: the protocol
 

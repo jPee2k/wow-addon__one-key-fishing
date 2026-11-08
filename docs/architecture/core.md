@@ -70,7 +70,8 @@ frame.
   `ns.Fire` no longer sees a listener's error. Nothing else is wrapped. `ns.GetErrors()` returns the log: at most 30
   entries ordered by last occurrence, a repeat of the same context and message counted into its entry. Before
   `ADDON_LOADED` the log lives in memory; the load drops saved entries of another addon version and adds the ones in
-  memory (specs/006-error-log).
+  memory (specs/006-error-log). `ns.ForgetErrors(match)` removes the entries `match` accepts and returns how many
+  (the spike drops its old test entries with it).
 - Helpers: `ns.ShowPopup` (two-button popups; the default buttons are the addon's `L["Yes"]` / `L["No"]`, never
   the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix). `ns.ReportSection` (a titled block of
   the debug report) is in `Core/Debug.lua`, used only by the spike. The frame helpers (`ns.CreateButton`,
@@ -146,8 +147,9 @@ Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-d
   `ns.GameObjectID(guid)` (the object ID of a game object GUID; Forever scrambles the spawn part) and
   `ns.IsBobberTargeted()` (the soft interact target is `GameData.Bobber`).
 - Bags: `ns.ForEachBagItem`, the shared bag iterator.
-- Names: `ns.WithRealm(name)` and `ns.SameCharacter(a, b)` (character names with their realm, as the exchange
-  addresses them); `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as whole percent); `ns.ItemIDFromLink(text)`
+- Names: `ns.PlayerName()` (the own name, `GetUnitName("player", true)`: "First Last" on Forever) and
+  `ns.SameCharacter(a, b)` (the same character with or without the own realm suffix; another realm is somebody else);
+  names are kept as the game gives them; `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as whole percent); `ns.ItemIDFromLink(text)`
   (the item ID in an item link).
 - Text: `ns.FoldCase(text)` (lower case for ASCII, Latin-1 Supplement and Cyrillic by UTF-8 byte patterns, the same
   in 5.1 and 5.3), `ns.SearchKey(text)` (folds after the game's `CaseAccentInsensitiveParse` when present) and

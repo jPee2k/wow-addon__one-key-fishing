@@ -57,61 +57,64 @@ possible a character of the other faction or on another layer for step C6.
 
 ## Part 3: chat channel (V19-V27), section "Chat channel"
 
-The section joins a test channel with a random name (`OKFSpikeNNNN`), never the real one. Run it in the open
-world, out of combat.
+Spec 010 removed this section from the spike: the channel is off (V19 failed). The hash and timing of C8 are the
+section "Proof steps (V26)" now.
 
 - [x] **C1. Slots** (V23): `MaxChatChannels` (expected `20`), `GetNumActiveChannels()`, and the "too many channels"
   text as the addon looks for it. Report: 2026-11-06: 20, 5 active, "You can only be in 20 channels at a time."
-- [ ] **C2. Joining and hiding** (V19, V21, V41): what `JoinTemporaryChannel` returned, the notice tokens and their
+- [x] **C2. Joining and hiding** (V19, V21, V41): what `JoinTemporaryChannel` returned, the notice tokens and their
   events, the channel number; a chat window listed the channel before the removal and none after it. Then a macro
   with `/leave OKFSpikeNNNN` and `/join OKFSpikeNNNN` (the name the report prints), and one with `/join`, `/leave`
-  and `/join` of it: the notices in their order (one `YOU_LEFT` per leave, before the next `YOU_JOINED`?). Report: 2026-11-06: `JoinTemporaryChannel` returns `0, empty`; the join notice is `YOU_CHANGED` only; no chat window listed the test channel; the macros: only the first `/join` or `/leave` of a channel in a macro takes effect (one notice), the rest is lost. Still open: B's view.
+  and `/join` of it: the notices in their order (one `YOU_LEFT` per leave, before the next `YOU_JOINED`?). Report: 2026-11-06: `JoinTemporaryChannel` returns `0, empty`; the join notice is `YOU_CHANGED` only; no chat window listed the test channel; the macros: only the first `/join` or `/leave` of a channel in a macro takes effect (one notice), the rest is lost. Closed: not shipped (V19, spec 010).
 - [x] **C3. Sending** (V19, V25): the result of the `OKFSPIKE` message to the channel (expected `0`) and, for its
   echo, the chat type (expected `CHANNEL`) and the shapes of `target` and `name`. Report: 2026-11-06: `0`, but no echo; the server answers `NOT_ALLOWED_IN_CHANNEL` (also by `/run` to `OneKeyFishingShare`): V19 failed, `docs/tech-debt.md`.
 - [x] **C4. Ownership** (V24): whether the player owns the new channel; the notices after setting and clearing a
   password on it. Report: 2026-11-06: the joining player owns it (`IsDisplayChannelOwner` true, `CHANNEL_OWNER` with the player's name); setting and clearing a password each bring `PASSWORD_CHANGED` with the player's name, actor empty.
 - [x] **C5. Numbers** (V22): the channel numbers before the join and after the leave are the same: yes / no.
   Report: 2026-11-06: yes (`channel numbers back as before the last join: true`).
-- [ ] **C6. Reach** (V20): B (and, if possible, a character of the other faction, and one on another layer) joins
-  the test channel name the report prints and runs `/okf spike` too; note which echoes arrive. Report: ____
-- [ ] **C7. Lock** (V24, V21): B sets a password on the test channel (`/password OKFSpikeNNNN x`); note the notices
-  A gets. A leaves and joins it again: the password prompt came and was closed (note any flash). Report: ____
+- [x] **C6. Reach** (V20): B (and, if possible, a character of the other faction, and one on another layer) joins
+  the test channel name the report prints and runs `/okf spike` too; note which echoes arrive. Closed: not shipped
+  (V19, spec 010).
+- [x] **C7. Lock** (V24, V21): B sets a password on the test channel (`/password OKFSpikeNNNN x`); note the notices
+  A gets. A leaves and joins it again: the password prompt came and was closed (note any flash). Closed: not shipped
+  (V19, spec 010).
 - [x] **C8. The hash** (V26): `bit` exists, the raw results of `bnot(0)` and `band(-1, 4294967295)`,
   `ns.SHA256("abc")` equals the known digest, and the time of 64 proof steps (expected under 5 ms). Report: 2026-11-06: `bit` true, both 4294967295, the digest known; 64 steps 17-20 ms over seven runs (over 5 ms: `docs/tech-debt.md`).
 - [x] **C9. Unknown items** (V27): how many item IDs of the bundled data the game does not know or says do not
   exist, and the result of asking the game to load one of them. Report: 2026-11-06 (synthetic seed, items 6000-6899): 36 unknown to `GetItemInfoInstant`, 0 not existing by `DoesItemExistByID`; the load request gives `ITEM_DATA_LOAD_RESULT` false.
 
-**If C2, C3 and C6 show that addon messages in a custom channel do not work (V19 fails)**: set
-`Channel.AVAILABLE = false` in `OneKeyFishing/Exchange/Channel.lua`; the release ships without the channel, V20-V25 are
-closed as "not shipped" in `specs/004-public-channel-sync/verification.md`, and the feature checklist of the public
-channel keeps only its protection steps.
+**The channel decision**: addon messages in a custom channel do not work (V19 failed), so the channel is off
+(`Channel.AVAILABLE = false`, spec 010); V20-V25 and V41 are closed as "not shipped" in
+`specs/004-public-channel-sync/verification.md`.
 
 ## Part 4: map pins and areas (V30-V37), section "Map pins and areas"
 
+Spec 010 kept P2 and P4 as the sections "Areas (V34)" and "Folding (V36)"; P1, P3 and P5 are closed and removed.
 Run the section at three waters: an open zone, a named subzone (a lake with its own name) and a city; once more
 inside a cave (a map of type 5, Micro) and, if reachable, in an instance. Run it twice at the first place: the
 items part shows the names before and after the game was asked for them.
 
 - [x] **P1. Pins** (V30, V31, V33): `CanSetUserWaypointOnMap` for the map and its parent, the map type, the game
   rule `WorldMapTrackingPinDisabled`, the CVar `showInGameNavigation` and the current waypoint, at each place.
-  Expected: true on zone maps, false in the instance; the cave converts to a point on its zone map. Report: 2026-11-06: true on Mulgore 1412, The Barrens 1413, Thunder Bluff 1456 and their parent Kalimdor 1414; the cave reports Kalimdor itself (no Micro map, V33 not met); the instance has no map; the rule not active; `showInGameNavigation` 0; no waypoint.
+  Expected: true on zone maps, false in the instance; the cave converts to a point on its zone map. Report: 2026-11-06: true on Mulgore 1412, The Barrens 1413, Thunder Bluff 1456 and their parent Kalimdor 1414; the cave reports Kalimdor itself (no Micro map, V33 not met); the instance has no map; the rule not active; `showInGameNavigation` 0; no waypoint. Closed; removed from the spike (spec 010).
 - [x] **P2. Areas** (V34): at each water the area IDs at the position with their names, `GetSubZoneText()` and the
   area the addon keeps. Expected: one area's name equals the subzone text. Report: 2026-11-06: Ratchet: area 392 = "Ratchet", kept; Stonebull Lake: none, or 222 "Bloodhoof Village"; Thunder Bluff and the cave: none (V34 partly failed, `docs/tech-debt.md`).
 - [x] **P3. Item names** (V35): the load state of three catalog items before and after the game was asked for them.
-  Expected: known after the request, or "unknown" for an item Forever hides. Report: 2026-11-06 (synthetic seed): items 6000, 6004, 6008 stay without a name after the request (the client cannot load them).
+  Expected: known after the request, or "unknown" for an item Forever hides. Report: 2026-11-06 (synthetic seed): items 6000, 6004, 6008 stay without a name after the request (the client cannot load them). Closed; removed from the spike (spec 010).
 - [x] **P4. Folding and order** (V36): `CaseAccentInsensitiveParse` of the sample and the `strcmputf8i` order on
   this client's language. Report: 2026-11-06, enUS: case folded (Latin and Cyrillic), accents kept; `strcmputf8i(b, A)` 1. Open: a deDE / frFR client.
 - [x] **P5. Templates** (V37): the scroll and search templates and the pin atlas exist: `true` for each.
-  Report: 2026-11-06: every template created, the atlas true.
+  Report: 2026-11-06: every template created, the atlas true. Closed; removed from the spike (spec 010).
 
 ## Part 5: error log (V42), section "Error log (V42)"
 
-Each run of the report causes one deliberate error, recorded like any other.
+Closed and removed from the spike by spec 010: the report causes no error any more, and its saved test entries are
+dropped from the error log at login.
 
 - [x] **E1. Error path** (V42): `/console scriptErrors 1`, then `/okf spike`. Expected: one popup (or one BugSack entry)
   with "OneKeyFishing spike test error" and a stack whose first Lua line is in `Spike.lua`; the section shows
   `ns.Safe returned false; entry spike, count <runs>` and that `Spike.lua` line; `/okf debug` lists the error under
-  "Errors" with the same count. Then `/console scriptErrors 0`. Report: 2026-11-06: one popup per run, first Lua line `Spike.lua:576`; `count 2` after two runs, `/okf debug` lists `2x spike`.
+  "Errors" with the same count. Then `/console scriptErrors 0`. Report: 2026-11-06: one popup per run, first Lua line `Spike.lua:576`; `count 2` after two runs, `/okf debug` lists `2x spike`. Closed; removed from the spike (spec 010).
 
 ## Report back
 
@@ -120,7 +123,7 @@ Each run of the report causes one deliberate error, recorded like any other.
   test; the `VERIFY` markers of the closed ids are removed and the ids ticked in the five `verification.md` files
   (002 to 006).
 - Then the feature checklists: [catch-database.md](catch-database.md), [catch-exchange.md](catch-exchange.md),
-  [public-channel.md](public-channel.md), [catch-catalog.md](catch-catalog.md).
+  [catch-catalog.md](catch-catalog.md) ([public-channel.md](public-channel.md) only if the channel is switched on).
 - Once every section has run, the spike code goes: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in
   `OneKeyFishing/Core/Commands.lua`, `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and
   its row in `CLAUDE.md` ([release-plan.md](../release-plan.md)).

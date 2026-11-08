@@ -132,6 +132,7 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] =
         "Valores: precio de vendedor (escanea la casa de subastas para obtener precios de mercado)"
     L["%d catches, %s"] = "%d capturas, %s"
+    L["1 catch, %s"] = "1 captura, %s"
     L["No catches yet."] = "Aún no hay capturas."
     L["Time"] = "Tiempo"
     L["Results"] = "Resultados"
@@ -160,6 +161,7 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["All"] = "Todo"
     L["Only mine"] = "Solo las mías"
     L["%d catches"] = "%d capturas"
+    L["1 catch"] = "1 captura"
     L["Nothing caught: %s"] = "Nada capturado: %s"
     L["Numbers for the whole map: few catches at this spot."] = "Datos de todo el mapa: pocas capturas en este punto."
     L["Little data"] = "Pocos datos"
@@ -269,6 +271,7 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Fishing mode: %s"] = "Modo pesca: %s"
     L["Fishing skill: %d/%d %s"] = "Habilidad de Pesca: %d/%d %s"
     L["Session: %d catches, %s"] = "Sesión: %d capturas, %s"
+    L["Session: 1 catch, %s"] = "Sesión: 1 captura, %s"
     L["Fishing key:"] = "Tecla de pesca:"
     L["Toggle mode key:"] = "Tecla de modo:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =

@@ -3,6 +3,8 @@
 -- "ns.Comm additions"). Channel.lua's state is stubbed, so only Comm is under test. The exchange itself (Share.lua) is
 -- not started. The tests run in order and share one login.
 
+channel_on = true
+
 in_guild = true
 load_addon()
 

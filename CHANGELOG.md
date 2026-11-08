@@ -22,14 +22,9 @@ All notable changes to OneKeyFishing are listed here. The format follows
   ID is yours); it pauses in combat, in instances and on loading screens, stays within 50 KB per hour and never
   shows anything in chat. "What can be caught here" counts it under "All" and says how many players the numbers
   come from ("60 catches from 3 players"), with a quiet status line at the bottom.
-- The public channel: the shared catch database also reaches every other addon user through a hidden chat channel,
-  `OneKeyFishingShare`. It is listed in the Chat Channels window but shows in no chat window, leaves General, Trade
-  and your own channels on their numbers, keeps a chat channel slot free for you (and gives its own up with one chat
-  line when you hit the limit), and moves to a fallback channel when somebody locks it.
 - "Shared database" settings page: "Use the shared catch database" turns the exchange off (nothing sent or received;
-  data received earlier is kept but not counted); "Use the public channel" under it turns only the channel off; a
-  short text on what is shared and the state. A popup at the first login says what is shared and where to turn it
-  off (once more after the update that brings the public channel).
+  data received earlier is kept but not counted), with a short text on what is shared and the state. A popup at the
+  first login says what is shared and where to turn it off.
 - Protections for data from strangers: where five or more players reported a spot, none counts for more than a fifth
   of it; an item that is neither in the bundled data nor in your own catches shows once three players reported it on
   the map; each player's data carries a proof that only its owner can extend, so nobody can make up a newer version
@@ -73,6 +68,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - An attack in fishing mode (with "Leave fishing mode when attacked" on) now says that the mode ends after the
   fight.
 - The manual no longer promises a navigation arrow on screen for the next-rank pin.
+- One catch reads "1 catch" instead of "1 catches" in the zone list of the statistics window and the session line
+  of the minimap tooltip.
 
 ## [1.1.0] - 2026-11-05
 

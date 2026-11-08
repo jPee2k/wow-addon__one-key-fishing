@@ -4,6 +4,8 @@
 -- addon's own game node does not start (the notice is never closed). The game node's channel rounds and
 -- Share.HeardInChannel are in channel_game_test.lua.
 
+channel_on = true
+
 load_addon()
 math.randomseed(11)
 

@@ -2,6 +2,8 @@
 -- bans"): the password prompt, WRONG_PASSWORD, BANNED, WRONG_FACTION, a join that never lands, and all six locked.
 -- The tests run in order and share one login.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 local NAMES = { "OneKeyFishingShare", "OneKeyFishingShare2", "OneKeyFishingShare3", "OneKeyFishingShare4",
     "OneKeyFishingShare5", "OneKeyFishingShare6" }

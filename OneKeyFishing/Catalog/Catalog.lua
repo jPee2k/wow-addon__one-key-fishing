@@ -401,10 +401,13 @@ end
 
 local TOOLTIP_PLACES = 3 -- zones in an item tooltip, items in the minimap tooltip
 
--- "N catches from K players" from 2 players on (part 3, FR-025), else "N catches".
+-- "N catches from K players" from 2 players on (part 3, FR-025), else "N catches" ("1 catch" for one).
 function Catalog.CatchesText(catches, players)
     if players >= 2 then
         return (L["%d catches from %d players"]):format(catches, players)
+    end
+    if catches == 1 then
+        return L["1 catch"]
     end
     return (L["%d catches"]):format(catches)
 end

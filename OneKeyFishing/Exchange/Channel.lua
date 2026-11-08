@@ -9,8 +9,9 @@ local L = ns.L
 local Channel = {}
 ns.Channel = Channel
 
--- VERIFY(V19): addon messages in a custom channel work in Forever; false takes the channel out of the release (FR-026)
-Channel.AVAILABLE = true
+-- V19 failed in game (2026-11-06): the server refuses addon messages in a custom channel (NOT_ALLOWED_IN_CHANNEL);
+-- the code stays, switched off (spec 010). False takes the channel out of the release (spec 004 FR-026).
+Channel.AVAILABLE = false
 
 -- The main channel and its fallbacks, walked in this order by every client (contracts/channel.md "Names").
 Channel.NAMES = { "OneKeyFishingShare", "OneKeyFishingShare2", "OneKeyFishingShare3", "OneKeyFishingShare4",
@@ -155,12 +156,14 @@ end
 ---------------------------------------------------------------------------
 -- A chat window shows the lines and notices of the channels in its own list only, so the channel is taken out of
 -- every list that has it (also after the game reloads the lists).
--- VERIFY(V21): removing the channel from the chat windows hides it there; the filters drop its notices and lines
-local function RemoveFromWindows()
-    if not current then
+-- Removing the channel from the chat windows hides it there; the filters drop its notices and lines (not shipped, V19).
+-- index: one of the names (default: the current one).
+local function RemoveFromWindows(index)
+    index = index or current
+    if not index then
         return
     end
-    local name = Channel.NAMES[current]
+    local name = Channel.NAMES[index]
     for i = 1, NUM_CHAT_WINDOWS or 10 do
         local window = _G["ChatFrame" .. i]
         if window and window.ContainsChannel and window:ContainsChannel(name) then
@@ -194,8 +197,8 @@ local function OnJoined()
 end
 
 -- Every leave of one of our names goes through here, so its YOU_LEFT is known for the addon's own.
--- VERIFY(V41): the server answers each leave of a channel with one YOU_LEFT of that name, before it answers a later
--- join of the same name
+-- The server answers each leave of a channel with one YOU_LEFT of that name, before it answers a later join of the
+-- same name (not shipped, V19).
 local function LeaveName(index)
     echoes[index] = echoes[index] or {}
     table.insert(echoes[index], GetTime())
@@ -233,8 +236,8 @@ end
 local function Join(index)
     current, joining, joins = index, true, joins + 1
     local join = joins
-    -- VERIFY(V19): an addon can join a custom channel this way, without a key press; a nil first value means the game
-    -- refuses the channel itself
+    -- An addon can join a custom channel this way, without a key press; a nil first value means the game refuses the
+    -- channel itself (not shipped, V19).
     local ok, kind = pcall(JoinTemporaryChannel, Channel.NAMES[index])
     if not ok or kind == nil then
         joining, refused = false, true
@@ -313,7 +316,7 @@ end
 -- Notices: joins, leaves, locks, kicks, bans, owners (research R4)
 ---------------------------------------------------------------------------
 local function IsMe(name)
-    local me = UnitName("player")
+    local me = ns.PlayerName()
     return type(name) == "string" and name ~= "" and type(me) == "string" and ns.SameCharacter(name, me)
 end
 
@@ -372,7 +375,7 @@ local function Kicked()
     C_Timer.After(KICK_REJOIN, Update)
 end
 
--- VERIFY(V24): the tokens and arguments of the channel notices are as on Retail (research R4)
+-- The tokens and arguments of the channel notices are as on Retail (research R4; not shipped, V19).
 local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
     local index = IndexOf(name)
     if not index or (issecretvalue and issecretvalue(token)) then
@@ -383,7 +386,8 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
         if index == current and (joining or joined) then
             OnJoined()
         elseif index ~= current and not Owed(index) then
-            LeaveName(index) -- another of ours (an old session's): one is enough
+            LeaveName(index) -- another of ours (an old session's, or one the game rejoined with the channel off)
+            RemoveFromWindows(index)
         end
     elseif token == "YOU_LEFT" then
         local owed, own = echoes[index] or {}, false
@@ -404,6 +408,11 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
         end
     elseif index ~= current then
         return
+    elseif token == "NOT_ALLOWED_IN_CHANNEL" then
+        -- The server refuses addon messages in the channel (seen in game, V19), though the send returned 0.
+        if joined then
+            ns.Comm.ChannelRefused(true)
+        end
     elseif token == "WRONG_PASSWORD" or token == "BANNED" or token == "WRONG_FACTION" then
         Lock(index)
     elseif token == "TRIAL_RESTRICTED" or token == "INVALID_NAME" then
@@ -440,7 +449,7 @@ ns.RegisterEvent("CHAT_MSG_CHANNEL_NOTICE_USER", OnNotice)
 ns.RegisterEvent("CHANNEL_PASSWORD_REQUEST", function(_, channel)
     local index = IndexOf(channel)
     if index then
-        -- VERIFY(V21): hiding the prompt in the same frame leaves no visible flash
+        -- Hiding the prompt in the same frame leaves no visible flash (not shipped, V19).
         StaticPopup_Hide(POPUP)
         Lock(index)
     end
@@ -449,7 +458,8 @@ end)
 ---------------------------------------------------------------------------
 -- The player's channel limit (FR-005; research R3)
 ---------------------------------------------------------------------------
--- VERIFY(V23): the game reports the refused join of the player's own channel with this text, on one of the events
+-- The game reports the refused join of the player's own channel with this text, on one of the events (not shipped,
+-- V19).
 local limitText -- built once: every system line and UI error is compared with it
 
 local function OnLimit(text)
@@ -502,10 +512,21 @@ local function Restore(saved)
     return saved.lockWait == true, saved.sawPassword == true
 end
 
--- VERIFY(V22): joined this late, the channel leaves General, Trade and the player's channels on their numbers
+-- Joined this late, the channel leaves General, Trade and the player's channels on their numbers (not shipped, V19).
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadingUi)
     local saved = ns.charDB.channelSession
     ns.charDB.channelSession = nil -- read once; a real login starts afresh
+    if Gate() == "unavailable" then
+        -- The channel is off in this release: one an earlier build left joined is left, out of the windows, and its
+        -- notices are filtered (no chat line). The next login finds none.
+        for index in ipairs(Channel.NAMES) do
+            if NumberOf(index) then
+                LeaveName(index)
+                RemoveFromWindows(index)
+            end
+        end
+        return
+    end
     if isReloadingUi then
         local waitLock, password
         if type(saved) == "table" then

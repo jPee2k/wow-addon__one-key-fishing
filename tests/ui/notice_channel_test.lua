@@ -2,6 +2,8 @@
 -- the notice shown once more to a player who closed the part 2 notice in an earlier release (FR-022): the
 -- guild exchange keeps running meanwhile, and the channel waits for the notice. One login.
 
+channel_on = true
+
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"
 
 OneKeyFishingDB = { shareNotice = true } -- closed in 1.2.0 before the channel, shareNoticeChannel not set yet

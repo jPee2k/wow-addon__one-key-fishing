@@ -12,19 +12,8 @@ cleanup, no wrong behaviour.
 The open items grouped into fixes that can be taken in one go (one spec or one patch each, `/speckit-specify` with
 the batch as its description). Each batch says where it is built, what it closes and what the game still has to
 show. The facts behind them: `docs/forever-api.md` "Verified in game" (2026-11-06/07) and the `verification.md` of
-specs 002 to 006. Batches 3 and 4 were fixed by spec 009 on `002-shared-db` (release 1.2.0).
-
-### Batch 1: the exchange in Forever (1.2.0, branch `002-shared-db`, next spec 010)
-
-What the spike showed about the network; without it the exchange reaches nobody but the group and the guild.
-
-- "Whispers to friends go to an address that does not exist" (high; V11)
-- "Addon messages in the public channel are refused" (high; V19, closes V20-V25 as not shipped)
-- "A proof step costs about 0.3 ms in the game" (medium; V26)
-- "A whisper to an offline player is not told by its result" (low; V12)
-
-Then: spike N1 (guild), N3, C6 with a second player; the `catch-exchange` checklist. Markers to close with it: V11,
-V19-V25, V26, V41, V12 (`npm run check` lists them).
+specs 002 to 006. Batches 3 and 4 were fixed by spec 009 and batch 1 by spec 010 on `002-shared-db` (release
+1.2.0).
 
 ### Batch 2: where a catch is recorded (1.2.0, branch `002-shared-db`, before the first real harvest)
 
@@ -39,7 +28,7 @@ Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
 
 ### Batch 5: small items (any time, with any of the above)
 
-- "1 catches" (low; nine translations)
+- "The next-rank advice reads a secret NPC name in a fight" (medium; a Lua error in instance fights)
 - "A fishing pole above the Fishing skill may be chosen" (low)
 - "A lure the game refused stays skipped after a skill-up" (low; waits for V43 / V44)
 - "The private-table check reads only the plain form" (low; tooling)
@@ -68,65 +57,6 @@ Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
 - **Direction**: the fallback of V3: `ns.IsPoolLoot` returns nil always (no pool counters), the "Water" button stays
   hidden; drop the pool split from the record format later. Test: a bobber source gives nil.
 
-### Addon messages in the public channel are refused (high)
-
-- **Found**: in game, 2026-11-06 (V19, spike and `/run` tests, full account): a typed line in the channel shows, but
-  every `SendAddonMessage` to a custom channel (`OneKeyFishingShare` and a test channel) returns `0` and the server
-  answers `NOT_ALLOWED_IN_CHANNEL` ("That operation is not permitted in this channel."); no echo comes back.
-- **Cause**: Forever's server does not allow addon messages in custom chat channels (not known whether always, or
-  for some accounts or levels; `AreOutgoingAddonChatMessagesRestricted()` is `true`).
-- **Where**: `Exchange/Channel.lua` (the join, a chat slot taken), `Exchange/Comm.lua` (HELLOs to the channel count
-  as sent: `send results 0=...`, while the server refuses them), the "Public channel: in use" status, the manual.
-- **Direction**: the plan's own fallback: `Channel.AVAILABLE = false`, V20-V25 closed as "not shipped" in
-  `specs/004-public-channel-sync/verification.md`, the public-channel checklist keeps its protection steps
-  (`docs/checklists/spike.md`, part 3). Before that, C6 with a second player: whether B receives anything. Also
-  count a `NOT_ALLOWED_IN_CHANNEL` as a failed send, so a refused path is left out (V10 fallback).
-
-### Whispers to friends go to an address that does not exist (high)
-
-- **Found**: in game, 2026-11-06 (V11, `/run` tests on one realm): Forever names are "First Last" with a space and
-  the realm from `GetNormalizedRealmName()` is internal (`CAMWOWEU4Realm4PvP`). `UnitName("player")` returns
-  "First" and "Last" as two values, not the name and a realm. A whisper to "First Last" arrives,
-  with the sender "First Last" in `CHAT_MSG_ADDON`; a whisper to "First Last-Realm" returns `0` but prints "No
-  player named ..." and never arrives.
-- **Cause**: `ns.WithRealm` appends `-<GetNormalizedRealmName()>` to a name without a dash, assuming the Retail
-  "Name-Realm" form.
-- **Where**: `Exchange/Comm.lua` `Comm.ForEachFriend` (`"w:" .. ns.WithRealm(info.name)`): every HELLO to a
-  character friend goes nowhere, may print "No player named ..." (the filter hides it only within its window), and
-  the address differs from the one the friend's own messages come from ("w:First Last"), so one friend can count
-  as two peers. `ns.SameCharacter` (`Core/Data.lua`, used by `Exchange/Channel.lua` and `Exchange/ShareGame.lua`)
-  compares through the same form. `Exchange/Channel.lua` `IsMe` takes `UnitName("player")`, the first name alone, so
-  a channel notice about the player ("First Last") is not taken as the player's own (V24: an own password or owner
-  change looks like a stranger's). The spike's "WHISPER to self" (`Core/Spike.lua`) sends to the first name alone.
-  Guild, group and channel peers are addressed by the sender as it came, which
-  works.
-- **Direction**: keep names as the game gives them; take the own name from `GetUnitName("player", true)` ("First
-  Last", one string), never from `UnitName` / `UnitFullName`; add a realm only when the game gave one (another
-  realm), and compare names without one. The character friends list was empty in the test (Forever's friends
-  window shows Battle.net friends), so the shape of `C_FriendList` names is still to be seen. Check a sender from another realm in game first (spike N1 with a second player).
-  Tests: a friend's address equals the address of the friend's own messages.
-
-### A whisper to an offline player is not told by its result (low)
-
-- **Found**: in game, 2026-11-06 (V12, spike N2): `SendAddonMessage` `WHISPER` to a name nobody plays returns `0`
-  (Success), not 12 (`TargetOffline`); the game prints "No player named '<name>' is currently playing." afterwards.
-- **Where**: `Exchange/Comm.lua` (the `TargetOffline` branch never runs; the offline handlers only see the
-  `CHAT_MSG_SYSTEM` line, which the filter hides).
-- **Direction**: take the "No player named" line the filter hides as the offline signal for that address (it
-  already knows the address), so a session to a peer that logged out ends at once; or rely on the session timeout
-  and drop the branch. Test: the hidden line ends the session to its address.
-
-### A proof step costs about 0.3 ms in the game (medium)
-
-- **Found**: in game, 2026-11-06, `/okf spike` (V26) three times: 64 proof steps took 19.8, 19.0 and 17.8 ms; the
-  verification assumed under 5 ms.
-- **Cause**: `ns.ProofStep` hashes with `ns.SHA256` in Lua over the `bit` library; the game's Lua is slower than
-  assumed.
-- **Where**: `Exchange/Share.lua` `PROOF_STEPS = 32` (links per frame step while a received record is checked), so
-  a frame step takes about 10 ms; the version chain marks and the chain checks in `CatchDB/Checks.lua`.
-- **Direction**: lower `PROOF_STEPS` to 8 (about 2.5 ms a step) or budget the steps by `debugprofilestop`; check
-  that a long chain is still checked in time (the chain is up to 4096 links). Test: the step count per frame step.
-
 ### The subzone of a cast is often not found (medium)
 
 - **Found**: in game, 2026-11-06, `/okf spike` (V34): at Stonebull Lake (Mulgore, map 1412) `GetSubZoneText()` is
@@ -139,6 +69,26 @@ Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
 - **Direction**: spots keep their coordinates (the fallback of FR-015, works today). Find an ID-based source of
   the area at a position (`C_Map.GetMapInfoAtPosition`, the area IDs of the map's explored overlays,
   `C_MapExplorationInfo.GetExploredMapTextures`), checked in game before any change.
+
+### The next-rank advice reads a secret NPC name in a fight (medium)
+
+- **Found**: in game, 2026-11-08, in a group in an instance, in a fight: a Lua error now and then (count 2)
+  "Fishing/Skill.lua:54: attempt to compare local 'text' (a secret string value, while execution tainted by
+  'OneKeyFishing')". Stack: the `CHAT_MSG_SKILL` handler, then `Check`, `Skill.GetNextRank`, `Where`, `NpcName`
+  (line 111), then `NonEmpty` (line 54).
+- **Cause**: `NpcName` reads the trainer's name from the first line of a creature tooltip
+  (`C_TooltipInfo.GetHyperlink`). In a fight in an instance the client gives `leftText` as a secret value:
+  `type` is `"string"`, but `text ~= ""` raises an error. The skill events of a fight (weapon and defense skill-ups
+  fire `CHAT_MSG_SKILL` and `SKILL_LINES_CHANGED`) reach `Skill.GetNextRank`. That happens on every event while the
+  "can learn" notice is not said yet: the skill is past `learnAt` but the character level is too low, so
+  `done.now` stays unset. The name is cached only when it was read, so every such event reads the tooltip again.
+- **Where**: `Fishing/Skill.lua` `NonEmpty`, `NpcName`, `Check`. The same `Skill.GetNextRank` runs for the minimap
+  tooltip and the statistics window.
+- **Direction**: `NonEmpty` returns nil for a secret value (`issecretvalue`, like the chat handlers of
+  `Exchange/`). The advice then falls back to the name table for that call and reads the tooltip again later. Also
+  `Check` can skip the advice in a fight (`InCombatLockdown()`): a notice is not needed there, and
+  `PLAYER_REGEN_ENABLED` or the next skill event says it after the fight. Test: a secret `leftText` in the stub
+  (`secret_values`) gives the table's name and no error; a skill event in a fight reads no tooltip.
 
 ### A fishing pole above the Fishing skill may be chosen (low)
 
@@ -167,14 +117,6 @@ Then: the `catch-catalog` steps 5 and 6. Markers: V3, V33, V34.
   It also cuts a line at `--` even inside a string, so a read after such a string is missed.
 - **Direction**: read the code with luaparse (already a dependency of the checks) and follow the locals bound to
   `ns.<Module>`, if a file ever needs an alias. Test: an aliased read from another folder is reported.
-
-### "1 catches" (low)
-
-- **Found**: in game, 2026-11-07, "What can be caught here" on a map with one catch: "1 catches".
-- **Cause**: one key `"%d catches"` for every count (`Catalog/Catalog.lua` `L["%d catches"]` and `"%d catches from
-  %d players"`, `UI/StatsFrame.lua` `"%d catches, %s"`).
-- **Direction**: a key for one (`"1 catch"`) beside the plural one, with its nine translations (the languages with
-  more plural forms keep their own word order); or a neutral form ("Catches: %d").
 
 ## History
 
@@ -218,3 +160,6 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
 - 2026-11-07, spec 009: batches 3 and 4 fixed with tests (the map pin no longer opens the map; no equip call in
   the combat lockdown; the attack line; the combat state handler compares the number the driver sends); R14 and
   V45 confirmed in game the same day.
+- 2026-11-07, spec 010: batch 1 and "1 catches" fixed with tests (names as the game gives them, the public channel
+  off, the proof step budget, the hidden "No player named" line as the offline signal, the singular texts; the
+  spike trimmed); V11 (friends list, other realm), V12 and V26 wait for the game.

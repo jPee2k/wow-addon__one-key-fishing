@@ -1,6 +1,8 @@
 -- Channel.lua: a /reload during the 10-20 s wait after a stranger's lock (specs/004-public-channel-sync,
 -- contracts/channel.md "Locks, kicks, bans"): the client is still in the locked channel, so the wait starts again.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 -- As the logout of the /reload saved it: a stranger's password seen, the wait running.
 OneKeyFishingCharDB = { channelSession = { lockWait = true, sawPassword = true } }

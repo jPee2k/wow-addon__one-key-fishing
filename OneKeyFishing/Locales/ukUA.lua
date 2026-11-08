@@ -130,6 +130,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] =
         "Вартість: ціна торговця (проскануйте аукціон, щоб отримати ринкові ціни)"
     L["%d catches, %s"] = "улов: %d, %s"
+    L["1 catch, %s"] = "улов: 1, %s"
     L["No catches yet."] = "Поки нічого не впіймано."
     L["Time"] = "Час"
     L["Results"] = "Результати"
@@ -157,6 +158,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["All"] = "Усе"
     L["Only mine"] = "Лише моє"
     L["%d catches"] = "улов: %d"
+    L["1 catch"] = "улов: 1"
     L["Nothing caught: %s"] = "Нічого не впіймано: %s"
     L["Numbers for the whole map: few catches at this spot."] = "Дані по всій карті: на цьому місці замало уловів."
     L["Little data"] = "Мало даних"
@@ -264,6 +266,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Fishing mode: %s"] = "Режим риболовлі: %s"
     L["Fishing skill: %d/%d %s"] = "Навичка риболовлі: %d/%d %s"
     L["Session: %d catches, %s"] = "Сесія: улов %d, %s"
+    L["Session: 1 catch, %s"] = "Сесія: улов 1, %s"
     L["Fishing key:"] = "Клавіша риболовлі:"
     L["Toggle mode key:"] = "Клавіша режиму:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =

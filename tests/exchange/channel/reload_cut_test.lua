@@ -1,6 +1,8 @@
 -- Channel.lua: a /reload that cut a leave off (specs/004-public-channel-sync, contracts/channel.md "Locks, kicks,
 -- bans"): the client is still in a channel the logout saved as locked, so it leaves it and joins the next one.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 OneKeyFishingCharDB = { channelSession = { locked = { [1] = true } } }
 channels_joined = { { name = "OneKeyFishingShare", number = 1 } }

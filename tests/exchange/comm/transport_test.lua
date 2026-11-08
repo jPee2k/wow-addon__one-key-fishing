@@ -287,8 +287,8 @@ test("friends: connected character friends and Battle.net friends playing Foreve
     }
     local found = {}
     Comm.ForEachFriend(function(address) table.insert(found, address) end)
-    eq(table.concat(found, " "), "w:Alice-Realm w:Carol-Elsewhere b:11",
-        "only those that can answer, with the realm their messages come from")
+    eq(table.concat(found, " "), "w:Alice w:Carol-Elsewhere b:11",
+        "only those that can answer, named as the friends list names them")
     friends, bn_friends = {}, {}
 end)
 

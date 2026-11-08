@@ -33,9 +33,11 @@ local START_DELAY_MIN, START_DELAY_MAX = 2, 20 -- seconds a hearer waits before 
 local FRIENDS_PER_ROUND = 20 -- HELLOs by whisper and Battle.net per round
 local HELLO_LIMIT = 60 -- seconds between HELLOs taken from one sender
 local SESSION_RECORDS = 25 -- records per direction and session, within SESSION_BYTES
--- Links of a version chain walked per frame step while a received record is checked (research R9 of part 3).
--- VERIFY(V26): PROOF_STEPS proof steps take well under 5 ms in the game (the spike times 64 of them)
-local PROOF_STEPS = 32
+-- A version chain is walked in chunks of PROOF_CHUNK links while a received record or a copy the seed holds in part is
+-- checked, until PROOF_BUDGET_MS of the frame step are spent (research R9 of part 3, R3 of spec 010).
+-- VERIFY(V26): debugprofilestop measures ms; at about 0.3 ms per proof step a frame step stays under 5 ms
+local PROOF_CHUNK = 4
+local PROOF_BUDGET_MS = 4
 local HOUR = 3600
 local ALONE_AFTER = 30 * 60 -- nobody heard for this long: "Nobody to exchange with right now"
 local FIRST_HELLO_MIN, FIRST_HELLO_MAX = 60, 120 -- seconds after the login (or the closed popup)
@@ -308,6 +310,28 @@ function Store.CheckSeedChains(store, work, budget)
     return true
 end
 
+-- Calls step() (one chunk of a chain walk, true while more is left) until it is done or another chunk, as long as the
+-- last one took, would pass PROOF_BUDGET_MS since `started` on `clock`: at least once, and exactly once without a
+-- clock. Returns true while more is left.
+local function WithinBudget(clock, started, step)
+    local more, before = nil, started
+    repeat
+        more = step()
+        local now = more and started and clock()
+        local stop = not now or now + (now - before) > started + PROOF_BUDGET_MS
+        before = now
+    until not more or stop
+    return more
+end
+P.WithinBudget = WithinBudget
+
+-- One frame step of the login check of the seed's copies (SeedChainWork): chunks within the budget. True when done.
+function Store.CheckSeedStep(store, work, clock)
+    return not WithinBudget(clock, clock and clock(), function()
+        return not Store.CheckSeedChains(store, work, PROOF_CHUNK)
+    end)
+end
+
 -- The eviction order by new information (specs/004-public-channel-sync, data-model.md "Eviction by new information"):
 -- A, records about places the seed knows well, go first; then B, records no peer confirmed for long; then C; and D,
 -- records about places with little data in the seed, go last.
@@ -517,7 +541,8 @@ P.MAX_RECORD_BYTES, P.SESSION_BYTES, P.SESSION_TIMEOUT = MAX_RECORD_BYTES, SESSI
 P.SESSION_MAX_LIFE, P.PEER_PAUSE, P.SESSION_GAP = SESSION_MAX_LIFE, PEER_PAUSE, SESSION_GAP
 P.GROUP_COOLDOWN, P.OTHER_COOLDOWN, P.RESPONDER_GAP = GROUP_COOLDOWN, OTHER_COOLDOWN, RESPONDER_GAP
 P.START_DELAY_MIN, P.START_DELAY_MAX, P.FRIENDS_PER_ROUND = START_DELAY_MIN, START_DELAY_MAX, FRIENDS_PER_ROUND
-P.HELLO_LIMIT, P.SESSION_RECORDS, P.PROOF_STEPS, P.HOUR = HELLO_LIMIT, SESSION_RECORDS, PROOF_STEPS, HOUR
+P.HELLO_LIMIT, P.SESSION_RECORDS, P.HOUR = HELLO_LIMIT, SESSION_RECORDS, HOUR
+P.PROOF_CHUNK, P.PROOF_BUDGET_MS = PROOF_CHUNK, PROOF_BUDGET_MS
 P.ALONE_AFTER, P.FIRST_HELLO_MIN, P.FIRST_HELLO_MAX = ALONE_AFTER, FIRST_HELLO_MIN, FIRST_HELLO_MAX
 P.ROUND_MIN, P.ROUND_MAX, P.EXTRA_HELLO_MIN = ROUND_MIN, ROUND_MAX, EXTRA_HELLO_MIN
 P.EXTRA_HELLO_MAX, P.EXTRA_HELLO_GAP, P.HELLO_STALE = EXTRA_HELLO_MAX, EXTRA_HELLO_GAP, HELLO_STALE

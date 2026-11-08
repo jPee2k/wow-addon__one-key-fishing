@@ -20,10 +20,11 @@ for step 7. Steps marked "B" are done on the second client.
    the setting on. After `/reload` the popup does not come back; on another character of the account neither.
 2. [ ] **Group** (V10, V11, V17): A and B fish at different places (a few casts each), then form a group. Within
    5 minutes each one's "What can be caught here" at the other's place shows the other's catches, "from 2 players".
-   The chat shows nothing at any point.
+   The chat shows nothing at any point, and the addon joins no chat channel (the public channel is off, spec 010).
 3. [ ] **Guild, friends, Battle.net** (V10, V11, V13, V17): repeat without a group, after both relogged:
    - [ ] A and B in one guild: within 30 minutes.
-   - [ ] Only on each other's character friends list: within 30 minutes.
+   - [ ] Only on each other's character friends list: within 30 minutes; `/okf share` counts B once among the
+     friends heard, and when B logs out during an exchange no "No player named" line shows (V11, V12, spec 010).
    - [ ] Only Battle.net friends: within 30 minutes.
 4. [ ] **Status** (V17): the status line in the tab and on the settings page shows the exchange ("Exchange:
    1 players, ... ago"). `/okf share` shows the peers heard, the last exchange and the traffic.

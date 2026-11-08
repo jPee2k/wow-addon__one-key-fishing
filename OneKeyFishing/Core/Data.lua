@@ -221,19 +221,30 @@ function ns.CountKeys(tbl)
     return count
 end
 
--- A character name with its realm: the game names a player of the own realm without one ("Name" -> "Name-Realm").
-function ns.WithRealm(name)
-    if name:find("-", 1, true) then
-        return name
-    end
-    local realm = GetNormalizedRealmName and GetNormalizedRealmName()
-    return realm and (name .. "-" .. realm) or name
+-- The player's own name as the game gives it: "First Last" on Forever (V11, seen in game). UnitName returns the
+-- first and the last name as two values, so it is not used for the name.
+function ns.PlayerName()
+    return GetUnitName("player", true)
 end
 
--- True when two character names ("Name-Realm", or "Name" for the player's own realm) are the same character: a
--- player of the same name on another realm is somebody else.
+-- A name without the suffix of the player's own realm. The game names a player of the own realm without a realm
+-- and adds one only to a player of another realm; the own-realm suffix comes only from addresses an older build
+-- made. A space is part of the name, never a realm separator.
+local function WithoutOwnRealm(name)
+    local realm = GetNormalizedRealmName and GetNormalizedRealmName()
+    if type(realm) == "string" and realm ~= "" then
+        local suffix = "-" .. realm
+        if #name > #suffix and name:sub(-#suffix) == suffix then
+            return name:sub(1, -#suffix - 1)
+        end
+    end
+    return name
+end
+
+-- True when two character names are the same character, with or without the own realm suffix: a player of the
+-- same name on another realm is somebody else.
 function ns.SameCharacter(a, b)
-    return a == b or ns.WithRealm(a) == ns.WithRealm(b)
+    return a == b or WithoutOwnRealm(a) == WithoutOwnRealm(b)
 end
 
 -- True when the interact key would hit the bobber (not some other object nearby).

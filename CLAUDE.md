@@ -95,7 +95,7 @@ commands in `Core/Commands.lua`.
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
 | `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `FishedContainers`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
-| `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
+| `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names and the own name, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
 | `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
@@ -105,7 +105,7 @@ commands in `Core/Commands.lua`.
 | `Fishing/Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
-| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel; one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
+| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (off since spec 010: `Channel.AVAILABLE`); one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines | [catalog.md](docs/architecture/catalog.md) |
 | `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/StatsFrame.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers (also the skill range label and the scan button state), copy window, indicator, toast, the statistics window's tabs (what can be caught here, the catalog) and the window, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
@@ -174,10 +174,12 @@ go there.
 - Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
   window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).
 - The server refuses addon messages in a custom chat channel (`NOT_ALLOWED_IN_CHANNEL`, though the send returns 0);
-  `PARTY` and `WHISPER` arrive (Battle.net game data returns 0; its arrival is not seen yet).
+  `PARTY` and `WHISPER` arrive (Battle.net game data returns 0; its arrival is not seen yet). The addon's channel is
+  off.
 - Character names are "First Last" with a space. `UnitName` / `UnitFullName` return the first and the last name as
   two values (not a realm); the full name is `GetUnitName(unit, true)`. A whisper goes to "First Last" (no realm);
-  `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name.
+  `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name. The addon keeps names
+  as the game gives them; its own name is `ns.PlayerName()`.
 - Places: a cave reports the continent map, an instance no map; pool loot comes from the bobber (35591), like open
   water; `GetExploredAreaIDsAtPosition` gives map regions, often not the subzone.
 - `C_Item.EquipItemByName` is protected in combat, weapons too (only `PLAYER_REGEN_DISABLED` runs before the

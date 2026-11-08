@@ -2,6 +2,8 @@
 -- of the old name (specs/004-public-channel-sync, contracts/channel.md "Locks, kicks, bans"; spec FR-005). The echo
 -- window covers only the name the addon left: the leave of the new one is the player's.
 
+channel_on = true
+
 local NAMES = {}
 
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }

@@ -57,8 +57,7 @@ One fishing round:
   from your own catches, the catch database that comes with the addon and the catches of the addon users you play
   with.
 - **Shared catch database**: catch counts travel under a random ID between addon users in your guild, group and
-  friends list, and through a hidden chat channel to every other addon user, in the background. Two settings turn it
-  off.
+  friends list, in the background. One setting turns it off.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked with "Leave fishing mode when attacked" on, the weapons come back at once
@@ -168,16 +167,9 @@ likely catches of the place you stand at. **Show catch chances in tooltips** in 
 Players who fish together see each other's catches right away, without waiting for the next release:
 
 - **With whom**: addon users in your guild, your party or raid, and your online friends (character friends and
-  Battle.net friends playing WoW Forever), and every other addon user the game lets you meet in the public channel
-  (below). Data also travels further: what a guild mate got from their friends reaches you too.
-- **The public channel**: about a minute after you log in, the addon joins a hidden chat channel,
-  `OneKeyFishingShare`, shared by every addon user, and announces itself there now and then; strangers who run the
-  addon then exchange with you by whisper, unseen. The channel is listed in the **Chat Channels** window and in
-  **Chat Settings**, but it is taken out of every chat window: none of its lines show, and General, Trade and your
-  own channels keep their numbers. Anyone who joins that channel by its name can see which characters in it use the
-  addon. The game allows 20 chat channels: the addon only joins with two slots free, and when you hit the limit
-  while it is in its channel, it leaves at once and says so in one line, so your next try works. If somebody locks
-  the channel, every addon client moves to the same fallback channel (`OneKeyFishingShare2` and so on).
+  Battle.net friends playing WoW Forever). Data also travels further: what a guild mate got from their friends
+  reaches you too, and each release bundles the shared data gathered so far. The addon joins no chat channel: WoW
+  Forever does not carry addon data in chat channels.
 - **What**: the catch counts described above, with the average spot you fished from in each grid cell, under the
   random ID of your account. **No character names** are sent with them, and the names of the players you exchange
   with are never saved. The players you exchange with directly can still tell which ID is yours, since your client
@@ -187,12 +179,10 @@ Players who fish together see each other's catches right away, without waiting f
   budget (at most 50 KB per hour). Nothing appears in chat.
 - **Off**: **Options → AddOns → OneKeyFishing → Shared database**, **Use the shared catch database**. Off means
   nothing is sent and nothing is received; data received earlier is kept but not counted, and counts again as soon
-  as you turn it back on. **Use the public channel** below it leaves the channel and keeps the guild, group and
-  friends exchange; what came through the channel before still counts. A popup at the first login says the same once
-  (and once more after the update that brings the public channel).
+  as you turn it back on. A popup at the first login says the same once.
 - **State**: the line at the bottom of **What can be caught here**, the settings page and `/okf share` (the bundled
   data and its version, the contributions you hold, the players seen in the last hour, the last exchange, the
-  traffic, and whether the public channel is in use or why not). `/okf debug` has the same numbers for bug reports,
+  traffic). `/okf debug` has the same numbers for bug reports,
   without your ID or anybody's name.
 - Data that does not add up (more catches than the casting time allows, impossible item counts) is refused, and the
   player who sent it is ignored until the end of the session. Nothing is ever counted twice, also not after a
@@ -285,9 +275,8 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   **Later**. Korean and Chinese may show as squares on a client in another language; pick **English** to get a
   readable interface back.
 - **Fishing gear**: a page of its own, see [Fishing gear](#fishing-gear).
-- **Shared database**: a page of its own: **Use the shared catch database**, **Use the public channel** (greyed out
-  while the first is off) with the channel's state, what is shared and the current state; see [Shared catch
-  database](#shared-catch-database).
+- **Shared database**: a page of its own: **Use the shared catch database**, what is shared and the current state;
+  see [Shared catch database](#shared-catch-database).
 
 ## Commands
 

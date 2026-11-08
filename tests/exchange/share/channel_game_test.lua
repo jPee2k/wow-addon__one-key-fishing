@@ -2,6 +2,8 @@
 -- HELLO rounds, Share.HeardInChannel and the status count. The notice (and the channel's) was closed in an earlier
 -- session. The tests run in order and share one login.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 load_addon()
 
@@ -93,7 +95,7 @@ end)
 
 test("back in the same channel after a kick: the next HELLO comes 30-90 s after the rejoin", function()
     local since = GetTime()
-    channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "PLAYER_KICKED", "OneKeyFishingShare2", "Me")
+    channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "PLAYER_KICKED", "OneKeyFishingShare2", "First Last")
     advance(70) -- the 60 s wait and the join check
     local state, index = Channel.GetState()
     eq(state .. index, "in2", "the same channel again")
@@ -106,7 +108,7 @@ end)
 
 test("a rejoin after a kick confirmed during a pause: the next HELLO still comes 30-90 s after the pause", function()
     local since = GetTime()
-    channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "PLAYER_KICKED", "OneKeyFishingShare2", "Me")
+    channel_notice("CHAT_MSG_CHANNEL_NOTICE_USER", "PLAYER_KICKED", "OneKeyFishingShare2", "First Last")
     advance(60) -- the rejoin starts
     in_combat = true
     fire("PLAYER_REGEN_DISABLED")

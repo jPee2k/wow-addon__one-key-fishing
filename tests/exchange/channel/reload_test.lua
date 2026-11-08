@@ -1,6 +1,8 @@
 -- Channel.lua: a /reload while in the channel (specs/004-public-channel-sync, contracts/channel.md "Joining"): the
 -- client is still in it, so it counts as joined at once; a second one of our names (an older session's) is left.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 channels_joined = { { name = "OneKeyFishingShare", number = 1 }, { name = "OneKeyFishingShare3", number = 2 } }
 chat_window_add(1, "OneKeyFishingShare")

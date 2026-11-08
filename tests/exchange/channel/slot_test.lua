@@ -1,6 +1,8 @@
 -- Channel.lua: giving the chat channel slot up for the player (specs/004-public-channel-sync, FR-005, research R3).
 -- The tests run in order and share one login.
 
+channel_on = true
+
 local MAIN = "OneKeyFishingShare"
 local LINE = "OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."
 

@@ -2,6 +2,8 @@
 -- leave has come (specs/004-public-channel-sync, contracts/channel.md "Joining"): that answer is used up, so the next
 -- YOU_LEFT is the player's.
 
+channel_on = true
+
 local MAIN = "OneKeyFishingShare"
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 load_addon()

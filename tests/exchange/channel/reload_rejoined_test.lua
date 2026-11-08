@@ -1,6 +1,8 @@
 -- Channel.lua: a /reload after the player left the channel by hand and joined it again by hand
 -- (specs/004-public-channel-sync, FR-005): the channel is the player's now, so the addon neither hides nor leaves it.
 
+channel_on = true
+
 local MAIN = "OneKeyFishingShare"
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 OneKeyFishingCharDB = { channelSession = { left = true } }

@@ -58,6 +58,9 @@ local anySuccess = false -- a message went out since the login: the game takes t
 local offlineHandlers = {}
 local flooded = {} -- addresses reported through OnFlood: every message from them is dropped until logout
 local channelRefusals = 0 -- in a row, on the current join of the channel
+-- NOT_ALLOWED_IN_CHANNEL notices on the current join: the send before each one returned success, which clears
+-- channelRefusals, so the notices are counted on their own.
+local channelNotices = 0
 local channelJoins -- the join of the channel those refusals were counted on (CHANNEL_STATE)
 local paths = {
     guild = { failures = 0, disabled = false },
@@ -66,7 +69,9 @@ local paths = {
     bnet = { failures = 0, disabled = false },
     channel = { failures = 0, disabled = false }, -- refusals move to the next channel (Channel.OnRefused) instead
 }
-local notFound = {} -- "No player named ..." line -> GetTime() of the whisper it would follow
+-- "No player named ..." line -> { at = GetTime() of the whisper it would follow, address = its address (cleared once
+-- the line ended the session) }
+local notFound = {}
 local buffers = {} -- address -> { bytes, checking, messages = { [key] = { parts, count, total, bytes, lastPart } } }
 local counter = 0 -- the part counter of this client's long messages
 
@@ -233,7 +238,6 @@ local function SendNow(message)
         ok, result = pcall(C_BattleNet.SendGameData, message.target, PREFIX, message.text)
     else
         -- VERIFY(V10): SendAddonMessage works for GUILD, PARTY, RAID and WHISPER and shows nothing in chat
-        -- VERIFY(V19): SendAddonMessage to a custom channel takes its number and reaches the addon users in it
         ok, result = pcall(C_ChatInfo.SendAddonMessage, PREFIX, message.text, message.chatType, message.target)
     end
     if not ok or result == false then
@@ -243,6 +247,21 @@ local function SendNow(message)
         return SUCCESS
     end
     return result
+end
+
+-- One refusal of the channel path: a refused send (in a row), or the server's NOT_ALLOWED_IN_CHANNEL notice
+-- (`notice`, from Channel.lua: counted on the current join, since its send returned success). At CHANNEL_REFUSALS
+-- the channel moves on.
+function Comm.ChannelRefused(notice)
+    if notice then
+        channelNotices = channelNotices + 1
+    else
+        channelRefusals = channelRefusals + 1
+    end
+    if channelRefusals >= CHANNEL_REFUSALS or channelNotices >= CHANNEL_REFUSALS then
+        channelRefusals, channelNotices = 0, 0
+        ns.Channel.OnRefused()
+    end
 end
 
 local function Deliver(message)
@@ -262,14 +281,16 @@ local function Deliver(message)
         end
     end
     if message.chatType == "WHISPER" and ERR_CHAT_PLAYER_NOT_FOUND_S then
-        for line, at in pairs(notFound) do
-            if GetTime() - at > FILTER_WINDOW then
+        for line, entry in pairs(notFound) do
+            if GetTime() - entry.at > FILTER_WINDOW then
                 notFound[line] = nil
             end
         end
-        -- The line may name the player with or without the realm.
-        notFound[ERR_CHAT_PLAYER_NOT_FOUND_S:format(message.target)] = GetTime()
-        notFound[ERR_CHAT_PLAYER_NOT_FOUND_S:format((message.target:match("^[^-]+")))] = GetTime()
+        -- The line may name the player with or without the realm, and shows "A-B" as "A B" (seen, V12).
+        local target = message.target
+        for _, name in ipairs({ target, (target:match("^[^-]+")), (target:gsub("-", " ")) }) do
+            notFound[ERR_CHAT_PLAYER_NOT_FOUND_S:format(name)] = { at = GetTime(), address = message.address }
+        end
     end
     local result = SendNow(message)
     results[result] = (results[result] or 0) + 1
@@ -287,7 +308,7 @@ local function Deliver(message)
             channelRefusals = 0
         end
     elseif result == ADDON_THROTTLE or result == CHANNEL_THROTTLE then
-        -- VERIFY(V25): addon messages to a channel throttle as on Retail and report ChannelThrottle
+        -- Addon messages to a channel throttle as on Retail and report ChannelThrottle (not shipped, V19).
         Enqueue(message, true)
         throttleBackoff = throttleBackoff and math.min(throttleBackoff * 2, MAX_THROTTLE_BACKOFF) or THROTTLE_BACKOFF
         holdUntil = GetTime() + throttleBackoff
@@ -298,13 +319,10 @@ local function Deliver(message)
     elseif message.path == "channel" then
         -- A channel that cannot carry messages any more (InvalidChannel or GeneralError when moderated or muted, or
         -- any other refusal): the next one, never the part 2 path rule, which would keep the slot with no use.
-        channelRefusals = channelRefusals + 1
-        if channelRefusals >= CHANNEL_REFUSALS then
-            channelRefusals = 0
-            ns.Channel.OnRefused()
-        end
+        Comm.ChannelRefused()
     elseif result == TARGET_OFFLINE then
-        -- VERIFY(V12): a whisper to a player who just went offline returns TargetOffline
+        -- A whisper to a player who just went offline may return TargetOffline (on Forever it returns 0, and the
+        -- hidden "No player named" line is the signal: HideNotFound)
         Unreachable(message)
     elseif result ~= NOT_IN_GUILD and result ~= NOT_IN_GROUP then
         -- Any other refusal. For one player it counts once against the path, not once per queued part: an
@@ -440,11 +458,12 @@ end
 ---------------------------------------------------------------------------
 -- fn(address) for every online character friend and every Battle.net game account playing Forever.
 function Comm.ForEachFriend(fn)
-    -- VERIFY(V11): a friend on the own realm is listed without the realm, while addon messages come as Name-Realm
+    -- VERIFY(V11): the friends list names a friend as the friend's own messages do ("First Last"; a realm only
+    -- when the game gives one)
     for i = 1, C_FriendList.GetNumFriends() or 0 do
         local info = C_FriendList.GetFriendInfoByIndex(i)
         if info and info.connected and type(info.name) == "string" then
-            fn("w:" .. ns.WithRealm(info.name)) -- the address the friend's own messages arrive from
+            fn("w:" .. info.name) -- the address the friend's own messages arrive from
         end
     end
     -- Battle.net friends playing Forever have clientProgram BNET_CLIENT_WOW and our WOW_PROJECT_ID (V13, seen in game)
@@ -469,18 +488,37 @@ end
 ---------------------------------------------------------------------------
 -- The chat filter: a whisper to a player who just went offline may print "No player named ..."
 ---------------------------------------------------------------------------
--- VERIFY(V12): the line appears for a whisper to an offline player, and this filter hides it
-local function HideNotFound(_, _, text)
+-- The recorded entry of a "No player named ..." line still within FILTER_WINDOW, or nil.
+local function NotFoundEntry(text)
     if (issecretvalue and issecretvalue(text)) or type(text) ~= "string" or next(notFound) == nil then
-        return
+        return nil
     end
-    local at = notFound[text]
-    if at then
-        if GetTime() - at <= FILTER_WINDOW then
-            return true
-        end
+    local entry = notFound[text]
+    if entry and GetTime() - entry.at > FILTER_WINDOW then
         notFound[text] = nil
+        return nil
     end
+    return entry
+end
+
+-- VERIFY(V12): a whisper to an offline player returns 0 and the game prints 'No player named ...': the event is the
+-- offline signal (whatever the chat windows show), once per address; the filter below only hides the line.
+ns.RegisterEvent("CHAT_MSG_SYSTEM", function(_, text)
+    local entry = NotFoundEntry(text)
+    local address = entry and entry.address
+    if address then
+        -- The line with and without the realm, and a repeat, end nothing more.
+        for _, other in pairs(notFound) do
+            if other.address == address then
+                other.address = nil
+            end
+        end
+        Unreachable({ address = address })
+    end
+end)
+
+local function HideNotFound(_, _, text)
+    return NotFoundEntry(text) ~= nil
 end
 
 if ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter then
@@ -575,7 +613,7 @@ end
 -- before a move that a notice caused does not count on the next channel.
 ns.On("CHANNEL_STATE", function(_, _, joins)
     if joins ~= channelJoins then
-        channelJoins, channelRefusals = joins, 0
+        channelJoins, channelRefusals, channelNotices = joins, 0, 0
     end
 end)
 

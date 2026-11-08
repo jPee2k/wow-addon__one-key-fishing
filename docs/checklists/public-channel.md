@@ -1,5 +1,8 @@
 # In-game checklist: the hidden public channel
 
+**Status**: the public channel is off in 1.2.0 (spec 010); this checklist applies only if it is switched on again.
+The protections (steps 9 and 11) are checked with the exchange of [catch-exchange.md](catch-exchange.md) meanwhile.
+
 **Feature**: the exchange through the hidden public channel and the protections against data from strangers
 (`specs/004-public-channel-sync`, part 3 of the shared catch database).
 **Closes**: V28, V29 of `specs/004-public-channel-sync/verification.md`, and the feature side of V19-V27 and V41

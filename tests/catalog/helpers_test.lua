@@ -9,6 +9,13 @@ test("ChanceText is a percent, or Little data, with the players from 2 on", func
     eq(ns.Catalog.ChanceText(0.456, false, 3), (ns.L["%s (%d players)"]):format("46%", 3), "three players")
 end)
 
+test("CatchesText: '1 catch' for one, the plural otherwise, the players from 2 on (spec 010 US5)", function()
+    eq(ns.Catalog.CatchesText(1, 1), ns.L["1 catch"], "one catch")
+    eq(ns.Catalog.CatchesText(1, 0), ns.L["1 catch"], "one catch, no players counted")
+    eq(ns.Catalog.CatchesText(2, 1), (ns.L["%d catches"]):format(2), "two")
+    eq(ns.Catalog.CatchesText(5, 3), (ns.L["%d catches from %d players"]):format(5, 3), "with the players")
+end)
+
 test("AreaName is the area's name, or nil without a known one", function()
     area_names[77] = "Crystal Lake"
     eq(ns.Catalog.AreaName({ area = 77 }), "Crystal Lake", "known")

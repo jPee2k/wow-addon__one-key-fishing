@@ -1,6 +1,8 @@
 -- Channel.lua: what a /reload keeps (specs/004-public-channel-sync, FR-005, data-model.md "State of the channel"):
 -- a channel left by hand, the names found locked and the kicks last until the next login, not until a /reload.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 -- As the logout before the /reload saved it: left by hand after the main channel was found locked.
 OneKeyFishingCharDB = { channelSession = { left = true, locked = { [1] = true }, kicks = 1 } }

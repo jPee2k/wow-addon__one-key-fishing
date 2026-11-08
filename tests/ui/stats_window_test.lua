@@ -36,6 +36,10 @@ test("opening the window fills the table", function()
     eq(cell(TIME_FISHING, 3), "0m", "all-time time")
 end)
 
+test("one catch in the zone list reads '1 catch' (spec 010 US5)", function()
+    eq(window.zoneLines[1].detail.text, (ns.L["1 catch, %s"]):format("0m"), "singular")
+end)
+
 test("the prices line shows the scan date", function()
     assert(window.prices.text:find("2026-10-23 14:05", 1, true), window.prices.text)
 end)

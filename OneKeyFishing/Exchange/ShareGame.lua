@@ -6,7 +6,7 @@ local Share = ns.Share
 local P = Share.private
 local SeedAbsorbed = ns.CatchDB.SeedAbsorbed
 local Store = Share.Store
-local PROOF_STEPS, FIRST_HELLO_MIN, FIRST_HELLO_MAX = P.PROOF_STEPS, P.FIRST_HELLO_MIN, P.FIRST_HELLO_MAX
+local FIRST_HELLO_MIN, FIRST_HELLO_MAX = P.FIRST_HELLO_MIN, P.FIRST_HELLO_MAX
 local ROUND_MIN, ROUND_MAX, EXTRA_HELLO_MIN = P.ROUND_MIN, P.ROUND_MAX, P.EXTRA_HELLO_MIN
 local EXTRA_HELLO_MAX, EXTRA_HELLO_GAP, HELLO_STALE = P.EXTRA_HELLO_MAX, P.EXTRA_HELLO_GAP, P.HELLO_STALE
 local CHANNEL_WINDOW, CHANNEL_FIRST_MIN = P.CHANNEL_WINDOW, P.CHANNEL_FIRST_MIN
@@ -181,7 +181,7 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     -- Copies of units the seed holds in part must continue the seed's proof: walked in the background.
     local work = Store.SeedChainWork(ns.db.shared)
     local function Step()
-        if not Store.CheckSeedChains(ns.db.shared, work, PROOF_STEPS) then
+        if not Store.CheckSeedStep(ns.db.shared, work, DebugClock) then
             C_Timer.After(0, Step)
         end
     end

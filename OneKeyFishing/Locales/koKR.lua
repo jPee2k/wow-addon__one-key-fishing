@@ -125,6 +125,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] =
         "가치: 상점 판매가 (시세를 보려면 경매장을 검색하세요)"
     L["%d catches, %s"] = "어획 %d회, %s"
+    L["1 catch, %s"] = "어획 1회, %s"
     L["No catches yet."] = "아직 어획이 없습니다."
     L["Time"] = "시간"
     L["Results"] = "결과"
@@ -152,6 +153,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["All"] = "전체"
     L["Only mine"] = "내 것만"
     L["%d catches"] = "어획 %d회"
+    L["1 catch"] = "어획 1회"
     L["Nothing caught: %s"] = "아무것도 낚지 못함: %s"
     L["Numbers for the whole map: few catches at this spot."] = "지도 전체 수치: 이 지점의 어획이 적습니다."
     L["Little data"] = "데이터 부족"
@@ -254,6 +256,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Fishing mode: %s"] = "낚시 모드: %s"
     L["Fishing skill: %d/%d %s"] = "낚시 숙련도: %d/%d %s"
     L["Session: %d catches, %s"] = "세션: 어획 %d회, %s"
+    L["Session: 1 catch, %s"] = "세션: 어획 1회, %s"
     L["Fishing key:"] = "낚시 키:"
     L["Toggle mode key:"] = "모드 전환 키:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =

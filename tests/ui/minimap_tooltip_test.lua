@@ -26,6 +26,28 @@ local function lastLine(code)
     return recorded[#recorded]
 end
 
+test("one catch in the session line reads '1 catch' (spec 010 US5)", function()
+    local getSession, getTime = ns.Stats.GetSession, ns.Stats.GetSessionTime
+    ns.Stats.GetSession = function() return { catches = 1 } end
+    ns.Stats.GetSessionTime = function() return 0 end
+    local button = assert(_G.OneKeyFishingMinimapButton, "the minimap button")
+    button.scripts.OnEnter(button)
+    local line = (ns.L["Session: 1 catch, %s"]):format(ns.Stats.FormatTime(0))
+    local found = false
+    for _, text in ipairs(recorded) do
+        found = found or text == line
+    end
+    assert(found, "the singular session line: " .. line)
+    ns.Stats.GetSession = function() return { catches = 3 } end
+    button.scripts.OnEnter(button)
+    found = false
+    for _, text in ipairs(recorded) do
+        found = found or text == (ns.L["Session: %d catches, %s"]):format(3, ns.Stats.FormatTime(0))
+    end
+    assert(found, "the plural for 3")
+    ns.Stats.GetSession, ns.Stats.GetSessionTime = getSession, getTime
+end)
+
 test("a blank last line only for Korean and Chinese", function()
     local languages = ns.GetLanguages()
     eq(#languages, 10, "languages")

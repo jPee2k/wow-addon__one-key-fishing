@@ -1,6 +1,8 @@
 -- Channel.lua: locks, kicks and bans while in the channel (specs/004-public-channel-sync, contracts/channel.md
 -- "Locks, kicks, bans", research R4). The tests run in order and share one login; each move goes one index on.
 
+channel_on = true
+
 local NAMES = {}
 
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
@@ -32,7 +34,7 @@ test("a password set by a stranger while this client owns the channel is cleared
     notice("PASSWORD_CHANGED", 1, "Griefer")
     eq(channel_owner_queries[#channel_owner_queries], NAMES[1], "asks who owns the channel")
     eq(#channel_passwords, 0, "nothing cleared before the answer")
-    notice("CHANNEL_OWNER", 1, "Me")
+    notice("CHANNEL_OWNER", 1, "First Last")
     eq(#channel_passwords, 1, "cleared")
     eq(channel_passwords[1].name, NAMES[1], "on our channel")
     eq(channel_passwords[1].password, "", "an empty password")
@@ -72,7 +74,7 @@ test("a stranger's password nobody undoes: the move to the next name after the r
 end)
 
 test("moderation set by a stranger moves on after the wait, even for the owner (it has no undo call)", function()
-    notice("OWNER_CHANGED", 2, "Me")
+    notice("OWNER_CHANGED", 2, "First Last")
     local passwords = #channel_passwords
     notice("MODERATION_ON", 2, "Griefer")
     eq(#channel_passwords, passwords, "no password call for moderation")
@@ -83,13 +85,13 @@ end)
 
 test("becoming the owner after a lock clears the password; becoming it without one does not", function()
     local passwords = #channel_passwords
-    notice("OWNER_CHANGED", 3, "Me")
+    notice("OWNER_CHANGED", 3, "First Last")
     eq(#channel_passwords, passwords, "no lock seen: nothing cleared")
     notice("OWNER_CHANGED", 3, "Other")
     notice("PASSWORD_CHANGED", 3, "Griefer")
     notice("CHANNEL_OWNER", 3, "Other")
     advance(5)
-    notice("OWNER_CHANGED", 3, "Me-Realm") -- the griefer left; with the realm, the player still matches
+    notice("OWNER_CHANGED", 3, "First Last-Realm") -- the griefer left; with the realm, the player still matches
     eq(#channel_passwords, passwords + 1, "cleared")
     eq(channel_passwords[#channel_passwords].name, NAMES[3], "on that channel")
     advance(30)
@@ -102,7 +104,7 @@ test("a kick rejoins after 60 s; a kick of somebody else changes nothing; the th
     notice("PLAYER_KICKED", 3, "Me-Elsewhere")
     eq(index(), 3, "a player of the same name on another realm")
     local joins = #channel_joins
-    notice("PLAYER_KICKED", 3, "Me")
+    notice("PLAYER_KICKED", 3, "First Last")
     eq(Channel.GetState() ~= "in", true, "out")
     fire("CHANNEL_UI_UPDATE") -- what the kick itself may bring: no early rejoin from it
     advance(30)
@@ -116,10 +118,10 @@ test("a kick rejoins after 60 s; a kick of somebody else changes nothing; the th
     eq(channel_joins[#channel_joins].name, NAMES[3], "the same channel again")
     advance(5)
     eq(index(), 3, "back in")
-    notice("PLAYER_KICKED", 3, "Me")
+    notice("PLAYER_KICKED", 3, "First Last")
     advance(66)
     eq(index(), 3, "back after the second kick")
-    notice("PLAYER_KICKED", 3, "Me")
+    notice("PLAYER_KICKED", 3, "First Last")
     advance(5)
     eq(index(), 4, "the third kick: the next name")
 end)
@@ -127,7 +129,7 @@ end)
 test("a ban of this player, or a mute, moves to the next name; a ban of somebody else does not", function()
     notice("PLAYER_BANNED", 4, "Someone")
     eq(index(), 4, "somebody else")
-    notice("PLAYER_BANNED", 4, "Me")
+    notice("PLAYER_BANNED", 4, "First Last")
     advance(5)
     eq(index(), 5, "banned: the next name")
     notice("MUTED", 5)

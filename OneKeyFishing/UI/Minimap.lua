@@ -48,8 +48,10 @@ local function ShowTooltip(owner)
     end
     local session = ns.Stats.GetSession()
     if session then
-        GameTooltip:AddLine((L["Session: %d catches, %s"]):format(session.catches,
-            ns.Stats.FormatTime(ns.Stats.GetSessionTime())), 1, 1, 1)
+        local time = ns.Stats.FormatTime(ns.Stats.GetSessionTime())
+        local text = session.catches == 1 and (L["Session: 1 catch, %s"]):format(time)
+            or (L["Session: %d catches, %s"]):format(session.catches, time)
+        GameTooltip:AddLine(text, 1, 1, 1)
     end
     -- In fishing mode: the likely catches of this place (specs/005-catch-catalog, FR-018).
     local chances = ns.Catalog.MinimapLines()

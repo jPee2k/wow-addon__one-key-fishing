@@ -2,6 +2,8 @@
 -- owe one answer, so a /leave of that name after a move to it is the player's (specs/004-public-channel-sync,
 -- contracts/channel.md "Joining", "Locks, kicks, bans").
 
+channel_on = true
+
 local NAMES = {}
 
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }

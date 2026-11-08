@@ -124,7 +124,7 @@ test("the owner's next version continues the chain; a made-up one claiming to be
         "a jump over a whole chain")
 end)
 
-test("a long jump is walked PROOF_STEPS links at a time", function()
+test("a long jump is walked a given number of links at a time", function()
     local held, incoming = other(3, 15), other(303, 400)
     local results, state = {}, nil
     repeat
@@ -174,7 +174,7 @@ test("the store refuses a newer version that does not continue the stored one", 
     shared.records["oooooooo@0"] = nil
 end)
 
-test("a merge walks a long chain over several frame steps, PROOF_STEPS links each, and keeps its place", function()
+test("a merge walks a long chain over several frame steps, a chunk each (no clock), and keeps its place", function()
     local sent = {}
     local node = ns.Share.NewNode(shared, { now = GetTime, time = GetTime, after = C_Timer.After,
         send = function(_, text) table.insert(sent, text) end, broadcast = function() end,
@@ -190,9 +190,9 @@ test("a merge walks a long chain over several frame steps, PROOF_STEPS links eac
         rounds = rounds + 1
         local count = steps(frameStep)
         most = math.max(most, count)
-        assert(rounds < 20, "the merge ends")
+        assert(rounds < 100, "the merge ends")
     end
-    assert(most <= 32, "at most PROOF_STEPS links per step: " .. most)
+    eq(most, ns.Share.private.PROOF_CHUNK, "one chunk per step without a clock")
     assert(rounds >= 7, "200 links over several steps: " .. rounds)
     eq(shared.records["oooooooo@0"].seq, 203, "stored once checked")
     eq(node.peers["w:X"].ignored, nil, "an honest sender")

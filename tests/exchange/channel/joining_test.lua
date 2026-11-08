@@ -3,6 +3,8 @@
 -- and join_lock_test.lua, giving the slot up in slot_test.lua, /reload in reload_test.lua (this folder). The notice
 -- was closed in an earlier session. The tests run in order and share one login.
 
+channel_on = true
+
 local MAIN = "OneKeyFishingShare"
 local FISH = 6291
 

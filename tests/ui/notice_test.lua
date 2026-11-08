@@ -2,6 +2,8 @@
 -- the one-time popup about the exchange. The first login lands in combat; nothing is exchanged before
 -- the popup is closed. The tests run in order and share one login.
 
+channel_on = true
+
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"
 
 in_guild = true

@@ -2,6 +2,8 @@
 -- are never taken for the player's leave (specs/004-public-channel-sync, contracts/channel.md "Joining", "Locks,
 -- kicks, bans"). The tests run in order and share one login.
 
+channel_on = true
+
 local NAMES = {}
 
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }

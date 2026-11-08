@@ -1,6 +1,8 @@
 -- Channel.lua: the game refusing the channel itself (specs/004-public-channel-sync, contracts/channel.md): a nil
 -- result from the join means every name would fail alike, so no fallback is tried. One login.
 
+channel_on = true
+
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 channel_join_result.OneKeyFishingShare = {} -- JoinTemporaryChannel returns nothing
 load_addon()

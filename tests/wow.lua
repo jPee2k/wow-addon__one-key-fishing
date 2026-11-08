@@ -52,6 +52,7 @@
 --   bn_friends[i] = { { gameAccountID, clientProgram, wowProjectID, isOnline }, ... }   Battle.net friends and
 --                                       their game accounts
 --   friends[i] = { name, connected }    character friends (C_FriendList)
+--   player_full_name = "Ann Lee"        GetUnitName("player", true) (default "First Last")
 --   in_guild = true                     IsInGuild
 --   group_type = "party" | "raid"       IsInGroup / IsInRaid (nil: no group)
 --   group_members = n                   GetNumGroupMembers (default 2 in a group, 0 outside)
@@ -61,6 +62,7 @@
 -- Helpers: receive_addon(prefix, text, chatType, sender, target, localID, name), receive_bn(prefix, text,
 -- gameAccountID), filter_hides(event, ...).
 -- The public channel (Channel.lua, specs/004-public-channel-sync):
+--   channel_on = true                   (before loading) switches the channel on (it ships off, spec 010)
 --   channels_joined                     { name, number } of the channels joined through JoinTemporaryChannel
 --   channel_extra = n                   the player's own other channels (numbers 1..n, counted as active)
 --   channel_join_result[name] = { ... } what JoinTemporaryChannel returns for that name ({}: nil)
@@ -1687,6 +1689,12 @@ end
 function GetNormalizedRealmName()
     return "Realm"
 end
+-- The full name, as the game gives it on Forever ("First Last"); other units: nil
+function GetUnitName(unit)
+    if unit == "player" then
+        return rawget(_G, "player_full_name") or "First Last"
+    end
+end
 loot_sources = {}
 function GetLootSourceInfo(slot)
     return loot_sources[slot]
@@ -1838,6 +1846,9 @@ function load_files(files)
         chunk("OneKeyFishing", ns)
         if file:match("[^/]+$") == "Data.lua" and ns.ProofStep and not rawget(_G, "real_proof") then
             ns.real_ProofStep, ns.ProofStep = ns.ProofStep, FastProofStep
+        end
+        if file:match("[^/]+$") == "Channel.lua" and rawget(_G, "channel_on") then
+            ns.Channel.AVAILABLE = true -- the tests of the channel itself; it ships off (spec 010)
         end
     end
 end
@@ -2011,7 +2022,7 @@ local stubs = {}
 local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
     group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
     explored_areas = true, profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
-    channel_info = true }
+    channel_info = true, channel_on = true, player_full_name = true }
 setmetatable(_G, {
     __index = function(_, key)
         if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then

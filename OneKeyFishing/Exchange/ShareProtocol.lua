@@ -7,7 +7,7 @@ local P = Share.private
 local MESSAGE_LIMIT, RECORD_LIMIT, Store = Share.MESSAGE_LIMIT, Share.RECORD_LIMIT, Share.Store
 local MAX_RECORD_BYTES, SESSION_BYTES, PEER_PAUSE = P.MAX_RECORD_BYTES, P.SESSION_BYTES, P.PEER_PAUSE
 local RESPONDER_GAP, FRIENDS_PER_ROUND, HELLO_LIMIT = P.RESPONDER_GAP, P.FRIENDS_PER_ROUND, P.HELLO_LIMIT
-local SESSION_RECORDS, PROOF_STEPS, HOUR, ALONE_AFTER = P.SESSION_RECORDS, P.PROOF_STEPS, P.HOUR, P.ALONE_AFTER
+local SESSION_RECORDS, PROOF_CHUNK, HOUR, ALONE_AFTER = P.SESSION_RECORDS, P.PROOF_CHUNK, P.HOUR, P.ALONE_AFTER
 local CHANNEL_TARGET, CHANNEL_WINDOW, NEAR_WINDOW = P.CHANNEL_TARGET, P.CHANNEL_WINDOW, P.NEAR_WINDOW
 local BUSY_RETRY_MIN, BUSY_RETRY_MAX, MESSAGE_UNIT = P.BUSY_RETRY_MIN, P.BUSY_RETRY_MAX, P.MESSAGE_UNIT
 local UnitOf, Absorbed, Changed, WasEvicted, Pending = P.UnitOf, P.Absorbed, P.Changed, P.WasEvicted, P.Pending
@@ -430,8 +430,8 @@ function Node:MergeStore(record)
     return result ~= "refused" or reason == "blocked" -- a blocked ID is no fault of the sender (FR-020)
 end
 
--- One frame step of the merge queue: a record's decode and check, or PROOF_STEPS links of its chain (a record whose
--- chain is longer keeps the front of the queue), then its store.
+-- One frame step of the merge queue: a record's decode and check, or chunks of PROOF_CHUNK links of its chain within
+-- the proof budget (P.WithinBudget; a record whose chain is longer keeps the front of the queue), then its store.
 function Node:MergeOne()
     local item = table.remove(self.merges, 1)
     if not item or item.peer.ignored then
@@ -443,9 +443,14 @@ function Node:MergeOne()
     local ok
     if item.verify then
         local verify = item.verify
-        local result, state = ns.CatchDB.CheckVersion(verify.held, verify.record, PROOF_STEPS, verify.state)
-        if result == "more" then
+        local result
+        P.WithinBudget(clock, started, function()
+            local state
+            result, state = ns.CatchDB.CheckVersion(verify.held, verify.record, PROOF_CHUNK, verify.state)
             verify.state = state
+            return result == "more"
+        end)
+        if result == "more" then
             table.insert(self.merges, 1, item)
             ok = true
         elseif result == "ok" then

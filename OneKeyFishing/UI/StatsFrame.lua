@@ -408,7 +408,11 @@ end
 local currentZoneLine, currentZoneData
 
 local function ZoneDetail(data, liveMode)
-    return (L["%d catches, %s"]):format(data.catches, FormatShortTime(data.modeTime + liveMode))
+    local time = FormatShortTime(data.modeTime + liveMode)
+    if data.catches == 1 then
+        return (L["1 catch, %s"]):format(time)
+    end
+    return (L["%d catches, %s"]):format(data.catches, time)
 end
 
 -- Only the time rows: cheap, called every second while the timer runs. A stopping timer flushes its time

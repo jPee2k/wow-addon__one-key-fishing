@@ -52,14 +52,14 @@ read_globals = {
     "GetInventoryItemID", "GetInventoryItemLink", "GetWeaponEnchantInfo", "GetItemCount", "GetItemCooldown",
     "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",
     "IsFishingLoot", "GetNumLootItems", "GetLootSlotLink", "GetLootSlotInfo", "GetLootSourceInfo",
-    "UnitChannelInfo", "UnitCastingInfo", "UnitGUID", "UnitIsAFK", "UnitLevel", "UnitName",
+    "UnitChannelInfo", "UnitCastingInfo", "UnitGUID", "UnitIsAFK", "UnitLevel", "GetUnitName",
     "GetNormalizedRealmName", "GetZoneText", "GetSubZoneText",
     "GetCameraZoom", "CameraZoomIn", "CameraZoomOut",
     "IsInGuild", "IsInGroup", "IsInRaid", "IsInInstance", "GetNumGroupMembers", "BNGetNumFriends",
     "issecretvalue", "debugprofilestop", "Constants", "geterrorhandler", "debugstack",
     "GetCallstackHeight", "SetErrorCallstackHeight",
-    "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName", "GetChannelList", "GetChatWindowChannels",
-    "SetChannelPassword", "DisplayChannelOwner", "IsDisplayChannelOwner",
+    "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName",
+    "SetChannelPassword", "DisplayChannelOwner",
     "CaseAccentInsensitiveParse", "strcmputf8i",
 
     -- Constants

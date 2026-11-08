@@ -2,6 +2,8 @@
 -- window of the addon's own leave of the old name (specs/004-public-channel-sync, contracts/channel.md "Locks, kicks,
 -- bans"; spec FR-005): left, the fallback is not taken for locked and no third name is joined.
 
+channel_on = true
+
 local NAMES = {}
 
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }

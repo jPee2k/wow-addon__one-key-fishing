@@ -224,14 +224,15 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   then sends `CHAT_MSG_CHANNEL_NOTICE` `NOT_ALLOWED_IN_CHANNEL` with the channel name (`CHAT_NOT_ALLOWED_IN_CHANNEL_NOTICE`
   "[%s] That operation is not permitted in this channel."); no `CHAT_MSG_ADDON` echo comes back. The same for a
   channel the player owns and for `OneKeyFishingShare` (V19 fails). A send to channel number 0 returns 7
-  (`InvalidChannel`).
+  (`InvalidChannel`). The addon's channel is off (spec 010).
 - Character names (`/run` tests, 2026-11-06): a Forever character has a first and a last name, written with a space
   ("Drog Earthshaker"); players whisper with `/w First Last`, and chat shows "[First Last]". `UnitName("player")`
   returns two values, the first name and the last name ("Drog", "Earthshaker"; the second is not a realm), so
   `print(UnitName(...))` looks like the full name and a call that passes `UnitName(...)` as its last argument sends
   the first name alone. `UnitFullName` does the same (two values, no realm). `GetUnitName(unit, true)` gives one
   string, "First Last" (also for a target: "Cadiee Druid"). `GetNormalizedRealmName()` gives an internal name
-  (`CAMWOWEU4Realm4PvP`).
+  (`CAMWOWEU4Realm4PvP`). The addon keeps names as the game gives them; its own name is `GetUnitName("player", true)`
+  (spec 010).
 - Forever's friends window lists Battle.net friends with their Forever character ("Showtime Stormbringer, Lvl 10");
   with no character friend added, `C_FriendList.GetNumFriends()` is 0 (2026-11-06). `SendAddonMessage` `WHISPER` to "First Last" arrives, and `CHAT_MSG_ADDON` names the
   sender "First Last" (no realm); to "First Last-Realm" or "First-Realm" it returns `0` but the game prints "No
@@ -258,8 +259,6 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 Answered only by the game; the spike ([docs/checklists/spike.md](checklists/spike.md)) asks them, and the answers
 move to "Verified in game":
 
-- Does a custom channel carry addon messages for anyone (a second player, C6)? For one player the server refuses
-  them (`NOT_ALLOWED_IN_CHANNEL`, V19); how far a channel reaches (faction, layer, V20) matters only if it does.
 - Does a sender from another realm come as "First Last-Realm", and what do `C_FriendList` names look like (V11)?
 - Does `C_BattleNet.SendGameData` reach another Forever client with the addon (V13)?
 - Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the

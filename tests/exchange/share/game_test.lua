@@ -359,6 +359,7 @@ test("/okf share prints the channel's line for each state, and none while the re
 end)
 
 test("/okf share counts the channel among the players heard, while the release has the channel", function()
+    ns.Channel.AVAILABLE = true -- it ships off (spec 010)
     local heard = Share.GetStatus().heard
     wipe(chat)
     SlashCmdList.ONEKEYFISHING("share")
