@@ -85,8 +85,9 @@ exchange on for step 8.
 
 - Date, build, client languages: 2026-11-07, game 1.60.1 (70790), enUS only, `002-shared-db` linked, a test seed
   made from the Statistics tab (not committed).
-- Problems found: the map pin's map and toast, no arrow on screen, spots without subzone names, a cave under the
-  continent (`docs/tech-debt.md` batches 2 and 3). Open: steps 1 (fresh cache, scrolling), 5, 6, 8, 10 (the click
+- Problems found: the map pin's map and toast (fixed by spec 009, confirmed 2026-11-07); spots without subzone
+  names and a cave under the continent (fixed by spec 011, waiting for the in-game check); no arrow on screen (the
+  V31 fallback: the arrow depends on the game's navigation setting). Open: steps 1 (fresh cache, scrolling), 5, 6, 8, 10 (the click
   while counting), 11 (a second client language).
 
 What happens next is in [release-plan.md](../release-plan.md).

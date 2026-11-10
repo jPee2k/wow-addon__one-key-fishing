@@ -53,7 +53,7 @@ auction house for step 7.
 
 - Date, build, client language: 2026-11-06 and 2026-11-07, game 1.60.1 (70790), enUS, `002-shared-db` linked;
   steps 5 and 8 with a test seed made from the Statistics tab, step 9 with a synthetic seed (neither committed).
-- Problems found: "1 catches" (`docs/tech-debt.md`). Open: step 2 at a seeded spot with a character that has
+- Problems found: "1 catches", fixed by spec 010 (confirmed 2026-11-08). Open: step 2 at a seeded spot with a character that has
   Fishing, then a real seed.
 
 What happens next (the fixes, the markers, the first real harvest, the release) is in

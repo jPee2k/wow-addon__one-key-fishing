@@ -9,8 +9,7 @@ game session**, before the feature checklists; afterwards the spike code is remo
 `verification.md` says what happens when an answer differs from the assumption.
 **Needs**: one character with Fishing at open water, a fishing pool, a capital and, if reachable, a cave and an
 instance with water; the auction house; a second player or account **B** with the addon (full account: Trial and
-Veteran accounts cannot send addon data) in a guild and a group with you and on your Battle.net friends list; if
-possible a character of the other faction or on another layer for step C6.
+Veteran accounts cannot send addon data) in a guild and a group with you and on your Battle.net friends list.
 
 ## Setup
 
@@ -127,7 +126,9 @@ dropped from the error log at login.
   [catch-catalog.md](catch-catalog.md) ([public-channel.md](public-channel.md) only if the channel is switched on).
 - Once every section has run, the spike code goes: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in
   `OneKeyFishing/Core/Commands.lua`, `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and
-  its row in `CLAUDE.md` ([release-plan.md](../release-plan.md)).
+  its row in `CLAUDE.md`, and `ns.ReportSection` in `OneKeyFishing/Core/Debug.lua` and `ns.ForgetErrors` in
+  `OneKeyFishing/Core/Core.lua` with its test in `tests/core/errors_test.lua` (only the spike uses them;
+  [release-plan.md](../release-plan.md)).
 
 ## Results
 

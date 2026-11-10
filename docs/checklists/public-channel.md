@@ -15,8 +15,8 @@ addon data.
 release ships without the channel; skip steps 1-8 and 10 and run only steps 9 and 11 (the protections).
 
 **Status 2026-11-07**: the spike showed V19 failing (the server answers `NOT_ALLOWED_IN_CHANNEL` to every addon
-message in a custom channel; `docs/tech-debt.md`). Unless C6 with a second player shows B receiving anything, the
-fix sets `Channel.AVAILABLE = false` and only steps 9 and 11 stay.
+message in a custom channel). Spec 010 set `Channel.AVAILABLE = false` and closed C6 as not shipped: only steps 9
+and 11 stay.
 
 ## Setup
 
