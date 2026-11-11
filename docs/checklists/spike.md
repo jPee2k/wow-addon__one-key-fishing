@@ -37,13 +37,15 @@ Veteran accounts cannot send addon data) in a guild and a group with you and on 
 
 ## Part 2: network (V10-V15), section "Network"
 
-- [ ] **N1. Guild and group** (V10, V11): in the open world, run `/okf spike` in a guild, then again in a group with
+- [x] **N1. Guild and group** (V10, V11): in the open world, run `/okf spike` in a guild, then again in a group with
   B. Expected: `RegisterAddonMessagePrefix` and the `GUILD`, group and `WHISPER to self` results are `0`, an echo
-  arrives for each, and the sender is shaped `Name-Realm`. Report: 2026-11-06/07: no guild; in a group `PARTY` 0 with an echo, the sender shaped `Name` ("First Last", no realm: V11 failed, `docs/tech-debt.md`). Open: the guild, with B.
+  arrives for each, and the sender is shaped `Name-Realm`. Report: 2026-11-06/07: no guild; in a group `PARTY` 0 with an echo, the sender shaped `Name` ("First Last", no realm: V11 failed, `docs/tech-debt.md`). 2026-11-11: in a guild with a guildmate running the addon, `GUILD` 0 with an echo, the sender shaped `Name`; `WHISPER to self` 0 with an echo.
 - [x] **N2. Offline whisper** (V12): the result of the whisper to the made-up name (expected `12`, `TargetOffline`,
   or `0`) and whether a "No player named ..." line appeared in chat. Report: 2026-11-06: `0` (not `TargetOffline`), and "No player named 'Okfspikenobody' is currently playing." in chat.
-- [ ] **N3. Battle.net** (V13): with B online in Forever as a Battle.net friend, the counts show at least one game
-  account "on this project", and `SendGameData to the first` is `0`. Report: ____
+- [x] **N3. Battle.net** (V13): with B online in Forever as a Battle.net friend, the counts show at least one game
+  account "on this project", and `SendGameData to the first` is `0`. Report: 2026-11-06: the game accounts are
+  counted, `SendGameData` 0. 2026-11-10: a Battle.net friend with the addon, no other path in common: `/okf share`
+  shows Battle.net 1 heard, 1 exchanged, last exchange 18m ago, 2 KB in the hour; `send results: 0=22`.
 - [x] **N4. Restrictions** (V14): in the open world out of combat every restriction is `false`, and so is
   `InChatMessagingLockdown` (`AreOutgoingAddonChatMessagesRestricted` is expected `true` on a normal realm: it is
   about chat messages addons send and does not pause the exchange; note its value). If possible, run it again in a

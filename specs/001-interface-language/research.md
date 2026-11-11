@@ -165,6 +165,10 @@ change; the guides are based on the beta and say requirements may still change.
   Classic uiMapIDs) and the pin landed on Heming at 0.274 / 0.770: those marks are gone too. Next to Heming:
   map 1434, 0.2745 / 0.7719, NPC 2626 in his GUID; he sells item 16083, the book: those marks are gone. Still open: Heming's
   merchant list, Nat Pagle, the quest ID, the Dustwallow map and point, the levels 20 and 35.
+- **In game (2026-11-10, enUS client, level 21, skill 150)**: the book 16083 taught Expert (spell 7732, cap 225); its
+  tooltip says "Requires Level 20" and "Requires Fishing (125)", so `learnAt = 125` and `level = 20` lost their marks.
+  Still open: `learnAt = 50` of Journeyman, Nat Pagle, the quest ID, the Dustwallow map and point, level 35 and skill
+  225.
 - **Forever extras** that do not change the path: Legacy points at skill 150 / 225 / 300, new recipes (Fishing
   Rack, Fishing Hut, Bait and Tackle), faction-bound poles. No Fishing above 300.
 - **Decision**: thresholds `learnAt` 50 / 125 / 225 and `level` 10 / 20 / 35 replace the old `WARN_BEFORE = 5`

@@ -15,9 +15,9 @@ about 1.2.0, which is built but not verified in game yet. It is deleted once 1.2
   cooldown, a locked container, a clam with full bags. Combat raised three items, fixed by spec 009.
 - [checklists/interface-language.md](checklists/interface-language.md) section 10 (2026-11-06: level 10, the notice,
   the pin, the replace popup, the chat map link, Heming's place and merchant list are done; the map that the Pin
-  button opened failed in a later fight, fixed by spec 009 and confirmed 2026-11-07, R14): that the book teaches Expert from skill
-  125 and level 20, the debug report after Expert, Nat Pagle and the quest ID (level 35, quest 6607 has no title on
-  Forever yet), the German Heming name. Their results go into `specs/001-interface-language/research.md` R11 / R12 /
+  button opened failed in a later fight, fixed by spec 009 and confirmed 2026-11-07, R14; 2026-11-10/11: the book
+  teaches Expert from skill 125 and level 20, the debug report after Expert, quest 6607 has its title on Forever): Nat
+  Pagle at level 35 (`learnAt` 225, the NPC, the map and the point), the German Heming name. Their results go into `specs/001-interface-language/research.md` R11 / R12 /
   R14 and remove the remaining `VERIFY` marks.
 - Korean and Chinese on a client in another language: deferred until a player reports it
   (`specs/007-launch-day-fixes/research.md` R9).

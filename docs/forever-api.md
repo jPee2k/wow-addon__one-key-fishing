@@ -160,7 +160,10 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
     (Success, not `TargetOffline`), and the made-up one prints "No player named '<name>' is currently playing."
     (V12 in part).
   - `BNET_CLIENT_WOW` is `WoW`, `WOW_PROJECT_ID` 18; Battle.net game accounts of Forever friends have
-    `clientProgram` WoW and `wowProjectID` 18; `C_BattleNet.SendGameData` returns 0 (V13 in part).
+    `clientProgram` WoW and `wowProjectID` 18; `C_BattleNet.SendGameData` returns 0. 2026-11-10: with a Battle.net
+    friend in Forever running the addon (no guild, group or character friend in common), `/okf share` counted one
+    player heard on Battle.net and one exchange; 22 sends returned 0: `BN_CHAT_MSG_ADDON` brings the messages
+    (closes V13).
   - Out of combat in a capital no `C_RestrictedActions` restriction is active, `InChatMessagingLockdown()` is
     false, `AreOutgoingAddonChatMessagesRestricted()` true (V14 in part).
   - `C_EncodingUtil` CBOR, Deflate and Base64 round-trip a record (closes V15).
@@ -194,6 +197,8 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   loot source `GameObject-...-35591-...`: the bobber, as in open water, so `GetLootSourceInfo` does not tell a
   pool catch apart (V3 fails).
 - In a group, `SendAddonMessage` `PARTY` returns 0 and echoes, with the sender "First Last" (no realm) (V10, V11).
+- In a guild, `SendAddonMessage` `GUILD` returns 0 and echoes, the sender shaped the same way; a guildmate running
+  the addon is heard and exchanged with (2026-11-11, V10).
 - In the cave before Wailing Caverns (subzone "Wailing Caverns", 2026-11-06) `C_Map.GetBestMapForUnit("player")`
   is the continent Kalimdor 1414 (type 2), with a position on it; no cave map; `GetExploredAreaIDsAtPosition`
   gives nothing (V2, V33, V34).

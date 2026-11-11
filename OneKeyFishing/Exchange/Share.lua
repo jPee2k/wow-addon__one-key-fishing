@@ -35,7 +35,8 @@ local HELLO_LIMIT = 60 -- seconds between HELLOs taken from one sender
 local SESSION_RECORDS = 25 -- records per direction and session, within SESSION_BYTES
 -- A version chain is walked in chunks of PROOF_CHUNK links while a received record or a copy the seed holds in part is
 -- checked, until PROOF_BUDGET_MS of the frame step are spent (research R9 of part 3, R3 of spec 010).
--- VERIFY(V26): debugprofilestop measures ms; at about 0.3 ms per proof step a frame step stays under 5 ms
+-- debugprofilestop measures ms; a proof step takes about 0.3 ms, and the longest merge step of a real exchange was
+-- 3.10 ms (V26, seen in game)
 local PROOF_CHUNK = 4
 local PROOF_BUDGET_MS = 4
 local HOUR = 3600

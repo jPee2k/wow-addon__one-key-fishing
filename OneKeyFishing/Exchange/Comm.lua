@@ -234,10 +234,10 @@ end
 local function SendNow(message)
     local ok, result
     if message.path == "bnet" then
-        -- VERIFY(V13): SendGameData carries OKF1 messages between Forever clients and returns a send result
+        -- SendGameData carries OKF1 messages between Forever clients and returns 0 (V13, seen in game)
         ok, result = pcall(C_BattleNet.SendGameData, message.target, PREFIX, message.text)
     else
-        -- VERIFY(V10): SendAddonMessage works for GUILD, PARTY, RAID and WHISPER and shows nothing in chat
+        -- GUILD, PARTY and WHISPER seen in game (V10); VERIFY(V10): RAID works as PARTY does
         ok, result = pcall(C_ChatInfo.SendAddonMessage, PREFIX, message.text, message.chatType, message.target)
     end
     if not ok or result == false then

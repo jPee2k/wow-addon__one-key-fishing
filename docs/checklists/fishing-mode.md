@@ -32,16 +32,17 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 1. Fishing mode
 
-- [ ] **On.** (re-run after spec 008) Press the toggle key at the water. Expected: the pole is equipped, the camera
+- [x] **On.** (re-run after spec 008) Press the toggle key at the water. Expected: the pole is equipped, the camera
   zooms to the set distance, the indicator appears with `Cast`, the minimap button lights up, the chat says the mode is
   on.
-- [ ] **Off.** (re-run after spec 008) Press it again. Expected: the previous weapons and gear are back, the camera zoom
+- [x] **Off.** (re-run after spec 008) Press it again. Expected: the previous weapons and gear are back, the camera zoom
   is back, auto loot and the soft-target CVars are back to their previous values (check Options -> Gameplay -> Controls,
   Interact Key and Auto Loot, before and after), the indicator is gone.
-- [ ] **`/reload` in the mode.** (re-run after spec 008) Turn the mode on, `/reload`. Expected: the mode is still on,
+- [x] **`/reload` in the mode.** (re-run after spec 008) Turn the mode on, `/reload`. Expected: the mode is still on,
   the gear and the camera as they were in the mode.
-- [ ] **Relog in the mode.** (re-run after spec 008) Turn the mode on, log out to the character screen, log in.
+- [x] **Relog in the mode.** (re-run after spec 008) Turn the mode on, log out to the character screen, log in.
   Expected: the mode is off, the gear and the CVars are restored; the camera stays as the game left it.
+  The four steps above: 2026-11-11 (game 70888, after specs 009-011, level 23): as expected, no error.
 - [x] **Out of combat only.** (re-run after spec 009) Only what spec 009 changed; confirmed 2026-11-06 and not
   repeated: with the setting on, the weapons come back at once on an attack and the rest of the gear and the mode
   off follow after the fight; with the setting off, fishing goes on after the fight. Three sub-steps, in this order:
@@ -82,29 +83,32 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 
 ## 3. Gear
 
-- [ ] **Gear page, first view (spec 007).** (re-run after spec 008) `/reload`, open Options -> AddOns -> OneKeyFishing
+- [x] **Gear page, first view (spec 007).** (re-run after spec 008) `/reload`, open Options -> AddOns -> OneKeyFishing
   -> Fishing gear first thing and hover the whole list area. Expected: only your items (or "No items yet."), no Remove
   button without an item, no Lua error. Close the panel, Alt+Click an item in the bags, open the page again: its row is
   there.
 
 - [ ] **Best pole.** With two poles in the bags and no chosen pole, enter the mode. Expected: the pole with the
   higher fishing bonus (then the higher item level) is equipped.
-- [ ] **Chosen pole and extra items.** (re-run after spec 008) Alt+Click a pole and a hat in the bags. Expected: the
+- [x] **Chosen pole and extra items.** (re-run after spec 008) Alt+Click a pole and a hat in the bags. Expected: the
   settings page "Fishing gear" lists them; entering the mode equips both; leaving puts back the previous weapons and
   helmet. With no previous helmet, the hat goes back to the bags.
-- [ ] **Remove.** (re-run after spec 008) Alt+Click the hat again. Expected: it leaves the list; the next mode entry
+- [x] **Remove.** (re-run after spec 008) Alt+Click the hat again. Expected: it leaves the list; the next mode entry
   does not equip it.
 - [ ] **Find fishing items.** (re-run after spec 008) Press the button on the gear page with a fishing-bonus item in the
   bags. Expected: the item is added; pressing again adds nothing new.
-- [ ] **Leaving during a cast.** (re-run after spec 008) Cast, then press the toggle key while the bobber is out.
+- [x] **Leaving during a cast.** (re-run after spec 008) Cast, then press the toggle key while the bobber is out.
   Expected: the mode ends and the gear is restored once the cast ends.
+  2026-11-11 (game 70888, after specs 009-011): first view, chosen items, remove and leaving during a cast as
+  expected, no error. Open: "Find fishing items" (no fishing-bonus item in the bags yet), the best of two poles, full bags.
 - [ ] **Full bags.** (re-run after spec 008) Fill the bags and leave the mode. Expected: a chat line that there is no
   free bag space to take off the gear; freeing a slot and leaving again restores it.
 
 ## 4. Lures and containers
 
-- [ ] **Lure.** (re-run after spec 008) With a lure in the bags and none on the pole, press the action key. Expected:
+- [x] **Lure.** (re-run after spec 008) With a lure in the bags and none on the pole, press the action key. Expected:
   the indicator shows `Apply lure`, the key applies it (a 5 second cast), the next press casts.
+  2026-11-11 (game 70888, after specs 009-011, skill 154): as expected, no error.
 - [ ] **Lure on cooldown.** Right after a lure was applied and removed (or with a second lure type), check the
   indicator. Expected: a lure on cooldown is skipped; the next one is offered, or a cast. In game 2026-11-06
   (release 1.1.0): Nightcrawlers (6530) and Shiny Bauble (6529) have no item cooldown (`cooldown: 0 s` for both
@@ -167,8 +171,10 @@ The full check (names, places, pins) is the "Next rank" section of
   Expected: a large on-screen message the first time in a session; entering fishing mode again prints only a chat line;
   it stops after the next rank is learned. In game 2026-11-05 (cap 75 at level 6): the message and the chat line as
   expected; after Journeyman was learned (2026-11-06) the notices stopped and the advice moved to Expert.
-- [ ] **Off.** (re-run after spec 008) Turn "Remind me about the next Fishing rank" off. Expected: no notices; the "Next
+- [x] **Off.** (re-run after spec 008) Turn "Remind me about the next Fishing rank" off. Expected: no notices; the "Next
   rank" line in the statistics window stays.
+  2026-11-11 (skill 154/225, Artisan advice, addon in Ukrainian): the line and its Pin button stay, no notice on
+  entering or leaving the mode: as expected.
 
 ## 9. Minimap button and settings
 
@@ -177,14 +183,15 @@ The full check (names, places, pins) is the "Next rank" section of
   same order (the indicator puts them on two lines). With one key unbound: that action
   shows one key.
 
-- [ ] **Button.** Left-click toggles the mode, Shift+Left-click opens the statistics, Right-click opens the menu
+- [x] **Button.** Left-click toggles the mode, Shift+Left-click opens the statistics, Right-click opens the menu
   (mode, statistics, settings, scan, reset indicator, debug report), drag moves it around the minimap; the
   tooltip shows the mode, the skill, the session time and the keys; it is grey while the mode is off.
 - [x] **Addon Compartment.** The addons button next to the minimap lists OneKeyFishing with the same actions.
 - [x] **Hide it.** Turn "Show the minimap button" off. Expected: the button is gone, the compartment entry stays.
-- [ ] **Settings page.** (re-run after spec 008) Options -> AddOns -> OneKeyFishing. Expected: the Keys section shows
+- [x] **Settings page.** (re-run after spec 008) Options -> AddOns -> OneKeyFishing. Expected: the Keys section shows
   both bindings; every checkbox of the manual's Settings list is there and takes effect (auto loot, bobber icon and gear
   on the next mode entry); the camera distance buttons change the zoom on the next entry; every Actions button works.
+  Button and settings page: 2026-11-11 (game 70888, after specs 009-011): as expected, no error.
 - [x] **`/okf`.** Expected: the command list with every command of the manual; `/onekeyfishing` does the same.
 
 ## 10. Debug report
@@ -208,5 +215,10 @@ The full check (names, places, pins) is the "Next rank" section of
   1.0.0-dev+1dbac37, then 1.0.0-dev+212927b with the addon in Ukrainian; a new character, Fishing learned at
   level 5, skill 52/75 at level 6. 2026-11-06, release 1.1.0: level 10, Journeyman learned, the rank steps of
   level 10 done. Open: combat, two poles, lure cooldown, containers.
+- 2026-11-11, game 1.60.1 (70888), client enUS, `002-shared-db` linked after specs 009-011, level 23, skill 154/225
+  (Expert): the re-runs after spec 008 of sections 1, 3 (but finding fishing items), 4 (the lure), 8 (off) and 9
+  pass, also with the addon in Ukrainian; no new error. Open: section 0 (the cap toast, the popup on a fresh account,
+  an update over an old install), two poles, full bags, a lure above the skill, the lure cooldown, containers, the
+  rank notices at 225.
 - Problems found: see the Results of [interface-language.md](interface-language.md) (gear page, debug report,
   popups, minimap key text).

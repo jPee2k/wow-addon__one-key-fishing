@@ -33,7 +33,36 @@ Seen only in the code; waits for a case in game.
 
 - "The private-table check reads only the plain form" (low)
 
+### Batch 9: two status texts (any time; no game needed)
+
+Seen in game, the fix and its test run without the game.
+
+- "The hint says only own catches while others' are shown" (low)
+- "Exchange: 1 players" (low)
+
 ## Open items
+
+### The hint says only own catches while others' are shown (low)
+
+- **Found**: in game, 2026-11-10, English client: "What can be caught here" in Thunder Bluff shows "51 catches from 2
+  players" and "Exchange: 1 players, 0m ago", and under them "No bundled data in this version: only your own catches
+  are shown." The first half is true (no seed yet), the second is wrong once the exchange brought other players'
+  records.
+- **Cause**: `UI/CatchHere.lua` (the hints) adds the line whenever the source filter is "All" and
+  `CatchDB.HasSeed()` is false; the text dates from part 1, before the exchange.
+- **Direction**: add the line only when no other player's record is held either (a `CatchDB` query over
+  `shared.records` without the own ones), or split it: "No bundled data in this version." alone once others' records
+  are held. Test: with no seed and one record of another player the hint has no "only your own catches"; with
+  neither it keeps the full line. Texts change in all nine languages.
+
+### "Exchange: 1 players" (low)
+
+- **Found**: in game, 2026-11-10, English client: the status line on the settings page "Shared database", on "What
+  can be caught here" and in `/okf share` reads "Exchange: 1 players, 1m ago".
+- **Cause**: `Exchange/ShareGame.lua` formats `L["Exchange: %d players, %s ago"]` for every count; spec 010 gave
+  "1 catch" its own singular text, the exchange line was left out.
+- **Direction**: a singular key for one player ("Exchange: 1 player, %s ago"), as spec 010 did for the catches, in
+  all nine languages. Test: the status text for one and for two players.
 
 ### The minimap tooltip loses its colours (low)
 

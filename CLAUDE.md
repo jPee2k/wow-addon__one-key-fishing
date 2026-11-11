@@ -167,15 +167,13 @@ go there.
 - Lua 5.1 in the game raises an error for `tostring()` with no value (a function that returns nothing); the
   tests do not catch it, so wrap such calls as `tostring((f()))`.
 - `C_Map.OpenWorldMap` is restricted, and the global `OpenWorldMap(mapID)` from addon code taints the map for a
-  later fight; a map pin follows Blizzard's `/mappin`, and the addon never opens the world map. The subzone of a
-  cast comes from the explored areas at the player's position matched against `GetSubZoneText()`.
+  later fight; a map pin follows Blizzard's `/mappin`, and the addon never opens the world map.
 - A state driver's value reaches `_onstate-*` as a number (`[combat] 1; 0` gives `1`): compare with
   `tonumber(newstate) == 1`, never `== "1"`.
 - Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
   window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).
 - The server refuses addon messages in a custom chat channel (`NOT_ALLOWED_IN_CHANNEL`, though the send returns 0);
-  `PARTY` and `WHISPER` arrive (Battle.net game data returns 0; its arrival is not seen yet). The addon's channel is
-  off.
+  `PARTY`, `WHISPER` and Battle.net game data (`SendGameData`) arrive. The addon's channel is off.
 - Character names are "First Last" with a space. `UnitName` / `UnitFullName` return the first and the last name as
   two values (not a realm); the full name is `GetUnitName(unit, true)`. A whisper goes to "First Last" (no realm);
   `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name. The addon keeps names

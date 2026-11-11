@@ -21,15 +21,26 @@ for step 7. Steps marked "B" are done on the second client.
 2. [ ] **Group** (V10, V11, V17): A and B fish at different places (a few casts each), then form a group. Within
    5 minutes each one's "What can be caught here" at the other's place shows the other's catches, "from 2 players".
    The chat shows nothing at any point, and the addon joins no chat channel (the public channel is off, spec 010).
+   Partly: the spike (2026-11-06, 2026-11-08) saw `PARTY` return 0 and echo; the sessions of 2026-11-10/11 ran
+   over Battle.net and the guild, so an exchange over the group itself is not seen yet (`/okf debug`: group 1 heard).
 3. [ ] **Guild, friends, Battle.net** (V10, V11, V13, V17): repeat without a group, after both relogged:
-   - [ ] A and B in one guild: within 30 minutes.
+   - [x] A and B in one guild: within 30 minutes. 2026-11-11: the session ran over the guild (`/okf debug`: guild 1
+     heard, Battle.net 0, exchanged 1, longest merge step 3.10 ms); the guildmate's record grew from 10 to 16 places
+     (new maps 1442, 1443). The guildmate is also a Battle.net friend, so the two paths were not apart.
    - [ ] Only on each other's character friends list: within 30 minutes; `/okf share` counts B once among the
      friends heard, and when B logs out during an exchange no "No player named" line shows (V11, V12, spec 010).
-   - [ ] Only Battle.net friends: within 30 minutes.
-4. [ ] **Status** (V17): the status line in the tab and on the settings page shows the exchange ("Exchange:
-   1 players, ... ago"). `/okf share` shows the peers heard, the last exchange and the traffic.
+   - [x] Only Battle.net friends: within 30 minutes. 2026-11-10: a session ran with a Battle.net friend (heard 1,
+     exchanged 1); the friend's record (10 places on maps 1413, 1421, 1434, 1445, 1456, build 1.60.1) is held with
+     `seen` at the session's time, and the catalog shows the friend's catch where only the friend fished: Raw Bristle
+     Whisker Catfish in Dustwallow Marsh, "Brackenwall Village (38, 30)", 3 catches, with its pin button.
+4. [x] **Status** (V17): the status line in the tab and on the settings page shows the exchange ("Exchange:
+   1 players, ... ago"). `/okf share` shows the peers heard, the last exchange and the traffic. 2026-11-10 (a
+   Battle.net friend): "Exchange: 1 players, 0m ago" on "What can be caught here" (with "51 catches from 2 players"),
+   "1m ago" on the settings page, `/okf share` with peers, last exchange and traffic: as expected. Found: "1 players"
+   and the "only your own catches" hint next to others' data (`docs/tech-debt.md` batch 9).
 5. [ ] **Pauses** (V14, V17): enter combat, then a dungeon: `/okf share` says paused and why. Outside, the exchange
-   resumes (the status line goes back to the exchange).
+   resumes (the status line goes back to the exchange). 2026-11-10: in combat "Exchange paused: in combat", after
+   the fight no pause: as expected. Open: a dungeon ("Exchange paused: in an instance").
 6. [ ] **Setting off** (V17): B turns the setting off: A's data disappears from B's tab, and `/okf share` says off.
    `/okf share` on A shows no new exchange with B. Turning it on brings the data back at once.
 7. [ ] **Relay** (V17): C exchanges only with A (a group of A and C). After A meets B, B sees C's catches.

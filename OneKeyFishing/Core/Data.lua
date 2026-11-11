@@ -142,7 +142,8 @@ end
 -- specs/004-public-channel-sync, "The version chain"), read from the digest's words in the four 20-bit groups
 -- HexToBase32(SHA256(link), 16) takes; no hex on the way, since a chain walk runs this thousands of times. The
 -- harvest computes the same with node:crypto.
--- VERIFY(V26): the game has the bit library, SHA256("abc") is the known digest, and 64 steps take under 5 ms
+-- The game has the bit library and SHA256("abc") is the known digest (V26, seen in game); a step takes about 0.3 ms, so
+-- callers spread the steps over frames (Share.lua, PROOF_BUDGET_MS).
 function ns.ProofStep(link)
     local h = Digest(link)
     local h1, h2, h3 = h[1], h[2], h[3]
