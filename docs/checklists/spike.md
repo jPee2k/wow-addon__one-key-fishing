@@ -50,7 +50,9 @@ Veteran accounts cannot send addon data) in a guild and a group with you and on 
   `InChatMessagingLockdown` (`AreOutgoingAddonChatMessagesRestricted` is expected `true` on a normal realm: it is
   about chat messages addons send and does not pause the exchange; note its value). If possible, run it again in a
   dungeon and during a boss fight and note what turns `true`. If anything is `true` in the open world, stop here
-  and report it: the exchange cannot run there. Report: 2026-11-06: all `false` out of combat in the open world and capitals, `InChatMessagingLockdown` false, `AreOutgoingAddonChatMessagesRestricted` true; in the Wailing Caverns instance `Map` true. A boss fight not checked.
+  and report it: the exchange cannot run there. Report: 2026-11-06: all `false` out of combat in the open world and capitals, `InChatMessagingLockdown` false, `AreOutgoingAddonChatMessagesRestricted` true; in the Wailing Caverns instance `Map` true. A boss fight not checked. 2026-11-11 in a dungeon (`Encounter` true, so
+  a boss fight was on): `Chat`, `Combat`, `Encounter`, `Map` true, `InChatMessagingLockdown` true, every send
+  (`GUILD`, `WHISPER`, `SendGameData`) returned 11; the addon pauses in an instance anyway.
 - [x] **N5. Encoding** (V15): the round trip line says `equal`, with an encoded length and `Base64 characters only:
   true`. Report: 2026-11-06, Thunder Bluff: equal, length 116, Base64 only true.
 - [x] **N6. Client constants** (V13): `BNET_CLIENT_WOW` and `WOW_PROJECT_ID` (expected `WoW` and `18`).

@@ -129,11 +129,11 @@ A low character helps for the first steps; the book and the quest need a trip to
 - [ ] Nat Pagle in Dustwallow Marsh gives "Nat Pagle, Angler Extreme" (skill 225, level 35): ____
 - [ ] (re-run after spec 008) Journeyman is taught by fishing trainers from skill 50, level 10: learned at a trainer at
   level 10 (2026-11-06); the skill 50 threshold itself needs a character with skill 50-74 at level 10 (open)
-- [ ] Next to Heming and next to Nat Pagle, with the NPC targeted, paste the map ID, the point and the GUID (the
+- [x] Next to Heming and next to Nat Pagle, with the NPC targeted, paste the map ID, the point and the GUID (the
   NPC ID is the second last number) of each:
   `/run local m=C_Map.GetBestMapForUnit("player") local p=C_Map.GetPlayerMapPosition(m,"player") print(m,UnitGUID("target"),p:GetXY())`
   Heming (2026-11-06, release 1.1.0): map 1434, 0.2745 / 0.7719, `Creature-0-6865-0-8-2626-52F4FE9F06` (NPC 2626)
-  Nat Pagle: ____
+  Nat Pagle (2026-11-11): map 1445, 0.5850 / 0.5990, `Creature-0-6866-1-8-12919-86E6208299` (NPC 12919)
 - [x] With Heming's merchant window open, the book is item 16083:
   `/run for i=1,GetMerchantNumItems() do print(i,GetMerchantItemID(i),GetMerchantItemLink(i)) end`: 1 6256 Fishing
   Pole, 2 6529 Shiny Bauble, 3 6530 Nightcrawlers, 4 6532 Bright Baubles, 5 273636 Chef's Knife, 6 16083 Expert

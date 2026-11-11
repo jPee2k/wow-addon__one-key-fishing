@@ -16,8 +16,9 @@ about 1.2.0, which is built but not verified in game yet. It is deleted once 1.2
 - [checklists/interface-language.md](checklists/interface-language.md) section 10 (2026-11-06: level 10, the notice,
   the pin, the replace popup, the chat map link, Heming's place and merchant list are done; the map that the Pin
   button opened failed in a later fight, fixed by spec 009 and confirmed 2026-11-07, R14; 2026-11-10/11: the book
-  teaches Expert from skill 125 and level 20, the debug report after Expert, quest 6607 has its title on Forever): Nat
-  Pagle at level 35 (`learnAt` 225, the NPC, the map and the point), the German Heming name. Their results go into `specs/001-interface-language/research.md` R11 / R12 /
+  teaches Expert from skill 125 and level 20, the debug report after Expert, quest 6607 has its title on Forever, Nat
+  Pagle (NPC 12919) stands at the expected point of map 1445): the quest at skill 225 and level 35, the German Heming
+  name. Their results go into `specs/001-interface-language/research.md` R11 / R12 /
   R14 and remove the remaining `VERIFY` marks.
 - Korean and Chinese on a client in another language: deferred until a player reports it
   (`specs/007-launch-day-fixes/research.md` R9).
@@ -52,6 +53,11 @@ The steps:
 3. Run the feature checklists: [catch-database.md](checklists/catch-database.md),
    [catch-exchange.md](checklists/catch-exchange.md), [catch-catalog.md](checklists/catch-catalog.md)
    ([public-channel.md](checklists/public-channel.md) only if the channel is switched on again). Fix, test, remove the remaining markers.
+   2026-11-10/11: N1 and N3 done; exchange over Battle.net and the guild, status, pauses (combat, dungeon), caves,
+   subzones, pools and the solo regression pass; V26 and V43 closed. Found: batch 9 (two status texts, low) and
+   batch 10 (the bobber's GUID is secret in a dungeon, high; also in 1.1.0): fix both before the release. Open: a
+   group and character friends with a second player, 50+ places (V18), an hour of fishing (V39), a second client
+   language.
 4. Remove the spike: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Core/Commands.lua`,
    `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and its row in `CLAUDE.md`, and
    `ns.ReportSection` in `OneKeyFishing/Core/Debug.lua` and `ns.ForgetErrors` in `OneKeyFishing/Core/Core.lua`

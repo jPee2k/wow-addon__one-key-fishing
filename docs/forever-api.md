@@ -130,7 +130,10 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
     taint from OneKeyFishing - EquipItemByName()", `taint.log`), also for weapons; in the `PLAYER_REGEN_DISABLED`
     handler, before the lockdown, it still swaps them.
   - The game refuses a lure above the Fishing skill with "Cannot apply ..." (since spec 008 the addon does not
-    offer one: `GameData/Lures.lua`, V43 / V44).
+    offer one: `GameData/Lures.lua`, V43 / V44). The lures' tooltips give the original requirements: Nightcrawlers and
+    Aquadynamic Fish Lens 50, Bright Baubles, Flesh Eating Worm and Aquadynamic Fish Attractor 100, Shiny Bauble none
+    (2026-11-11, V43).
+  - The Fishing channel lasts 30 s (`UnitChannelInfo("player")` end minus start, 2026-11-11, V26).
   - `GetBuildInfo()` gives "1.60.1" and the build "70790" (closes V7).
   - The bobber's GUID is `GameObject-...-35591-...`: object ID 35591, read from the `softinteract` unit (V3, the
     bobber side; the cast, hook and "No bobber" steps pass on it).
@@ -222,6 +225,10 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 - Inside the Wailing Caverns instance (2026-11-06): `C_Map.GetBestMapForUnit("player")` is nil, no position,
   `C_RestrictedActions.GetAddOnRestrictionState(Enum.AddOnRestrictionType.Map)` is 2 and the `Map` restriction is
   active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).
+- In a dungeon (2026-11-11): `UnitGUID("softinteract")` on the bobber is a secret value; splitting it raises
+  "attempt to perform string conversion on a secret string value" (`docs/tech-debt.md`, batch 10). During a boss fight
+  the `Chat`, `Combat`, `Encounter` and `Map` restrictions are active, `InChatMessagingLockdown()` is true, and
+  `SendAddonMessage` (`GUILD`, `WHISPER`) and `C_BattleNet.SendGameData` return 11.
 - At Ratchet (The Barrens 1413, 2026-11-06) `GetExploredAreaIDsAtPosition` gives area 392 "Ratchet", the same as
   `GetSubZoneText()` (V34 works there).
 - Places by `/run` (2026-11-08, before spec 011):

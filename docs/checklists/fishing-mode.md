@@ -26,9 +26,12 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   (`SKILL_WARNING`). On a fresh account the one-time popup about the exchange shows and its Settings button opens
   the "Shared database" page (`UI/ShareNotice.lua`). Partly 2026-11-06: the scan button is there and counts. Open: the toast at
   a capped rank, the popup on a fresh account.
-- [ ] **Update over an old install.** Copy the build over the 1.0.0 folder without deleting it. Expected: the old
+- [x] **Update over an old install.** Copy the build over the 1.0.0 folder without deleting it. Expected: the old
   root `*.lua` files stay but are not loaded (the TOC no longer lists them); everything above still works. Skipped 2026-11-06: the build is linked; run it with
-  `npm run install-addon` before the release.
+  `npm run install-addon` before the release. 2026-11-11: release 1.1.0 from its tag in AddOns, the build
+  `1.1.0-dev+fdda5a0` copied over it (the old root files `Core.lua`, `Data.lua`, `Skill.lua` and the rest stayed);
+  after a game restart no error, `/okf` lists the commands, the mode turns on and off, `/okf stats` opens, `/okf
+  debug` shows the new version and no new error: as expected.
 
 ## 1. Fishing mode
 
@@ -118,7 +121,8 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   a lure above your Fishing skill is never offered: the indicator and the key pass it over, no "Cannot apply ..."
   message. Once your skill reaches the lure's requirement (Nightcrawlers and Aquadynamic Fish Lens 50, Bright Baubles,
   Flesh Eating Worm and Aquadynamic Fish Attractor 100), the key offers it. Report a lure the game still refuses, with
-  your skill (V43, V44).
+  your skill (V43, V44). 2026-11-11: the six requirements match the items' tooltips in game (V43 closed); the
+  behaviour below a threshold waits for a character under 100 with such a lure (V44).
 - [ ] **Clam.** (re-run after spec 008) Catch or carry a clam. Expected: the indicator shows `Open`, the key opens it,
   the loot is taken. In game 2026-11-06 (release 1.1.0): a fished chest opened this way.
 - [ ] **Unknown container** (V27). If you fish up a container the game showed nothing about before (a new Forever item).

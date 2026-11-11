@@ -38,9 +38,11 @@ for step 7. Steps marked "B" are done on the second client.
    Battle.net friend): "Exchange: 1 players, 0m ago" on "What can be caught here" (with "51 catches from 2 players"),
    "1m ago" on the settings page, `/okf share` with peers, last exchange and traffic: as expected. Found: "1 players"
    and the "only your own catches" hint next to others' data (`docs/tech-debt.md` batch 9).
-5. [ ] **Pauses** (V14, V17): enter combat, then a dungeon: `/okf share` says paused and why. Outside, the exchange
+5. [x] **Pauses** (V14, V17): enter combat, then a dungeon: `/okf share` says paused and why. Outside, the exchange
    resumes (the status line goes back to the exchange). 2026-11-10: in combat "Exchange paused: in combat", after
-   the fight no pause: as expected. Open: a dungeon ("Exchange paused: in an instance").
+   the fight no pause: as expected. 2026-11-11, a dungeon: "Exchange paused: in an instance" (in Ukrainian), `/okf
+   debug` `state paused (instance)`, `transport: pause instance`; after leaving the group and the dungeon the status
+   line says "Nobody to exchange with right now", no pause: as expected.
 6. [ ] **Setting off** (V17): B turns the setting off: A's data disappears from B's tab, and `/okf share` says off.
    `/okf share` on A shows no new exchange with B. Turning it on brings the data back at once.
 7. [ ] **Relay** (V17): C exchanges only with A (a group of A and C). After A meets B, B sees C's catches.

@@ -53,9 +53,9 @@ GameData.FishingRanks = {
             npcID = 12919, -- Nat Pagle, gives it (the game names this NPC so, seen in game)
             areaID = 517, -- Tidefury Cove
             zoneAreaID = 15, -- Dustwallow Marsh
-            maps = { 1445, 70 }, -- VERIFY(R11)
-            x = 0.586, -- VERIFY(R11)
-            y = 0.602, -- VERIFY(R11)
+            maps = { 1445, 70 }, -- Forever uses the Classic map (seen in game)
+            x = 0.586, -- next to Nat Pagle 0.585 / 0.599 (seen in game)
+            y = 0.602,
         },
         fallback = {
             quest = "Nat Pagle, Angler Extreme",

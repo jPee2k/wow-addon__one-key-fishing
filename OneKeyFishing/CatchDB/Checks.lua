@@ -154,7 +154,7 @@ end
 -- the first settled cast after it, so one step holds at most a minute plus two casts of casting. A record never holds
 -- more than STEP_SECONDS per step of its seq, whoever sends it: a copy made up at a seq its owner published can add
 -- only that much, and the limit needs no other version, so no copy can block the owner's next one.
--- VERIFY(V26): a fishing cast lasts at most about 30 s in Forever, so no honest step reaches STEP_SECONDS
+-- A fishing cast lasts 30 s in Forever (UnitChannelInfo, V26, seen in game), so no honest step reaches STEP_SECONDS
 local STEP_SECONDS = 180
 P.STEP_SECONDS = STEP_SECONDS -- for the tests
 

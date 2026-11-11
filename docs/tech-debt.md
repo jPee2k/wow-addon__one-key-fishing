@@ -17,6 +17,12 @@ item of batch 5 by spec 011, on `002-shared-db` (release 1.2.0).
 
 The batches are in the order to take them: the top one first.
 
+### Batch 10: the bobber in an instance (before 1.2.0; check in a dungeon with water)
+
+A Lua error on every indicator update while fishing in a dungeon (fishing itself works); 1.1.0 has the same code.
+
+- "The bobber's GUID is a secret value in an instance" (high)
+
 ### Batch 7: the minimap tooltip (any time; reproduce in game first)
 
 Cosmetic, no wrong data; the fix waits for a way to make it happen on purpose.
@@ -41,6 +47,22 @@ Seen in game, the fix and its test run without the game.
 - "Exchange: 1 players" (low)
 
 ## Open items
+
+### The bobber's GUID is a secret value in an instance (high)
+
+- **Found**: in game, 2026-11-11 (game 70888, enUS, addon in Ukrainian, a dungeon with water): while fishing, the
+  game's error window twice ("Count: 2", then "Count: 6"): `attempt to perform string conversion on a secret string
+  value (execution tainted by 'OneKeyFishing')` in `strsplit`, `Core/Data.lua:13` `GameObjectID`, called from
+  `Core/Data.lua:253` `IsBobberTargeted`, from `UI/Indicator.lua:123` (`ShowNoBobber`) on the indicator's update;
+  the local `guid` is `<secret string>`. Casting, hooking and loot still worked; only the error window kept coming.
+  In the open world the same GUID is readable (spike, 2026-11-06). Release 1.1.0 has the same code (`Data.lua`).
+- **Cause**: in an instance `UnitGUID("softinteract")` returns a secret value, and `ns.GameObjectID` splits it with
+  no `issecretvalue` check (the pattern used in `CatchDB.lua`, `Comm.lua`, `Skill.lua`).
+- **Direction**: `ns.GameObjectID` returns nil for a secret value; `IsBobberTargeted` then needs a third answer
+  ("unknown"), so the indicator does not show "No bobber" in an instance where the bobber cannot be told apart, and
+  the key keeps `INTERACTTARGET` while channeling as now. Check every other reader of `softinteract` (name, GUID) for
+  the same guard. Test: a stubbed `UnitGUID` returning a value `issecretvalue` reports as secret gives no error and
+  no "No bobber". Then a dungeon with water in game: no error, hooking works.
 
 ### The hint says only own catches while others' are shown (low)
 
