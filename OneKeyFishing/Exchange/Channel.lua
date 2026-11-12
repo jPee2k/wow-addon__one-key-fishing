@@ -61,7 +61,7 @@ local indexByName = {} -- a channel name as the game gives it -> its index or fa
 
 -- The index (1 main, 2..6 fallback) of one of our channel names, compared without case, or nil.
 local function IndexOf(name)
-    if type(name) ~= "string" or (issecretvalue and issecretvalue(name)) then
+    if type(name) ~= "string" or ns.IsSecret(name) then
         return nil
     end
     local index = indexByName[name]
@@ -378,7 +378,7 @@ end
 -- The tokens and arguments of the channel notices are as on Retail (research R4; not shipped, V19).
 local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
     local index = IndexOf(name)
-    if not index or (issecretvalue and issecretvalue(token)) then
+    if not index or ns.IsSecret(token) then
         return
     end
     local by = (type(actor) == "string" and actor ~= "") and actor or player
@@ -463,7 +463,7 @@ end)
 local limitText -- built once: every system line and UI error is compared with it
 
 local function OnLimit(text)
-    if not joined or joining or (issecretvalue and issecretvalue(text)) then
+    if not joined or joining or ns.IsSecret(text) then
         return
     end
     if limitText == nil then

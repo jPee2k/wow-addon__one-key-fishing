@@ -62,7 +62,8 @@ or before a 501st place:
 - With `settings.shareDB` on, source "all" also sums every other player's record
   (`shared.records["<id>@<epoch>"]`, the reset rule per build; not one the seed holds in part).
 - A view has `players`: records with a summed cell plus the seed's largest `k`, an ID the seed absorbed only above
-  that `k` (a lower bound, never an overcount).
+  that `k` (a lower bound, never an overcount); and `others`: another player's record has a catch in the sum
+  (spec 012: the no-bundled-data hint of "What can be caught here").
 - Indexes: the seed gets a per-map key index once, and all stored other records share one index by place key and
   by map (updated in place for the keys `SHARED_DATA_CHANGED` names, rebuilt without keys).
 - Results are cached until `CatchDB.GetVersion()` changes, which `SHARED_DATA_CHANGED` bumps (so

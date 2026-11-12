@@ -164,7 +164,7 @@ with no chat line. Its tests switch it on with the stub flag `channel_on`.
 ## Exchange/ShareGame.lua: setting and state
 
 `Share.SetEnabled` (the setting), `Share.GetStatus()` / `StatusLine()` / `PrintStatus()` / `Describe()` (states
-off, notice, unavailable, paused, alone, active); `Share.ChannelLine()` is the channel's line for `/okf share`
+off, notice, unavailable, paused, alone, active; the status line has its own text for one player, spec 012); `Share.ChannelLine()` is the channel's line for `/okf share`
 and the settings page, and `GetStatus` carries the channel fields (`channel`, `channelIndex`, `channelPeers`,
 `population`, `blocked`, `ownBlocked`). The one-time notice names the channel: closing the popup sets
 `shareNotice` and, while the release has the channel, `shareNoticeChannel`; a player who closed an earlier notice

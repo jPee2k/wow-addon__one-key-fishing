@@ -164,7 +164,8 @@ test("the state is active with the exchange of the last hour", function()
     eq(status.exchanged, 1, "exchanged with one player")
     eq(status.records, 2, "own and the peer's record")
     assert(status.traffic > 0, "traffic counted")
-    eq(Share.StatusLine(), (L["Exchange: %d players, %s ago"]):format(1,
+    -- One player: the singular text (spec 012 US2; it read "1 players" before).
+    eq(Share.StatusLine(), (L["Exchange: 1 player, %s ago"]):format(
         ns.Stats.FormatShortTime(status.lastExchange)), "status line")
 end)
 

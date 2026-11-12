@@ -168,6 +168,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["and %d more"] = "і ще %d"
     L["No bundled data in this version: only your own catches are shown."] =
         "У цій версії немає вбудованих даних: показано лише ваш улов."
+    L["No bundled data in this version."] = "У цій версії немає вбудованих даних."
     L["The game does not show this place on the map."] = "Гра не показує це місце на карті."
     L["Item"] = "Предмет"
     L["Chance"] = "Шанс"
@@ -300,6 +301,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Exchange paused: the game asked to slow down"] = "Обмін призупинено: гра попросила сповільнитися"
     L["Nobody to exchange with right now"] = "Зараз немає з ким обмінюватися"
     L["Exchange: %d players, %s ago"] = "Обмін: гравців %d, %s тому"
+    L["Exchange: 1 player, %s ago"] = "Обмін: 1 гравець, %s тому"
     L["Exchange: waiting for the first exchange"] = "Обмін: чекаємо на перший обмін"
     L["Bundled data: version %d, %d places"] = "Вбудовані дані: версія %d, місць %d"
     L["Records held: %d, %d places"] = "Збережені внески: %d, місць %d"

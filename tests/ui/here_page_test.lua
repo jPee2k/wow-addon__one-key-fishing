@@ -127,6 +127,43 @@ test("the source filter", function()
     ns.CatchHere.SetSource("all")
 end)
 
+-- Spec 012 US2: with another player's catches behind the numbers, the page no longer claims to show only the own
+-- catches; a record of another place leaves the claim true.
+test("without a seed but with another player's catches here, the hint names only the missing bundled data", function()
+    local LONG = L["No bundled data in this version: only your own catches are shown."]
+    local SHORT = L["No bundled data in this version."]
+    local id = "o0000001"
+    local function Record(key)
+        ns.db.shared.records[id .. "@0"] = { id = id, epoch = 0, seq = 1, seen = 1, proof = ("a"):rep(16),
+            builds = { ["1.60.1"] = { [key] = catch_cell(5, 0, { [FISH] = { 5, 5 } }) } } }
+        ns.Fire("SHARED_DATA_CHANGED")
+        tick(window)
+    end
+    Record("1413:3:47") -- another map
+    assert(here.hint.text:find(LONG, 1, true), "another place: the full line: " .. here.hint.text)
+    Record("1415:3:47")
+    assert(here.hint.text:find(SHORT, 1, true), here.hint.text)
+    -- Only the other player's catches, on a map the player never fished: not "only your own" either.
+    player_map_id = 1413
+    fire("ZONE_CHANGED_NEW_AREA")
+    Record("1413:3:47")
+    assert(here.hint.text:find(SHORT, 1, true), "another player only: " .. here.hint.text)
+    player_map_id = 1415
+    fire("ZONE_CHANGED_NEW_AREA")
+    Record("1415:3:47")
+    assert(not here.hint.text:find(LONG, 1, true), "no 'only your own catches': " .. here.hint.text)
+    -- The setting itself, not Share.SetEnabled: that would also close the exchange notice a later test reads.
+    ns.db.settings.shareDB = false
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    assert(here.hint.text:find(LONG, 1, true), "sharing off: the full line: " .. here.hint.text)
+    ns.db.settings.shareDB = true
+    ns.db.shared.records[id .. "@0"] = nil
+    ns.Fire("SHARED_DATA_CHANGED")
+    tick(window)
+    assert(here.hint.text:find(LONG, 1, true), "the full line again: " .. here.hint.text)
+end)
+
 test("the statistics tab is unchanged", function()
     click(L["Statistics"], window)
     assert(window.statsPage:IsShown(), "statistics shown")

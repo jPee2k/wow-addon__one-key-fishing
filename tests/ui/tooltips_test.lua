@@ -15,9 +15,14 @@ advance(10) -- the default index
 
 local L = ns.L
 
+-- A line as the player reads it: the minimap tooltip wraps its lines in colour codes (spec 012 R5).
+local function plain(text)
+    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+end
+
 local function index(lines, text)
     for i, line in ipairs(lines) do
-        if line == text then
+        if plain(line) == text then
             return i
         end
     end
@@ -62,8 +67,8 @@ test("the minimap button and the compartment entry show the likely catch in fish
     button.scripts.OnEnter(button)
     local header = index(tooltip_lines, L["Likely catch here:"])
     assert(header, "fishing")
-    eq(tooltip_lines[header + 1], "  Deviate Fish | 50%", "the item")
-    eq(tooltip_lines[header + 2], "  " .. (L["%d catches from %d players"]):format(60, 2), "the footer")
+    eq(plain(tooltip_lines[header + 1]), "  Deviate Fish | 50%", "the item")
+    eq(plain(tooltip_lines[header + 2]), "  " .. (L["%d catches from %d players"]):format(60, 2), "the footer")
     OneKeyFishing_OnAddonCompartmentEnter(nil, UIParent)
     assert(index(tooltip_lines, L["Likely catch here:"]), "the compartment entry")
     ns.Mode.IsActive = active

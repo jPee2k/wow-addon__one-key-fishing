@@ -31,4 +31,26 @@ export const tests = [
       assert.deepEqual(privateProblems(text, "UI", folderOf), []);
     },
   },
+  {
+    // Spec 012 US5: the forms a line-by-line search missed.
+    name: "an alias, a bracketed name and a read after a string with -- are problems too",
+    fn: () => {
+      const alias = privateProblems("local C = ns.CatchDB\nlocal x = C.private\n", "UI", folderOf);
+      assert.deepEqual(alias.map((p) => p.line), [2], "alias");
+      const bracket = privateProblems('local x = ns["CatchDB"].private\n', "UI", folderOf);
+      assert.deepEqual(bracket.map((p) => p.line), [1], "bracketed name");
+      const bracketKey = privateProblems('local C = ns.CatchDB\nlocal x = C["private"]\n', "UI", folderOf);
+      assert.deepEqual(bracketKey.map((p) => p.line), [2], "bracketed key");
+      const afterString = privateProblems('local s = "a -- b" local x = CatchDB.private\n', "UI", folderOf);
+      assert.deepEqual(afterString.map((p) => p.line), [1], "after a string with --");
+    },
+  },
+  {
+    name: "the module's own folder and a file that does not parse report nothing",
+    fn: () => {
+      const text = 'local C = ns.CatchDB\nlocal a = C.private\nlocal b = ns["CatchDB"].private\n';
+      assert.deepEqual(privateProblems(text, "CatchDB", folderOf), []);
+      assert.deepEqual(privateProblems("local x = = CatchDB.private\n", "UI", folderOf), []);
+    },
+  },
 ];

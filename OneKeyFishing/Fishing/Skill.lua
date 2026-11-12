@@ -53,7 +53,7 @@ end
 -- A name read from the game, or nil. In an instance fight the game gives a creature's tooltip name as a secret value
 -- (seen 2026-11-08): comparing it raises an error, so a secret value counts as missing.
 local function NonEmpty(text)
-    if issecretvalue and issecretvalue(text) then
+    if ns.IsSecret(text) then
         return nil
     end
     return type(text) == "string" and text ~= "" and text or nil

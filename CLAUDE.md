@@ -161,7 +161,7 @@ go there.
   Deprecated globals (`Blizzard_Deprecated*`) are not loaded; use the namespaced functions.
 - `C_Item.EquipItemByName` fails silently while casting or channeling.
 - The bobber is unit `softinteract` (name and GUID) with no nameplate; `UnitExists` is false for it. In an instance
-  its GUID is a secret value (check `issecretvalue` before reading it).
+  its GUID is a secret value: check `ns.IsSecret` before reading it (`IsBobberTargeted` then answers unknown).
 - The Fishing skill comes from `GetProfessions()` and `GetProfessionInfo` (skillLine 356).
 - Key bindings on punctuation keys break when the Windows keyboard language is switched.
 - `YES`, `NO` and `CANCEL` are in the client's language, not the addon's: popups use `L["Yes"]` / `L["No"]`.

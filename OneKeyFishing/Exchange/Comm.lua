@@ -490,7 +490,7 @@ end
 ---------------------------------------------------------------------------
 -- The recorded entry of a "No player named ..." line still within FILTER_WINDOW, or nil.
 local function NotFoundEntry(text)
-    if (issecretvalue and issecretvalue(text)) or type(text) ~= "string" or next(notFound) == nil then
+    if ns.IsSecret(text) or type(text) ~= "string" or next(notFound) == nil then
         return nil
     end
     local entry = notFound[text]

@@ -376,11 +376,16 @@ local function BuildView(scope, sum, rules)
             area = areaID
         end
     end
+    -- Another player caught something here: an ID with catches that has a part (only other players' records do).
+    local others = false
+    for id in pairs(sum.ids) do
+        others = others or sum.parts[id] ~= nil
+    end
     local catches = RawCatches(sum)
     return { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
         -- No miss rate under a water filter: a miss has no loot source (FR-022).
         missRate = (sum.water or "all") == "all" and (casts > 0 and misses / casts or 0) or nil, items = items,
-        players = players,
+        players = players, others = others,
         point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
 end
 
@@ -399,7 +404,8 @@ local reportersCache = {} -- "<mapID>|<source>" -> Reporters(...): the map's, wh
 
 -- What a place gives (contracts/catchdb-api.md): the spot, or the whole map when the spot has fewer than
 -- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }. A view is
--- { scope = "spot" | "map" | "none", littleData, catches, misses, missRate, players,
+-- { scope = "spot" | "map" | "none", littleData, catches, misses, missRate, players, others (another player's catch
+-- is in the sum),
 -- items = { { itemID, catches, chance, pieces, reporters, inSeed } } }: catches is the real sum (a seed cell the
 -- harvest weighted gives its raw catches, r); misses and the items' catches are summed unweighted, but a weighted
 -- seed cell holds them weighted; chance, pieces and missRate come from the sums weighted by research.md R7 of part 3;

@@ -32,18 +32,35 @@ local function OpenMenu(owner)
     end)
 end
 
+-- Each coloured line carries its colour as a code in its text as well as in the arguments: once the game reset the
+-- line colours of the shared tooltip and every line turned white, while codes inside the text survived (2026-11-08,
+-- spec 012 R5). The codes wrap the translated text; they are never part of an L[...] string.
+local function Colored(text, r, g, b)
+    return ("|cff%02x%02x%02x%s|r"):format(math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5),
+        math.floor(b * 255 + 0.5), text)
+end
+
+local function AddLine(text, r, g, b, wrap)
+    GameTooltip:AddLine(Colored(text, r, g, b), r, g, b, wrap)
+end
+
+local function AddDoubleLine(left, right, lr, lg, lb, rr, rg, rb)
+    GameTooltip:AddDoubleLine(Colored(left, lr, lg, lb), Colored(right, rr, rg, rb), lr, lg, lb, rr, rg, rb)
+end
+
 local function ShowTooltip(owner)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
-    GameTooltip:AddDoubleLine("OneKeyFishing", ns.version, nil, nil, nil, 0.6, 0.6, 0.6)
+    GameTooltip:ClearLines() -- no line of an earlier owner (an item row of the statistics window) is kept
+    GameTooltip:AddDoubleLine("OneKeyFishing", Colored(ns.version, 0.6, 0.6, 0.6), nil, nil, nil, 0.6, 0.6, 0.6)
     local state = ns.Mode.IsActive() and ("|cff55ff55" .. L["ON"] .. "|r") or ("|cffaaaaaa" .. L["OFF"] .. "|r")
-    GameTooltip:AddLine(L["Fishing mode: %s"]:format(state), 1, 1, 1)
+    AddLine(L["Fishing mode: %s"]:format(state), 1, 1, 1)
     local rank, maxRank = ns.Skill.Get()
     if rank then
         local text = L["Fishing skill: %d/%d %s"]:format(rank, maxRank, ns.Skill.GetRankName(maxRank))
-        GameTooltip:AddLine(text, 1, 1, 1)
+        AddLine(text, 1, 1, 1)
         local advice = ns.Skill.GetNextRank()
         if advice then
-            GameTooltip:AddLine(ns.Skill.DescribeNextRank(advice), 1, 0.82, 0, not ns.TallGlyphs())
+            AddLine(ns.Skill.DescribeNextRank(advice), 1, 0.82, 0, not ns.TallGlyphs())
         end
     end
     local session = ns.Stats.GetSession()
@@ -51,31 +68,31 @@ local function ShowTooltip(owner)
         local time = ns.Stats.FormatTime(ns.Stats.GetSessionTime())
         local text = session.catches == 1 and (L["Session: 1 catch, %s"]):format(time)
             or (L["Session: %d catches, %s"]):format(session.catches, time)
-        GameTooltip:AddLine(text, 1, 1, 1)
+        AddLine(text, 1, 1, 1)
     end
     -- In fishing mode: the likely catches of this place (specs/005-catch-catalog, FR-018).
     local chances = ns.Catalog.MinimapLines()
     if chances then
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(L["Likely catch here:"])
+        AddLine(L["Likely catch here:"], 1, 0.82, 0)
         for _, item in ipairs(chances.items) do
-            GameTooltip:AddDoubleLine("  " .. item.name, item.right, 1, 1, 1, 1, 1, 1)
+            AddDoubleLine("  " .. item.name, item.right, 1, 1, 1, 1, 1, 1)
         end
-        GameTooltip:AddLine("  " .. chances.footer, 0.8, 0.8, 0.8)
+        AddLine("  " .. chances.footer, 0.8, 0.8, 0.8)
     end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddDoubleLine(L["Fishing key:"], ns.KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
-    GameTooltip:AddDoubleLine(L["Toggle mode key:"], ns.KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
+    AddDoubleLine(L["Fishing key:"], ns.KeyText("ONEKEYFISHING_ACTION"), 1, 0.82, 0, 1, 1, 1)
+    AddDoubleLine(L["Toggle mode key:"], ns.KeyText("ONEKEYFISHING_TOGGLE"), 1, 0.82, 0, 1, 1, 1)
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine(L["How to use: press the toggle key, then the fishing key to cast,"], 0.8, 0.8, 0.8)
-    GameTooltip:AddLine(L["and the same key again when the bobber splashes."], 0.8, 0.8, 0.8)
-    GameTooltip:AddLine(L["Alt+Click items in your bags to add fishing gear."], 0.8, 0.8, 0.8)
+    AddLine(L["How to use: press the toggle key, then the fishing key to cast,"], 0.8, 0.8, 0.8)
+    AddLine(L["and the same key again when the bobber splashes."], 0.8, 0.8, 0.8)
+    AddLine(L["Alt+Click items in your bags to add fishing gear."], 0.8, 0.8, 0.8)
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine(L["Left-click: toggle fishing mode"], 0, 1, 0)
-    GameTooltip:AddLine(L["Shift+Left-click: statistics"], 0, 1, 0)
-    GameTooltip:AddLine(L["Right-click: menu"], 0, 1, 0)
+    AddLine(L["Left-click: toggle fishing mode"], 0, 1, 0)
+    AddLine(L["Shift+Left-click: statistics"], 0, 1, 0)
+    AddLine(L["Right-click: menu"], 0, 1, 0)
     if owner == button then
-        GameTooltip:AddLine(L["Drag: move this button"], 0, 1, 0)
+        AddLine(L["Drag: move this button"], 0, 1, 0)
     end
     if ns.TallGlyphs() then
         GameTooltip:AddLine(" ")

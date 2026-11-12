@@ -33,7 +33,8 @@ local GLOBAL_COOLDOWN = 1.5
 local LURE_FAIL_DELAY = 8
 
 local skippedItems = {} -- itemID -> true for containers that failed to open (e.g. locked) this session
--- itemID -> true for lures that failed to apply (e.g. skill too low); cleared when fishing mode is entered.
+-- itemID -> the Fishing skill when the lure failed to apply (0 when not known); cleared when fishing mode is entered,
+-- or when the skill rose past that value and meets the lure's requirement (spec 012 R4).
 local skippedLures = {}
 -- itemID -> free bag slots when its loot could not be taken; skipped until more slots are free.
 local skippedForSpace = {}
@@ -74,7 +75,7 @@ local function CheckLastLure()
         -- It landed, or the game put it on cooldown: either way not a failure.
         lastLure = nil
     elseif GetTime() - lastLure.time >= LURE_FAIL_DELAY then
-        skippedLures[lastLure.itemID] = true
+        skippedLures[lastLure.itemID] = ns.Skill.Get() or 0
         ns.Print(L["Cannot apply %s, skipping it until fishing mode is turned on again."],
             select(2, C_Item.GetItemInfo(lastLure.itemID)) or lastLure.itemID)
         lastLure = nil
@@ -134,7 +135,7 @@ function Bags.DescribeLures()
         if count > 0 then
             table.insert(lines, ("%d x%d, needs: %d, usable: %s, cooldown: %.0f s, skipped: %s"):format(itemID, count,
                 ns.GameData.Lures[itemID].skill, tostring(not C_Item.IsUsableItem or C_Item.IsUsableItem(itemID)),
-                LureCooldown(itemID), tostring(skippedLures[itemID] == true)))
+                LureCooldown(itemID), tostring(skippedLures[itemID] ~= nil)))
         end
     end
     if lastLure then
@@ -147,6 +148,29 @@ end
 ns.On("MODE_CHANGED", function(isActive)
     if isActive then
         wipe(skippedLures)
+    end
+end)
+
+-- And once the Fishing skill reaches a requirement that it did not meet at the refusal (a lure offered while the skill
+-- was not known yet). A lure refused with its requirement met was refused for another reason: it stays skipped, so it
+-- is not tried again on every skill-up.
+ns.RegisterEvent("SKILL_LINES_CHANGED", function()
+    if not next(skippedLures) then
+        return
+    end
+    local rank = ns.Skill.Get()
+    if not rank then
+        return
+    end
+    local cleared = false
+    for itemID, skillAtRefusal in pairs(skippedLures) do
+        if not SkillAllows(itemID, skillAtRefusal) and SkillAllows(itemID, rank) then
+            skippedLures[itemID] = nil
+            cleared = true
+        end
+    end
+    if cleared then
+        ns.Fire("LURE_READY")
     end
 end)
 
@@ -250,10 +274,13 @@ local function IsFromLastOpen()
     if lastOpen.guid and GetLootSourceInfo then
         for i = 1, GetNumLootItems() do
             local source = GetLootSourceInfo(i)
-            if source == lastOpen.guid then
-                return true
+            -- A secret source (an instance, spec 012) cannot be compared: it is neither this container nor another.
+            if not ns.IsSecret(source) then
+                if source == lastOpen.guid then
+                    return true
+                end
+                knownSource = knownSource or source ~= nil
             end
-            knownSource = knownSource or source ~= nil
         end
     end
     if knownSource then

@@ -175,6 +175,7 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["and %d more"] = "et %d de plus"
     L["No bundled data in this version: only your own catches are shown."] =
         "Aucune donnée incluse dans cette version : seules vos propres prises sont affichées."
+    L["No bundled data in this version."] = "Aucune donnée incluse dans cette version."
     L["The game does not show this place on the map."] = "Le jeu n'affiche pas cet endroit sur la carte."
     L["Item"] = "Objet"
     L["Chance"] = "Chance"
@@ -312,6 +313,7 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Exchange paused: the game asked to slow down"] = "Échange en pause : le jeu demande de ralentir"
     L["Nobody to exchange with right now"] = "Personne avec qui échanger pour le moment"
     L["Exchange: %d players, %s ago"] = "Échange : %d joueurs, il y a %s"
+    L["Exchange: 1 player, %s ago"] = "Échange : 1 joueur, il y a %s"
     L["Exchange: waiting for the first exchange"] = "Échange : en attente du premier échange"
     L["Bundled data: version %d, %d places"] = "Données fournies : version %d, %d lieux"
     L["Records held: %d, %d places"] = "Contributions conservées : %d, %d lieux"

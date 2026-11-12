@@ -274,7 +274,9 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         end
     end
     if source == "all" and not ns.CatchDB.HasSeed() then
-        table.insert(hints, L["No bundled data in this version: only your own catches are shown."])
+        -- With another player's catches behind these numbers they are not only the own (spec 012 US2).
+        table.insert(hints, view.others and L["No bundled data in this version."]
+            or L["No bundled data in this version: only your own catches are shown."])
     end
     page.hint:SetText(table.concat(hints, "\n"))
 end

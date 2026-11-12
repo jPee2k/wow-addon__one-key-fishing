@@ -114,13 +114,18 @@ end
 local bobberSeenCast, graceTimerCast
 
 -- True when the hook would miss the bobber: it was targeted in this cast and is lost, or it never showed up
--- within the grace time. While the bobber is still flying, no warning.
+-- within the grace time. While the bobber is still flying, no warning. When the game hides the soft target's
+-- identity (an instance) the bobber cannot be told apart, so no warning either: the key still hooks (spec 012).
 local function ShowNoBobber()
+    local targeted, known = ns.IsBobberTargeted()
+    if not known then
+        return false
+    end
     local _, _, _, startMS = UnitChannelInfo("player")
     if not startMS then
-        return not ns.IsBobberTargeted()
+        return not targeted
     end
-    if ns.IsBobberTargeted() then
+    if targeted then
         bobberSeenCast = startMS
         return false
     end

@@ -4,10 +4,16 @@ local _, ns = ...
 
 local FISHING_SPELLS = ns.GameData.FishingSpells -- lowest rank first
 
--- The object ID (entry) of a game object GUID, or nil for any other GUID. Forever scrambles the spawn part of
--- GUIDs, so the object ID is the part to compare.
+-- True when the game gives the value as a secret: it cannot be compared, split or printed by addon code. In an
+-- instance the soft target's GUID is one (seen 2026-11-11, spec 012). False when the game has no issecretvalue.
+function ns.IsSecret(value)
+    return issecretvalue ~= nil and issecretvalue(value) == true
+end
+
+-- The object ID (entry) of a game object GUID, or nil for any other GUID and for a secret one. Forever scrambles the
+-- spawn part of GUIDs, so the object ID is the part to compare.
 function ns.GameObjectID(guid)
-    if not guid then
+    if not guid or ns.IsSecret(guid) then
         return nil
     end
     local unitType, _, _, _, _, objectID = strsplit("-", guid)
@@ -248,10 +254,15 @@ function ns.SameCharacter(a, b)
     return a == b or WithoutOwnRealm(a) == WithoutOwnRealm(b)
 end
 
--- True when the interact key would hit the bobber (not some other object nearby).
--- The bobber has no nameplate and UnitExists is false for it, but its name and GUID are readable.
+-- targeted, known: whether the interact key would hit the bobber (not some other object nearby), and whether that
+-- can be told. The bobber has no nameplate and UnitExists is false for it, but its GUID is readable in the open
+-- world; in an instance it is a secret value, so the answer is unknown there (false, false; spec 012).
 function ns.IsBobberTargeted()
-    return ns.GameObjectID(UnitGUID("softinteract")) == ns.GameData.Bobber.objectID
+    local guid = UnitGUID("softinteract")
+    if ns.IsSecret(guid) then
+        return false, false
+    end
+    return ns.GameObjectID(guid) == ns.GameData.Bobber.objectID, true
 end
 
 local fishingSpellLookup = {}

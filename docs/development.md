@@ -44,7 +44,9 @@ Run it after every change. It checks:
   where `tools/addon.mjs` allows it ([core.md](architecture/core.md), Layers);
 - `GameData/` holds data only: its code (strings and comments left out) has no `function`, no call, no `L[...]` / `ns.L`
   and no module but `ns.GameData` ([game-data.md](architecture/game-data.md));
-- a module's private table (`<Module>.private`) is read only by the files of its own folder (and the tests);
+- a module's private table (`<Module>.private`) is read only by the files of its own folder (and the tests): the
+  file is parsed, so a read through a local alias (`local C = ns.CatchDB` ... `C.private`), a bracketed name
+  (`ns["CatchDB"].private`) or after a string with `--` is found as well;
 - a test file names its subject, not a module of its area (below);
 - locale keys in sync;
 - the bundled seed `CatchDB/SeedData.lua` exists, is at most 1 MB, the `ns.SeedData` fields, place keys;

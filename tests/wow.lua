@@ -22,6 +22,7 @@
 --   player_map_position = { x, y }      C_Map.GetPlayerMapPosition (nil: no position, as in an instance)
 --   fishing_rank = 150                  the Fishing rank from GetProfessions / GetProfessionInfo (nil: not learned)
 --   loot_sources[slot] = guid           GetLootSourceInfo of the open loot window
+--   soft_target_guid = guid             UnitGUID("softinteract") (default nil: no soft target)
 --   build_version = "1.60.2"            the version string of GetBuildInfo (default "1.60.1")
 --   commodity_results[itemID] = { { unitPrice, quantity } }, commodity_total[itemID] = n,
 --   item_results[itemID] = { { buyoutAmount, quantity } }   auction search results (fire the result event)
@@ -69,7 +70,8 @@
 --   channel_joins, channel_leaves, channel_passwords, channel_owner_queries   calls recorded (read)
 --   window_removals                     { window, name } of each ChatFrameN:RemoveChannel (read)
 --   popups_hidden                       keys passed to StaticPopup_Hide (read)
---   secret_values[value] = true         issecretvalue(value) is true
+--   secret_values[value] = true         issecretvalue(value) is true; strsplit raises on such a text, as the game does
+--   tooltip_cleared                     GameTooltip:ClearLines was called since the last SetOwner (read)
 --   unknown_items[itemID] = true        an item the client does not know (GetItemInfoInstant nil)
 --   item_load_requests                  IDs passed to C_Item.RequestLoadItemDataByID (read)
 --   bit_unsigned = true                 the bit stub returns unsigned results
@@ -720,9 +722,10 @@ end
 local function DoubleLine(left, right)
     return tostring(left) .. " | " .. tostring(right)
 end
-tooltip_lines, tooltip_item, tooltip_shown = {}, nil, false
+tooltip_lines, tooltip_item, tooltip_shown, tooltip_cleared = {}, nil, false, false
 GameTooltip = setmetatable({
-    SetOwner = function() tooltip_lines, tooltip_item = {}, nil end,
+    SetOwner = function() tooltip_lines, tooltip_item, tooltip_cleared = {}, nil, false end,
+    ClearLines = function() tooltip_lines, tooltip_cleared = {}, true end,
     AddLine = function(_, text) table.insert(tooltip_lines, text) end,
     AddDoubleLine = function(_, left, right) table.insert(tooltip_lines, DoubleLine(left, right)) end,
     SetItemByID = function(_, itemID) tooltip_item = itemID end,
@@ -1678,7 +1681,12 @@ for _, name in ipairs({ "C_AddOns", "C_CVar", "C_Map", "C_Item", "C_Container", 
 end
 
 -- Units, casts and loot sources: nothing targeted, nothing being cast
-function UnitGUID() end
+soft_target_guid = nil
+function UnitGUID(unit)
+    if unit == "softinteract" then
+        return soft_target_guid
+    end
+end
 function UnitName(unit)
     if unit == "player" then
         return "Me"
@@ -1777,6 +1785,9 @@ end
 -- strsplit(delimiters, text, pieces): every character of `delimiters` splits; with `pieces`, the last piece
 -- keeps the rest of the text.
 function strsplit(delimiters, text, pieces)
+    if issecretvalue(text) then
+        error("attempt to perform string conversion on a secret string value", 2)
+    end
     local set = "[" .. delimiters:gsub("[%]%^%-%%]", "%%%0") .. "]"
     local parts, start = {}, 1
     while not pieces or #parts < pieces - 1 do

@@ -308,11 +308,13 @@ Typing commands is optional: everything is also available from the menus. `/onek
   the current language. Bind it in the second slot of the same binding while the other language is on, or use a
   letter, number, F-key or mouse button (see [Quick start](#quick-start)).
 - **The indicator shows "No bobber"**: the bobber is in the water but not soft-targeted (or still not after
-  3 seconds). Turn the camera towards the bobber.
+  3 seconds). Turn the camera towards the bobber. In a dungeon the game does not tell which object you face, so
+  the indicator shows "Hook!" there without this check.
 - **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon knows the skill each lure needs and
   does not offer a lure before your skill reaches it; if the game still refuses one, the addon skips it until you
-  turn fishing mode on again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the
-  lure is offered again when its cooldown ends.
+  turn fishing mode on again. A lure tried before the addon could read your skill comes back by itself once your
+  Fishing skill reaches its requirement. A lure on cooldown is not skipped: the next ready lure is used instead (or
+  none), and the lure is offered again when its cooldown ends.
 - **"Cannot open ..."**: the container is locked. The addon skips it for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the
   key opens it again.

@@ -37,7 +37,8 @@ for step 7. Steps marked "B" are done on the second client.
    1 players, ... ago"). `/okf share` shows the peers heard, the last exchange and the traffic. 2026-11-10 (a
    Battle.net friend): "Exchange: 1 players, 0m ago" on "What can be caught here" (with "51 catches from 2 players"),
    "1m ago" on the settings page, `/okf share` with peers, last exchange and traffic: as expected. Found: "1 players"
-   and the "only your own catches" hint next to others' data (`docs/tech-debt.md` batch 9).
+   and the "only your own catches" hint next to others' data, fixed by spec 012: re-check with one exchange partner,
+   "Exchange: 1 player, ... ago" in all three places and the hint "No bundled data in this version." alone.
 5. [x] **Pauses** (V14, V17): enter combat, then a dungeon: `/okf share` says paused and why. Outside, the exchange
    resumes (the status line goes back to the exchange). 2026-11-10: in combat "Exchange paused: in combat", after
    the fight no pause: as expected. 2026-11-11, a dungeon: "Exchange paused: in an instance" (in Ukrainian), `/okf

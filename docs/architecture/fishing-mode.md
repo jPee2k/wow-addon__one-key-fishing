@@ -72,10 +72,13 @@ Lures and fished containers.
   It fires `LURE_READY` for lures passed over because of a cooldown, when the soonest one is ready.
 - The skill rule: a lure whose `skill` is above `Skill.Get()` (the base rank, without bonuses: `VERIFY(V44)`) is
   never offered. Once the skill reaches it, the next `FindLure` offers it, in the same session. While the skill is
-  unknown, nothing is held back. The values come from the original game (`VERIFY(V43)`,
-  `specs/008-architecture-alignment/verification.md`). A lure not in `GameData.Lures` is never offered.
+  unknown, nothing is held back. The values come from the original game and match the items'
+  tooltips in game (V43, `specs/008-architecture-alignment/verification.md`). A lure not in `GameData.Lures` is never offered.
 - An attempt counts as failed only when, 8 s later, the pole has no lure and the lure is not on cooldown; a failed
-  lure is skipped until fishing mode is entered again.
+  lure is skipped until fishing mode is entered again. `skippedLures` keeps the skill of the refusal (0 when not
+  known): a skill event clears a lure whose requirement that skill did not meet and the skill meets now (offered
+  while the skill was unknown; spec 012). A lure refused with its requirement met stays skipped: it was refused for
+  another reason, and a retry on every skill point would only repeat the failure.
 - `Bags.DescribeLures` feeds the debug report.
 - A container's loot window is matched to the open attempt by the item GUID (`GetLootSourceInfo`); nothing is
   opened over an open loot window; a container whose loot did not fit waits for free bag space, a locked one is

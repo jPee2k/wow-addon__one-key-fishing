@@ -57,3 +57,39 @@ test("the debug report names each lure's requirement", function()
     end
     eq(found, true, "the Nightcrawlers line says needs: 50")
 end)
+
+-- Spec 012 US3: a lure the game refused comes back once the Fishing skill reaches a requirement it did not meet at
+-- the refusal (the lure was offered while the skill was unknown). A lure refused with its requirement met stays
+-- skipped after a skill-up: it was refused for another reason and must not be retried on every skill point.
+test("a lure refused while the skill was unknown comes back once the skill reaches its requirement", function()
+    fishing_skill, fishing_rank = nil, nil
+    Bags_({ [NIGHTCRAWLERS] = 1 })
+    weapon_enchant = false
+    Bags.NoteLureAttempt(NIGHTCRAWLERS)
+    advance(9) -- past the time a lure needs to land
+    eq(Bags.FindLure(), nil, "refused: skipped")
+    readyFired = 0
+    fishing_rank = 49
+    fire("SKILL_LINES_CHANGED")
+    eq(readyFired, 0, "no LURE_READY below the requirement")
+    fishing_rank = 50
+    eq(Bags.FindLure(), nil, "still skipped until the skill event")
+    fire("SKILL_LINES_CHANGED")
+    eq(readyFired, 1, "LURE_READY once it comes back")
+    eq(Bags.FindLure(), NIGHTCRAWLERS, "offered again at its requirement")
+end)
+
+test("a lure refused with its requirement met stays skipped after a skill-up until the next mode", function()
+    fishing_rank = 50
+    Bags_({ [NIGHTCRAWLERS] = 1 })
+    Bags.NoteLureAttempt(NIGHTCRAWLERS)
+    advance(9)
+    eq(Bags.FindLure(), nil, "refused")
+    readyFired = 0
+    fishing_rank = 51
+    fire("SKILL_LINES_CHANGED")
+    eq(readyFired, 0, "no LURE_READY")
+    eq(Bags.FindLure(), nil, "still skipped after the skill-up")
+    ns.Fire("MODE_CHANGED", true)
+    eq(Bags.FindLure(), NIGHTCRAWLERS, "a new mode session tries it again")
+end)

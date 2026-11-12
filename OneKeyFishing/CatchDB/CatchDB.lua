@@ -211,7 +211,7 @@ end
 -- a walk. Not called without a subzone, without a matching area, or while a walk for another subzone runs.
 function CatchDB.LookupArea(done)
     local subzone = GetSubZoneText and GetSubZoneText()
-    if (issecretvalue and issecretvalue(subzone)) or type(subzone) ~= "string" or subzone == "" then
+    if ns.IsSecret(subzone) or type(subzone) ~= "string" or subzone == "" then
         return
     end
     local needle = ns.FoldCase(subzone)

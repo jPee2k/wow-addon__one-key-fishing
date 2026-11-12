@@ -5,7 +5,8 @@ The frames in `UI/` and the temporary `Core/Spike.lua`.
 ## Indicator
 
 Next action, cast bar, session timer. "No bobber" when the soft interact GUID is not game object 35591; while the
-bobber is still flying, up to 3 s after the channel start, no warning. In a fight (`Action.IsPaused()`, spec 009)
+bobber is still flying, up to 3 s after the channel start, no warning. In an instance the GUID is a secret value and
+the bobber cannot be told apart (`IsBobberTargeted` answers unknown): no warning, "Hook!" (spec 012). In a fight (`Action.IsPaused()`, spec 009)
 it shows "Paused in combat" instead of the next action, with no pulse, bar or key; the fight's end redraws it.
 
 ## Settings
@@ -40,6 +41,8 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - the map and the skill range are read again on zone, loading-screen and skill events, the cell every second;
 - "N catches from K players" under "All" from 2 players on, and `Share.StatusLine()` at the bottom, updated on the
   tick;
+- without a bundled seed, "All" adds a hint: "only your own catches are shown", or just "No bundled data in this
+  version." when another player's catch is in the numbers (`view.others`, spec 012);
 - an item the client does not know yet (`GetItemInfoInstant` nil when the row is drawn) gets the "Unknown item" text,
   a question mark icon (134400), no price, and one `C_Item.RequestLoadItemDataByID`; its tooltip says how many
   players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
@@ -90,7 +93,9 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   (after entering the world, after combat, retried when the game had no free dialog frame); closing it calls
   `Share.NoticeRead()`, the Settings button opens the "Shared database" page.
 - Minimap: the button and the Addon Compartment entry from the TOC; in fishing mode with
-  `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`.
+  `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`. The tooltip is
+  cleared after `SetOwner`, and every coloured line carries its colour as a code in its text as well as in the
+  arguments: the game once reset the line colours (every line white) while text codes survived (spec 012).
 - ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line; the item post call adds
   "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
   `settings.tooltipChances` (V38).

@@ -226,7 +226,8 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   `C_RestrictedActions.GetAddOnRestrictionState(Enum.AddOnRestrictionType.Map)` is 2 and the `Map` restriction is
   active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).
 - In a dungeon (2026-11-11): `UnitGUID("softinteract")` on the bobber is a secret value; splitting it raises
-  "attempt to perform string conversion on a secret string value" (`docs/tech-debt.md`, batch 10). During a boss fight
+  "attempt to perform string conversion on a secret string value"; since spec 012 the addon checks `issecretvalue`
+  first (`ns.IsSecret`) and treats the bobber as unknown there. During a boss fight
   the `Chat`, `Combat`, `Encounter` and `Map` restrictions are active, `InChatMessagingLockdown()` is true, and
   `SendAddonMessage` (`GUILD`, `WHISPER`) and `C_BattleNet.SendGameData` return 11.
 - At Ratchet (The Barrens 1413, 2026-11-06) `GetExploredAreaIDsAtPosition` gives area 392 "Ratchet", the same as

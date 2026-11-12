@@ -72,6 +72,9 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - The manual no longer promises a navigation arrow on screen for the next-rank pin.
 - One catch reads "1 catch" instead of "1 catches" in the zone list of the statistics window and the session line
   of the minimap tooltip.
+- No more Lua error window while fishing in a dungeon ("attempt to perform string conversion on a secret string
+  value"); there the indicator shows "Hook!" while the bobber is out, since the game hides which object you face.
+- The minimap button's tooltip no longer loses its colours (every line white) now and then.
 
 ## [1.1.0] - 2026-11-05
 

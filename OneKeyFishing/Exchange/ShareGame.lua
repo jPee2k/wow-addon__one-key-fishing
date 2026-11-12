@@ -318,6 +318,8 @@ function Share.StatusLine()
         return PauseText(reason)
     elseif state == "alone" then
         return L["Nobody to exchange with right now"]
+    elseif status.exchanged == 1 then
+        return (L["Exchange: 1 player, %s ago"]):format(ns.Stats.FormatShortTime(status.lastExchange))
     elseif status.exchanged > 0 then
         return (L["Exchange: %d players, %s ago"]):format(status.exchanged,
             ns.Stats.FormatShortTime(status.lastExchange))

@@ -144,8 +144,11 @@ player manual `OneKeyFishing/README.md` (`npm run check`), except a temporary on
 Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-data.md)):
 
 - Fishing: `ns.IsFishingSpell`, `ns.GetFishingSpellID` (the highest rank learned, from `GameData.FishingSpells`),
-  `ns.GameObjectID(guid)` (the object ID of a game object GUID; Forever scrambles the spawn part) and
-  `ns.IsBobberTargeted()` (the soft interact target is `GameData.Bobber`).
+  `ns.GameObjectID(guid)` (the object ID of a game object GUID; Forever scrambles the spawn part; nil for a secret
+  value) and `ns.IsBobberTargeted()` -> `targeted, known` (the soft interact target is `GameData.Bobber`; in an
+  instance its GUID is a secret value, so the answer is `false, false`: unknown, spec 012).
+- Secrets: `ns.IsSecret(value)` (`issecretvalue`, false when the game has none): a value the game hides from addon
+  code (an instance, a fight) cannot be compared, split or printed.
 - Bags: `ns.ForEachBagItem`, the shared bag iterator.
 - Names: `ns.PlayerName()` (the own name, `GetUnitName("player", true)`: "First Last" on Forever) and
   `ns.SameCharacter(a, b)` (the same character with or without the own realm suffix; another realm is somebody else);

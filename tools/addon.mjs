@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import luaparse from "luaparse";
 
 export const ADDON = "OneKeyFishing";
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -83,19 +84,82 @@ export function gameDataProblems(text) {
 
 // A module's private table (`<Module>.private`) holds what the files of that module share and what only the tests
 // read (docs/development.md); no file of another folder reads it. folderOf(name) gives the folder that defines the
-// module `ns.<name>`, or undefined. Returns { line, message } per offending use; comments are not read.
+// module `ns.<name>`, or undefined. Returns { line, message } per offending use. The file is parsed (luaparse), so
+// comments and strings are not read, and a read through a local alias (`local C = ns.CatchDB` ... `C.private`) or a
+// bracketed name (`ns["CatchDB"].private`, `C["private"]`) is found too (spec 012). A file that does not parse gives no problems:
+// the check's own parse step reports it.
 export function privateProblems(text, folder, folderOf) {
+  if (!text.includes("private")) {
+    return []; // no read is possible: spares a second parse of most files (the bundled seed among them)
+  }
+  let ast;
+  try {
+    ast = luaparse.parse(text, { luaVersion: "5.1", locations: true, comments: false });
+  } catch {
+    return [];
+  }
+  const aliases = new Map(); // local name -> module name
+  const stringValue = (node) => node.type === "StringLiteral" ? node.raw.slice(1, -1) : undefined;
+  // The module a value names: `X` (a known module or an alias), `ns.X` or `ns["X"]`; else undefined.
+  const moduleOf = (node) => {
+    if (!node) {
+      return undefined;
+    }
+    if (node.type === "Identifier") {
+      return aliases.get(node.name) ?? (folderOf(node.name) !== undefined ? node.name : undefined);
+    }
+    const isNs = node.base && node.base.type === "Identifier" && node.base.name === "ns";
+    if (node.type === "MemberExpression" && node.indexer === "." && isNs) {
+      return folderOf(node.identifier.name) !== undefined ? node.identifier.name : undefined;
+    }
+    if (node.type === "IndexExpression" && isNs) {
+      const name = stringValue(node.index);
+      return name !== undefined && folderOf(name) !== undefined ? name : undefined;
+    }
+    return undefined;
+  };
   const problems = [];
-  text.split(/\r?\n/).forEach((line, index) => {
-    const code = line.replace(/--.*$/, "");
-    for (const match of code.matchAll(/\b([A-Z]\w*)\.private\b/g)) {
-      const owner = folderOf(match[1]);
+  const visit = (node) => {
+    if (!node || typeof node !== "object") {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (node.type === "LocalStatement" || node.type === "AssignmentStatement") {
+      node.init.forEach(visit);
+      node.variables.forEach((variable, i) => {
+        if (variable.type === "Identifier") {
+          const name = moduleOf(node.init[i]);
+          if (name !== undefined) {
+            aliases.set(variable.name, name);
+          } else {
+            aliases.delete(variable.name);
+          }
+        } else {
+          visit(variable);
+        }
+      });
+      return;
+    }
+    const readsPrivate = (node.type === "MemberExpression" && node.identifier.name === "private")
+      || (node.type === "IndexExpression" && stringValue(node.index) === "private");
+    if (readsPrivate) {
+      const name = moduleOf(node.base);
+      const owner = name !== undefined ? folderOf(name) : undefined;
       if (owner !== undefined && owner !== folder) {
-        problems.push({ line: index + 1,
-          message: `reads ${match[1]}.private of ${owner}/ (a module's private table is not an API)` });
+        problems.push({ line: node.loc.start.line,
+          message: `reads ${name}.private of ${owner}/ (a module's private table is not an API)` });
       }
     }
-  });
+    for (const [key, value] of Object.entries(node)) {
+      if (key !== "loc" && key !== "range") {
+        visit(value);
+      }
+    }
+  };
+  visit(ast.body);
   return problems;
 }
 

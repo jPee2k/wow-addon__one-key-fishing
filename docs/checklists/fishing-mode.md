@@ -139,6 +139,10 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [x] **Session timer.** Turn "Show session fishing time under the indicator" on. Expected: the time counts while
   the mode is on, stops while off, pauses while AFK (with "Pause the fishing timer while AFK" on).
 - [x] **Notifications off.** Turn "Show catch notifications" off and catch a fish. Expected: no notification.
+- [ ] **In a dungeon** (spec 012, tech-debt batch 10 of 2026-11-11). Fish ten casts at water inside a dungeon.
+  Expected: no error window (before the fix: "attempt to perform string conversion on a secret string value"); the
+  indicator shows "Hook!" while the bobber is out, never "No bobber"; the catches are looted; `/okf debug` Errors has
+  no new entry. Then in the open world, a cast while facing away from the bobber still shows "No bobber" after 3 s.
 
 ## 6. Statistics
 
@@ -181,6 +185,10 @@ The full check (names, places, pins) is the "Next rank" section of
   entering or leaving the mode: as expected.
 
 ## 9. Minimap button and settings
+
+- [ ] **Tooltip colours** (spec 012). Over a session, hover item rows of the statistics window, then the minimap
+  button, many times. Expected: the gold, grey and green lines keep their colours (once every line was white,
+  2026-11-08); not decided by one hover.
 
 - [x] **Two keys (spec 007).** Bind two keys to each action (`` ` `` and `'`, `SHIFT-`` and `SHIFT-'`). Expected:
   the minimap tooltip, the key line of the settings page and the indicator show both keys of each action, in the
