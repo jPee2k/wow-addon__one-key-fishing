@@ -19,7 +19,7 @@ local SPELLS = GameData.FishingSpells
 GameData.FishingRanks = {
     [75] = {
         next = SPELLS[2].spellID, -- Journeyman
-        learnAt = 50, -- VERIFY(R11)
+        learnAt = 50, -- the original game's value (R11, accepted)
         level = 10,
         source = { kind = "trainer" },
     },
@@ -45,8 +45,8 @@ GameData.FishingRanks = {
     },
     [225] = {
         next = SPELLS[4].spellID, -- Artisan
-        learnAt = 225, -- VERIFY(R11)
-        level = 35, -- VERIFY(R11)
+        learnAt = 225, -- the original game's value (R11, accepted)
+        level = 35, -- the original game's value (R11, accepted)
         source = {
             kind = "quest",
             questID = 6607, -- Nat Pagle, Angler Extreme (the game gives this title, seen in game)

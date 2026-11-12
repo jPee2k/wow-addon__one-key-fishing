@@ -30,7 +30,9 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008 and 009 have one); a marker is removed only after the author confirms the behaviour in game.
+  008 and 009 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
+  if it is wrong).
 
 ## Documents
 

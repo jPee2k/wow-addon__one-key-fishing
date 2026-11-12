@@ -17,7 +17,8 @@ Comm.private = P -- internals shared by the Exchange/Comm*.lua files and read by
 
 local PREFIX = "OKF1"
 local MAX_MESSAGE = 255 -- bytes per message, the part header included
--- VERIFY(V10): the game throttles as on Retail (10 per prefix, +1 per s; whispers outside instances unthrottled)
+-- Assumed (V10, accepted without an in-game check): the game throttles as on Retail (10 per prefix, +1 per s;
+-- whispers outside instances unthrottled)
 local BROADCAST_PACE = 2 -- seconds between guild and group messages
 local WHISPER_PACE = 0.5 -- seconds between whispers and Battle.net messages
 local BUDGET = 50 * 1024 -- bytes sent per BUDGET_MINUTES, counted per minute; above it only BYE goes out
@@ -237,7 +238,7 @@ local function SendNow(message)
         -- SendGameData carries OKF1 messages between Forever clients and returns 0 (V13, seen in game)
         ok, result = pcall(C_BattleNet.SendGameData, message.target, PREFIX, message.text)
     else
-        -- GUILD, PARTY and WHISPER seen in game (V10); VERIFY(V10): RAID works as PARTY does
+        -- GUILD, PARTY and WHISPER seen in game (V10); RAID assumed to work as PARTY does (accepted)
         ok, result = pcall(C_ChatInfo.SendAddonMessage, PREFIX, message.text, message.chatType, message.target)
     end
     if not ok or result == false then
@@ -458,8 +459,8 @@ end
 ---------------------------------------------------------------------------
 -- fn(address) for every online character friend and every Battle.net game account playing Forever.
 function Comm.ForEachFriend(fn)
-    -- VERIFY(V11): the friends list names a friend as the friend's own messages do ("First Last"; a realm only
-    -- when the game gives one)
+    -- Assumed (V11, accepted): the friends list names a friend as the friend's own messages do ("First Last"; a
+    -- realm only when the game gives one)
     for i = 1, C_FriendList.GetNumFriends() or 0 do
         local info = C_FriendList.GetFriendInfoByIndex(i)
         if info and info.connected and type(info.name) == "string" then
@@ -501,8 +502,9 @@ local function NotFoundEntry(text)
     return entry
 end
 
--- VERIFY(V12): a whisper to an offline player returns 0 and the game prints 'No player named ...': the event is the
--- offline signal (whatever the chat windows show), once per address; the filter below only hides the line.
+-- V12 (seen in game; the hiding accepted without a check): a whisper to an offline player returns 0 and the game
+-- prints 'No player named ...': the event is the offline signal (whatever the chat windows show), once per address;
+-- the filter below only hides the line.
 ns.RegisterEvent("CHAT_MSG_SYSTEM", function(_, text)
     local entry = NotFoundEntry(text)
     local address = entry and entry.address

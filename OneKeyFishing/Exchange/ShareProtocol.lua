@@ -439,7 +439,7 @@ function Node:MergeOne()
     end
     local clock = self.env.clock
     local started = clock and clock()
-    -- VERIFY(V16): one decode, check and merge per frame step stays smooth with 20,000 stored places
+    -- One decode, check and merge per frame step; assumed smooth with 20,000 stored places (V16, accepted)
     local ok
     if item.verify then
         local verify = item.verify

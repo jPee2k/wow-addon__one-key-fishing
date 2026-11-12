@@ -282,12 +282,13 @@ Answered only by the game; the spike ([docs/checklists/spike.md](checklists/spik
 move to "Verified in game":
 
 - Does a sender from another realm come as "First Last-Realm", and what do `C_FriendList` names look like (V11)?
-- Does `C_BattleNet.SendGameData` reach another Forever client with the addon (V13)?
+  Accepted without a check for 1.2.0 (2026-11-12): the same "First Last" rule as the senders seen.
 - Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the
   skill ranges of the place key can go.
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
 
+Answered on 2026-11-10: `C_BattleNet.SendGameData` reaches another Forever client with the addon (V13).
 Answered on 2026-11-08 (`/run`, see "Verified in game"): the subzone's area ID is found by `GetSubZoneText()`
 among the `C_Map.GetAreaInfo` names (V34), and a cave's continent map gives the zone under the point (V2, V33).
 Answered on 2026-11-06/07 (see "Verified in game"): pool loot is not told apart (V3); one `YOU_LEFT` per leave, and

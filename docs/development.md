@@ -112,7 +112,8 @@ base name of a `.lua` file in its area's addon folder (`fishing/bags_test.lua` f
 Code built on an assumption that only the game can confirm (while the game cannot be played) carries
 `-- VERIFY(<id>): <what>`. The assumption, its fallback and the way to check it are in the feature's
 `verification.md`. `npm run check` lists the open markers and `npm run build` refuses them; a marker is removed
-only after the author confirms the behaviour in game.
+only after the author confirms the behaviour in game, or when the author accepts the assumption without a check
+(its row then says "Accepted", with what happens if it is wrong).
 
 ## Building and installing
 

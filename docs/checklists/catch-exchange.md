@@ -23,12 +23,19 @@ for step 7. Steps marked "B" are done on the second client.
    The chat shows nothing at any point, and the addon joins no chat channel (the public channel is off, spec 010).
    Partly: the spike (2026-11-06, 2026-11-08) saw `PARTY` return 0 and echo; the sessions of 2026-11-10/11 ran
    over Battle.net and the guild, so an exchange over the group itself is not seen yet (`/okf debug`: group 1 heard).
+   2026-11-12, a group of three Battle.net friends: every `/okf share` says "group 0", as designed: a client is one
+   peer under the path heard first (here Battle.net, spec 003 edge case "counted once"), so the group's HELLO adds
+   nothing and the session cooldown stays 30 min, not the group's 10. The group path needs a partner met only in
+   the group.
 3. [ ] **Guild, friends, Battle.net** (V10, V11, V13, V17): repeat without a group, after both relogged:
    - [x] A and B in one guild: within 30 minutes. 2026-11-11: the session ran over the guild (`/okf debug`: guild 1
      heard, Battle.net 0, exchanged 1, longest merge step 3.10 ms); the guildmate's record grew from 10 to 16 places
      (new maps 1442, 1443). The guildmate is also a Battle.net friend, so the two paths were not apart.
    - [ ] Only on each other's character friends list: within 30 minutes; `/okf share` counts B once among the
      friends heard, and when B logs out during an exchange no "No player named" line shows (V11, V12, spec 010).
+     2026-11-12, four players: not apart yet (every partner was also on a Battle.net list), but a client reached by
+     two paths counts once, under the path heard first: A "guild 1, Battle.net 2", exchanged with 3 (three
+     partners); the guildmate who is also A's Battle.net friend "Battle.net 1", exchanged with 1.
    - [x] Only Battle.net friends: within 30 minutes. 2026-11-10: a session ran with a Battle.net friend (heard 1,
      exchanged 1); the friend's record (10 places on maps 1413, 1421, 1434, 1445, 1456, build 1.60.1) is held with
      `seen` at the session's time, and the catalog shows the friend's catch where only the friend fished: Raw Bristle
@@ -39,13 +46,20 @@ for step 7. Steps marked "B" are done on the second client.
    "1m ago" on the settings page, `/okf share` with peers, last exchange and traffic: as expected. Found: "1 players"
    and the "only your own catches" hint next to others' data, fixed by spec 012: re-check with one exchange partner,
    "Exchange: 1 player, ... ago" in all three places and the hint "No bundled data in this version." alone.
+   2026-11-12 (build 2f96652, the same Battle.net friend on 4cebf29): "Exchange: 1 player, 10m ago" on the tab,
+   the settings page and `/okf share` (in Ukrainian); the short hint in The Barrens. Both sides: records 3, places
+   32, exchanged with 1. The friend's catalog lists 4 of the 20 items: as designed, an item neither in the seed
+   nor in the own catches shows from 3 reporters on a map (FR-014 of part 2); the items shown list both players'
+   places.
 5. [x] **Pauses** (V14, V17): enter combat, then a dungeon: `/okf share` says paused and why. Outside, the exchange
    resumes (the status line goes back to the exchange). 2026-11-10: in combat "Exchange paused: in combat", after
    the fight no pause: as expected. 2026-11-11, a dungeon: "Exchange paused: in an instance" (in Ukrainian), `/okf
    debug` `state paused (instance)`, `transport: pause instance`; after leaving the group and the dungeon the status
    line says "Nobody to exchange with right now", no pause: as expected.
-6. [ ] **Setting off** (V17): B turns the setting off: A's data disappears from B's tab, and `/okf share` says off.
-   `/okf share` on A shows no new exchange with B. Turning it on brings the data back at once.
+6. [x] **Setting off** (V17): B turns the setting off: A's data disappears from B's tab, and `/okf share` says off.
+   `/okf share` on A shows no new exchange with B. Turning it on brings the data back at once. 2026-11-12 (build
+   2f96652, three partners online): turned off on A, the partners' catches left A's tab at once, `/okf share` said
+   off; turned on, they came back at once: as expected. The partners' side was not watched.
 7. [ ] **Relay** (V17): C exchanges only with A (a group of A and C). After A meets B, B sees C's catches.
 8. [ ] **Offline peer** (V12): B logs out in the middle of an exchange (right after a group join): no line about it
    appears in A's chat.

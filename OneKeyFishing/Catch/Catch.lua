@@ -31,7 +31,7 @@ ns.RegisterEvent("LOOT_READY", function()
         if link then
             local _, _, quantity = GetLootSlotInfo(i)
             -- The ID comes from the link: GetItemInfoInstant has none for an item the client does not know yet.
-            -- VERIFY(V27): the loot link of an item the client does not know yet carries its item ID
+            -- Assumed (V27, accepted): the loot link of an item the client does not know yet carries its item ID
             table.insert(items, { link = link, itemID = ns.ItemIDFromLink(link), quantity = quantity or 1 })
         end
     end

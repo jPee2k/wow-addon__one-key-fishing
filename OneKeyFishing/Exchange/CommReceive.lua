@@ -176,8 +176,8 @@ ns.RegisterEvent("CHAT_MSG_ADDON", function(_, prefix, text, channel, sender, ta
     if channel == "CHANNEL" and not ns.Channel.IsOurs((type(name) == "string" and name ~= "") and name or target) then
         return
     end
-    -- VERIFY(V11): the sender is named as the game gives it ("First Last" seen; a realm only for another realm) and
-    -- works as the WHISPER target as it is
+    -- V11 ("First Last" seen; another realm accepted without a check): the sender is named as the game gives it (a
+    -- realm only for another realm) and works as the WHISPER target as it is
     OnMessage("w:" .. sender, VIA[channel], text)
 end)
 

@@ -91,8 +91,9 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   button without an item, no Lua error. Close the panel, Alt+Click an item in the bags, open the page again: its row is
   there.
 
-- [ ] **Best pole.** With two poles in the bags and no chosen pole, enter the mode. Expected: the pole with the
-  higher fishing bonus (then the higher item level) is equipped.
+- [x] **Best pole.** With two poles in the bags and no chosen pole, enter the mode. Expected: the pole with the
+  higher fishing bonus (then the higher item level) is equipped. 2026-11-12 (build 2f96652): Fishing Pole and
+  Strong Fishing Pole (+5) in either bag order, the Strong one equipped, no error.
 - [x] **Chosen pole and extra items.** (re-run after spec 008) Alt+Click a pole and a hat in the bags. Expected: the
   settings page "Fishing gear" lists them; entering the mode equips both; leaving puts back the previous weapons and
   helmet. With no previous helmet, the hat goes back to the bags.
@@ -104,8 +105,9 @@ water where mobs can attack (for the combat steps); the auction house for the pr
   Expected: the mode ends and the gear is restored once the cast ends.
   2026-11-11 (game 70888, after specs 009-011): first view, chosen items, remove and leaving during a cast as
   expected, no error. Open: "Find fishing items" (no fishing-bonus item in the bags yet), the best of two poles, full bags.
-- [ ] **Full bags.** (re-run after spec 008) Fill the bags and leave the mode. Expected: a chat line that there is no
-  free bag space to take off the gear; freeing a slot and leaving again restores it.
+- [x] **Full bags.** (re-run after spec 008) Fill the bags and leave the mode. Expected: a chat line that there is no
+  free bag space to take off the gear; freeing a slot and leaving again restores it. 2026-11-12 (build 2f96652): as
+  expected, no error.
 
 ## 4. Lures and containers
 
@@ -139,10 +141,12 @@ water where mobs can attack (for the combat steps); the auction house for the pr
 - [x] **Session timer.** Turn "Show session fishing time under the indicator" on. Expected: the time counts while
   the mode is on, stops while off, pauses while AFK (with "Pause the fishing timer while AFK" on).
 - [x] **Notifications off.** Turn "Show catch notifications" off and catch a fish. Expected: no notification.
-- [ ] **In a dungeon** (spec 012, tech-debt batch 10 of 2026-11-11). Fish ten casts at water inside a dungeon.
+- [x] **In a dungeon** (spec 012, tech-debt batch 10 of 2026-11-11). Fish ten casts at water inside a dungeon.
   Expected: no error window (before the fix: "attempt to perform string conversion on a secret string value"); the
   indicator shows "Hook!" while the bobber is out, never "No bobber"; the catches are looted; `/okf debug` Errors has
   no new entry. Then in the open world, a cast while facing away from the bobber still shows "No bobber" after 3 s.
+  2026-11-12 (build 2f96652): passes. In the open world "No bobber" after 3 s and "Hook!" again facing it; in a
+  dungeon no error window, the catches looted, `/okf debug` Errors none (the exchange paused for the instance).
 
 ## 6. Statistics
 
@@ -186,9 +190,9 @@ The full check (names, places, pins) is the "Next rank" section of
 
 ## 9. Minimap button and settings
 
-- [ ] **Tooltip colours** (spec 012). Over a session, hover item rows of the statistics window, then the minimap
+- [x] **Tooltip colours** (spec 012). Over a session, hover item rows of the statistics window, then the minimap
   button, many times. Expected: the gold, grey and green lines keep their colours (once every line was white,
-  2026-11-08); not decided by one hover.
+  2026-11-08); not decided by one hover. 2026-11-12: kept their colours over the whole session.
 
 - [x] **Two keys (spec 007).** Bind two keys to each action (`` ` `` and `'`, `SHIFT-`` and `SHIFT-'`). Expected:
   the minimap tooltip, the key line of the settings page and the indicator show both keys of each action, in the

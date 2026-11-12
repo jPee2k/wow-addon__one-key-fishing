@@ -139,6 +139,11 @@ with no chat line. Its tests switch it on with the stub flag `channel_on`.
   before it goes); 15 s timeout and 5 min in all; cooldowns 2 min / 10 min (group) / 30 min.
 - Crossing `SUM`s: the smaller node tag leads, also when the two know each other by different addresses (a `SUM`
   is matched to the session by the tag).
+- One client on two paths (a guildmate or group member who is also a Battle.net friend) is one peer: a `HELLO`
+  whose tag was heard from an address of the other kind in the last 30 min only notes the tag there. So the client
+  counts once in `/okf share` and the status line, under the path heard first (each side may name a different
+  one), and keeps that path's cooldown: a Battle.net friend who joins the group stays on the 30 min cooldown and is
+  not counted under the group (seen in game 2026-11-12).
 - Received records are decoded, checked and stored one per `C_Timer.After(0)` step.
 - A sender of broken, unwanted or too much data is ignored until logout (not for an item this client does not
   know; the hourly limits are twice what an honest client can send to one peer, derived from `Comm.BUDGET` and the

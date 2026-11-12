@@ -56,10 +56,17 @@ The steps:
    2026-11-10/11: N1 and N3 done; exchange over Battle.net and the guild, status, pauses (combat, dungeon), caves,
    subzones, pools and the solo regression pass; V26 and V43 closed. Found: batch 9 (two status texts, low) and
    batch 10 (the bobber's GUID is secret in a dungeon, high; also in 1.1.0); spec 012 fixed them with every other
-   open tech-debt item (2026-11-12), waiting for the in-game re-check (`fishing-mode.md` "In a dungeon", "Tooltip
-   colours"; `catch-exchange.md` step 4). Open: a
-   group and character friends with a second player, 50+ places (V18), an hour of fishing (V39), a second client
-   language.
+   open tech-debt item (2026-11-12); re-checked in game the same day (build 2f96652), all pass: fishing in a dungeon
+   without an error, the tooltip colours over a session, "Exchange: 1 player" and the short hint
+   (`catch-exchange.md` step 4). Also 2026-11-12, four players online: a client reached by two paths counts once,
+   under the path heard first (steps 2 and 3); the setting off and on (step 6); full bags and the best of two poles
+   (`fishing-mode.md`). No new finding. Open: the group path and the character friends path (each needs a partner
+   met by that path only; every partner so far was also on a Battle.net list), a relay (step 7), an offline peer
+   (step 8), 50+ places (V18), an hour of fishing (V39), the cap 225 and level 35, containers and lures (clam,
+   locked box, lure cooldown, V44), "Find fishing items", a second client language.
+   2026-11-12: the author accepted V10, V11, V12, V16, V27, R11 and R12 without an in-game check (the rows say
+   "Accepted" with what happens if one is wrong); their markers are removed. Markers left: V5, V18, V33, V36, V44
+   and the spike's.
 4. Remove the spike: `OneKeyFishing/Core/Spike.lua`, its TOC line, the `spike` entry in `OneKeyFishing/Core/Commands.lua`,
    `tests/ui/spike_test.lua`, the "Spike.lua" section of `docs/architecture/ui.md` and its row in `CLAUDE.md`, and
    `ns.ReportSection` in `OneKeyFishing/Core/Debug.lua` and `ns.ForgetErrors` in `OneKeyFishing/Core/Core.lua`

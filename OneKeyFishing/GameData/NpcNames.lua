@@ -7,8 +7,8 @@ ns.GameData = GameData
 
 -- Official NPC names per client language (GetLocale()), for when the client cannot tell them (no API reads an NPC
 -- name by ID). enUS is the fallback for every other client language (esMX: no confirmed source, so English).
--- Source: Wowhead's localized pages and tooltips (2026-11-03). VERIFY(R12): deDE Heming is "Der alte Mann Heming"
--- in the modern data but English in Wowhead's Classic data.
+-- Source: Wowhead's localized pages and tooltips (2026-11-03). deDE Heming is "Der alte Mann Heming" in the
+-- modern data but English in Wowhead's Classic data (R12, accepted without a German client).
 GameData.NpcNames = {
     [2626] = {
         enUS = "Old Man Heming",
