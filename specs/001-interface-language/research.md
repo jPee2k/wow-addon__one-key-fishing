@@ -11,7 +11,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
     globals when it is opened).
   - `ns.RegisterCommand(name, description, fn)` takes the description as a function returning the text
     (`function() return L["..."] end`), called when the help is printed. Five commands: scan, debug, toggle,
-    config, stats.
+    config, stats. (Superseded later: every command is now declared in `Commands.lua` (`ns.COMMANDS`), and
+    the descriptions and the `/okf` help are English on every client, constitution Principle II.)
   - `UI/Settings.lua` `TOGGLES`, `UI/StatsFrame.lua` `ROWS`, `UI/Indicator.lua` `LABELS`, `Skill.lua`
     `RANK_NAMES` / `NEXT_RANK`: built by a function on first use instead of at file load. (User Story 3
     later replaces the `Skill.lua` tables with `GameData/FishingRanks.lua` and runtime sentences, R13, R15;
@@ -49,7 +50,8 @@ Decisions taken for the plan, each with the reason and the alternatives that wer
 
 - **Decision**: `ns.ResolveLanguage(preference, clientLocale)`:
   1. preference is a registered code → that code;
-  2. otherwise (`"auto"`, or a code no longer shipped) → `clientLocale` if registered;
+  2. otherwise (`"auto"`, or a code no longer shipped) → `clientLocale` if registered, after mapping the
+     client variants of a shipped language (`enGB` → `enUS`, `ptPT` → `ptBR`);
   3. otherwise → `"enUS"`.
   Ukrainian has no client locale, so it can only come from step 1. `ruRU` is not registered and falls to
   English. Lookups go: chosen translation → English key.
@@ -157,6 +159,16 @@ change; the guides are based on the beta and say requirements may still change.
 - **In game (2026-11-05, ruRU client)**: area IDs 35, 33, 517 and 15 and item 16083 give the expected names, so
   their `VERIFY` marks are gone. Still open: the level and skill thresholds (level 10 is not reached yet), the
   book seller, the quest (6607 has no title), the map IDs and the points.
+- **In game (2026-11-06, release 1.1.0, enUS client)**: Journeyman learned at a trainer at level 10, and the
+  "can learn" notice came on reaching level 10, so `level = 10` lost its mark (`learnAt = 50` keeps it: the
+  character was past skill 50). The client chose map 1434 for Booty Bay (the Classic ID, so Forever uses the
+  Classic uiMapIDs) and the pin landed on Heming at 0.274 / 0.770: those marks are gone too. Next to Heming:
+  map 1434, 0.2745 / 0.7719, NPC 2626 in his GUID; he sells item 16083, the book: those marks are gone. Still open: Heming's
+  merchant list, Nat Pagle, the quest ID, the Dustwallow map and point, the levels 20 and 35.
+- **In game (2026-11-10, enUS client, level 21, skill 150)**: the book 16083 taught Expert (spell 7732, cap 225); its
+  tooltip says "Requires Level 20" and "Requires Fishing (125)", so `learnAt = 125` and `level = 20` lost their marks.
+  Still open: `learnAt = 50` of Journeyman, Nat Pagle, the quest ID, the Dustwallow map and point, level 35 and skill
+  225.
 - **Forever extras** that do not change the path: Legacy points at skill 150 / 225 / 300, new recipes (Fishing
   Rack, Fishing Hut, Bait and Tackle), faction-bound poles. No Fishing above 300.
 - **Decision**: thresholds `learnAt` 50 / 125 / 225 and `level` 10 / 20 / 35 replace the old `WARN_BEFORE = 5`
@@ -182,6 +194,9 @@ change; the guides are based on the beta and say requirements may still change.
   second call and 5 s after `RequestLoadQuestByID(6607)`; `GetQuestInfo(6607)` is nil too (open: the quest ID on
   Forever, or no quest data for a level 1 character; checked at Nat Pagle later). At skill 52, level 6, the
   debug report shows the next rank's name from the spell subtext (`next rank: <Journeyman in Russian> (game)`).
+- **In game (2026-11-06, enUS client)**: after Journeyman the report shows `next rank names: item game, npc game,
+  area game, zone game`: Heming's name comes from his creature tooltip (`C_TooltipInfo.GetHyperlink`), so that
+  mark is gone. Open: the German Heming name of the table (used only without a tooltip).
 - All of them exist in the Forever export (`Blizzard_APIDocumentationGenerated`: `MapDocumentation.lua`,
   `ItemDocumentation.lua`, `QuestLogDocumentation.lua`, `SpellDocumentation.lua`,
   `TooltipInfoDocumentation.lua`).
@@ -223,6 +238,14 @@ change; the guides are based on the beta and say requirements may still change.
   `OpenWorldMap(mapID)` out of combat, a popup before replacing a pin the player set, the addon's last pin in
   `charDB.pin`. Same saved field and texts as on `002-shared-db`, so the 1.2.0 merge switches the catalog to the
   module. The map is the first candidate ID the client knows and allows pins on (Classic ID first).
+- **In game (2026-11-06, enUS client)**: the Pin button and the minimap menu entry set the pin on Heming (map
+  1434) with the navigation arrow and open the map; a pin of the player's own is replaced only after the popup,
+  whose buttons are in the addon's language. The arrow mark is gone (and the catch catalog's V31, the same call).
+  The chat map link (at the cap 150) sets the pin and opens the map, and a fight afterwards is clean: the
+  game's own handler opens the map. **Failed**: after the pin opened the map (`OpenWorldMap` from addon code), opening it
+  in a fight gave "Interface action failed because of an AddOn"; `Logs/taint.log` names the map canvas field
+  `targetScrollY` and the blocked `Button:SetPassThroughButtons()` of the map's quest pins. The fix (the pin leaves
+  the map closed) waits in `docs/tech-debt.md`.
 - **Policy**: setting a pin is the player's click; no game action is automated (Principle I).
 
 ## R15. Static game data (FR-024)

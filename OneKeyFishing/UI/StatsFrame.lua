@@ -1,4 +1,6 @@
--- StatsFrame: session / current zone / all-time statistics, top catches and zones.
+-- StatsFrame: session / current zone / all-time statistics, top catches and zones, on the first of three tabs;
+-- the second tab is the "What can be caught here" page (UI/CatchHere.lua), the third the catch catalog
+-- (UI/CatalogTab.lua). The last open tab is saved.
 -- Everything is recomputed when the data changed (catch, miss, cast, zone change, scan, Refresh);
 -- otherwise only the time rows tick.
 local _, ns = ...
@@ -18,10 +20,13 @@ local TOP_ZONES = 5
 local TICK_INTERVAL = 1
 
 local frame
+-- The window's pages in tab order, built by Create: { key, label, frame, refresh, tick }. The open one is saved
+-- in OneKeyFishingDB.statsTab.
+local pages
 
 local FormatTime = ns.Stats.FormatTime -- Stats.lua loads earlier in the TOC
 local FormatShortTime = ns.Stats.FormatShortTime
-local CreateButton = ns.CreateButton -- Core.lua
+local CreateButton = ns.CreateButton -- UI/Widgets.lua
 
 local function PerHour(amount, seconds)
     if seconds < 60 then
@@ -64,7 +69,7 @@ local function BuildRows()
             end },
         { section = L["Money"] },
         { key = "value", label = L["Value"],
-            tip = L["Items caught, at the higher of the vendor price and the last scanned auction price."],
+            tip = L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."],
             text = function(c) return ns.FormatMoney(c.value) end },
         { key = "goldPerHour", label = L["Gold per hour"],
             tip = L["Value per hour of fishing time. Updated with every cast and with Refresh."],
@@ -75,11 +80,7 @@ local function BuildRows()
     }
 end
 
-local function CreateText(parent, template, justify)
-    local fontString = parent:CreateFontString(nil, "OVERLAY", template)
-    fontString:SetJustifyH(justify or "LEFT")
-    return fontString
-end
+local CreateText = ns.CreateText -- UI/Widgets.lua
 
 local function ShowRowTooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -88,31 +89,31 @@ local function ShowRowTooltip(self)
     GameTooltip:Show()
 end
 
--- Rows and section headers from ROWS; returns the y below the last row.
-local function CreateTable(f, headerY)
+-- Rows and section headers from ROWS, on the statistics page; returns the y below the last row.
+local function CreateTable(f, page, headerY)
     f.cells = {} -- row key -> its three cells (session, this zone, all time)
     local y = headerY - 4
     for _, definition in ipairs(ROWS) do
         if definition.section then
             y = y - LINE_HEIGHT - SECTION_GAP
-            local header = CreateText(f, "GameFontNormalSmall")
+            local header = CreateText(page, "GameFontNormalSmall")
             header:SetPoint("TOPLEFT", LABEL_X, y)
             header:SetText(definition.section)
-            local divider = f:CreateTexture(nil, "ARTWORK")
+            local divider = page:CreateTexture(nil, "ARTWORK")
             divider:SetColorTexture(1, 1, 1, 0.15)
             divider:SetHeight(1)
             divider:SetPoint("TOPLEFT", LABEL_X, y - LINE_HEIGHT + 4)
             divider:SetPoint("TOPRIGHT", -LABEL_X, y - LINE_HEIGHT + 4)
         else
             y = y - LINE_HEIGHT
-            local label = CreateText(f, "GameFontHighlight")
+            local label = CreateText(page, "GameFontHighlight")
             label:SetPoint("TOPLEFT", LABEL_X, y)
             label:SetText(definition.label)
             -- A long translation is cut at the first column; the row tooltip shows it in full.
             label:SetWidth(COLUMN_X[1] - LABEL_X - 8)
             label:SetWordWrap(false)
             -- Font strings take no mouse input: a frame over the label shows the explanation.
-            local hover = CreateFrame("Frame", nil, f)
+            local hover = CreateFrame("Frame", nil, page)
             hover:SetPoint("TOPLEFT", LABEL_X, y)
             hover:SetSize(COLUMN_X[1] - LABEL_X - 8, LINE_HEIGHT)
             hover:EnableMouse(true)
@@ -127,7 +128,7 @@ local function CreateTable(f, headerY)
             local cells = {}
             f.cells[definition.key] = cells
             for column = 1, 3 do
-                local cell = CreateText(f, "GameFontHighlight", "RIGHT")
+                local cell = CreateText(page, "GameFontHighlight", "RIGHT")
                 cell:SetPoint("TOPLEFT", COLUMN_X[column], y)
                 cell:SetWidth(COLUMN_WIDTH)
                 cells[column] = cell
@@ -142,6 +143,72 @@ end
 function StatsFrame.ButtonRows(leftWidth, scanWidth, minWidth)
     local width = math.max(minWidth, leftWidth)
     return width, leftWidth + 8 + scanWidth > width
+end
+
+-- Shows the page with this key (the first one for an unknown key) and marks its tab.
+local function SelectTab(key)
+    local selected = 1
+    for index, page in ipairs(pages) do
+        if page.key == key then
+            selected = index
+        end
+    end
+    ns.db.statsTab = pages[selected].key
+    for index, page in ipairs(pages) do
+        page.frame:SetShown(index == selected)
+    end
+    if frame.usesPanelTabs then
+        PanelTemplates_SetTab(frame, selected)
+    else
+        for index, tab in ipairs(frame.Tabs) do
+            tab:SetEnabled(index ~= selected)
+        end
+    end
+    pages[selected].refresh()
+end
+
+-- One tab: the game's panel tab, or nil when the client lacks the template.
+local function CreatePanelTab(f, text)
+    local ok, tab = pcall(CreateFrame, "Button", nil, f, "PanelTabButtonTemplate")
+    if ok and tab then
+        tab:SetText(text)
+        PanelTemplates_TabResize(tab, 0)
+        return tab
+    end
+end
+
+-- A tab per page below the window: the game's panel tabs, or plain buttons for all of them when the client
+-- lacks the template or its functions (one look for every tab).
+local function CreateTabs(f)
+    -- PanelTabButtonTemplate and PanelTemplates_* render tabs in Forever (V6, seen in game 2026-11-06)
+    local tabs = {}
+    if PanelTemplates_SetNumTabs and PanelTemplates_SetTab and PanelTemplates_TabResize then
+        for index, page in ipairs(pages) do
+            tabs[index] = CreatePanelTab(f, page.label)
+            if not tabs[index] then
+                for _, tab in ipairs(tabs) do
+                    tab:Hide()
+                end
+                tabs = {}
+                break
+            end
+        end
+    end
+    f.usesPanelTabs = #tabs == #pages
+    for index, page in ipairs(pages) do
+        local tab = tabs[index] or ns.CreateButton(f, page.label, 120, nil)
+        tab:SetScript("OnClick", function() SelectTab(page.key) end)
+        if index == 1 then
+            tab:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 12, 2)
+        else
+            tab:SetPoint("LEFT", tabs[index - 1], "RIGHT", 4, 0)
+        end
+        tabs[index] = tab
+    end
+    f.Tabs = tabs -- what PanelTemplates_* read
+    if f.usesPanelTabs then
+        PanelTemplates_SetNumTabs(f, #tabs)
+    end
 end
 
 local function Create()
@@ -166,41 +233,57 @@ local function Create()
     title:SetPoint("TOP", 0, -6)
     title:SetText(L["OneKeyFishing - Statistics"])
 
-    f.skill = CreateText(f, "GameFontNormal")
+    -- Three pages over the same area, switched by the tabs below the window: today's statistics,
+    -- "What can be caught here" (UI/CatchHere.lua) and the catch catalog (UI/CatalogTab.lua).
+    local page = CreateFrame("Frame", nil, f)
+    page:SetAllPoints()
+    f.statsPage = page
+    f.herePage = ns.CatchHere.Create(f)
+    f.catalogPage = ns.CatalogTab.Create(f)
+    pages = {
+        { key = "stats", label = L["Statistics"], frame = page,
+            refresh = StatsFrame.Refresh, tick = StatsFrame.TickStatistics },
+        { key = "here", label = L["What can be caught here"], frame = f.herePage,
+            refresh = ns.CatchHere.Refresh, tick = ns.CatchHere.Tick },
+        { key = "catalog", label = L["Catch catalog"], frame = f.catalogPage,
+            refresh = ns.CatalogTab.Refresh, tick = ns.CatalogTab.Tick },
+    }
+
+    f.skill = CreateText(page, "GameFontNormal")
     f.skill:SetPoint("TOPLEFT", LABEL_X, -32)
-    f.prices = CreateText(f, "GameFontDisableSmall")
+    f.prices = CreateText(page, "GameFontDisableSmall")
     f.prices:SetPoint("TOPLEFT", f.skill, "BOTTOMLEFT", 0, -4)
     -- The next Fishing rank (three lines at most) and the map pin for its place
-    f.nextRank = CreateText(f, "GameFontHighlightSmall")
+    f.nextRank = CreateText(page, "GameFontHighlightSmall")
     f.nextRank:SetPoint("TOPLEFT", f.prices, "BOTTOMLEFT", 0, -4)
     f.nextRank:SetWidth(WIDTH - 2 * LABEL_X - 90)
     f.nextRank:SetMaxLines(3) -- the table header below leaves room for three
-    f.pin = CreateButton(f, L["Pin"], 60, function() ns.Skill.PinNextRank() end)
+    f.pin = CreateButton(page, L["Pin"], 60, function() ns.Skill.PinNextRank() end)
     f.pin:SetPoint("TOPLEFT", f.nextRank, "TOPRIGHT", 10, 4) -- beside its line, clear of the prices line
 
     -- Table header
     local headerY = -106
     local headers = { L["Session"], L["This zone"], L["All time"] }
     for i, text in ipairs(headers) do
-        local header = CreateText(f, "GameFontNormal", "RIGHT")
+        local header = CreateText(page, "GameFontNormal", "RIGHT")
         header:SetPoint("TOPLEFT", COLUMN_X[i], headerY)
         header:SetWidth(COLUMN_WIDTH)
         header:SetText(text)
     end
-    f.zoneName = CreateText(f, "GameFontDisableSmall")
+    f.zoneName = CreateText(page, "GameFontDisableSmall")
     f.zoneName:SetPoint("TOPLEFT", LABEL_X, headerY)
     f.zoneName:SetWidth(COLUMN_X[1] - LABEL_X - 8)
 
-    local tableBottom = CreateTable(f, headerY)
+    local tableBottom = CreateTable(f, page, headerY)
 
     -- Top catches
     local itemsY = tableBottom - LINE_HEIGHT - 16
-    local itemsHeader = CreateText(f, "GameFontNormal")
+    local itemsHeader = CreateText(page, "GameFontNormal")
     itemsHeader:SetPoint("TOPLEFT", LABEL_X, itemsY)
     itemsHeader:SetText(L["Top catches (all time)"])
     f.itemLines = {}
     for i = 1, TOP_ITEMS do
-        local line = CreateFrame("Frame", nil, f)
+        local line = CreateFrame("Frame", nil, page)
         line:SetSize(WIDTH - 2 * LABEL_X, LINE_HEIGHT)
         line:SetPoint("TOPLEFT", LABEL_X, itemsY - i * LINE_HEIGHT - 2)
         line.icon = line:CreateTexture(nil, "ARTWORK")
@@ -218,9 +301,7 @@ local function Create()
         line:EnableMouse(true)
         line:SetScript("OnEnter", function(self)
             if self.itemID then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetItemByID(self.itemID)
-                GameTooltip:Show()
+                ns.ShowItemTooltip(self, self.itemID, true)
             end
         end)
         line:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -229,38 +310,38 @@ local function Create()
 
     -- Zones
     local zonesY = itemsY - (TOP_ITEMS + 1) * LINE_HEIGHT - 12
-    local zonesHeader = CreateText(f, "GameFontNormal")
+    local zonesHeader = CreateText(page, "GameFontNormal")
     zonesHeader:SetPoint("TOPLEFT", LABEL_X, zonesY)
     zonesHeader:SetText(L["Zones (all time)"])
     f.zoneLines = {}
     for i = 1, TOP_ZONES do
-        local name = CreateText(f, "GameFontHighlight")
+        local name = CreateText(page, "GameFontHighlight")
         name:SetPoint("TOPLEFT", LABEL_X, zonesY - i * LINE_HEIGHT - 2)
         name:SetWidth(320)
-        local detail = CreateText(f, "GameFontHighlight", "RIGHT")
+        local detail = CreateText(page, "GameFontHighlight", "RIGHT")
         detail:SetPoint("TOPRIGHT", -LABEL_X, zonesY - i * LINE_HEIGHT - 2)
         detail:SetWidth(200)
         f.zoneLines[i] = { name = name, detail = detail }
     end
 
     -- Buttons
-    local resetSession = CreateButton(f, L["Reset session"], 130, function()
+    local resetSession = CreateButton(page, L["Reset session"], 130, function()
         ns.ShowPopup("ONEKEYFISHING_RESET_SESSION", L["Reset the fishing statistics of this session?"], function()
             ns.Stats.ResetSession()
             StatsFrame.Refresh() -- right away: the old buckets are gone
         end)
     end)
     resetSession:SetPoint("BOTTOMLEFT", 14, 12)
-    local resetAll = CreateButton(f, L["Reset all"], 130, function()
+    local resetAll = CreateButton(page, L["Reset all"], 130, function()
         ns.ShowPopup("ONEKEYFISHING_RESET_ALL", L["Delete ALL fishing statistics of this character?"], function()
             ns.Stats.ResetAll()
             StatsFrame.Refresh()
         end)
     end)
     resetAll:SetPoint("LEFT", resetSession, "RIGHT", 8, 0)
-    local refresh = CreateButton(f, L["Refresh"], 90, function() StatsFrame.Refresh() end)
+    local refresh = CreateButton(page, L["Refresh"], 90, function() StatsFrame.Refresh() end)
     refresh:SetPoint("LEFT", resetAll, "RIGHT", 8, 0)
-    f.scan = CreateButton(f, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
+    f.scan = CreateButton(page, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
     f.scan:SetPoint("BOTTOMRIGHT", -14, 12)
     -- Translated buttons can be too wide: the window widens for the three left buttons, and a Scan button that
     -- does not fit beside them wraps like text: the left three move up a row, Scan starts the row below at the
@@ -277,6 +358,8 @@ local function Create()
         f.scan:SetPoint("BOTTOMLEFT", 14, 12)
     end
 
+    CreateTabs(f)
+
     local elapsed = 0
     f:SetScript("OnUpdate", function(_, delta)
         elapsed = elapsed + delta
@@ -285,7 +368,7 @@ local function Create()
             StatsFrame.Tick()
         end
     end)
-    f:SetScript("OnShow", function() StatsFrame.Refresh() end)
+    f:SetScript("OnShow", function() SelectTab(ns.db.statsTab) end)
     -- New frames are shown; start hidden so the first Toggle opens it.
     f:Hide()
     return f
@@ -305,7 +388,7 @@ local function IsShown()
 end
 
 local function UpdateScanButton()
-    frame.scan:SetEnabled(ns.Auction.CanScan())
+    ns.UpdateScanButton(frame.scan) -- UI/Widgets.lua
 end
 
 -- The column contexts for ROWS; values come from the last full refresh.
@@ -325,7 +408,11 @@ end
 local currentZoneLine, currentZoneData
 
 local function ZoneDetail(data, liveMode)
-    return (L["%d catches, %s"]):format(data.catches, FormatShortTime(data.modeTime + liveMode))
+    local time = FormatShortTime(data.modeTime + liveMode)
+    if data.catches == 1 then
+        return (L["1 catch, %s"]):format(time)
+    end
+    return (L["%d catches, %s"]):format(data.catches, time)
 end
 
 -- Only the time rows: cheap, called every second while the timer runs. A stopping timer flushes its time
@@ -366,7 +453,7 @@ end
 
 -- Everything, including values and rates. Called on show, by the Refresh button, and by Tick when the data changed.
 function StatsFrame.Refresh()
-    if not IsShown() then
+    if not (IsShown() and frame.statsPage:IsShown()) then
         return
     end
     dirty, shownVersion = false, ns.Stats.GetVersion()
@@ -407,11 +494,11 @@ function StatsFrame.Refresh()
         local itemID = itemIDs[i]
         line.itemID = itemID
         if itemID then
-            local name, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
-            line.icon:SetTexture(icon or C_Item.GetItemIconByID(itemID))
-            line.name:SetText(link or name or ("item:" .. itemID))
+            local text, icon = ns.ItemDisplay(itemID)
+            line.icon:SetTexture(icon)
+            line.name:SetText(text)
             line.count:SetText("x" .. items[itemID])
-            line.value:SetText(ns.FormatMoney(items[itemID] * ns.Prices.Get(itemID)))
+            line.value:SetText(ns.Prices.FormatValue(itemID, items[itemID]))
             line:Show()
         else
             line:Hide()
@@ -436,11 +523,20 @@ function StatsFrame.Refresh()
     end
 end
 
--- Every second: a full refresh when something changed, otherwise just the time rows.
+-- Every second: the open page's tick.
 function StatsFrame.Tick()
     if not IsShown() then
         return
     end
+    for _, page in ipairs(pages) do
+        if page.frame:IsShown() then
+            page.tick()
+        end
+    end
+end
+
+-- The statistics page's tick: a full refresh when something changed, otherwise just the time rows.
+function StatsFrame.TickStatistics()
     if dirty or shownVersion ~= ns.Stats.GetVersion() then
         StatsFrame.Refresh()
     else
@@ -451,6 +547,14 @@ end
 function StatsFrame.Toggle()
     frame = frame or Create()
     frame:SetShown(not frame:IsShown())
+end
+
+-- Shows the window on the catch catalog; arg as CatalogTab.Show takes it (an item ID, a search text or nil).
+function StatsFrame.OpenCatalog(arg)
+    frame = frame or Create()
+    frame:Show()
+    SelectTab("catalog")
+    ns.CatalogTab.Show(arg)
 end
 
 -- Statistics changes are seen through the Stats version; these only mark the window dirty, so a burst
@@ -470,9 +574,12 @@ ns.RegisterEvent("CHAT_MSG_SKILL", MarkDirty)
 -- book, the quest and the rank spells, which the client loads later. Other items, quests and spells are ignored.
 ns.RegisterEvent("PLAYER_LEVEL_UP", function() C_Timer.After(1, MarkDirty) end)
 local function MarkDirtyForAdvice(_, id)
-    for cap, step in pairs(ns.FishingRanks) do
-        if id == step.source.itemID or id == step.source.questID or id == step.next
-            or id == ns.FishingRankSpells[cap] then
+    if ns.IsFishingSpell(id) then -- a rank spell
+        MarkDirty()
+        return
+    end
+    for _, step in pairs(ns.GameData.FishingRanks) do
+        if id == step.source.itemID or id == step.source.questID then
             MarkDirty()
             return
         end
@@ -489,5 +596,3 @@ ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
         MarkDirty()
     end
 end)
-
-ns.RegisterCommand("stats", function() return L["show the fishing statistics"] end, StatsFrame.Toggle)

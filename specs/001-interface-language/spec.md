@@ -112,8 +112,8 @@ what the rank is, where to learn it and which character level it needs. The name
 town, book, quest, the seller or quest giver, the rank) are exactly the ones the player's game client shows
 on its map, in its tooltips and in its quest log, whatever language the addon's interface is in. At the cap
 the addon says so loudly once. The advice stays in the statistics window and the minimap tooltip, so it is
-not lost when the notice fades, and for the book and the quest one click puts the game's own map pin and
-navigation arrow on the place.
+not lost when the notice fades, and for the book and the quest one click puts the game's own map pin on the
+place, tracked by the minimap's arrow (changed by spec 009).
 
 **Why this priority**: it fixes texts that this feature translated by hand and that do not match what the
 player sees on the map (worst for Ukrainian, which has no client), and it turns a 3-second toast into advice
@@ -142,8 +142,8 @@ quest.
 5. **Given** a German client, **When** the Artisan advice is shown, **Then** the quest, Nat Pagle and the
    zone carry the German client's names.
 6. **Given** the Expert or Artisan advice, **When** the player clicks the pin button in the statistics
-   window or the minimap menu entry, **Then** the game's map pin and navigation arrow point at the seller or
-   the quest giver; if the player had set a pin of their own, the addon asks before replacing it. **When**
+   window or the minimap menu entry, **Then** the game's map pin marks the seller or the quest giver (tracked
+   by the minimap's arrow; the world map stays closed, changed by spec 009); if the player had set a pin of their own, the addon asks before replacing it. **When**
    the player clicks the map link in the chat notice instead, **Then** the game itself sets the pin on the
    same place and opens the map, as for any map link.
 7. **Given** Fishing 300/300, **When** the statistics window or the minimap tooltip is shown, **Then** no
@@ -252,10 +252,10 @@ quest.
 - **FR-021**: The statistics window MUST show a permanent "Next rank" line under the skill line (rank, how
   and where to learn it, the level needed while it is not reached), and the minimap button tooltip MUST
   show the same advice. Nothing is shown when there is no next rank (300) or Fishing is not learned.
-- **FR-022**: For the book and the quest, the player MUST be able to set the game's own map pin with the
-  navigation arrow on the seller or the quest giver: a pin button next to the "Next rank" line, a minimap
-  menu entry and a clickable map link in the chat notice. Through the pin button and the menu entry, a pin
-  the player set themselves is replaced only after a confirmation, and the navigation arrow is turned on.
+- **FR-022** (changed by spec 009): For the book and the quest, the player MUST be able to set the game's own map
+  pin, tracked (the minimap's arrow), without opening the world map, on the seller or the quest giver: a pin
+  button next to the "Next rank" line, a minimap menu entry and a clickable map link in the chat notice. Through the pin button and the menu entry, a pin
+  the player set themselves is replaced only after a confirmation, and the pin is tracked.
   The chat link is the game's standard map link and behaves like any other: the game sets the pin and opens
   the map at once, without the addon's confirmation or arrow. Where the game allows no pin, the pin controls are hidden. The trainer rank has no
   pin; its sentence points to capitals and towns and to the minimap's trainer tracking.

@@ -7,7 +7,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Toggle fishing mode"] = "낚시 모드 전환"
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "저장된 데이터가 더 새로운 버전의 OneKeyFishing에서 만들어졌습니다. 문제를 피하려면 애드온을 업데이트하세요."
-    L["v%s commands:"] = "v%s 명령어:"
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "게임 클라이언트에 맞는 번역이 없어 애드온이 영어로 표시됩니다. " ..
         "%s 등 다른 언어는 /okf config에서 고를 수 있습니다."
@@ -46,7 +45,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
         "낚시 모드가 꺼져 있습니다. 먼저 '낚시 모드 전환' 키를 누르세요."
     L["The fishing key is paused in combat."] = "전투 중에는 낚시 키가 일시 중지됩니다."
     L["Leaving fishing mode after combat."] = "전투가 끝나면 낚시 모드를 종료합니다."
-    L["enter or leave fishing mode"] = "낚시 모드 켜기 또는 끄기"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "검색 중 %d/%d"
@@ -56,8 +54,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Nothing to scan yet: catch some fish first."] = "아직 검색할 것이 없습니다. 먼저 물고기를 낚으세요."
     L["Scanning auction prices of %d item(s)..."] = "아이템 %d개의 경매장 가격 검색 중..."
     L["Auction scan stopped: %d of %d price(s) found."] = "경매장 검색 중지: %d/%d개 가격 확인."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "낚은 아이템의 경매장 가격 검색 (경매장이 열려 있어야 함)"
 
     -- Skill.lua
     L["Apprentice"] = "수습"
@@ -86,15 +82,16 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Apply lure"] = "미끼 사용"
     L["Open"] = "열기"
     L["No bobber"] = "찌 없음"
+    L["Paused in combat"] = "전투 중 일시 정지"
     L["Drag to move. Lock it in the settings."] = "끌어서 이동합니다. 설정에서 고정할 수 있습니다."
 
     -- UI/Toast.lua
     L["Caught: %s"] = "낚음: %s"
     L["Nothing caught"] = "아무것도 낚지 못함"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "게임이 지도 핀을 받아들이지 않았습니다."
-    L["Map pin: %s"] = "지도 핀: %s"
+    L["Map pin: %s. Open the world map to see it."] = "지도 핀: %s. 세계 지도를 열어 확인하세요."
     L["Replace your map pin with this place?"] = "지도 핀을 이 장소로 바꾸시겠습니까?"
     L["Replace"] = "바꾸기"
 
@@ -128,8 +125,8 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] =
         "가치: 상점 판매가 (시세를 보려면 경매장을 검색하세요)"
     L["%d catches, %s"] = "어획 %d회, %s"
+    L["1 catch, %s"] = "어획 1회, %s"
     L["No catches yet."] = "아직 어획이 없습니다."
-    L["show the fishing statistics"] = "낚시 통계 보기"
     L["Time"] = "시간"
     L["Results"] = "결과"
     L["Money"] = "골드"
@@ -142,14 +139,42 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Casts that ended without loot."] = "전리품 없이 끝난 던지기입니다."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "낚시 시간 1시간당 어획입니다. 던질 때마다, 그리고 새로고침할 때 갱신됩니다."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "낚은 아이템의 가치입니다. 상점 판매가와 마지막으로 검색한 경매장 가격 중 높은 값으로 계산합니다."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "낚은 아이템의 가치입니다. 상점 판매가와 경매장 가격 중 높은 값으로 계산하며, 매물이 적으면 상점 판매가를 씁니다."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "낚시 시간 1시간당 가치입니다. 던질 때마다, 그리고 새로고침할 때 갱신됩니다."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "통계"
+    L["What can be caught here"] = "여기서 낚이는 것"
+    L["Skill: %s"] = "숙련도: %s"
+    L["All skill levels"] = "모든 숙련도"
+    L["Source: %s"] = "출처: %s"
+    L["All"] = "전체"
+    L["Only mine"] = "내 것만"
+    L["%d catches"] = "어획 %d회"
+    L["1 catch"] = "어획 1회"
+    L["Nothing caught: %s"] = "아무것도 낚지 못함: %s"
+    L["Numbers for the whole map: few catches at this spot."] = "지도 전체 수치: 이 지점의 어획이 적습니다."
+    L["Little data"] = "데이터 부족"
+    L["Nothing has been caught here yet."] = "아직 여기서 낚은 것이 없습니다."
+    L["Try \"All skill levels\": little data for your skill."] = "'모든 숙련도'를 선택해 보세요: 현재 숙련도의 데이터가 부족합니다."
+    L["and %d more"] = "외 %d개"
+    L["No bundled data in this version: only your own catches are shown."] = "이 버전에는 기본 제공 데이터가 없습니다: 내 어획만 표시됩니다."
+    L["No bundled data in this version."] = "이 버전에는 기본 제공 데이터가 없습니다."
+    L["The game does not show this place on the map."] = "게임이 이 장소를 지도에 표시하지 않습니다."
+    L["Item"] = "아이템"
+    L["Chance"] = "확률"
+    L["Per catch"] = "어획당"
+    L["Price"] = "가격"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "매물 적음"
+    L["Auction price: %s (few lots)"] = "경매장 가격: %s (매물 적음)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 디버그 보고서"
-    L["show a report to copy into a bug report"] = "버그 제보에 붙여 넣을 보고서 보기"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "낚시 중 자동 획득"
@@ -207,7 +232,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Automatic: no fishing pole in your bags."] = "자동: 가방에 낚싯대가 없습니다."
     L["Settings cannot be opened in combat."] = "전투 중에는 설정을 열 수 없습니다."
     L["Settings panel is not available in this client."] = "이 클라이언트에서는 설정 창을 사용할 수 없습니다."
-    L["open the settings"] = "설정 열기"
     L["Language:"] = "언어:"
     L["Interface language"] = "인터페이스 언어"
     L["Game client language"] = "게임 클라이언트 언어"
@@ -229,11 +253,11 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Pin: next Fishing rank"] = "핀: 다음 낚시 등급"
     L["Leave fishing mode"] = "낚시 모드 종료"
     L["Enter fishing mode"] = "낚시 모드 시작"
-    L["Statistics"] = "통계"
     L["Settings"] = "설정"
     L["Fishing mode: %s"] = "낚시 모드: %s"
     L["Fishing skill: %d/%d %s"] = "낚시 숙련도: %d/%d %s"
     L["Session: %d catches, %s"] = "세션: 어획 %d회, %s"
+    L["Session: 1 catch, %s"] = "세션: 어획 1회, %s"
     L["Fishing key:"] = "낚시 키:"
     L["Toggle mode key:"] = "모드 전환 키:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =
@@ -244,4 +268,118 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Shift+Left-click: statistics"] = "Shift+왼쪽 클릭: 통계"
     L["Right-click: menu"] = "오른쪽 클릭: 메뉴"
     L["Drag: move this button"] = "끌기: 이 버튼 이동"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "이제 OneKeyFishing이 내 어획을 무작위 ID로 이 애드온을 쓰는 길드원, 파티원과 친구에게 공유합니다."
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "캐릭터 이름은 보내지 않지만, 데이터를 교환하는 플레이어는 어떤 ID가 내 것인지 알 수 있습니다."
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "설정 -> 애드온 -> OneKeyFishing -> 공유 데이터베이스에서 끌 수 있습니다."
+    L["Got it"] = "확인"
+    L["Shared database"] = "공유 데이터베이스"
+    L["Shared catch database is off"] = "공유 어획 데이터베이스가 꺼져 있습니다"
+    L["Waiting for you to read the notice"] = "안내를 읽을 때까지 기다리는 중"
+    L["Exchange unavailable: the game refuses addon messages"] = "교환 불가: 게임이 애드온 메시지를 거부합니다"
+    L["Exchange paused: in combat"] = "교환 일시 중지: 전투 중"
+    L["Exchange paused: in an instance"] = "교환 일시 중지: 인스턴스 안"
+    L["Exchange paused: loading screen"] = "교환 일시 중지: 로딩 화면"
+    L["Exchange paused: the game restricts addon messages here"] = "교환 일시 중지: 이곳에서는 게임이 애드온 메시지를 제한합니다"
+    L["Exchange paused: the game asked to slow down"] = "교환 일시 중지: 게임이 속도를 줄이라고 요청했습니다"
+    L["Nobody to exchange with right now"] = "지금은 교환할 상대가 없습니다"
+    L["Exchange: %d players, %s ago"] = "교환: %d명, %s 전"
+    L["Exchange: 1 player, %s ago"] = "교환: 1명, %s 전"
+    L["Exchange: waiting for the first exchange"] = "교환: 첫 교환을 기다리는 중"
+    L["Bundled data: version %d, %d places"] = "기본 데이터: 버전 %d, 장소 %d곳"
+    L["Records held: %d, %d places"] = "보유한 기록: %d개, 장소 %d곳"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "지난 1시간 동안 확인된 플레이어: 길드 %d, 파티 %d, 친구 %d, Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "지난 1시간 동안 교환한 플레이어: %d"
+    L["Last exchange: %s ago"] = "마지막 교환: %s 전"
+    L["Last exchange: none yet"] = "마지막 교환: 아직 없음"
+    L["Traffic in the last hour: %d KB"] = "지난 1시간 트래픽: %d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "공유 어획 데이터베이스 사용"
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "내 어획(아이템, 수량, 지도 칸, 낚시한 평균 위치)은 무작위 ID로 공유됩니다."
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "길드, 파티와 친구 목록의 애드온 사용자에게 전달됩니다. 이름과 장비는 보내지 않습니다."
+    L["The players you exchange with can tell which ID is yours."] = "데이터를 교환하는 플레이어는 어떤 ID가 내 것인지 알 수 있습니다."
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "끄면: 아무것도 보내거나 받지 않으며, 다른 플레이어의 데이터는 계산하지 않습니다."
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "어획 %d회, 플레이어 %d명"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "알 수 없는 아이템"
+    L["The game has not shown this item yet."] = "게임에서 아직 이 아이템을 보여 주지 않았습니다."
+    L["Reported by %d players on this map"] = "이 지도에서 보고한 플레이어: %d명"
+    L["In the bundled data"] = "기본 데이터에 있음"
+    L["Item ID: %d"] = "아이템 ID: %d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing이 채팅 채널 자리를 비우려고 숨겨진 채널에서 나갔습니다. 다시 참여해 보세요."
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "공개 채널 사용"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "공개 채널을 켜면 숨겨진 채팅 채널을 통해 다른 모든 애드온 사용자에게도 전달됩니다."
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "이름으로 그 채널에 들어온 사람은 누구나 채널 안의 어떤 캐릭터가 이 애드온을 쓰는지 볼 수 있습니다."
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "이제 OneKeyFishing이 내 어획을 무작위 ID로 이 애드온을 쓰는 다른 플레이어에게 공유합니다."
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "길드, 파티와 친구에게, 그리고 숨겨진 채팅 채널을 통해 그 밖의 누구에게나 전달됩니다."
+    L["Public channel: in use"] = "공개 채널: 사용 중"
+    L["Public channel: in use (fallback channel %d)"] = "공개 채널: 사용 중 (예비 채널 %d)"
+    L["Public channel: off"] = "공개 채널: 꺼짐"
+    L["Public channel: no free chat channel slot"] = "공개 채널: 빈 채팅 채널 자리가 없음"
+    L["Public channel: locked or refused by the game"] = "공개 채널: 잠겼거나 게임이 거부함"
+    L["Public channel: you left it, back at the next login"] = "공개 채널: 직접 나감, 다음 접속 때 다시 참여"
+    L["Public channel: waiting"] = "공개 채널: 대기 중"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "지난 1시간 동안 확인된 플레이어: 길드 %d, 파티 %d, 친구 %d, Battle.net %d, 채널 %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "알 수 없는 지역 (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "정확한 위치 없음"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "낚시 도감"
+    L["Search by item name"] = "아이템 이름으로 검색"
+    L["Zones: %d"] = "지역: %d"
+    L["Back"] = "뒤로"
+    L["Place"] = "장소"
+    L["Skill"] = "숙련도"
+    L["Counting the catch..."] = "잡은 물고기를 집계하는 중..."
+    L["Nothing has been caught yet."] = "아직 잡은 것이 없습니다."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "도감은 내가 잡은 것, 기본 제공 데이터, 그리고 공유를 켜면 다른 플레이어가 잡은 것으로 채워집니다."
+    L["You have not caught anything yet."] = "아직 아무것도 잡지 않았습니다."
+    L["No item matches the search."] = "검색과 일치하는 아이템이 없습니다."
+    L["No data for this item under these filters."] = "이 필터로는 이 아이템의 데이터가 없습니다."
+    L["Click an item to see where else it is caught."] = "아이템을 클릭하면 다른 어디에서 잡히는지 볼 수 있습니다."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "여기에 지도 핀 꽂기"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (플레이어 %d명)"
+    L["Caught in:"] = "잡히는 곳:"
+    L["Likely catch here:"] = "이곳에서 잡힐 만한 것:"
+    L["Show catch chances in tooltips"] = "툴팁에 낚시 확률 표시"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "물: %s"
+    L["Everywhere"] = "모든 곳"
+    L["Open water"] = "탁 트인 물"
+    L["Pools"] = "물고기 떼"
 end)

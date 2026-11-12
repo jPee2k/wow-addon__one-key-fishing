@@ -7,7 +7,6 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Toggle fishing mode"] = "切換釣魚模式"
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "你的存檔資料來自較新版本的 OneKeyFishing。請更新插件以避免問題。"
-    L["v%s commands:"] = "v%s 指令："
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "你的遊戲客戶端沒有對應的翻譯，因此插件顯示為英文。" ..
         "其他語言（例如 %s）可在 /okf config 中選擇。"
@@ -45,7 +44,6 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Fishing mode is off. Press your 'Toggle fishing mode' key first."] = "釣魚模式未開啟。請先按「切換釣魚模式」鍵。"
     L["The fishing key is paused in combat."] = "釣魚鍵在戰鬥中暫停使用。"
     L["Leaving fishing mode after combat."] = "戰鬥結束後將離開釣魚模式。"
-    L["enter or leave fishing mode"] = "進入或離開釣魚模式"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "掃描中 %d/%d"
@@ -55,7 +53,6 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Nothing to scan yet: catch some fish first."] = "還沒有可掃描的物品：請先釣些魚。"
     L["Scanning auction prices of %d item(s)..."] = "正在掃描 %d 件物品的拍賣價格……"
     L["Auction scan stopped: %d of %d price(s) found."] = "拍賣掃描已停止：找到 %d / %d 個價格。"
-    L["scan auction prices of caught items (auction house must be open)"] = "掃描漁獲的拍賣價格（需開啟拍賣場）"
 
     -- Skill.lua
     L["Apprentice"] = "學徒"
@@ -84,15 +81,16 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Apply lure"] = "上魚餌"
     L["Open"] = "開啟"
     L["No bobber"] = "沒有浮標"
+    L["Paused in combat"] = "戰鬥中暫停"
     L["Drag to move. Lock it in the settings."] = "拖曳以移動。可在設定中鎖定。"
 
     -- UI/Toast.lua
     L["Caught: %s"] = "釣到：%s"
     L["Nothing caught"] = "什麼都沒釣到"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "遊戲未接受地圖標記。"
-    L["Map pin: %s"] = "地圖標記：%s"
+    L["Map pin: %s. Open the world map to see it."] = "地圖標記：%s。請開啟世界地圖查看。"
     L["Replace your map pin with this place?"] = "用此地點替換你的地圖標記？"
     L["Replace"] = "替換"
 
@@ -124,8 +122,8 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["%dh %02dm"] = "%d小時%02d分"
     L["Values: vendor price (scan the auction house for market prices)"] = "價值：商人價（掃描拍賣場以取得市場價格）"
     L["%d catches, %s"] = "%d 次漁獲，%s"
+    L["1 catch, %s"] = "1 次漁獲，%s"
     L["No catches yet."] = "尚無漁獲。"
-    L["show the fishing statistics"] = "顯示釣魚統計"
     L["Time"] = "時間"
     L["Results"] = "成果"
     L["Money"] = "金錢"
@@ -137,14 +135,42 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Casts that ended without loot."] = "沒有收穫的拋竿。"
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "每小時釣魚時間的漁獲數。每次拋竿及按下重新整理時更新。"
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "釣到的物品價值，取商人價與最近一次掃描的拍賣價較高者。"
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "釣到的物品價值，取商人價與拍賣價較高者；掛單少時用商人價。"
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "每小時釣魚時間的價值。每次拋竿及按下重新整理時更新。"
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "統計"
+    L["What can be caught here"] = "這裡能釣到什麼"
+    L["Skill: %s"] = "技能：%s"
+    L["All skill levels"] = "所有技能等級"
+    L["Source: %s"] = "來源：%s"
+    L["All"] = "全部"
+    L["Only mine"] = "僅限我的"
+    L["%d catches"] = "%d 次漁獲"
+    L["1 catch"] = "1 次漁獲"
+    L["Nothing caught: %s"] = "什麼都沒釣到：%s"
+    L["Numbers for the whole map: few catches at this spot."] = "整張地圖的數據：此處漁獲太少。"
+    L["Little data"] = "資料不足"
+    L["Nothing has been caught here yet."] = "這裡還沒有釣到過東西。"
+    L["Try \"All skill levels\": little data for your skill."] = "試試「所有技能等級」：你的技能等級資料不足。"
+    L["and %d more"] = "還有 %d 項"
+    L["No bundled data in this version: only your own catches are shown."] = "此版本沒有內建資料：只顯示你自己的漁獲。"
+    L["No bundled data in this version."] = "此版本沒有內建資料。"
+    L["The game does not show this place on the map."] = "遊戲沒有在地圖上顯示這個地方。"
+    L["Item"] = "物品"
+    L["Chance"] = "機率"
+    L["Per catch"] = "每次"
+    L["Price"] = "價格"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "掛單少"
+    L["Auction price: %s (few lots)"] = "拍賣價格：%s（掛單少）"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 除錯報告"
-    L["show a report to copy into a bug report"] = "顯示可複製到錯誤回報中的報告"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "釣魚時自動拾取"
@@ -202,7 +228,6 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Automatic: no fishing pole in your bags."] = "自動：背包中沒有魚竿。"
     L["Settings cannot be opened in combat."] = "戰鬥中無法開啟設定。"
     L["Settings panel is not available in this client."] = "此用戶端無法使用設定面板。"
-    L["open the settings"] = "開啟設定"
     L["Language:"] = "語言："
     L["Interface language"] = "介面語言"
     L["Game client language"] = "遊戲用戶端語言"
@@ -224,11 +249,11 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Pin: next Fishing rank"] = "標記：下一級釣魚"
     L["Leave fishing mode"] = "離開釣魚模式"
     L["Enter fishing mode"] = "進入釣魚模式"
-    L["Statistics"] = "統計"
     L["Settings"] = "設定"
     L["Fishing mode: %s"] = "釣魚模式：%s"
     L["Fishing skill: %d/%d %s"] = "釣魚技能：%d/%d %s"
     L["Session: %d catches, %s"] = "本次：%d 次漁獲，%s"
+    L["Session: 1 catch, %s"] = "本次：1 次漁獲，%s"
     L["Fishing key:"] = "釣魚鍵："
     L["Toggle mode key:"] = "切換模式鍵："
     L["How to use: press the toggle key, then the fishing key to cast,"] = "使用方法：按下切換鍵，再按釣魚鍵拋竿，"
@@ -238,4 +263,118 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Shift+Left-click: statistics"] = "Shift+左鍵：統計"
     L["Right-click: menu"] = "右鍵：選單"
     L["Drag: move this button"] = "拖曳：移動此按鈕"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "OneKeyFishing 現在會以隨機 ID 與使用本插件的公會成員、隊友和好友分享你的漁獲。"
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "不會傳送角色名稱，但與你交換資料的玩家可以知道哪個 ID 是你的。"
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "可在 選項 -> 插件 -> OneKeyFishing -> 共享資料庫 中關閉。"
+    L["Got it"] = "知道了"
+    L["Shared database"] = "共享資料庫"
+    L["Shared catch database is off"] = "共享漁獲資料庫已關閉"
+    L["Waiting for you to read the notice"] = "等待你閱讀說明"
+    L["Exchange unavailable: the game refuses addon messages"] = "無法交換：遊戲拒絕插件訊息"
+    L["Exchange paused: in combat"] = "交換已暫停：戰鬥中"
+    L["Exchange paused: in an instance"] = "交換已暫停：在副本中"
+    L["Exchange paused: loading screen"] = "交換已暫停：載入畫面"
+    L["Exchange paused: the game restricts addon messages here"] = "交換已暫停：遊戲在此限制插件訊息"
+    L["Exchange paused: the game asked to slow down"] = "交換已暫停：遊戲要求放慢速度"
+    L["Nobody to exchange with right now"] = "目前沒有可交換的對象"
+    L["Exchange: %d players, %s ago"] = "交換：%d 名玩家，%s前"
+    L["Exchange: 1 player, %s ago"] = "交換：1 名玩家，%s前"
+    L["Exchange: waiting for the first exchange"] = "交換：等待第一次交換"
+    L["Bundled data: version %d, %d places"] = "內建資料：版本 %d，%d 個地點"
+    L["Records held: %d, %d places"] = "保存的紀錄：%d 筆，%d 個地點"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "過去一小時聽到的玩家：公會 %d，隊伍 %d，好友 %d，Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "過去一小時交換過的玩家：%d"
+    L["Last exchange: %s ago"] = "上次交換：%s前"
+    L["Last exchange: none yet"] = "上次交換：尚無"
+    L["Traffic in the last hour: %d KB"] = "過去一小時流量：%d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "使用共享漁獲資料庫"
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "你的漁獲（物品、數量、地圖格子、你釣魚的平均位置）會以隨機 ID 分享。"
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "資料會傳給你的公會、隊伍和好友名單中的插件使用者。不含名稱或裝備。"
+    L["The players you exchange with can tell which ID is yours."] = "與你交換資料的玩家可以知道哪個 ID 是你的。"
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "關閉時：不傳送也不接收任何資料，其他玩家的資料也不計入。"
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "%d 次漁獲，來自 %d 名玩家"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "未知物品"
+    L["The game has not shown this item yet."] = "遊戲尚未顯示此物品。"
+    L["Reported by %d players on this map"] = "此地圖上有 %d 名玩家回報"
+    L["In the bundled data"] = "在內建資料中"
+    L["Item ID: %d"] = "物品 ID：%d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing 已離開其隱藏頻道，以空出一個聊天頻道位置。請再試一次。"
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "使用公開頻道"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "開啟公開頻道後，資料也會透過隱藏的聊天頻道傳給其他所有插件使用者。"
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "任何以名稱加入該頻道的人，都能看到頻道中哪些角色使用本插件。"
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing 現在會以隨機 ID 與其他使用本插件的玩家分享你的漁獲。"
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "資料會傳給你的公會、隊伍和好友，也會透過隱藏的聊天頻道傳給其他任何人。"
+    L["Public channel: in use"] = "公開頻道：使用中"
+    L["Public channel: in use (fallback channel %d)"] = "公開頻道：使用中（備用頻道 %d）"
+    L["Public channel: off"] = "公開頻道：關閉"
+    L["Public channel: no free chat channel slot"] = "公開頻道：沒有空的聊天頻道位置"
+    L["Public channel: locked or refused by the game"] = "公開頻道：已鎖定或遭遊戲拒絕"
+    L["Public channel: you left it, back at the next login"] = "公開頻道：你已離開，下次登入時會再加入"
+    L["Public channel: waiting"] = "公開頻道：等待中"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "過去一小時聽到的玩家：公會 %d，隊伍 %d，好友 %d，Battle.net %d，頻道 %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "未知區域 (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s（%s）"
+    L["No exact spot"] = "無確切地點"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "漁獲目錄"
+    L["Search by item name"] = "依物品名稱搜尋"
+    L["Zones: %d"] = "區域：%d"
+    L["Back"] = "返回"
+    L["Place"] = "地點"
+    L["Skill"] = "技能"
+    L["Counting the catch..."] = "正在統計漁獲..."
+    L["Nothing has been caught yet."] = "尚未釣到任何東西。"
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "目錄會收錄你的漁獲、內建資料，以及開啟分享時其他玩家的漁獲。"
+    L["You have not caught anything yet."] = "你尚未釣到任何東西。"
+    L["No item matches the search."] = "沒有符合搜尋的物品。"
+    L["No data for this item under these filters."] = "在這些篩選條件下沒有此物品的資料。"
+    L["Click an item to see where else it is caught."] = "點擊物品以查看還能在哪裡釣到。"
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "在此設置地圖標記"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s（%d 名玩家）"
+    L["Caught in:"] = "釣獲地點："
+    L["Likely catch here:"] = "此處可能釣到："
+    L["Show catch chances in tooltips"] = "在滑鼠提示中顯示釣獲機率"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "水域：%s"
+    L["Everywhere"] = "所有地方"
+    L["Open water"] = "開放水域"
+    L["Pools"] = "魚群"
 end)

@@ -30,7 +30,8 @@
 ## AddonCompartmentFuncOnEnter: OneKeyFishing_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: OneKeyFishing_OnAddonCompartmentLeave
 
-Localization.lua
+Core\Localization.lua
+# Locales: enUS.lua holds the keys, then one complete translation per language, all before Core.lua
 Locales\enUS.lua
 Locales\deDE.lua
 Locales\esES.lua
@@ -41,25 +42,62 @@ Locales\koKR.lua
 Locales\ptBR.lua
 Locales\zhTW.lua
 Locales\zhCN.lua
-Core.lua
-Data.lua
+# Game data (data only, ns.GameData): first, so every module may read it while the files load
+GameData\FishingSpells.lua
 GameData\FishingRanks.lua
-Gear.lua
-Bags.lua
-Camera.lua
-Action.lua
-Mode.lua
-Catch.lua
-Prices.lua
-Auction.lua
-Skill.lua
-Stats.lua
+GameData\NpcNames.lua
+GameData\Bobber.lua
+GameData\Lures.lua
+GameData\FishedContainers.lua
+GameData\FishingPoles.lua
+GameData\EquipSlots.lua
+GameData\Icons.lua
+# Core: events, the message bus, saved variables, shared data
+Core\Core.lua
+Core\Data.lua
+Core\MapPin.lua
+# Fishing mode
+Fishing\Gear.lua
+Fishing\Bags.lua
+Fishing\Camera.lua
+Fishing\Action.lua
+Fishing\Mode.lua
+# Catches and statistics
+Catch\Catch.lua
+Catch\Prices.lua
+Catch\Auction.lua
+Fishing\Skill.lua
+Catch\Stats.lua
+# Catch database
+CatchDB\SeedData.lua
+CatchDB\CatchDB.lua
+CatchDB\Checks.lua
+CatchDB\Index.lua
+CatchDB\Views.lua
+CatchDB\Events.lua
+# Catch exchange
+Exchange\Comm.lua
+Exchange\CommReceive.lua
+Exchange\Channel.lua
+Exchange\Share.lua
+Exchange\ShareNode.lua
+Exchange\ShareProtocol.lua
+Exchange\ShareGame.lua
+# Catch catalog
+Catalog\Catalog.lua
+# UI
+UI\Widgets.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
-UI\MapPin.lua
+UI\CatchHere.lua
+UI\CatalogTab.lua
 UI\StatsFrame.lua
-Debug.lua
+UI\AuctionButton.lua
+UI\ShareNotice.lua
+Core\Debug.lua
 UI\Settings.lua
 UI\ItemHooks.lua
 UI\Minimap.lua
+# Commands: last, every slash command in one place
+Core\Commands.lua

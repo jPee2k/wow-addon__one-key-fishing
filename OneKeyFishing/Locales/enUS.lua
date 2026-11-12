@@ -11,7 +11,6 @@ ns.AddTranslation("enUS", "English", function() end)
 L["Fishing action (cast / hook)"] = true
 L["Toggle fishing mode"] = true
 L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] = true
-L["v%s commands:"] = true
 L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] = true
 
 -- Gear.lua
@@ -45,7 +44,6 @@ L["Restored game settings from an unfinished fishing session."] = true
 L["Fishing mode is off. Press your 'Toggle fishing mode' key first."] = true
 L["The fishing key is paused in combat."] = true
 L["Leaving fishing mode after combat."] = true
-L["enter or leave fishing mode"] = true
 
 -- Auction.lua
 L["Scanning %d/%d"] = true
@@ -55,7 +53,6 @@ L["Open the auction house first."] = true
 L["Nothing to scan yet: catch some fish first."] = true
 L["Scanning auction prices of %d item(s)..."] = true
 L["Auction scan stopped: %d of %d price(s) found."] = true
-L["scan auction prices of caught items (auction house must be open)"] = true
 
 -- Skill.lua
 L["Apprentice"] = true
@@ -83,15 +80,16 @@ L["Hook!"] = true
 L["Apply lure"] = true
 L["Open"] = true
 L["No bobber"] = true
+L["Paused in combat"] = true
 L["Drag to move. Lock it in the settings."] = true
 
 -- UI/Toast.lua
 L["Caught: %s"] = true
 L["Nothing caught"] = true
 
--- UI/MapPin.lua
+-- Core/MapPin.lua and its toasts in UI/Toast.lua
 L["The game did not accept the map pin."] = true
-L["Map pin: %s"] = true
+L["Map pin: %s. Open the world map to see it."] = true
 L["Replace your map pin with this place?"] = true
 L["Replace"] = true
 
@@ -123,8 +121,8 @@ L["%dm"] = true
 L["%dh %02dm"] = true
 L["Values: vendor price (scan the auction house for market prices)"] = true
 L["%d catches, %s"] = true
+L["1 catch, %s"] = true
 L["No catches yet."] = true
-L["show the fishing statistics"] = true
 L["Time"] = true
 L["Results"] = true
 L["Money"] = true
@@ -135,12 +133,40 @@ L["Fishing casts made in fishing mode."] = true
 L["Casts that brought loot."] = true
 L["Casts that ended without loot."] = true
 L["Catches per hour of fishing time. Updated with every cast and with Refresh."] = true
-L["Items caught, at the higher of the vendor price and the last scanned auction price."] = true
+L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] = true
 L["Value per hour of fishing time. Updated with every cast and with Refresh."] = true
+
+-- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+L["Statistics"] = true
+L["What can be caught here"] = true
+L["Skill: %s"] = true
+L["All skill levels"] = true
+L["Source: %s"] = true
+L["All"] = true
+L["Only mine"] = true
+L["%d catches"] = true
+L["1 catch"] = true
+L["Nothing caught: %s"] = true
+L["Numbers for the whole map: few catches at this spot."] = true
+L["Little data"] = true
+L["Nothing has been caught here yet."] = true
+L["Try \"All skill levels\": little data for your skill."] = true
+L["and %d more"] = true
+L["No bundled data in this version: only your own catches are shown."] = true
+L["No bundled data in this version."] = true
+L["The game does not show this place on the map."] = true
+L["Item"] = true
+L["Chance"] = true
+L["Per catch"] = true
+L["Price"] = true
+
+
+-- Prices (the few-lots mark in both tabs)
+L["few lots"] = true
+L["Auction price: %s (few lots)"] = true
 
 -- Debug.lua
 L["OneKeyFishing - debug report"] = true
-L["show a report to copy into a bug report"] = true
 
 -- UI/Settings.lua
 L["Auto loot while fishing"] = true
@@ -191,7 +217,6 @@ L["Automatic, best in your bags: %s (+%d)"] = true
 L["Automatic: no fishing pole in your bags."] = true
 L["Settings cannot be opened in combat."] = true
 L["Settings panel is not available in this client."] = true
-L["open the settings"] = true
 L["Language:"] = true
 L["Interface language"] = true
 L["Game client language"] = true
@@ -212,11 +237,11 @@ L["OneKeyFishing: Alt+Click to add to fishing gear"] = true
 L["Pin: next Fishing rank"] = true
 L["Leave fishing mode"] = true
 L["Enter fishing mode"] = true
-L["Statistics"] = true
 L["Settings"] = true
 L["Fishing mode: %s"] = true
 L["Fishing skill: %d/%d %s"] = true
 L["Session: %d catches, %s"] = true
+L["Session: 1 catch, %s"] = true
 L["Fishing key:"] = true
 L["Toggle mode key:"] = true
 L["How to use: press the toggle key, then the fishing key to cast,"] = true
@@ -226,3 +251,103 @@ L["Left-click: toggle fishing mode"] = true
 L["Shift+Left-click: statistics"] = true
 L["Right-click: menu"] = true
 L["Drag: move this button"] = true
+
+-- Share.lua
+L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] = true
+L["No character names are sent, but the players you exchange with can tell which ID is yours."] = true
+L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] = true
+L["Got it"] = true
+L["Shared database"] = true
+L["Shared catch database is off"] = true
+L["Waiting for you to read the notice"] = true
+L["Exchange unavailable: the game refuses addon messages"] = true
+L["Exchange paused: in combat"] = true
+L["Exchange paused: in an instance"] = true
+L["Exchange paused: loading screen"] = true
+L["Exchange paused: the game restricts addon messages here"] = true
+L["Exchange paused: the game asked to slow down"] = true
+L["Nobody to exchange with right now"] = true
+L["Exchange: %d players, %s ago"] = true
+L["Exchange: 1 player, %s ago"] = true
+L["Exchange: waiting for the first exchange"] = true
+L["Bundled data: version %d, %d places"] = true
+L["Records held: %d, %d places"] = true
+L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] = true
+L["Players exchanged with in the last hour: %d"] = true
+L["Last exchange: %s ago"] = true
+L["Last exchange: none yet"] = true
+L["Traffic in the last hour: %d KB"] = true
+
+-- UI/Settings.lua: the Shared database page
+L["Use the shared catch database"] = true
+L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] = true
+L["They go to addon users in your guild, group and friends list. No names or gear."] = true
+L["The players you exchange with can tell which ID is yours."] = true
+L["Turned off: nothing is sent or received, and other players' data is not counted."] = true
+
+-- UI/CatchHere.lua: other players' catches
+L["%d catches from %d players"] = true
+
+-- UI/CatchHere.lua: items the game client does not know yet (part 3)
+L["Unknown item"] = true
+L["The game has not shown this item yet."] = true
+L["Reported by %d players on this map"] = true
+L["In the bundled data"] = true
+L["Item ID: %d"] = true
+
+-- Channel.lua: the hidden public channel (part 3)
+L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] = true
+
+-- UI/Settings.lua: the public channel (part 3)
+L["Use the public channel"] = true
+L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] = true
+L["Anyone who joins that channel by its name can see which characters in it use the addon."] = true
+
+-- Share.lua: the public channel (part 3)
+L["OneKeyFishing now shares your catches under a random ID with other players who use it."] = true
+L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] = true
+L["Public channel: in use"] = true
+L["Public channel: in use (fallback channel %d)"] = true
+L["Public channel: off"] = true
+L["Public channel: no free chat channel slot"] = true
+L["Public channel: locked or refused by the game"] = true
+L["Public channel: you left it, back at the next login"] = true
+L["Public channel: waiting"] = true
+L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] = true
+
+-- Catalog.lua: the catch catalog (part 4)
+L["Unknown zone (%d)"] = true
+
+-- Catalog.lua: spots
+L["%s (%s)"] = true
+L["No exact spot"] = true
+
+-- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+L["Catch catalog"] = true
+L["Search by item name"] = true
+L["Zones: %d"] = true
+L["Back"] = true
+L["Place"] = true
+L["Skill"] = true
+L["Counting the catch..."] = true
+L["Nothing has been caught yet."] = true
+L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] = true
+L["You have not caught anything yet."] = true
+L["No item matches the search."] = true
+L["No data for this item under these filters."] = true
+L["Click an item to see where else it is caught."] = true
+
+-- UI/CatalogTab.lua: the map pin (part 4)
+L["Set a map pin here"] = true
+
+-- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+L["%s (%d players)"] = true
+L["Caught in:"] = true
+L["Likely catch here:"] = true
+L["Show catch chances in tooltips"] = true
+
+-- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+L["Water: %s"] = true
+L["Everywhere"] = true
+L["Open water"] = true
+L["Pools"] = true

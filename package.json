@@ -1,6 +1,6 @@
 {
   "name": "onekeyfishing",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Development tools for the OneKeyFishing World of Warcraft addon (checks, tests and packaging).",
   "license": "MIT",
@@ -22,6 +22,8 @@
     "dev": "node tools/build.mjs --dev",
     "build": "node tools/build.mjs --release",
     "install-addon": "node tools/build.mjs --dev && node tools/install.mjs",
+    "harvest": "node tools/harvest.mjs",
+    "prelink": "node tools/link.mjs --remove-copy",
     "link": "node tools/link.mjs",
     "unlink": "node tools/link.mjs --remove"
   },

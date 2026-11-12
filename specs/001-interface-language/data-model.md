@@ -27,14 +27,18 @@
 ## Effective language (runtime only)
 
 - `ns.language`: the code in use for this UI session, set once in `ADDON_LOADED` by
-  `ns.ResolveLanguage(settings.language, GetLocale())` (see `research.md` R3).
+  `ns.ResolveLanguage(settings.language, GetLocale())` (see `research.md` R3). The client locales `enGB` and
+  `ptPT` resolve to `enUS` and `ptBR`.
 - Changes only through a UI reload; changing the preference does not change it.
 
 ## Translation lookup
 
 ```text
-L[key] -> translations[ns.language][key] -> key (English)
+L[key] -> active[key] (the effective translation) -> strings[key] (English, from enUS.lua) -> key
 ```
+
+- `ns.translations[code]` holds `{ name, fill }`. `ns.SetLanguage(code)` runs the `fill` of the effective
+  language into `active`, then drops the `fill` of every language; only the names stay for the menu.
 
 - Before `ns.language` is set, a lookup returns the key and is recorded in `ns.earlyLookups` (test guard,
   `research.md` R1).

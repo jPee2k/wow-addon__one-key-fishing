@@ -17,9 +17,16 @@ How a release is built and published, and what it is checked against.
    `CHANGELOG.md`. Changes waiting for a release are collected under `## [Unreleased]`; move them into the
    version entry and remove that heading, because the packager shows the whole file on the CurseForge file
    page and the release workflow stops while the heading is there.
-2. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`.
-3. Open a pull request `develop` -> `main` and merge it once the `check` job is green.
-4. On the updated `main`, tag the merge commit with the bare version (`git tag 1.0.0`, no `v`) and push the
+2. Refresh the bundled catch database: fish for a while, then `npm run harvest` (plus the saved files friends
+   sent, as arguments). Check the report and `git diff OneKeyFishing/CatchDB/SeedData.lua`, and commit
+   `OneKeyFishing/CatchDB/SeedData.lua` with `seed/contributions.json`. After a game patch that changed what a zone
+   gives, add `-- --reset <mapID>` for that map.
+3. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`. No
+   `VERIFY` marker may be left (`npm run check` lists them; `npm run build` refuses them): each is an assumption
+   that still waits for an in-game check, or one the author accepts without a check (its `verification.md` row
+   says "Accepted"; [release-plan.md](release-plan.md) lists the ones still to confirm).
+4. Open a pull request `develop` -> `main` and merge it once the `check` job is green.
+5. On the updated `main`, tag the merge commit with the bare version (`git tag 1.0.0`, no `v`) and push the
    tag (`git push origin 1.0.0`). GitHub Actions (`.github/workflows/release.yml`) runs the checks and tests,
    checks that the tag is on `main`, matches `package.json` and the changelog has no `Unreleased` section,
    then BigWigsMods/packager builds the zip with `.pkgmeta`, creates a GitHub release and uploads to
@@ -27,7 +34,7 @@ How a release is built and published, and what it is checked against.
    the TOC; `npm run check` keeps them out of the addon's Lua and XML files, and the local build fills in the
    version the same way. Without `## X-Curse-Project-ID` in the TOC or the `CF_API_KEY` secret, only the
    GitHub release is made.
-5. Without the workflow: `npm run build` refuses uncommitted changes, runs the checks and tests, and packages
+6. Without the workflow: `npm run build` refuses uncommitted changes, runs the checks and tests, and packages
    the commit into `dist/OneKeyFishing/` and `dist/OneKeyFishing-x.y.z.zip`, which can be uploaded to
    CurseForge by hand.
 
@@ -56,9 +63,9 @@ How a release is built and published, and what it is checked against.
 | Free of charge, no paid features | Yes, MIT licensed, nothing is locked |
 | Code is not obfuscated | Plain, readable Lua |
 | No in-game advertising or donation requests | None |
-| No collection of personal data, no traffic outside the game | None; saved variables stay on the player's computer |
+| No collection of personal data, no traffic outside the game | None; saved variables stay on the player's computer. The catch data holds only counts and a grid-cell average position under a random account ID. It travels only inside the game, as addon messages between addon users: guild, group and friends, and strangers met through a hidden chat channel (two settings turn these off); it reaches the bundled database through `npm run harvest`: from the author's own client, which holds what the exchange brought in, or from a saved file a player sends the author outside the game |
 | No automation: every action needs a hardware event | Cast, hook, lure and open happen only on a key press, through a secure action button and override bindings. Nothing reacts to the bobber splash by itself, no sounds are monitored |
-| Must not hurt realm performance | Auction searches run one at a time, wait for the throttle and time out |
+| Must not hurt realm performance | Auction searches run one at a time, wait for the throttle and time out. The catch exchange sends through one queue: guild and group messages 2 s apart, whispers and Battle.net messages 0.5 s apart, at most 50 KB per hour (`Comm.BUDGET`); a throttled send backs off 2-8 s, a lockdown pauses it 60 s to 15 min, and nothing is sent in combat, instances, loading screens or while the game restricts addon messages |
 
 ## CurseForge packaging requirements
 

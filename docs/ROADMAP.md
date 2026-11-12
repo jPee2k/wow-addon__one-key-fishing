@@ -1,43 +1,33 @@
 # Roadmap
 
-Ideas for versions after 1.0.0. Nothing here is scheduled yet: each item gets its own plan before work starts.
-Every feature must keep the addon's rule: every game action is a real key press, nothing reacts to the
-bobber by itself.
+What is not built yet. Built features are listed in `CHANGELOG.md` (released and `[Unreleased]`); what is left after
+1.2.0 is in [release-plan.md](release-plan.md). Nothing here is scheduled: each item gets its own spec before
+work starts, and every feature must keep the addon's rule: every game action is a real key press, nothing reacts
+to the bobber by itself.
 
-## 1. Shared fishing database
+## Open work on built features
 
-What can be caught where, for every zone and fishing spot of the world.
-
-- Built from the catches players record with the addon (the addon already stores caught items per zone and
-  subzone in `OneKeyFishingCharDB.stats.zones`).
-- An addon cannot send data out of the game, so the shared data travels as a data file bundled with new
-  releases: players export their catches (a copy window, like the debug report), the data is merged outside
-  the game and shipped in the next version.
-- In game: a "What can be caught here" list for the current zone, merged from the bundled data and your own
-  catches.
-- Open questions: export format and privacy (no character names), how to merge and validate submissions,
-  keeping the data file small, zones that differ between game versions.
-
-## 2. Catch chances
-
-The chance to catch each item at the current spot.
-
-- From your own statistics (catches per item / all catches in the zone) and from the shared database.
-- Shown in the statistics window and, optionally, in the minimap tooltip.
-- Depends on the skill and on lures, so the chances may need to be grouped by skill range.
-- Small samples need care: show how many catches a number is based on.
-
-## 3. Localization
-
-Done in `specs/001-interface-language`: ten languages and a language setting, see [languages.md](languages.md).
-What is left:
-
-- Native-speaker review of the eight translations other than Ukrainian (CurseForge localization tool or pull
-  requests), especially game names (ranks, places, the fishing book) that were kept in English where unsure.
+- **Native-speaker review** of the eight translations other than Ukrainian (CurseForge localization tool or pull
+  requests), especially game names (ranks, places, the fishing book) that were kept in English where unsure
+  ([languages.md](languages.md)).
+- **A harvest report after a game patch**: compare item shares before and after the patch in every zone and print
+  the zones with a notable difference or new items, so the author knows where `npm run harvest -- --reset <mapID>`
+  is due. Today the reset is a manual judgement.
+- **A collection mode for the author** (`/okf share collect`): exchange sessions more often within the same
+  traffic budget on the day before a release, so the harvest sees more of the network. An idea from the design of
+  the shared database, not built.
 
 ## Ideas to discuss
 
-- Fishing pools: notice and point out nearby pools.
-- A map pin on the nearest fishing trainer for Journeyman (spec 001 research R16): needs the trainers' Forever map
-  IDs and points, checked in game; until then the minimap's trainer tracking finds them.
-- Skill-up forecast: how many catches until the next skill point or rank cap.
+- **Shared auction prices**: the catch value without a scan of one's own (the freshest scan wins, prices older
+  than 3 days are not shared). Left out of the shared catch database: it waits for the in-game answer to which
+  auction house a player uses in WoW Forever (game modes split by faction, no realms), since a peer from another
+  house would bring wrong prices.
+- **A map pin on the nearest fishing trainer** for Journeyman (spec 001 research R16): needs the trainers' Forever
+  map IDs and points, checked in game; until then the minimap's trainer tracking finds them.
+- **Fishing pools**: notice and point out nearby pools. The catch database already tells pool catches apart when
+  the game does (the "Water" filter).
+- **Skill-up forecast**: how many catches until the next skill point or rank cap.
+- **Other game versions** (Classic, Anniversary, Season of Discovery): the map IDs differ, so the catch database
+  would need a seed per game version and `WOW_PROJECT_ID` in its records; addon messages in custom channels are
+  disabled there.

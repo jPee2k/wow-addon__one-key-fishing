@@ -8,7 +8,6 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "Tus datos guardados son de una versión más reciente de OneKeyFishing. " ..
         "Actualiza el addon para evitar problemas."
-    L["v%s commands:"] = "Comandos de v%s:"
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "No hay traducción para tu cliente del juego, así que el addon está en inglés. " ..
         "Hay otros idiomas, como %s, en /okf config."
@@ -49,7 +48,6 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
         "El modo pesca está desactivado. Primero presiona tu tecla de 'Activar/desactivar modo pesca'."
     L["The fishing key is paused in combat."] = "La tecla de pesca está en pausa durante el combate."
     L["Leaving fishing mode after combat."] = "Saldrás del modo pesca después del combate."
-    L["enter or leave fishing mode"] = "entrar o salir del modo pesca"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "Escaneando %d/%d"
@@ -61,8 +59,6 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Scanning auction prices of %d item(s)..."] = "Escaneando precios de subasta de %d objeto(s)..."
     L["Auction scan stopped: %d of %d price(s) found."] =
         "Escaneo de subasta detenido: se encontraron %d de %d precio(s)."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "escanear precios de subasta de lo pescado (la casa de subastas debe estar abierta)"
 
     -- Skill.lua
     L["Apprentice"] = "Aprendiz"
@@ -93,15 +89,16 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Apply lure"] = "Poner señuelo"
     L["Open"] = "Abrir"
     L["No bobber"] = "Sin corcho"
+    L["Paused in combat"] = "En pausa en combate"
     L["Drag to move. Lock it in the settings."] = "Arrastra para mover. Fíjalo en la configuración."
 
     -- UI/Toast.lua
     L["Caught: %s"] = "Pescado: %s"
     L["Nothing caught"] = "No pescaste nada"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "El juego no aceptó el marcador de mapa."
-    L["Map pin: %s"] = "Marcador de mapa: %s"
+    L["Map pin: %s. Open the world map to see it."] = "Marcador de mapa: %s. Abre el mapa del mundo para verlo."
     L["Replace your map pin with this place?"] = "¿Reemplazar tu marcador de mapa por este lugar?"
     L["Replace"] = "Reemplazar"
 
@@ -136,8 +133,8 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] =
         "Valores: precio de vendedor (escanea la casa de subastas para ver precios de mercado)"
     L["%d catches, %s"] = "%d capturas, %s"
+    L["1 catch, %s"] = "1 captura, %s"
     L["No catches yet."] = "Aún no hay capturas."
-    L["show the fishing statistics"] = "mostrar las estadísticas de pesca"
     L["Time"] = "Tiempo"
     L["Results"] = "Resultados"
     L["Money"] = "Dinero"
@@ -150,14 +147,45 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Casts that ended without loot."] = "Lanzamientos que terminaron sin botín."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "Capturas por hora de tiempo de pesca. Se actualiza con cada lanzamiento y con Actualizar."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "Objetos pescados, al mayor entre el precio de vendedor y el último precio de subasta escaneado."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "Objetos pescados, al mayor entre el precio de vendedor y el de subasta; con pocos lotes, el precio de " ..
+        "vendedor."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "Valor por hora de tiempo de pesca. Se actualiza con cada lanzamiento y con Actualizar."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "Estadísticas"
+    L["What can be caught here"] = "Qué se pesca aquí"
+    L["Skill: %s"] = "Habilidad: %s"
+    L["All skill levels"] = "Todos los niveles de habilidad"
+    L["Source: %s"] = "Fuente: %s"
+    L["All"] = "Todo"
+    L["Only mine"] = "Solo las mías"
+    L["%d catches"] = "%d capturas"
+    L["1 catch"] = "1 captura"
+    L["Nothing caught: %s"] = "No pescaste nada: %s"
+    L["Numbers for the whole map: few catches at this spot."] = "Datos de todo el mapa: pocas capturas en este punto."
+    L["Little data"] = "Pocos datos"
+    L["Nothing has been caught here yet."] = "Aquí todavía no se ha pescado nada."
+    L["Try \"All skill levels\": little data for your skill."] =
+        "Prueba 'Todos los niveles de habilidad': hay pocos datos para tu habilidad."
+    L["and %d more"] = "y %d más"
+    L["No bundled data in this version: only your own catches are shown."] =
+        "Esta versión no trae datos incluidos: solo se muestran tus propias capturas."
+    L["No bundled data in this version."] = "Esta versión no trae datos incluidos."
+    L["The game does not show this place on the map."] = "El juego no muestra este lugar en el mapa."
+    L["Item"] = "Objeto"
+    L["Chance"] = "Probabilidad"
+    L["Per catch"] = "Por captura"
+    L["Price"] = "Precio"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "pocos lotes"
+    L["Auction price: %s (few lots)"] = "Precio de subasta: %s (pocos lotes)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - informe de depuración"
-    L["show a report to copy into a bug report"] = "mostrar un informe para copiar en un reporte de error"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "Despojo automático al pescar"
@@ -220,7 +248,6 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Settings cannot be opened in combat."] = "La configuración no se puede abrir en combate."
     L["Settings panel is not available in this client."] =
         "El panel de configuración no está disponible en este cliente."
-    L["open the settings"] = "abrir la configuración"
     L["Language:"] = "Idioma:"
     L["Interface language"] = "Idioma de la interfaz"
     L["Game client language"] = "Idioma del cliente del juego"
@@ -242,11 +269,11 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Pin: next Fishing rank"] = "Marcar: siguiente nivel de Pesca"
     L["Leave fishing mode"] = "Salir del modo pesca"
     L["Enter fishing mode"] = "Entrar al modo pesca"
-    L["Statistics"] = "Estadísticas"
     L["Settings"] = "Configuración"
     L["Fishing mode: %s"] = "Modo pesca: %s"
     L["Fishing skill: %d/%d %s"] = "Habilidad de Pesca: %d/%d %s"
     L["Session: %d catches, %s"] = "Sesión: %d capturas, %s"
+    L["Session: 1 catch, %s"] = "Sesión: 1 captura, %s"
     L["Fishing key:"] = "Tecla de pesca:"
     L["Toggle mode key:"] = "Tecla de activar modo:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =
@@ -258,4 +285,126 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Shift+Left-click: statistics"] = "Mayús+clic izquierdo: estadísticas"
     L["Right-click: menu"] = "Clic derecho: menú"
     L["Drag: move this button"] = "Arrastrar: mover este botón"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "OneKeyFishing ahora comparte tus capturas, con un ID aleatorio, con tu hermandad, tu grupo y tus amigos " ..
+        "que lo usan."
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "No se envían nombres de personajes, pero quienes intercambian datos contigo pueden saber qué ID es el tuyo."
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "Desactívalo en Opciones -> Accesorios -> OneKeyFishing -> Base de datos compartida."
+    L["Got it"] = "Entendido"
+    L["Shared database"] = "Base de datos compartida"
+    L["Shared catch database is off"] = "La base de datos de capturas compartida está desactivada"
+    L["Waiting for you to read the notice"] = "Esperando a que leas el aviso"
+    L["Exchange unavailable: the game refuses addon messages"] =
+        "Intercambio no disponible: el juego rechaza los mensajes de addons"
+    L["Exchange paused: in combat"] = "Intercambio en pausa: en combate"
+    L["Exchange paused: in an instance"] = "Intercambio en pausa: en una instancia"
+    L["Exchange paused: loading screen"] = "Intercambio en pausa: pantalla de carga"
+    L["Exchange paused: the game restricts addon messages here"] =
+        "Intercambio en pausa: el juego restringe aquí los mensajes de addons"
+    L["Exchange paused: the game asked to slow down"] = "Intercambio en pausa: el juego pidió ir más lento"
+    L["Nobody to exchange with right now"] = "Por ahora no hay nadie con quien intercambiar"
+    L["Exchange: %d players, %s ago"] = "Intercambio: %d jugadores, hace %s"
+    L["Exchange: 1 player, %s ago"] = "Intercambio: 1 jugador, hace %s"
+    L["Exchange: waiting for the first exchange"] = "Intercambio: esperando el primer intercambio"
+    L["Bundled data: version %d, %d places"] = "Datos incluidos: versión %d, %d lugares"
+    L["Records held: %d, %d places"] = "Aportes guardados: %d, %d lugares"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "Jugadores escuchados en la última hora: hermandad %d, grupo %d, amigos %d, Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "Jugadores con intercambio en la última hora: %d"
+    L["Last exchange: %s ago"] = "Último intercambio: hace %s"
+    L["Last exchange: none yet"] = "Último intercambio: ninguno todavía"
+    L["Traffic in the last hour: %d KB"] = "Tráfico en la última hora: %d KB"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "Usar la base de datos de capturas compartida"
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "Tus capturas (objetos, cantidades, casillas del mapa, el punto promedio desde el que pescas) se comparten " ..
+        "con un ID aleatorio."
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "Llegan a quienes usan el addon en tu hermandad, grupo y lista de amigos. Sin nombres ni equipo."
+    L["The players you exchange with can tell which ID is yours."] =
+        "Quienes intercambian datos contigo pueden saber qué ID es el tuyo."
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "Desactivada: no se envía ni se recibe nada, y los datos de otros jugadores no se cuentan."
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "%d capturas de %d jugadores"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "Objeto desconocido"
+    L["The game has not shown this item yet."] = "El juego todavía no ha mostrado este objeto."
+    L["Reported by %d players on this map"] = "Reportado por %d jugadores en este mapa"
+    L["In the bundled data"] = "En los datos incluidos"
+    L["Item ID: %d"] = "ID del objeto: %d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing salió de su canal oculto para liberar un espacio de canal de chat. Vuelve a intentarlo."
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "Usar el canal público"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "Con el canal público activado, también llegan a todos los demás usuarios del addon por un canal de chat " ..
+        "oculto."
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "Quien se una a ese canal por su nombre puede ver qué personajes del canal usan el addon."
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing ahora comparte tus capturas, con un ID aleatorio, con otros jugadores que lo usan."
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "Llega a tu hermandad, tu grupo y tus amigos, y a cualquier otro por un canal de chat oculto."
+    L["Public channel: in use"] = "Canal público: en uso"
+    L["Public channel: in use (fallback channel %d)"] = "Canal público: en uso (canal de reserva %d)"
+    L["Public channel: off"] = "Canal público: desactivado"
+    L["Public channel: no free chat channel slot"] = "Canal público: no hay un espacio libre de canal de chat"
+    L["Public channel: locked or refused by the game"] = "Canal público: bloqueado o rechazado por el juego"
+    L["Public channel: you left it, back at the next login"] =
+        "Canal público: lo abandonaste; vuelve en el próximo inicio de sesión"
+    L["Public channel: waiting"] = "Canal público: en espera"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "Jugadores escuchados en la última hora: hermandad %d, grupo %d, amigos %d, Battle.net %d, canal %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "Zona desconocida (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "Sin lugar exacto"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "Catálogo de capturas"
+    L["Search by item name"] = "Buscar por nombre de objeto"
+    L["Zones: %d"] = "Zonas: %d"
+    L["Back"] = "Atrás"
+    L["Place"] = "Lugar"
+    L["Skill"] = "Habilidad"
+    L["Counting the catch..."] = "Contando las capturas..."
+    L["Nothing has been caught yet."] = "Aún no se ha pescado nada."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "El catálogo se llena con tus capturas, los datos incluidos y, con el intercambio activado, las capturas de "
+        .. "otros jugadores."
+    L["You have not caught anything yet."] = "Aún no has pescado nada."
+    L["No item matches the search."] = "Ningún objeto coincide con la búsqueda."
+    L["No data for this item under these filters."] = "No hay datos de este objeto con estos filtros."
+    L["Click an item to see where else it is caught."] = "Haz clic en un objeto para ver dónde más se pesca."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "Poner una marca en el mapa aquí"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (%d jugadores)"
+    L["Caught in:"] = "Se pesca en:"
+    L["Likely catch here:"] = "Captura probable aquí:"
+    L["Show catch chances in tooltips"] = "Mostrar probabilidades de captura en las descripciones"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "Agua: %s"
+    L["Everywhere"] = "En todas partes"
+    L["Open water"] = "Aguas abiertas"
+    L["Pools"] = "Bancos"
 end)

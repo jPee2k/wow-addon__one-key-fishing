@@ -8,7 +8,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Toggle fishing mode"] = "Увімкнути / вимкнути режим риболовлі"
     L["Your saved data comes from a newer version of OneKeyFishing. Update the addon to avoid problems."] =
         "Збережені дані з новішої версії OneKeyFishing. Оновіть аддон, щоб уникнути проблем."
-    L["v%s commands:"] = "v%s, команди:"
     L["Your game client has no translation, so the addon is in English. Others, such as %s, are in /okf config."] =
         "Для вашого клієнта гри немає перекладу, тому аддон англійською. " ..
         "Інші мови, наприклад %s, є в /okf config."
@@ -49,7 +48,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
         "Режим риболовлі вимкнено. Спершу натисніть клавішу «Увімкнути / вимкнути режим риболовлі»."
     L["The fishing key is paused in combat."] = "У бою клавіша риболовлі не працює."
     L["Leaving fishing mode after combat."] = "Режим риболовлі вимкнеться після бою."
-    L["enter or leave fishing mode"] = "увімкнути або вимкнути режим риболовлі"
 
     -- Auction.lua
     L["Scanning %d/%d"] = "Сканування %d/%d"
@@ -59,8 +57,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Nothing to scan yet: catch some fish first."] = "Поки нічого сканувати: спершу щось упіймайте."
     L["Scanning auction prices of %d item(s)..."] = "Сканую ціни на аукціоні, предметів: %d..."
     L["Auction scan stopped: %d of %d price(s) found."] = "Сканування аукціону зупинено: знайдено цін %d із %d."
-    L["scan auction prices of caught items (auction house must be open)"] =
-        "сканувати ціни улову на аукціоні (аукціон має бути відкритий)"
 
     -- Skill.lua
     L["Apprentice"] = "Учень"
@@ -91,15 +87,16 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Apply lure"] = "Наживка"
     L["Open"] = "Відкрити"
     L["No bobber"] = "Немає поплавця"
+    L["Paused in combat"] = "Пауза в бою"
     L["Drag to move. Lock it in the settings."] = "Перетягніть, щоб перемістити. Закріпити можна в налаштуваннях."
 
     -- UI/Toast.lua
     L["Caught: %s"] = "Упіймано: %s"
     L["Nothing caught"] = "Нічого не впіймано"
 
-    -- UI/MapPin.lua
+    -- Core/MapPin.lua and its toasts in UI/Toast.lua
     L["The game did not accept the map pin."] = "Гра не прийняла мітку на карті."
-    L["Map pin: %s"] = "Мітка на карті: %s"
+    L["Map pin: %s. Open the world map to see it."] = "Мітка на карті: %s. Відкрийте карту світу, щоб її побачити."
     L["Replace your map pin with this place?"] = "Замінити вашу мітку на карті цим місцем?"
     L["Replace"] = "Замінити"
 
@@ -133,8 +130,8 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Values: vendor price (scan the auction house for market prices)"] =
         "Вартість: ціна торговця (проскануйте аукціон, щоб отримати ринкові ціни)"
     L["%d catches, %s"] = "улов: %d, %s"
+    L["1 catch, %s"] = "улов: 1, %s"
     L["No catches yet."] = "Поки нічого не впіймано."
-    L["show the fishing statistics"] = "показати статистику риболовлі"
     L["Time"] = "Час"
     L["Results"] = "Результати"
     L["Money"] = "Гроші"
@@ -147,14 +144,44 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Casts that ended without loot."] = "Закидання, що закінчилися без здобичі."
     L["Catches per hour of fishing time. Updated with every cast and with Refresh."] =
         "Улов за годину риболовлі. Оновлюється з кожним закиданням і кнопкою «Оновити»."
-    L["Items caught, at the higher of the vendor price and the last scanned auction price."] =
-        "Упіймані предмети за більшою з ціни торговця та останньої сканованої ціни аукціону."
+    L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."] =
+        "Улов за більшою з ціни торговця та ціни аукціону; якщо лотів мало — за ціною торговця."
     L["Value per hour of fishing time. Updated with every cast and with Refresh."] =
         "Вартість за годину риболовлі. Оновлюється з кожним закиданням і кнопкою «Оновити»."
 
+    -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
+    L["Statistics"] = "Статистика"
+    L["What can be caught here"] = "Що тут ловиться"
+    L["Skill: %s"] = "Навичка: %s"
+    L["All skill levels"] = "Будь-яка навичка"
+    L["Source: %s"] = "Джерело: %s"
+    L["All"] = "Усе"
+    L["Only mine"] = "Лише моє"
+    L["%d catches"] = "улов: %d"
+    L["1 catch"] = "улов: 1"
+    L["Nothing caught: %s"] = "Нічого не впіймано: %s"
+    L["Numbers for the whole map: few catches at this spot."] = "Дані по всій карті: на цьому місці замало уловів."
+    L["Little data"] = "Мало даних"
+    L["Nothing has been caught here yet."] = "Тут ще нічого не ловили."
+    L["Try \"All skill levels\": little data for your skill."] =
+        "Оберіть «Будь-яка навичка»: для вашої навички мало даних."
+    L["and %d more"] = "і ще %d"
+    L["No bundled data in this version: only your own catches are shown."] =
+        "У цій версії немає вбудованих даних: показано лише ваш улов."
+    L["No bundled data in this version."] = "У цій версії немає вбудованих даних."
+    L["The game does not show this place on the map."] = "Гра не показує це місце на карті."
+    L["Item"] = "Предмет"
+    L["Chance"] = "Шанс"
+    L["Per catch"] = "За улов"
+    L["Price"] = "Ціна"
+
+
+    -- Prices (the few-lots mark in both tabs)
+    L["few lots"] = "мало лотів"
+    L["Auction price: %s (few lots)"] = "Ціна аукціону: %s (мало лотів)"
+
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - звіт для налагодження"
-    L["show a report to copy into a bug report"] = "показати звіт, який можна скопіювати в повідомлення про помилку"
 
     -- UI/Settings.lua
     L["Auto loot while fishing"] = "Автозбір здобичі під час риболовлі"
@@ -213,7 +240,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Automatic: no fishing pole in your bags."] = "Автоматично: у сумках немає вудки."
     L["Settings cannot be opened in combat."] = "Налаштування не можна відкрити в бою."
     L["Settings panel is not available in this client."] = "Панель налаштувань недоступна в цьому клієнті."
-    L["open the settings"] = "відкрити налаштування"
     L["Language:"] = "Мова:"
     L["Interface language"] = "Мова інтерфейсу"
     L["Game client language"] = "Мова клієнта гри"
@@ -237,11 +263,11 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Pin: next Fishing rank"] = "Мітка: наступний ранг риболовлі"
     L["Leave fishing mode"] = "Вимкнути режим риболовлі"
     L["Enter fishing mode"] = "Увімкнути режим риболовлі"
-    L["Statistics"] = "Статистика"
     L["Settings"] = "Налаштування"
     L["Fishing mode: %s"] = "Режим риболовлі: %s"
     L["Fishing skill: %d/%d %s"] = "Навичка риболовлі: %d/%d %s"
     L["Session: %d catches, %s"] = "Сесія: улов %d, %s"
+    L["Session: 1 catch, %s"] = "Сесія: улов 1, %s"
     L["Fishing key:"] = "Клавіша риболовлі:"
     L["Toggle mode key:"] = "Клавіша режиму:"
     L["How to use: press the toggle key, then the fishing key to cast,"] =
@@ -253,4 +279,124 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Shift+Left-click: statistics"] = "Shift+лівий клік: статистика"
     L["Right-click: menu"] = "Правий клік: меню"
     L["Drag: move this button"] = "Перетягування: перемістити кнопку"
+
+    -- Share.lua
+    L["OneKeyFishing now shares your catches under a random ID with your guild, group and friends who use it."] =
+        "OneKeyFishing тепер ділиться вашим уловом під випадковим ID з вашою гільдією, групою та друзями, які ним " ..
+        "користуються."
+    L["No character names are sent, but the players you exchange with can tell which ID is yours."] =
+        "Імена персонажів не надсилаються, але гравці, з якими ви обмінюєтеся, можуть знати, який ID ваш."
+    L["Turn it off in Options -> AddOns -> OneKeyFishing -> Shared database."] =
+        "Вимкнути можна в Options -> AddOns -> OneKeyFishing -> Спільна база даних."
+    L["Got it"] = "Зрозуміло"
+    L["Shared database"] = "Спільна база даних"
+    L["Shared catch database is off"] = "Спільну базу уловів вимкнено"
+    L["Waiting for you to read the notice"] = "Чекаємо, поки ви прочитаєте повідомлення"
+    L["Exchange unavailable: the game refuses addon messages"] = "Обмін недоступний: гра відхиляє повідомлення аддонів"
+    L["Exchange paused: in combat"] = "Обмін призупинено: бій"
+    L["Exchange paused: in an instance"] = "Обмін призупинено: ви в підземеллі"
+    L["Exchange paused: loading screen"] = "Обмін призупинено: екран завантаження"
+    L["Exchange paused: the game restricts addon messages here"] =
+        "Обмін призупинено: гра обмежує тут повідомлення аддонів"
+    L["Exchange paused: the game asked to slow down"] = "Обмін призупинено: гра попросила сповільнитися"
+    L["Nobody to exchange with right now"] = "Зараз немає з ким обмінюватися"
+    L["Exchange: %d players, %s ago"] = "Обмін: гравців %d, %s тому"
+    L["Exchange: 1 player, %s ago"] = "Обмін: 1 гравець, %s тому"
+    L["Exchange: waiting for the first exchange"] = "Обмін: чекаємо на перший обмін"
+    L["Bundled data: version %d, %d places"] = "Вбудовані дані: версія %d, місць %d"
+    L["Records held: %d, %d places"] = "Збережені внески: %d, місць %d"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d"] =
+        "Гравці за останню годину: гільдія %d, група %d, друзі %d, Battle.net %d"
+    L["Players exchanged with in the last hour: %d"] = "Гравців, з якими був обмін за останню годину: %d"
+    L["Last exchange: %s ago"] = "Останній обмін: %s тому"
+    L["Last exchange: none yet"] = "Останній обмін: ще не було"
+    L["Traffic in the last hour: %d KB"] = "Трафік за останню годину: %d КБ"
+
+    -- UI/Settings.lua: the Shared database page
+    L["Use the shared catch database"] = "Використовувати спільну базу уловів"
+    L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."] =
+        "Ваш улов (предмети, кількість, клітинки карт, середня точка, з якої ви ловите) передається під випадковим ID."
+    L["They go to addon users in your guild, group and friends list. No names or gear."] =
+        "Його отримують користувачі аддона у вашій гільдії, групі та списку друзів. Без імен і спорядження."
+    L["The players you exchange with can tell which ID is yours."] =
+        "Гравці, з якими ви обмінюєтеся, можуть знати, який ID ваш."
+    L["Turned off: nothing is sent or received, and other players' data is not counted."] =
+        "Вимкнено: нічого не надсилається й не приймається, а дані інших гравців не враховуються."
+
+    -- UI/CatchHere.lua: other players' catches
+    L["%d catches from %d players"] = "улов: %d, гравців: %d"
+
+    -- UI/CatchHere.lua: items the game client does not know yet (part 3)
+    L["Unknown item"] = "Невідомий предмет"
+    L["The game has not shown this item yet."] = "Гра ще не показала цей предмет."
+    L["Reported by %d players on this map"] = "Повідомили гравців на цій карті: %d"
+    L["In the bundled data"] = "У вбудованих даних"
+    L["Item ID: %d"] = "ID предмета: %d"
+
+    -- Channel.lua: the hidden public channel (part 3)
+    L["OneKeyFishing left its hidden channel to free a chat channel slot. Try joining again."] =
+        "OneKeyFishing вийшов зі свого прихованого каналу, щоб звільнити місце для каналу чату. Спробуйте ще раз."
+
+    -- UI/Settings.lua: the public channel (part 3)
+    L["Use the public channel"] = "Використовувати публічний канал"
+    L["With the public channel on, they also go to every other addon user, through a hidden chat channel."] =
+        "Коли публічний канал увімкнено, його отримують також усі інші користувачі аддона через прихований канал " ..
+        "чату."
+    L["Anyone who joins that channel by its name can see which characters in it use the addon."] =
+        "Будь-хто, хто приєднається до цього каналу за його назвою, бачитиме, які персонажі в ньому користуються " ..
+        "аддоном."
+
+    -- Share.lua: the public channel (part 3)
+    L["OneKeyFishing now shares your catches under a random ID with other players who use it."] =
+        "OneKeyFishing тепер ділиться вашим уловом під випадковим ID з іншими гравцями, які ним користуються."
+    L["It reaches your guild, group and friends, and anyone else through a hidden chat channel."] =
+        "Його отримують ваша гільдія, група та друзі, а також будь-хто інший через прихований канал чату."
+    L["Public channel: in use"] = "Публічний канал: використовується"
+    L["Public channel: in use (fallback channel %d)"] = "Публічний канал: використовується (запасний канал %d)"
+    L["Public channel: off"] = "Публічний канал: вимкнено"
+    L["Public channel: no free chat channel slot"] = "Публічний канал: немає вільного місця для каналу чату"
+    L["Public channel: locked or refused by the game"] = "Публічний канал: заблоковано або гра відмовляє"
+    L["Public channel: you left it, back at the next login"] =
+        "Публічний канал: ви з нього вийшли, повернеться з наступним входом у гру"
+    L["Public channel: waiting"] = "Публічний канал: очікування"
+    L["Players heard in the last hour: guild %d, group %d, friends %d, Battle.net %d, channel %d"] =
+        "Гравці за останню годину: гільдія %d, група %d, друзі %d, Battle.net %d, канал %d"
+
+    -- Catalog.lua: the catch catalog (part 4)
+    L["Unknown zone (%d)"] = "Невідома зона (%d)"
+
+    -- Catalog.lua: spots
+    L["%s (%s)"] = "%s (%s)"
+    L["No exact spot"] = "Без точного місця"
+
+    -- UI/CatalogTab.lua, UI/StatsFrame.lua, UI/CatchHere.lua: the catch catalog (part 4)
+    L["Catch catalog"] = "Каталог улову"
+    L["Search by item name"] = "Пошук за назвою предмета"
+    L["Zones: %d"] = "Зон: %d"
+    L["Back"] = "Назад"
+    L["Place"] = "Місце"
+    L["Skill"] = "Навичка"
+    L["Counting the catch..."] = "Підрахунок улову..."
+    L["Nothing has been caught yet."] = "Ще нічого не спіймано."
+    L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."] =
+        "Каталог наповнюється вашим уловом, вбудованими даними та, з увімкненим обміном, уловом інших гравців."
+    L["You have not caught anything yet."] = "Ви ще нічого не спіймали."
+    L["No item matches the search."] = "Жоден предмет не відповідає пошуку."
+    L["No data for this item under these filters."] = "Немає даних про цей предмет за цими фільтрами."
+    L["Click an item to see where else it is caught."] = "Клацніть предмет, щоб побачити, де ще його ловлять."
+
+    -- UI/CatalogTab.lua: the map pin (part 4)
+    L["Set a map pin here"] = "Поставити тут мітку на мапі"
+
+    -- Catalog.lua, UI/ItemHooks.lua, UI/Minimap.lua, UI/Settings.lua: catch chances in tooltips (part 4)
+    L["%s (%d players)"] = "%s (гравців: %d)"
+    L["Caught in:"] = "Ловиться в:"
+    L["Likely catch here:"] = "Імовірний улов тут:"
+    L["Show catch chances in tooltips"] = "Показувати шанси улову в підказках"
+
+    -- UI/CatchHere.lua, UI/CatalogTab.lua: the Water filter (part 4)
+    L["Water: %s"] = "Вода: %s"
+    L["Everywhere"] = "Усюди"
+    L["Open water"] = "Відкрита вода"
+    L["Pools"] = "Косяки"
 end)

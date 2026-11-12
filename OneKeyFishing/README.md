@@ -43,7 +43,7 @@ One fishing round:
 ## What the addon does
 
 - **One key** for everything: cast, hook, loot. The same key applies a lure (the best one that is not on
-  cooldown) and opens fished clams when needed.
+  cooldown and that your Fishing skill is high enough for) and opens fished clams when needed.
 - **Fishing mode**: one toggle that sets everything up (auto loot, the interact icon over the bobber, gear,
   camera) and puts it all back afterwards, also after a `/reload`, a disconnect or a crash.
 - **Gear swap**: the best pole in your bags (or the one you chose) plus your fishing items. On exit only the slots
@@ -53,14 +53,22 @@ One fishing round:
 - **Catch notifications** for every catch and every miss.
 - **Statistics**: casts, catches, misses, fishing time and the value of the catch, per session, per zone and in
   total.
+- **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price,
+  from your own catches, the catch database that comes with the addon and the catches of the addon users you play
+  with.
+- **Shared catch database**: catch counts travel under a random ID between addon users in your guild, group and
+  friends list, in the background. One setting turns it off.
 - **Auction scan**: prices of everything you have ever caught, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
-- **Safe in combat**: when attacked, the weapons come back at once and fishing mode ends after the fight.
+- **Safe in combat**: when attacked with "Leave fishing mode when attacked" on, the weapons come back at once
+  (unless you are casting: then with the rest of the gear after the fight) and fishing mode ends after the fight; in
+  a fight the fishing key pauses.
 - **Minimap button** with a menu: every action is available without typing a command.
 
 ## Fishing gear
 
-By default the addon equips the **best pole in your bags** (by fishing bonus, then by item level).
+By default the addon equips the **best pole in your bags** that your Fishing skill allows (by fishing bonus, then
+by item level).
 
 To choose your own items:
 
@@ -79,13 +87,15 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 
 ## Statistics
 
-Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
+Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has two tabs at the
+bottom, **Statistics** and **What can be caught here**; it opens on the one you used last.
 
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
   **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
   name to see how it is counted. Decimal numbers use your game client's separator (2,5 on a German client),
   whatever the interface language.
-- **Top catches** and **zones** of all time.
+- **Top catches** and **zones** of all time. Items your game client does not know yet are counted too and show by
+  their number until the game knows them.
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a
   catch, a miss, a zone change, an auction scan); only the time rows tick while you fish. The session shows
   `H:MM:SS`, the zone and all-time columns `1h 23m`.
@@ -94,6 +104,94 @@ Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 - **Reset session** and **Reset all** ask for confirmation first.
 
 The timer runs only while fishing mode is on. It pauses while you are AFK (you can turn that off).
+
+## What can be caught here
+
+The second tab of the statistics window lists what the spot you stand at gives:
+
+- every item caught there, with its **chance** (how many catches contained it), the **pieces per catch** and its
+  **price**, plus how many catches the numbers are based on and how often a cast there catches nothing;
+- a spot is a part of the map (the map is split into a 10 by 10 grid). When a spot has fewer than 50 catches, the
+  tab shows the whole map and says so; with fewer than 50 there too, it shows **Little data** instead of
+  percentages;
+- **Skill**: your own skill range by default (0-74, 75-149, 150-224, 225-299, 300+), or any other range, or all
+  of them;
+- **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
+  you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from 3
+  players");
+- WoW Forever does not tell a catch from a fish pool apart from open water, so the numbers count both together;
+- an item your game client does not know yet (some items in WoW Forever stay unknown until you find one) shows as
+  **Unknown item** with a question mark icon; its tooltip says how many players reported it on this map, whether the
+  bundled data has it, and its item ID. Once the game knows the item, its name and icon appear;
+- a quiet line at the bottom shows the state of the [shared catch database](#shared-catch-database);
+- click an item to see where else it is caught, in the [catch catalog](#catch-catalog).
+
+The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far,
+so the tab has numbers from your first login; your own catches are added to them, nothing is counted twice.
+
+What is stored: per place only counts (catches, misses, casting time, items) and the average spot you fished from
+inside the grid cell, under a random ID of your account. No character names, guild, times or gear. With the [shared
+catch database](#shared-catch-database) on, the same counts go to the addon users you play with; they also reach the
+bundled database through the author's own client.
+
+## Catch catalog
+
+The third tab of the statistics window lists every item of the catch database: your own catches, the bundled data
+and, with the shared catch database on, what other players reported.
+
+- **Search**: type part of an item name, in your game client's language and in any letter case; the list narrows
+  with every letter. Grey items only show when you search for them. An item your game client does not know yet
+  stays out of the list until the game loads it.
+- **Filters**: **Skill** (all ranges by default) and **Source** (**All** or **Only mine**), as on the "What can be
+  caught here" tab.
+- **An item**: click it to see the zones it was caught in, with its chance there, the zone's catches and the span
+  of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
+  data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
+  named after its subzone in your language (or shows its coordinates), with its own chance and catches.
+- **Map pin**: the pin button of a spot sets the game's own map pin there: it shows on the world map and the minimap
+  (with the minimap's arrow). A short message says so and tells you to open the world map to see it (even with catch
+  notifications off); the addon does not open the map itself. If you already have a pin that the addon did not set,
+  it asks before replacing it. The arrow on screen depends on the game's navigation setting. Instances and spots
+  without a position have no pin button.
+- The tab follows new catches and new data from other players while it is open, keeping your search, the chosen
+  item and the open zones. `/okf catalog` opens it; `/okf catalog <name>` searches, and an item link (shift-click an
+  item into the line) opens that item.
+
+**Catch chances in tooltips**: the tooltip of any item in the database adds **Caught in:** with its three best
+zones and its chance there, also for chat links. In fishing mode, the minimap button's tooltip adds the three most
+likely catches of the place you stand at. **Show catch chances in tooltips** in the settings turns both off.
+
+## Shared catch database
+
+Players who fish together see each other's catches right away, without waiting for the next release:
+
+- **With whom**: addon users in your guild, your party or raid, and your online friends (character friends and
+  Battle.net friends playing WoW Forever). Data also travels further: what a guild mate got from their friends
+  reaches you too, and each release bundles the shared data gathered so far. The addon joins no chat channel: WoW
+  Forever does not carry addon data in chat channels.
+- **What**: the catch counts described above, with the average spot you fished from in each grid cell, under the
+  random ID of your account. **No character names** are sent with them, and the names of the players you exchange
+  with are never saved. The players you exchange with directly can still tell which ID is yours, since your client
+  sends your own data itself; players who get it through others see only who passed it on.
+- **When**: in the background whenever you are online, also outside fishing mode. It pauses in combat, in
+  instances, on loading screens and where the game restricts addon messages, and stays within a small traffic
+  budget (at most 50 KB per hour). Nothing appears in chat.
+- **Off**: **Options → AddOns → OneKeyFishing → Shared database**, **Use the shared catch database**. Off means
+  nothing is sent and nothing is received; data received earlier is kept but not counted, and counts again as soon
+  as you turn it back on. A popup at the first login says the same once.
+- **State**: the line at the bottom of **What can be caught here**, the settings page and `/okf share` (the bundled
+  data and its version, the contributions you hold, the players seen in the last hour, the last exchange, the
+  traffic). `/okf debug` has the same numbers for bug reports,
+  without your ID or anybody's name.
+- Data that does not add up (more catches than the casting time allows, impossible item counts) is refused, and the
+  player who sent it is ignored until the end of the session. Nothing is ever counted twice, also not after a
+  release bundles data you already got from other players.
+- **No single player can skew the numbers**: where five or more players reported a spot, no one of them counts for
+  more than a fifth of it; the bundled data and your own catches count in full. An item that is neither in the
+  bundled data nor in your own catches shows only once three players reported it on that map. Each player's data is
+  bound to its owner: nobody else can make up a newer version of it. The author can block a contributor in the
+  bundled data, and every client with that release drops it.
+- **Trial and Veteran accounts** cannot send addon data; the state then says the exchange is unavailable.
 
 ## The next Fishing rank
 
@@ -111,8 +209,10 @@ The timer runs only while fishing mode is on. It pauses while you are AFK (you c
 - The names of the book, the quest, the places and the ranks are the ones your game client shows, in its language,
   whatever language the addon is in.
 - For the book and the quest, the chat line ends with a map link, and the statistics window and the minimap menu
-  have a pin button: the game's map pin and navigation arrow point at the seller or the quest giver. A pin you set
-  yourself is replaced only after you confirm (the chat link works like any map link and sets the pin at once).
+  have a pin button: the game's map pin marks the seller or the quest giver on the world map and the minimap (with
+  the minimap's arrow); open the world map to see it. The arrow on screen depends on the game's navigation setting.
+  A pin you set yourself is replaced only after you confirm (the chat link works like any map link: it sets the pin
+  at once and opens the map).
 - Turn the reminders off with "Remind me about the next Fishing rank"; the line in the statistics window stays.
 
 ## Auction prices
@@ -120,6 +220,11 @@ The timer runs only while fishing mode is on. It pauses while you are AFK (you c
 1. Open the auction house.
 2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
 3. The addon looks up every item you have ever caught, one at a time.
+
+The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far
+below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 different offers are on
+sale (the auction house shows sellers at the same price as one offer; one seller's stack is not a market), the price
+is shown with **(few lots)** and the catch value uses the vendor price instead.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
 scanned auction prices for catch value**.
@@ -132,7 +237,8 @@ scanned auction prices for catch value**.
   Fishing rank when it has a place, reset indicator position, debug report).
 - **Drag**: move the button around the minimap.
 - The tooltip shows the mode, your Fishing skill and the next rank, the session time, your key bindings and short
-  instructions. The button is grey while fishing mode is off.
+  instructions; in fishing mode also the most likely catches of the place you stand at. The button is grey while
+  fishing mode is off.
 
 The same entry is in the Addon Compartment (the addons button next to the minimap).
 
@@ -157,6 +263,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Use scanned auction prices for catch value
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button
+  - Show catch chances in tooltips (the zones in item tooltips, the likely catches in the minimap tooltip)
 - **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position, Scan auction prices
   (with the auction house open).
 - **Language** (top right): **Game client language** follows your client and uses English when there is no
@@ -167,6 +274,8 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   **Later**. Korean and Chinese may show as squares on a client in another language; pick **English** to get a
   readable interface back.
 - **Fishing gear**: a page of its own, see [Fishing gear](#fishing-gear).
+- **Shared database**: a page of its own: **Use the shared catch database**, what is shared and the current state;
+  see [Shared catch database](#shared-catch-database).
 
 ## Commands
 
@@ -179,23 +288,33 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf toggle` | enter or leave fishing mode |
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
+| `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
 | `/okf scan` | scan auction prices (the auction house must be open) |
+| `/okf share` | show the state of the shared catch database |
 | `/okf debug` | show a report to copy into a bug report |
 
 ## Troubleshooting
 
 - **"No key is bound to 'Fishing action'"**: bind it in Options → Keybindings → AddOns → OneKeyFishing.
 - **"Fishing mode is off"**: the action key only works in fishing mode. Press your toggle key first.
-- **"The fishing key is paused in combat"**: the mode is on, but the game does not let addons keep the key bound
-  in combat. It works again when the fight ends.
+- **"The fishing key is paused in combat"** (the indicator shows "Paused in combat"): the mode is on, but the game
+  does not let addons keep the key bound in combat, so it neither casts nor hooks a bobber that is still out. It
+  works again when the fight ends.
+- **"Leaving fishing mode after combat."**: an attack (with "Leave fishing mode when attacked" on) or the toggle key
+  in a fight. The game lets an addon swap weapons only as the fight starts. If the attack comes while you are
+  casting, or you leave the mode during the fight, the weapons come back with the rest of the gear when the fight
+  ends; the pole stays in your hands until then.
 - **The key stops working after switching the keyboard language**: it is a punctuation key, which WoW names by
   the current language. Bind it in the second slot of the same binding while the other language is on, or use a
   letter, number, F-key or mouse button (see [Quick start](#quick-start)).
 - **The indicator shows "No bobber"**: the bobber is in the water but not soft-targeted (or still not after
-  3 seconds). Turn the camera towards the bobber.
-- **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon skips it until you turn fishing mode on
-  again. A lure on cooldown is not skipped: the next ready lure is used instead (or none), and the lure is offered
-  again when its cooldown ends.
+  3 seconds). Turn the camera towards the bobber. In a dungeon the game does not tell which object you face, so
+  the indicator shows "Hook!" there without this check.
+- **"Cannot apply ..."**: the lure needs a higher Fishing skill. The addon knows the skill each lure needs and
+  does not offer a lure before your skill reaches it; if the game still refuses one, the addon skips it until you
+  turn fishing mode on again. A lure tried before the addon could read your skill comes back by itself once your
+  Fishing skill reaches its requirement. A lure on cooldown is not skipped: the next ready lure is used instead (or
+  none), and the lure is offered again when its cooldown ends.
 - **"Cannot open ..."**: the container is locked. The addon skips it for the rest of the session.
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the
   key opens it again.
@@ -208,6 +327,10 @@ Typing commands is optional: everything is also available from the menus. `/onek
 2. Click the text in the window, press Ctrl+A and Ctrl+C.
 3. Open an issue at https://github.com/jPee2k/wow-addon__one-key-fishing/issues (or a comment on the CurseForge
    page) with the report, what you did and what happened. Copy any Lua error text as well.
+
+The report ends with the addon's recent errors ("Errors"): where each happened, how often and when, with a few lines
+of the code that failed. An error listed there needs no separate copy. When one part of the addon fails, the others
+keep working.
 
 ## Requirements
 

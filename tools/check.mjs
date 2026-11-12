@@ -1,14 +1,20 @@
 // Static checks for the addon (no Lua or luacheck needed):
 //   Lua 5.1 syntax, undeclared and unused globals against .luacheckrc, line length (also of tests/*.lua),
-//   ASCII-only Lua, TOC and XML files (translations and GameData/ strings excepted), the addon folder holds
-//   only packaged files, the repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
+//   ASCII-only Lua, TOC and XML files (translations and GameData/ strings excepted), GameData/ holds data only,
+//   private tables stay in their folder, test files name their subject, the addon folder holds only packaged
+//   files, the repository root is packaged or ignored in .pkgmeta, TOC file list, locale keys, the version in
 //   package.json vs CHANGELOG.md, every slash command in the player manual, and no Cyrillic in the docs.
 import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
-import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, parseToc } from "./addon.mjs";
+import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
+  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems,
+  parseToc, privateProblems, testNameProblem }
+  from "./addon.mjs";
+import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
-const MAX_LINE_LENGTH = 120;
+// --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
+const release = process.argv.includes("--release");
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
@@ -112,8 +118,13 @@ function parseLua(file) {
   }
 }
 
+const seedPath = path.join(ADDON_DIR, SEED_FILE);
+let seedAst = null;
 for (const file of luaFiles) {
   const ast = parseLua(file);
+  if (file === seedPath) {
+    seedAst = ast;
+  }
   for (const name of new Set(ast ? ast.globals.map((g) => g.name) : [])) {
     used.add(name);
     if (!declared.has(name) && !LUA_BUILTINS.has(name)) {
@@ -143,7 +154,7 @@ for (const file of files.filter((f) => f.endsWith(".xml") && inAddon(f))) {
 // official game names per client language (NPC names) in their string literals, while their code, keys and
 // comments stay ASCII.
 const isTranslation = (file) =>
-  inAddon(file) && relAddon(file).startsWith("Locales/") && relAddon(file) !== "Locales/enUS.lua";
+  inAddon(file) && relAddon(file).startsWith(`${LOCALES_DIR}/`) && relAddon(file) !== BASE_LOCALE;
 const isGameData = (file) => inAddon(file) && relAddon(file).startsWith("GameData/");
 const TRANSLATED_TOC_FIELDS = ["Notes", "Category"];
 const TRANSLATED_TOC_LINE = new RegExp(`^##\\s*(?:${TRANSLATED_TOC_FIELDS.join("|")})-[a-z]{2}[A-Z]{2}\\s*:`);
@@ -169,6 +180,13 @@ for (const file of files) {
   });
 }
 
+// GameData/ holds data only: no function, no L lookup, no module but ns.GameData (tools/addon.mjs gameDataProblems).
+for (const file of files.filter((f) => f.endsWith(".lua") && isGameData(f))) {
+  for (const found of gameDataProblems(fs.readFileSync(file, "utf8"))) {
+    problem(`${rel(file)}:${found.line}`, found.message);
+  }
+}
+
 // TOC: every listed file exists, the addon folder holds nothing that is not packaged, the version is filled
 // in at build time.
 const tocName = `${ADDON}/${TOC}`;
@@ -191,6 +209,12 @@ if (!fs.existsSync(tocPath)) {
   for (const file of files.filter(inAddon)) {
     if (!packaged.has(relAddon(file))) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
+    }
+  }
+  // One folder per area (docs/architecture/): nothing but the TOC and the extras at the root of the addon folder.
+  for (const file of toc.files) {
+    if (!file.includes("/") || !ADDON_FOLDERS.includes(file.split("/")[0])) {
+      problem(tocName, `"${file}" is not in one of the area folders (${ADDON_FOLDERS.join(", ")})`);
     }
   }
   for (const field of ["Interface", "Title", "Notes", "Category", "Author", "Version"]) {
@@ -246,13 +270,73 @@ for (const entry of packagedRoot) {
   }
 }
 
+// The layers (tools/addon.mjs LAYERS): `ns.<Name>` defined at the start of a line (`ns.Name = ...`,
+// `function ns.Name(`) belongs to the layer of its file's folder; a file may name only what its own layer and the
+// layers below define. So no module outside UI/ (and Core/Commands.lua) names a frame module, Core names no module
+// of an area, and the game layer (Fishing/, Catch/) knows nothing of the catch database or the exchange.
+const DEFINITION = /^(?:function\s+ns\.([A-Za-z_]\w*)\s*\(|ns\.([A-Za-z_]\w*)\s*=[^=])/gm;
+const REFERENCE = /\bns\.([A-Za-z_]\w*)/g;
+const folderLayer = (file) => LAYERS[relAddon(file).split("/")[0]];
+const readerLayer = (file) => ENTRY_LAYERS[relAddon(file)] ?? folderLayer(file);
+const sources = new Map(luaFiles.map((file) => [file, fs.readFileSync(file, "utf8")]));
+const definedIn = new Map(); // name -> { file, layer } (the highest layer when several files define it)
+for (const [file, source] of sources) {
+  for (const match of source.matchAll(DEFINITION)) {
+    const name = match[1] || match[2];
+    const layer = folderLayer(file);
+    if (layer === undefined) {
+      continue; // not in an area folder: reported with the TOC
+    }
+    if (!definedIn.has(name) || definedIn.get(name).layer < layer) {
+      definedIn.set(name, { file, layer });
+    }
+  }
+}
+for (const [file, source] of sources) {
+  const layer = readerLayer(file);
+  if (layer === undefined) {
+    continue;
+  }
+  const reported = new Set();
+  for (const match of source.matchAll(REFERENCE)) {
+    const owner = definedIn.get(match[1]);
+    if (owner && owner.file !== file && owner.layer > layer && !reported.has(match[1])) {
+      reported.add(match[1]);
+      problem(rel(file), `uses ns.${match[1]} of ${rel(owner.file)}, a higher layer (docs/architecture/core.md, Layers)`);
+    }
+  }
+  if (!relAddon(file).startsWith("UI/") && !FRAMES_OUTSIDE_UI.includes(relAddon(file)) && /\bCreateFrame\s*\(/.test(source)) {
+    problem(rel(file), "CreateFrame outside UI/ (frames are the view's; tools/addon.mjs FRAMES_OUTSIDE_UI lists the exceptions)");
+  }
+}
+
+// A module's private table is read only by the files of its own folder (and by the tests).
+const folderOfModule = (name) => definedIn.has(name) ? relAddon(definedIn.get(name).file).split("/")[0] : undefined;
+for (const [file, source] of sources) {
+  for (const found of privateProblems(source, relAddon(file).split("/")[0], folderOfModule)) {
+    problem(`${rel(file)}:${found.line}`, found.message);
+  }
+}
+
+// Test files name their subject, not a module of their area (tools/addon.mjs testNameProblem).
+const moduleFiles = (folder) => {
+  const dir = path.join(ADDON_DIR, folder);
+  return fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".lua")).map((f) => f.slice(0, -4)) : [];
+};
+for (const file of files.filter((f) => f.endsWith("_test.lua") && inTests(f))) {
+  const found = testNameProblem(rel(file).slice("tests/".length), moduleFiles);
+  if (found) {
+    problem(rel(file), found);
+  }
+}
+
 // Locales: every L["..."] used in the code is listed in enUS.lua, and every listed key is used.
 // Other locales may only translate keys that exist in enUS.lua.
 const L_KEY = /\bL\["((?:[^"\\]|\\.)*)"\]/g;
 const keysIn = (file) => new Set([...fs.readFileSync(file, "utf8").matchAll(L_KEY)].map((m) => m[1]));
-const baseLocale = path.join(ADDON_DIR, "Locales", "enUS.lua");
+const baseLocale = path.join(ADDON_DIR, BASE_LOCALE);
 const baseName = rel(baseLocale);
-const isLocale = (file) => relAddon(file).startsWith("Locales/");
+const isLocale = (file) => relAddon(file).startsWith(`${LOCALES_DIR}/`);
 if (!fs.existsSync(baseLocale)) {
   problem(baseName, "missing");
 } else {
@@ -280,6 +364,20 @@ if (!fs.existsSync(baseLocale)) {
   }
 }
 
+// The bundled seed (written by npm run harvest; the format is defined in tools/harvest.mjs). It is always
+// committed, so a missing one is a problem, not a silently skipped check.
+if (!fs.existsSync(seedPath)) {
+  problem(`${ADDON}/${SEED_FILE}`, "missing (the bundled seed; npm run harvest writes it)");
+} else {
+  const bytes = fs.statSync(seedPath).size;
+  if (bytes > MAX_SEED_BYTES) {
+    problem(rel(seedPath), `${bytes} bytes, more than the 1 MB limit`);
+  }
+  for (const message of seedAst ? seedProblems(seedAst) : []) { // no AST: the syntax error is reported above
+    problem(rel(seedPath), message);
+  }
+}
+
 // The newest CHANGELOG entry matches package.json.
 const version = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
 const changelogPath = path.join(ROOT, "CHANGELOG.md");
@@ -291,14 +389,16 @@ if (fs.existsSync(changelogPath)) {
 }
 
 // The player manual (OneKeyFishing/README.md, shipped in the package) documents every slash command: the
-// `ns.RegisterCommand("name", ...)` calls, or the `name = "..."` entries of Commands.lua when it exists. A command
-// whose declaration is marked VERIFY (temporary, removed before a release) is not expected there.
+// `name = "..."` entries of Core/Commands.lua, the one place commands are declared. A command whose declaration
+// is marked VERIFY (temporary, removed before a release) is not expected there.
 const manualPath = path.join(ADDON_DIR, "README.md");
-if (fs.existsSync(manualPath)) {
+const commandsPath = path.join(ADDON_DIR, COMMANDS_FILE);
+if (!fs.existsSync(commandsPath)) {
+  problem(`${ADDON}/${COMMANDS_FILE}`, "missing (every slash command is declared there)");
+} else if (fs.existsSync(manualPath)) {
   const manual = fs.readFileSync(manualPath, "utf8");
-  const commandsFile = path.join(ADDON_DIR, "Commands.lua");
-  const COMMAND = fs.existsSync(commandsFile) ? /\{\s*name\s*=\s*"([a-z]+)"/g : /ns\.RegisterCommand\(\s*"([a-z]+)"/g;
-  for (const file of fs.existsSync(commandsFile) ? [commandsFile] : luaFiles) {
+  const COMMAND = /\{\s*name\s*=\s*"([a-z]+)"/g;
+  for (const file of [commandsPath]) {
     const source = fs.readFileSync(file, "utf8");
     for (const match of source.matchAll(COMMAND)) {
       // The comment lines right above the declaration (and the declaration's own line).
@@ -328,6 +428,17 @@ for (const file of files.filter((f) => f.endsWith(".md"))) {
       }
     }
   });
+}
+
+// Verification debt (findMarkers in addon.mjs): listed; with --release they are problems.
+const markers = luaFiles.flatMap((file) => findMarkers(fs.readFileSync(file, "utf8"))
+  .map((m) => `${rel(file)}:${m.line} ${m.id} ${m.what}`.trimEnd()));
+if (release) {
+  for (const marker of markers) {
+    problem(marker, "open VERIFY marker: close the verification debt before a release");
+  }
+} else if (markers.length > 0) {
+  console.log(`open verification markers (${markers.length}):\n${markers.map((m) => `  ${m}`).join("\n")}`);
 }
 
 if (problems.length > 0) {

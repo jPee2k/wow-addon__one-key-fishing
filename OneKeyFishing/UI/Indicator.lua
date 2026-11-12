@@ -106,7 +106,7 @@ local function IdleState()
         local info = C_Container.GetContainerItemInfo(arg1, arg2)
         return kind, info and info.iconFileID
     end
-    return "cast", C_Spell.GetSpellTexture(ns.GetFishingSpellID() or ns.FISHING_SPELL_IDS[1])
+    return "cast", C_Spell.GetSpellTexture(ns.GetFishingSpellID() or ns.GameData.FishingSpells[1].spellID)
 end
 
 -- Channel start times (they identify the cast) of the cast whose bobber was targeted, and of the cast whose
@@ -114,13 +114,18 @@ end
 local bobberSeenCast, graceTimerCast
 
 -- True when the hook would miss the bobber: it was targeted in this cast and is lost, or it never showed up
--- within the grace time. While the bobber is still flying, no warning.
+-- within the grace time. While the bobber is still flying, no warning. When the game hides the soft target's
+-- identity (an instance) the bobber cannot be told apart, so no warning either: the key still hooks (spec 012).
 local function ShowNoBobber()
+    local targeted, known = ns.IsBobberTargeted()
+    if not known then
+        return false
+    end
     local _, _, _, startMS = UnitChannelInfo("player")
     if not startMS then
-        return not ns.IsBobberTargeted()
+        return not targeted
     end
-    if ns.IsBobberTargeted() then
+    if targeted then
         bobberSeenCast = startMS
         return false
     end
@@ -144,6 +149,17 @@ function Indicator.Update()
         frame:Hide()
         return
     end
+    if ns.Action.IsPaused() then
+        -- In a fight the key is paused (its overrides are dropped): no "Cast" or "Hook!" to offer.
+        pulse:Stop()
+        bar:Hide()
+        frame.icon:SetTexture(select(2, IdleState()))
+        frame.icon:SetAlpha(0.5)
+        frame.label:SetText("|cffffd100" .. L["Paused in combat"] .. "|r")
+        frame.key:SetText("")
+        frame:Show()
+        return
+    end
     local kind, icon
     if ns.Action.IsChanneling() then
         kind, icon = "hook", HOOK_ICON
@@ -151,6 +167,7 @@ function Indicator.Update()
         kind, icon = IdleState()
     end
     frame.icon:SetTexture(icon)
+    frame.icon:SetAlpha(1) -- the paused state dims it; the hook's pulse animates from this base
     if kind == "hook" and ShowNoBobber() then
         -- The key would interact with something else (or nothing): warn instead of "Hook!".
         frame.label:SetText("|cffff4444" .. L["No bobber"] .. "|r")
@@ -165,7 +182,6 @@ function Indicator.Update()
         bar:Show()
     else
         pulse:Stop()
-        frame.icon:SetAlpha(1)
         bar:Hide()
     end
     frame:Show()
@@ -232,3 +248,5 @@ ns.RegisterEvent("UNIT_INVENTORY_CHANGED", function(_, unit)
     end
 end)
 ns.On("LURE_READY", Indicator.Update) -- a lure came off cooldown
+-- The lure the key offers depends on the Fishing skill (Bags.FindLure): a skill-up may make one usable.
+ns.RegisterEvent("SKILL_LINES_CHANGED", function() Indicator.Update() end)

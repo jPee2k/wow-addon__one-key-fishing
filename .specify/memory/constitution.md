@@ -12,8 +12,9 @@ The addon MUST stay within Blizzard's UI Add-On Development Policy at all times.
   automatic hook on the bobber splash, no sound monitoring, no timed or chained actions.
 - No external tools, no traffic outside the game, no collection of personal data, no
   advertising, no paid or locked features, no obfuscated code.
-- Server-facing work (auction searches) MUST run one request at a time, respect the throttle
-  and time out.
+- Server-facing work MUST stay light. Auction searches run one request at a time, respect the
+  throttle and time out. The catch exchange's addon messages go through one paced queue with an
+  hourly byte budget; every send result is read, and a throttle or lockdown backs off.
 
 Rationale: a policy breach can get the addon removed or players banned; no feature is worth it.
 
@@ -27,8 +28,10 @@ The game client can run in any language, so the addon MUST NOT depend on localiz
 - Every visible string MUST go through `ns.L` with a literal English key; color codes stay
   outside the strings; enUS keys and code usage MUST stay in sync. The only deliberate
   exceptions are shown as they are, without `ns.L`: the debug report, language names written in
-  their own language (the language setting), and the addon name "OneKeyFishing" with its
-  version string.
+  their own language (the language setting), the addon name "OneKeyFishing" with its version
+  string, and slash commands: the `/okf` command names, their help descriptions and the `/okf`
+  help output are always English, on every client and interface language, because players type
+  them in English.
 - English is the development language: code, comments, docs, specs, commit messages, branch
   names and pull requests are written in English, whatever language the conversation is in.
   The only exceptions are the translations and language names written in their own language
@@ -38,13 +41,21 @@ Rationale: a fishing addon that works only on English clients fails most of its 
 
 ### III. Safe, Restorable State
 
-Fishing mode changes the player's settings, gear and camera; the player MUST always get them back.
+Fishing mode changes the player's settings, gear and camera. The player MUST always get the
+settings and the gear back, and the camera whenever the mode ends in the same session.
 
-- Every change (CVar, equipped slot, camera, mode flag) MUST be recorded in saved variables
-  *before* it is applied, so exit, logout, `/reload`, disconnects and crashes all restore it.
+- Every changed CVar and equipped slot MUST be recorded in saved variables *before* it is
+  applied, so exit, logout, `/reload` and disconnects restore it, and the next login puts back
+  what the saved file still holds after a crash.
+- The camera zoom is restored on exit and kept across a `/reload`; a real login forgets it,
+  because a zoom from an earlier session means nothing.
+- Fishing mode resumes by itself only after a `/reload` (a flag set at logout while the mode is
+  on). After a real login it stays off, and the CVars and the gear come back.
 - Only what the addon changed is restored, and only while it still holds what the addon put
   there.
-- Combat rules MUST be honoured: protected changes wait until combat ends; weapons return at once.
+- Combat rules MUST be honoured: protected changes wait until combat ends. Equipping is protected
+  in combat, weapons too: the weapons return when the fight starts, before the combat lockdown
+  (`PLAYER_REGEN_DISABLED`), and everything else after it ends.
 - A renamed, moved or reshaped saved field MUST bump `DB_SCHEMA` with a migration; defaults fill
   missing keys without overwriting player data.
 
@@ -56,7 +67,8 @@ worse bug than any missing feature.
 The target is WoW Forever (Interface `16001`), which runs the Mainline API.
 
 - Only API calls known to exist on Forever may be relied on; facts verified in game are recorded
-  in `CLAUDE.md` ("Known API facts") and MUST be updated when a new one is learned.
+  in `docs/forever-api.md` (the traps that matter most also in `CLAUDE.md`) and MUST be updated
+  when a new one is learned.
 - Calls with uncertain behaviour MUST be guarded and degrade gracefully, never error at load.
 - Every new WoW API global MUST be added to `.luacheckrc` `read_globals`.
 - Behaviour that only the game can show MUST be handed to the user with an in-game test
@@ -68,9 +80,9 @@ silent failures that tests cannot catch.
 ### V. Checked and Tested Changes
 
 - `npm run check` and `npm test` MUST pass after every change and before every commit.
-- Logic that can run without the game (Core, Bags, Catch, Stats, Prices, statistics window
-  logic) MUST get a new or extended test in `tests/` when it changes; stubs live in
-  `tests/wow.lua`.
+- Logic that can run without the game (Core, the game data, Bags, Skill, Catch, Stats, Prices,
+  CatchDB, Comm, Channel, Share, Catalog, statistics window logic) MUST get a new or extended
+  test in `tests/` when it changes; stubs live in `tests/wow.lua`.
 - Addon code MUST stay Lua 5.1 compatible and free of 5.1/5.3 differences; a failure caused only
   by fengari's Lua 5.3 is fixed in the test or the stub, not by bending the addon.
 
@@ -83,6 +95,20 @@ player sees the code.
   and a module MAY call a later module only at runtime.
 - Modules communicate through `ns.On` / `ns.Fire` messages and documented functions; a new
   message MUST be listed in `CLAUDE.md`.
+- All slash commands MUST be declared in one place, `OneKeyFishing/Core/Commands.lua`, which lists
+  every command with its English description and the module function it calls at runtime;
+  modules MUST NOT register commands themselves.
+- The code is layered (Core, Game, Data, View; `CLAUDE.md` Architecture, `docs/architecture/core.md`
+  "Layers"): a file MAY use the module tables of its own layer and the ones below, every frame
+  lives in `UI/`, and a lower layer MUST NOT name a frame module; `npm run check` enforces it.
+- Game data (items, spells, objects, NPCs, places, slots by ID) lives in the layer 0 data model
+  `ns.GameData` under `GameData/`, one file per entity, data only: no logic, no `ns.L`, no other
+  module (`npm run check` enforces it); addon tuning stays in its module.
+- A module split over several files shares its internals through `<Module>.private`; no file
+  of another folder reads that table (`npm run check` enforces it).
+- Every new feature MUST be built inside this architecture: its data and rules in a module of its
+  area, its frames in `UI/`, the two joined by messages and documented functions; a new area adds
+  its folder, its `docs/architecture/` document and its `tests/` folder.
 - Prefer the smallest change that solves the problem; new settings, frames or abstractions need
   a concrete player need, not a hypothetical one.
 
@@ -116,8 +142,9 @@ Rationale: a small addon stays maintainable only while each module has one clear
   publishes it. Steps and the policy checklist live in `docs/publishing.md`.
 - A change a player can see or use updates `CHANGELOG.md` (`[Unreleased]`) and the manual
   `OneKeyFishing/README.md` in the same commit (fixes of an unreleased feature need no changelog
-  line); architecture changes update `CLAUDE.md`; a finished feature leaves `docs/ROADMAP.md`;
-  finished plans go into `docs/history/`.
+  line); architecture changes update `CLAUDE.md` (the module map, the messages, the cross-module
+  rules) and the area document in `docs/architecture/`; a finished feature leaves
+  `docs/ROADMAP.md`; finished plans go into `docs/history/`.
 
 ## Governance
 
@@ -131,4 +158,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.3.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-03
+**Version**: 1.5.3 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-07

@@ -4,6 +4,78 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-11-12
+
+### Added
+
+- "What can be caught here", a second tab in the statistics window: the items of the spot you stand at, with
+  their chance, pieces per catch and price, the number of catches behind them and the share of casts that catch
+  nothing. Few catches at a spot: the whole map; few on the map too: "Little data". Filters for the skill range
+  and for the source (all, or only your own catches). Catches in a cave count for the zone around it.
+- A catch database bundled with every release, so the tab has numbers from the first login. Your own catches
+  are recorded for it per map, grid cell and skill range, under a random ID (no names; per cell only the average
+  spot you fished from and the game's number of the subzone, so spots get a name in every client language).
+- Shared catch database: catch counts travel under a random ID and in the background between addon users in your
+  guild, group and friends list (Battle.net friends playing WoW Forever included), and what they got from others
+  reaches you too. No character names are sent or saved (the players you exchange with directly can tell which
+  ID is yours); it pauses in combat, in instances and on loading screens, stays within 50 KB per hour and never
+  shows anything in chat. "What can be caught here" counts it under "All" and says how many players the numbers
+  come from ("60 catches from 3 players"), with a quiet status line at the bottom.
+- "Shared database" settings page: "Use the shared catch database" turns the exchange off (nothing sent or received;
+  data received earlier is kept but not counted), with a short text on what is shared and the state. A popup at the
+  first login says what is shared and where to turn it off.
+- Protections for data from strangers: where five or more players reported a spot, none counts for more than a fifth
+  of it; an item that is neither in the bundled data nor in your own catches shows once three players reported it on
+  the map; each player's data carries a proof that only its owner can extend, so nobody can make up a newer version
+  of it; a version holds at most as much fishing as its steps allow; the bundled data can block a contributor.
+  Data that does not add up is refused, and its sender is ignored until the end of the session.
+- Items your game client does not know yet show as "Unknown item" with their item ID in the tooltip, and get their
+  name once the game knows them.
+- "Catch catalog", a third tab in the statistics window: every item of the catch database with a search by its name
+  in your client's language, the zones it is caught in with the chance there, and each zone's spots named after their
+  subzone. A spot's pin button sets the game's own map pin there with the game's navigation, and asks first when you
+  already have a pin of your own. `/okf catalog [name or item link]` opens it, and a click on an item of "What can be
+  caught here" opens that item.
+- Item tooltips show "Caught in:" with the item's three best zones and its chance; in fishing mode the minimap
+  tooltip shows the three most likely catches of the place. "Show catch chances in tooltips" turns both off.
+- `/okf share` shows the state of the shared catch database; `/okf debug` has sections for the catch database, the
+  exchange and the catalog.
+- `/okf debug` ends with the addon's recent errors ("Errors"): where each happened, how often and when, with a few
+  lines of the code that failed. Errors still show as before in the game's error window or BugSack.
+
+### Changed
+
+- A lure your Fishing skill is too low for is no longer offered; it is used once your skill is high enough.
+- Auction prices: the average of the cheapest fifth of the pieces on sale instead of the cheapest lot, so one
+  lot far off the market no longer decides the price. With fewer than 5 pieces or fewer than 3 different
+  offers (prices) on sale the price is marked "(few lots)" and the catch value uses the vendor price.
+- Slash commands and the `/okf` help are always in English, whatever the interface language.
+- When one part of the addon fails, the others keep working: an error in one part no longer stops the others from
+  handling the same moment (a failure in the statistics no longer costs the catch database a catch).
+
+### Fixed
+
+- Items your game client does not know yet are counted in the statistics and in your catch data, and fished
+  containers of that kind are remembered like the others, so the key opens them and the auction scan includes them.
+- After setting a map pin, the world map no longer fails in a fight ("Interface action failed because of an
+  AddOn"): the pin no longer opens the map, and its message says to open it.
+- Leaving fishing mode in a fight no longer raises "Interface action failed"; the gear comes back when the fight
+  ends.
+- In a fight the fishing key now pauses and says so, instead of trying to cast, and the indicator shows "Paused in
+  combat". The pause also covers the hook: a bobber still out when a fight starts can no longer be hooked until it
+  ends.
+- An attack in fishing mode (with "Leave fishing mode when attacked" on) now says that the mode ends after the
+  fight.
+- No more Lua error in dungeon fights ("attempt to compare ... a secret string value") from the next Fishing rank
+  advice; its "can learn" notice now waits for the end of a fight.
+- Fishing mode no longer picks a pole your Fishing skill is too low for; it takes the best one you can use.
+- The manual no longer promises a navigation arrow on screen for the next-rank pin.
+- One catch reads "1 catch" instead of "1 catches" in the zone list of the statistics window and the session line
+  of the minimap tooltip.
+- No more Lua error window while fishing in a dungeon ("attempt to perform string conversion on a secret string
+  value"); there the indicator shows "Hook!" while the bobber is out, since the game hides which object you face.
+- The minimap button's tooltip no longer loses its colours (every line white) now and then.
+
 ## [1.1.0] - 2026-11-05
 
 ### Added

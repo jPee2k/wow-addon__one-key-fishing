@@ -2,6 +2,7 @@
 -- Canvas pages with plain widgets, so they do not depend on the Settings setting-type API.
 --   OneKeyFishing  - keys, feature toggles, actions
 --   Fishing gear   - chosen pole and the list of extra fishing items
+--   Shared database - the exchange of catch data with other players (Share.lua) and its state
 local _, ns = ...
 local L = ns.L
 
@@ -30,12 +31,13 @@ local function Toggles()
         { key = "auctionPrices", label = L["Use scanned auction prices for catch value"] },
         { key = "camera", label = L["Zoom the camera while fishing"] },
         { key = "minimapButton", label = L["Show the minimap button"] },
+        { key = "tooltipChances", label = L["Show catch chances in tooltips"] },
     }
 end
 
 local COLUMN_OFFSET = 300
 
-local mainCategory
+local mainCategory, shareCategory
 
 ---------------------------------------------------------------------------
 -- Widgets
@@ -62,18 +64,14 @@ local function CreateCheckbox(parent, label, getValue, setValue)
     return checkbox
 end
 
-local CreateButton = ns.CreateButton -- Core.lua
+local CreateButton = ns.CreateButton -- UI/Widgets.lua
 
-local function ItemDisplay(itemID)
-    local name, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
-    return link or name or ("item:" .. itemID), icon or C_Item.GetItemIconByID(itemID)
-end
+local ItemDisplay = ns.ItemDisplay -- UI/Widgets.lua
 
 ---------------------------------------------------------------------------
 -- Language
 ---------------------------------------------------------------------------
 local RELOAD_POPUP = "ONEKEYFISHING_RELOAD_LANGUAGE"
-local CHECK_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t "
 
 -- The stored preference as the menu sees it: a code that is not shipped (any more) counts as "auto".
 local function SelectedLanguage()
@@ -90,14 +88,17 @@ end
 -- Saves the preference ("auto" or a language code). The new language shows after a reload, which only the
 -- player's click on "Reload now" starts.
 function SettingsUI.ChooseLanguage(value)
-    if value == ns.db.settings.language or (value ~= "auto" and not ns.translations[value]) then
+    if value ~= "auto" and not ns.translations[value] then
         return
     end
-    ns.db.settings.language = value
-    -- The player has found the language menu: the one-time hint about it (Core.lua) is no longer needed.
-    ns.db.settings.languageHintShown = true
+    if value ~= ns.db.settings.language then
+        ns.db.settings.language = value
+        -- The player has found the language menu: the one-time hint about it (Core.lua) is no longer needed.
+        ns.db.settings.languageHintShown = true
+    end
     -- No reload when the interface would come back in the language it already has (e.g. "Deutsch" picked on
     -- a German client that follows the client language); a reload offered for an earlier choice is withdrawn.
+    -- Picking a language that still waits for its reload ("Later") offers the reload again.
     if ns.ResolveLanguage(value, GetLocale()) == ns.language then
         StaticPopup_Hide(RELOAD_POPUP)
         return
@@ -108,7 +109,7 @@ end
 
 -- "Game client language" first, then every shipped language by its own name.
 local function LanguageChoices()
-    local choices = { { value = "auto", text = L["Game client language"] } }
+    local choices = { { value = "auto", text = SettingsUI.LanguageLabel("auto") } }
     for _, language in ipairs(ns.GetLanguages()) do
         table.insert(choices, { value = language.code, text = language.name })
     end
@@ -116,25 +117,11 @@ local function LanguageChoices()
 end
 
 local function OpenLanguageMenu(owner, onChosen)
-    local function Choose(value)
-        SettingsUI.ChooseLanguage(value)
-        onChosen()
-    end
-    local choices = LanguageChoices()
-    if not (MenuUtil and MenuUtil.CreateContextMenu) then
-        return
-    end
-    MenuUtil.CreateContextMenu(owner, function(_, root)
-        for _, choice in ipairs(choices) do
-            local function IsSelected() return SelectedLanguage() == choice.value end
-            local function Select() Choose(choice.value) end
-            if root.CreateRadio then
-                root:CreateRadio(choice.text, IsSelected, Select)
-            else
-                root:CreateButton((IsSelected() and CHECK_MARK or "") .. choice.text, Select)
-            end
-        end
-    end)
+    ns.OpenRadioMenu(owner, LanguageChoices(), function(value) return SelectedLanguage() == value end,
+        function(value)
+            SettingsUI.ChooseLanguage(value)
+            onChosen()
+        end)
 end
 
 local function ShowLanguageTooltip(owner)
@@ -155,7 +142,6 @@ local function CreateLanguageControl(page)
     local button
     local function Update()
         button:SetText(SettingsUI.LanguageLabel(SelectedLanguage()))
-        ns.FitButton(button)
     end
     button = CreateButton(page, "", 160, function(self) OpenLanguageMenu(self, Update) end)
     button:SetPoint("TOPRIGHT", -PADDING, -PADDING + 4)
@@ -245,7 +231,7 @@ local function CreateMainPage()
     actionsHeader:SetPoint("TOPLEFT", cameraLabel, "BOTTOMLEFT", 0, -18)
     local toggleButton = CreateButton(page, L["Toggle fishing mode"], 180, function() ns.Mode.Toggle() end)
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
-    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowReport() end)
+    local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowDebugReport() end)
     reportButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
     local statsButton = CreateButton(page, L["Open statistics"], 140, function() ns.StatsFrame.Toggle() end)
     statsButton:SetPoint("LEFT", reportButton, "RIGHT", 8, 0)
@@ -260,9 +246,7 @@ local function CreateMainPage()
     scanHint:SetPoint("TOPLEFT", resetButton, "BOTTOMLEFT", 2, -4)
     scanHint:SetWidth(560)
     local function UpdateScanButton()
-        local usable = ns.Auction.CanScan()
-        scanButton:SetEnabled(usable)
-        scanHint:SetShown(not ns.Auction.IsOpen())
+        ns.UpdateScanButton(scanButton, scanHint) -- UI/Widgets.lua
     end
     ns.On("AUCTION_STATE", UpdateScanButton)
 
@@ -280,15 +264,6 @@ end
 ---------------------------------------------------------------------------
 -- Fishing gear page
 ---------------------------------------------------------------------------
-local function ShowItemTooltip(owner, itemID)
-    if not itemID then
-        return -- an empty row: the game's tooltip refuses a nil item
-    end
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    GameTooltip:SetItemByID(itemID)
-    GameTooltip:Show()
-end
-
 local function CreateGearRow(parent)
     local row = CreateFrame("Frame", nil, parent)
     row:Hide() -- until Refresh gives it an item
@@ -308,7 +283,7 @@ local function CreateGearRow(parent)
     row.remove = CreateButton(row, L["Remove"], 80, function() ns.Gear.RemoveItem(row.itemID) end)
     row.remove:SetPoint("RIGHT")
 
-    row:SetScript("OnEnter", function(self) ShowItemTooltip(self, self.itemID) end)
+    row:SetScript("OnEnter", function(self) ns.ShowItemTooltip(self, self.itemID) end)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     return row
 end
@@ -432,17 +407,123 @@ local function CreateGearPage()
 end
 
 ---------------------------------------------------------------------------
+-- Shared database page
+---------------------------------------------------------------------------
+local STATUS_INTERVAL = 1 -- seconds between status updates while the page is shown
+
+-- Top to bottom: the setting, what is shared, the state. Part 3 (the public channel) adds its setting below the
+-- first one and extends the text.
+local function CreateSharePage()
+    local page = CreateFrame("Frame")
+
+    local title = CreateText(page, "GameFontNormalLarge", L["Shared database"])
+    title:SetPoint("TOPLEFT", PADDING, -PADDING)
+
+    local checkbox = CreateCheckbox(page, L["Use the shared catch database"],
+        function() return ns.Share.IsEnabled() end,
+        function(value) ns.Share.SetEnabled(value) end)
+    checkbox:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -2, -14)
+    checkbox.label:SetWidth(520)
+
+    -- The public channel (part 3), only while the release has it: a second setting, greyed out while sharing is off,
+    -- and the channel's state under it.
+    local below, channelBox, channelLine = checkbox, nil, nil
+    if ns.Channel.AVAILABLE then
+        channelBox = CreateCheckbox(page, L["Use the public channel"],
+            function() return ns.Channel.IsEnabled() end,
+            function(value) ns.Channel.SetEnabled(value) end)
+        channelBox:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -6)
+        channelBox.label:SetWidth(520)
+        channelLine = CreateText(page, "GameFontHighlightSmall")
+        channelLine:SetPoint("TOPLEFT", channelBox, "BOTTOMLEFT", 30, -2)
+        channelLine:SetWidth(530)
+        page.channelBox, page.channelLine = channelBox, channelLine
+        below = channelBox
+    end
+
+    local sentences = {
+        L["Your catches (items, counts, map cells, the average spot you fish from) are shared under a random ID."],
+        L["They go to addon users in your guild, group and friends list. No names or gear."],
+        L["The players you exchange with can tell which ID is yours."],
+    }
+    if ns.Channel.AVAILABLE then
+        table.insert(sentences,
+            L["With the public channel on, they also go to every other addon user, through a hidden chat channel."])
+        table.insert(sentences,
+            L["Anyone who joins that channel by its name can see which characters in it use the addon."])
+    end
+    local about = CreateText(page, "GameFontHighlightSmall", table.concat(sentences, " "))
+    about:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 2, channelLine and -24 or -12)
+    about:SetWidth(560)
+    local offText = CreateText(page, "GameFontHighlightSmall",
+        L["Turned off: nothing is sent or received, and other players' data is not counted."])
+    offText:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -6)
+    offText:SetWidth(560)
+    local hint = CreateText(page, "GameFontDisableSmall", "/okf share")
+    hint:SetPoint("TOPLEFT", offText, "BOTTOMLEFT", 0, -6)
+
+    local status = CreateText(page, "GameFontNormal")
+    status:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -16)
+    status:SetWidth(560)
+    page.status = status
+
+    -- The channel setting follows the first one: clickable only while sharing is on.
+    local function SyncChannelBox()
+        if channelBox then
+            local on = ns.Share.IsEnabled()
+            channelBox:SetEnabled(on)
+            channelBox:SetChecked(ns.Channel.IsEnabled())
+            channelBox.label:SetFontObject(on and "GameFontHighlight" or "GameFontDisable")
+        end
+    end
+    ns.On("SETTINGS_CHANGED", function(key)
+        if key == "shareDB" or key == "shareChannel" then
+            SyncChannelBox()
+        end
+    end)
+
+    local elapsed = 0
+    local function Update()
+        elapsed = 0
+        status:SetText(ns.Share.StatusLine())
+        if channelLine then
+            channelLine:SetText(ns.Share.ChannelLine())
+        end
+    end
+    page:SetScript("OnShow", function()
+        SyncChannelBox()
+        Update()
+    end)
+    page:SetScript("OnUpdate", function(_, delta)
+        elapsed = elapsed + delta
+        if elapsed >= STATUS_INTERVAL then
+            Update()
+        end
+    end)
+    return page
+end
+
+---------------------------------------------------------------------------
 -- Registration
 ---------------------------------------------------------------------------
-function SettingsUI.Open()
-    if not mainCategory then
+local function OpenCategory(category)
+    if not category then
         return
     end
     if InCombatLockdown() then
         ns.Print(L["Settings cannot be opened in combat."])
         return
     end
-    Settings.OpenToCategory(mainCategory:GetID())
+    Settings.OpenToCategory(category:GetID())
+end
+
+function SettingsUI.Open()
+    OpenCategory(mainCategory)
+end
+
+-- The "Shared database" page (the "Settings" button of the one-time popup).
+function SettingsUI.OpenShare()
+    OpenCategory(shareCategory)
 end
 
 ns.RegisterEvent("PLAYER_LOGIN", function()
@@ -452,12 +533,12 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     end
     -- The panel shows a page with SetParent + Show (Blizzard_SettingsPanel.lua DisplayLayout). A frame is created
     -- shown, so that Show would change nothing and send no OnShow, which fills the pages: they start hidden.
-    local mainPage, gearPage = CreateMainPage(), CreateGearPage()
+    local mainPage, gearPage, sharePage = CreateMainPage(), CreateGearPage(), CreateSharePage()
     mainPage:Hide()
     gearPage:Hide()
+    sharePage:Hide()
     mainCategory = Settings.RegisterCanvasLayoutCategory(mainPage, "OneKeyFishing")
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, gearPage, L["Fishing gear"])
+    shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, sharePage, L["Shared database"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)
-
-ns.RegisterCommand("config", function() return L["open the settings"] end, SettingsUI.Open)

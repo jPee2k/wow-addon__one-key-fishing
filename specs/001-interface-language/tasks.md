@@ -232,9 +232,9 @@ language and stays so on another character; "Game client language" returns to US
   volunteer corrections.
 - [X] T040 Run `npm run check`, `npm test` and `npm run dev`; confirm `dist/OneKeyFishing/` contains the ten
   locale files and `Localization.lua`.
-- [X] T041 Hand the in-game checklist of [quickstart.md](quickstart.md) to the author (including the font
-  `/run` line); record the font results in [research.md](research.md) R6 and any API finding in `CLAUDE.md`
-  "Known API facts".
+- [X] T041 Hand the in-game checklist `docs/checklists/interface-language.md` to the author (including the font
+  `/run` line); record the font results in [research.md](research.md) R6 and any API finding in
+  `docs/forever-api.md`.
 
 ---
 
@@ -322,7 +322,7 @@ Task: "Create OneKeyFishing/Locales/zhCN.lua (简体中文)"
 - [X] T054 In `OneKeyFishing/Locales/enUS.lua`, add the state sentences, the trainer / book / quest sentences, the "Next rank" line texts, the level text, the pin texts and the new setting label; remove `a fishing trainer`, the book and quest phrases, `Fishing skill capped (%d/%d): learn %s Fishing from %s.`, `Fishing %d/%d: %d point(s) left in this rank. Next: %s Fishing from %s.` and the old setting label; translate every new text in the nine `Locales/<code>.lua` files (keep the author's uncommitted review changes in `ukUA.lua`; the author reviews the Ukrainian texts) per FR-017, FR-011, research R13 (partial)
 - [X] T055 Update the docs per plan: Phase 12: a "Next rank" section in `docs/checklists/interface-language.md` (the steps of quickstart.md "User Story 3") and section 8 of `docs/checklists/fishing-mode.md`; the rank reminder in `OneKeyFishing/README.md`; `CHANGELOG.md` `[Unreleased]` Added/Changed lines; `CLAUDE.md` (`GameData/` and its rule, `UI/MapPin.lua`, `charDB.pin`, the `Skill.lua` description, the `npm run check` exception); `docs/release-plan.md` 1.2.0 (move lures, containers, pole bonuses, spell and bobber IDs to `GameData/`; the catalog uses `ns.MapPin`); `docs/ROADMAP.md` (pin on the nearest fishing trainer) (missing)
 - [X] T056 Add functional requirements to `specs/001-interface-language/spec.md` for the work already in the code but not in the spec: the one-time language hint on clients without a translation (`ns.NeedsLanguageHint`, `settings.languageHintShown`), the translated TOC `Notes-<code>` / `Category-<code>` lines, and the client decimal separator (`ns.FormatDecimal`); update research.md R10, which still calls localized TOC fields out of scope per spec: Requirements (unrequested)
-- [ ] T057 Run `npm run check` and `npm test` (T044, T045 pass) and hand the "User Story 3" steps of quickstart.md to the author; record the in-game results (IDs, map IDs, coordinates, subtext, tooltip names, map link) in research.md R11/R12 and `CLAUDE.md` "Known API facts" per plan: Phase 13, Constitution IV (missing)
+- [x] T057 Run `npm run check` and `npm test` (T044, T045 pass) and hand the "User Story 3" steps of quickstart.md to the author; record the in-game results (IDs, map IDs, coordinates, subtext, tooltip names, map link) in research.md R11/R12 and `CLAUDE.md` "Known API facts" per plan: Phase 13, Constitution IV (missing) Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
 
 ### Phase 6 execution order
 
