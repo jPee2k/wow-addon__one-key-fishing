@@ -35,7 +35,9 @@ for step 7. Steps marked "B" are done on the second client.
      friends heard, and when B logs out during an exchange no "No player named" line shows (V11, V12, spec 010).
      2026-11-12, four players: not apart yet (every partner was also on a Battle.net list), but a client reached by
      two paths counts once, under the path heard first: A "guild 1, Battle.net 2", exchanged with 3 (three
-     partners); the guildmate who is also A's Battle.net friend "Battle.net 1", exchanged with 1.
+     partners); the guildmate who is also A's Battle.net friend "Battle.net 1", exchanged with 1. Later the same
+     evening, after the group formed: "group 2, bnet 2; exchanged with 4" with three partners in the hour. Found: a
+     partner who reloads counts twice for an hour (`tech-debt.md`, batch 11, low).
    - [x] Only Battle.net friends: within 30 minutes. 2026-11-10: a session ran with a Battle.net friend (heard 1,
      exchanged 1); the friend's record (10 places on maps 1413, 1421, 1434, 1445, 1456, build 1.60.1) is held with
      `seen` at the session's time, and the catalog shows the friend's catch where only the friend fished: Raw Bristle

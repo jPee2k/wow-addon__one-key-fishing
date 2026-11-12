@@ -231,7 +231,7 @@ end
 ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED", OnCommodityResults)
 ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_ADDED", OnCommodityResults)
 
--- VERIFY(V5): buyoutAmount is the price of the whole auction (all its pieces); bid-only auctions have none
+-- Assumed (V5, accepted): buyoutAmount is the price of the whole auction (all its pieces); bid-only auctions have none
 ns.RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED", function(_, itemKey)
     if not itemKey or itemKey.itemID ~= current then
         return

@@ -21,13 +21,13 @@ frame.
 | 3 View | `UI/`: every frame | everything |
 
 - Entries: `Core/Commands.lua` is the one place a command opens a window (it sees everything); `Core/Debug.lua`
-  and `Core/Spike.lua` read every module but the UI and return text that `Commands.lua` shows.
+  reads every module but the UI and returns text that `Commands.lua` shows.
 - Chat output (`ns.Print`) and the game's popup (`ns.ShowPopup`) stay in Core as infrastructure any layer may use:
   they are not addon frames.
 - `npm run check` enforces the rule: what a file defines at the start of a line (`ns.Name = ...`,
   `function ns.Name(`) belongs to its folder's layer, and a file may name only what its layer and the layers below
   define. `CreateFrame` outside `UI/` is allowed only where `tools/addon.mjs` (`FRAMES_OUTSIDE_UI`) lists it: the
-  event frame, the secure button and its state handler, the scanning tooltip, the spike's probes.
+  event frame, the secure button and its state handler, the scanning tooltip.
 - Lifecycle: a module registers its own `ADDON_LOADED` / `PLAYER_LOGIN` handlers with `ns.RegisterEvent` (no
   `OnInitialize` / `OnEnable` framework); handlers of one event run in TOC order.
 - A new feature goes into the module of its area (layer 1 or 2) and `UI/`, joined by messages and module
@@ -70,11 +70,9 @@ frame.
   `ns.Fire` no longer sees a listener's error. Nothing else is wrapped. `ns.GetErrors()` returns the log: at most 30
   entries ordered by last occurrence, a repeat of the same context and message counted into its entry. Before
   `ADDON_LOADED` the log lives in memory; the load drops saved entries of another addon version and adds the ones in
-  memory (specs/006-error-log). `ns.ForgetErrors(match)` removes the entries `match` accepts and returns how many
-  (the spike drops its old test entries with it).
+  memory (specs/006-error-log).
 - Helpers: `ns.ShowPopup` (two-button popups; the default buttons are the addon's `L["Yes"]` / `L["No"]`, never
-  the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix). `ns.ReportSection` (a titled block of
-  the debug report) is in `Core/Debug.lua`, used only by the spike. The frame helpers (`ns.CreateButton`,
+  the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix). The frame helpers (`ns.CreateButton`,
   `ns.CreateText`, `ns.ItemDisplay`, `ns.ShowItemTooltip`, `ns.OpenRadioMenu`, `ns.KeyText`) are the view's, in
   `UI/Widgets.lua` ([ui.md](ui.md)).
 - The slash command dispatcher and help (`/okf` and `/onekeyfishing`; the commands themselves are in

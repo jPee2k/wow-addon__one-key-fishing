@@ -96,7 +96,6 @@ UI\StatsFrame.lua
 UI\AuctionButton.lua
 UI\ShareNotice.lua
 Core\Debug.lua
-Core\Spike.lua
 UI\Settings.lua
 UI\ItemHooks.lua
 UI\Minimap.lua

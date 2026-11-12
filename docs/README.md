@@ -9,7 +9,7 @@
 | [architecture/](architecture/) | the modules in detail: [core](architecture/core.md), [game data](architecture/game-data.md), [fishing mode](architecture/fishing-mode.md), [catches and statistics](architecture/catch-and-stats.md), [catch database](architecture/catch-db.md), [catalog](architecture/catalog.md), [exchange](architecture/exchange.md), [UI](architecture/ui.md) |
 | [languages.md](languages.md) | the interface languages, how one is chosen, the rules for translation files |
 | [publishing.md](publishing.md) | branches, release steps, Blizzard's add-on policy and the CurseForge requirements |
-| [release-plan.md](release-plan.md) | the checks left after 1.1.0 and what 1.2.0 waits for, and in which order |
+| [release-plan.md](release-plan.md) | the accepted assumptions and in-game checks left after 1.2.0, and what 1.2.1 waits for |
 | [checklists/](checklists/README.md) | the in-game checklists, one per feature, with the template and the order |
 | [ROADMAP.md](ROADMAP.md) | what is not built yet |
 | [tech-debt.md](tech-debt.md) | the known issues with their severity, and the review history |

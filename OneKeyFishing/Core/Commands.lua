@@ -13,9 +13,6 @@ ns.COMMANDS = {
         run = function() ns.Auction.Scan() end },
     { name = "share", description = "show the state of the shared catch database",
         run = function() ns.Share.PrintStatus() end },
-    -- VERIFY(spike): temporary, with Spike.lua
-    { name = "spike", description = "print API facts for the verification checklist",
-        run = function() ns.ShowCopyWindow(ns.Spike.Report()) end },
     { name = "stats", description = "show the fishing statistics", run = function() ns.StatsFrame.Toggle() end },
     { name = "toggle", description = "enter or leave fishing mode", run = function() ns.Mode.Toggle() end },
 }

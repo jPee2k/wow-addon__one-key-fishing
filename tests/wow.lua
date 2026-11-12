@@ -1987,9 +1987,11 @@ function owe_gear()
 end
 
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.
--- beforeLogin runs between the two, e.g. to replace the bundled seed (ns.SeedData) the files just set.
+-- The tests run on an empty bundled seed, whatever the harvest wrote into SeedData.lua; beforeLogin runs between
+-- the files and the login, e.g. to set a test's own seed (ns.SeedData).
 function load_addon(beforeLogin)
     load_files(TOC_FILES)
+    ns.SeedData = { epoch = 0, built = "", build = "", absorbed = {}, resets = {}, cells = {} }
     if beforeLogin then
         beforeLogin()
     end

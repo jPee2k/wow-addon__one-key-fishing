@@ -17,7 +17,6 @@ local function Section(lines, title, fn)
         table.insert(lines, ("  !! failed: %s"):format(tostring(err)))
     end
 end
-ns.ReportSection = Section -- also for the temporary spike report (Spike.lua)
 
 -- A function result as text. The parentheses keep one value, nil when the call returned nothing: Lua 5.1's
 -- tostring() raises an error without an argument (Bags.FindLure ends without a return when no lure is usable).

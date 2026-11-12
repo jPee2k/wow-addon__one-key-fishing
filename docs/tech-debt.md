@@ -14,11 +14,31 @@ the batch as its description). Each batch says where it is built, what it closes
 show. Batches 3 and 4 were fixed by spec 009, batch 1 by spec 010, batches 2 and 6 with the pole item of batch 5 by
 spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release 1.2.0).
 
-No batch is open.
+### Batch 11: one player counted per address after a relog (any time; no game needed)
+
+Seen in game; the fix and its test run without the game.
+
+- "A partner who relogs counts twice for an hour" (low)
 
 ## Open items
 
-None.
+### A partner who relogs counts twice for an hour (low)
+
+- **Found**: in game, 2026-11-12 (build 2f96652): in the last hour A exchanged with three partners (two in A's
+  group who are also Battle.net friends, and a guildmate who is a Battle.net friend), but `/okf debug` said
+  "heard in the last hour: guild 0, group 2, friend 0, bnet 2; exchanged with 4". Earlier the same evening, with
+  the same people, the counts were right (each client once, under the path heard first). In that hour one partner
+  logged in again from another computer.
+- **Cause**: `Node:Activity` (`Exchange/ShareProtocol.lua`) counts addresses heard and synced in the last hour, and
+  `Handlers.H` joins two addresses of one client only by its node tag, which is new at every login or `/reload`.
+  After a partner reloads, the new tag is heard first from the group address (the HELLO round broadcasts before it
+  greets friends), so the group address becomes a peer, while the Battle.net address keeps its old `heard` (and
+  `synced`) and counts until an hour has passed; its HELLOs with the new tag are taken as the same client and do not
+  refresh it. A scratch test showed group 1 and bnet 1 for one client right after the new tag and 20 minutes later.
+  Only the counts are wrong ("Exchange: N players", `/okf share`); sessions and cooldowns already read the tag.
+- **Direction**: count clients, not addresses: in `Activity`, take each non-channel peer's tag and count a tag
+  once (under the path heard last), and drop an address whose tag another address took over. Test: a client heard
+  by Battle.net, then by the group with a new tag, counts once in `heard` and `exchanged`.
 
 ## History
 

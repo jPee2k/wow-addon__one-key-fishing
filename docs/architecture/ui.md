@@ -1,6 +1,6 @@
 # Architecture: UI
 
-The frames in `UI/` and the temporary `Core/Spike.lua`.
+The frames in `UI/`.
 
 ## Indicator
 
@@ -99,16 +99,6 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 - ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line; the item post call adds
   "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
   `settings.tooltipChances` (V38).
-- CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug` and
-  `/okf spike` reports; `ns.ShowDebugReport` shows the debug report (the command, the minimap menu and the
+- CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug`
+  report; `ns.ShowDebugReport` shows the debug report (the command, the minimap menu and the
   settings page).
-
-## Core/Spike.lua (temporary)
-
-Carries `VERIFY(spike)`. `Spike.Report()` returns the window title and the text that `/okf spike` shows in the
-copy window: the game facts still open (spec 010 removed the answered parts): the network APIs (V10-V15), the proof
-step timing (V26), the game's text folding (V36) and the last auction search (V5) (spec 011 removed the areas, V34),
-for the checks of [docs/checklists/spike.md](../checklists/spike.md) and the `verification.md` of each part. At login
-it drops the saved entries of its old deliberate test error from the error log (`ns.ForgetErrors`).
-The file, its TOC line, its Commands.lua entry and `tests/ui/spike_test.lua` go before the release, since
-`npm run build` refuses `VERIFY` markers.

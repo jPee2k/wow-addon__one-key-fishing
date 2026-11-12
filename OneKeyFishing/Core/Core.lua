@@ -143,18 +143,6 @@ function ns.GetErrors()
     return errorLog
 end
 
--- Removes the entries match(entry) accepts; returns how many (the spike drops its old test entries with it).
-function ns.ForgetErrors(match)
-    local removed = 0
-    for i = #errorLog, 1, -1 do
-        if match(errorLog[i]) then
-            table.remove(errorLog, i)
-            removed = removed + 1
-        end
-    end
-    return removed
-end
-
 -- Event dispatch: several modules may listen to the same event; each handler runs on its own (ns.Safe).
 local eventFrame = CreateFrame("Frame")
 local handlers = {}

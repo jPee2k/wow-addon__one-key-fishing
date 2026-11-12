@@ -16,8 +16,7 @@ verified only after that (constitution, Principle IV).
 | [public-channel.md](public-channel.md) | the hidden public channel and the protections | `specs/004-public-channel-sync` | three accounts sharing nothing |
 | [catch-catalog.md](catch-catalog.md) | the catalog tab, map pins, subzones, tooltips | `specs/005-catch-catalog` | two client languages, a fresh item cache |
 
-The order and what each release waits for are in [docs/release-plan.md](../release-plan.md): the first two for
-1.1.0, the rest for 1.2.0.
+The steps still open after 1.2.0 are listed in [docs/release-plan.md](../release-plan.md).
 
 ## How a checklist is built
 

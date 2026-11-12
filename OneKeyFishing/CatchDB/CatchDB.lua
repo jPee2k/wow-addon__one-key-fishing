@@ -25,7 +25,7 @@ local SEQ_INTERVAL = 60 -- seconds between bumps of the record's seq
 -- Places of the own record before a new one rolls it (Roll below): a peer takes a record of up to 1,000 places and
 -- 32 KB encoded. Measured with CBOR + Deflate + Base64 in Node: 34-47 bytes per place, so 500 places stay under
 -- 24 KB even with hundreds of catches per cell.
--- VERIFY(V18): C_EncodingUtil encodes an own record of ROLL_PLACES busy places in at most 24 KB
+-- Assumed (V18, accepted; 56 bytes a place seen at 15 places): ROLL_PLACES busy places encode in about 24 KB
 local ROLL_PLACES = 500
 local ID_LENGTH = 8 -- base32 characters (Data.lua)
 CatchDB.ID_LENGTH = ID_LENGTH

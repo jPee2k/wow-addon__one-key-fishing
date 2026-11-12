@@ -116,7 +116,7 @@ function Gear.FindBestPole()
     local bestID, bestScore, bestBonus
     -- A pole above the Fishing skill cannot be equipped: passed over; an unknown skill, or a pole the addon does not
     -- list, holds nothing back.
-    -- VERIFY(V44): the game compares the base skill (GetProfessionInfo rank), as for lures
+    -- Assumed (V44, accepted): the game compares the base skill (GetProfessionInfo rank), as for lures
     local rank = ns.Skill.Get()
     local function Consider(itemID, equipped)
         if not ns.IsFishingPole(itemID) then

@@ -1,7 +1,7 @@
 # Roadmap
 
-What is not built yet. Built features are listed in `CHANGELOG.md` (released and `[Unreleased]`); the two pending
-releases are in [release-plan.md](release-plan.md). Nothing here is scheduled: each item gets its own spec before
+What is not built yet. Built features are listed in `CHANGELOG.md` (released and `[Unreleased]`); what is left after
+1.2.0 is in [release-plan.md](release-plan.md). Nothing here is scheduled: each item gets its own spec before
 work starts, and every feature must keep the addon's rule: every game action is a real key press, nothing reacts
 to the bobber by itself.
 

@@ -23,8 +23,8 @@ How a release is built and published, and what it is checked against.
    gives, add `-- --reset <mapID>` for that map.
 3. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`. No
    `VERIFY` marker may be left (`npm run check` lists them; `npm run build` refuses them): each is an assumption
-   that still waits for an in-game check. The two releases that wait for the game launch have their own order of
-   steps in [release-plan.md](release-plan.md).
+   that still waits for an in-game check, or one the author accepts without a check (its `verification.md` row
+   says "Accepted"; [release-plan.md](release-plan.md) lists the ones still to confirm).
 4. Open a pull request `develop` -> `main` and merge it once the `check` job is green.
 5. On the updated `main`, tag the merge commit with the bare version (`git tag 1.0.0`, no `v`) and push the
    tag (`git push origin 1.0.0`). GitHub Actions (`.github/workflows/release.yml`) runs the checks and tests,

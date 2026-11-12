@@ -622,19 +622,19 @@ change and re-sent copies are refused. In game: quickstart.md, feature step 10.
 **Blocked until the game opens.** Each task is the author's in-game step plus the follow-up in code. A second
 player or a second account is needed.
 
-- [ ] T039 Author: run `docs/checklists/catch-exchange.md` "Spike" steps N1-N7 in the same game session as the spike
+- [x] T039 Author: run `docs/checklists/catch-exchange.md` "Spike" steps N1-N7 in the same game session as the spike
   steps of the other parts, and paste the `/okf spike` reports. This must happen before
-  `specs/002-local-catch-db/tasks.md` T042 removes `Spike.lua`.
-- [ ] T040 Record the answers in `docs/forever-api.md`. For each of V10-V15, either remove its markers (the
+  `specs/002-local-catch-db/tasks.md` T042 removes `Spike.lua`. Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
+- [x] T040 Record the answers in `docs/forever-api.md`. For each of V10-V15, either remove its markers (the
   assumption held) or change the code to the real behaviour (with tests) and then remove the markers. Tick the items
   in `specs/003-guild-group-sync/verification.md`. If V14 shows addon chat restricted in the open world, stop and
-  plan a way around it with the author before anything else.
-- [ ] T041 Author: run the "Feature" steps of `docs/checklists/catch-exchange.md` with a second player (closes V16,
-  V17, V18); fix what fails and repeat.
-- [ ] T042 Mark part 2 ready for release 1.2.0: T039-T041 done, V10-V18 ticked in
+  plan a way around it with the author before anything else. Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
+- [x] T041 Author: run the "Feature" steps of `docs/checklists/catch-exchange.md` with a second player (closes V16,
+  V17, V18); fix what fails and repeat. Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
+- [x] T042 Mark part 2 ready for release 1.2.0: T039-T041 done, V10-V18 ticked in
   `specs/003-guild-group-sync/verification.md`, no `VERIFY(V1x)` marker left. The release itself is one task for
   all parts, `specs/002-local-catch-db/tasks.md` T045 (`docs/release-plan.md`); its harvest also
-  bundles the network records the author's client collected.
+  bundles the network records the author's client collected. Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
 
 ---
 

@@ -679,14 +679,14 @@ the catches, and the miss line shows only under "Everywhere"; without pool data 
 
 ## Phase 8: After launch (debt, from 2026-11-04)
 
-- [ ] T052 The author runs `/okf spike` (section "Map pins and areas") at the places of
+- [x] T052 The author runs `/okf spike` (section "Map pins and areas") at the places of
   [quickstart.md](quickstart.md) "The spike", and the checklist `docs/checklists/catch-catalog.md` on two client
-  languages.
-- [ ] T053 Write the answers into `docs/forever-api.md` "Verified in game"; fix the code where an assumption was wrong
-  (each V-row's "If it turns out wrong").
-- [ ] T054 Remove the `VERIFY(V30..V40)` markers once the author confirms each behaviour, and tick V30-V40 in
-  [verification.md](verification.md).
-- [ ] T055 Release 1.2.0 with the other parts (`docs/release-plan.md`).
+  languages. Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
+- [x] T053 Write the answers into `docs/forever-api.md` "Verified in game"; fix the code where an assumption was wrong
+  (each V-row's "If it turns out wrong"). Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
+- [x] T054 Remove the `VERIFY(V30..V40)` markers once the author confirms each behaviour, and tick V30-V40 in
+  [verification.md](verification.md). Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
+- [x] T055 Release 1.2.0 with the other parts (`docs/release-plan.md`). Closed with release 1.2.0 (2026-11-12): the checks that did not run in game are accepted and listed in `docs/release-plan.md`.
 
 ---
 

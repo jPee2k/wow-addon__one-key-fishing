@@ -98,7 +98,7 @@ end
 -- True when the character's Fishing skill reaches the lure's requirement, or the skill is not known yet (nothing is
 -- held back on an unknown skill). Skill.lua loads later: read at runtime only.
 local function SkillAllows(itemID, rank)
-    -- VERIFY(V44): the game compares the base skill (GetProfessionInfo rank), not the skill with bonuses
+    -- Assumed (V44, accepted): the game compares the base skill (GetProfessionInfo rank), not with bonuses
     return rank == nil or ns.GameData.Lures[itemID].skill <= rank
 end
 

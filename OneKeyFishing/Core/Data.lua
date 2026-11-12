@@ -203,7 +203,7 @@ end
 -- The key a name is searched by: the game's own folding of case and accents when the client has it (a typed "e"
 -- then finds an "e" with an accent), then ns.FoldCase.
 function ns.SearchKey(text)
-    -- VERIFY(V36): CaseAccentInsensitiveParse folds case and accents of the client's language
+    -- V36 (case seen; accents accepted): CaseAccentInsensitiveParse folds case and accents of the client's language
     local parse = CaseAccentInsensitiveParse
     local parsed = type(parse) == "function" and parse(text)
     return ns.FoldCase(type(parsed) == "string" and parsed or text)

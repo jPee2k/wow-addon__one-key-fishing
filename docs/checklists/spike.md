@@ -1,5 +1,8 @@
 # In-game checklist: the spike (game facts)
 
+**Done.** The spike ran 2026-11-06 to 2026-11-11; `/okf spike` and `Core/Spike.lua` were removed for release 1.2.0.
+This page keeps its results; the facts are in `docs/forever-api.md` "Verified in game".
+
 **Feature**: the game facts the shared catch database was built on before the game could be played
 (`specs/002-local-catch-db` to `specs/005-catch-catalog`), and the error log (`specs/006-error-log`). `/okf spike`
 (`Core/Spike.lua`, temporary) prints them in one report with a section per part. This checklist is run **once, in one

@@ -58,7 +58,7 @@ a slash command is missing from the manual.
 | [`docs/forever-api.md`](docs/forever-api.md) | the WoW Forever API: the facts verified in game, how to check a call, the open questions |
 | [`docs/tech-debt.md`](docs/tech-debt.md) | the known issues with their severity |
 | [`docs/publishing.md`](docs/publishing.md) | branches, release steps, Blizzard's add-on policy and CurseForge requirements |
-| [`docs/release-plan.md`](docs/release-plan.md) | what the next releases wait for (in-game checks after the launch of WoW Forever) |
+| [`docs/release-plan.md`](docs/release-plan.md) | the in-game checks left after 1.2.0 and what the next patch waits for |
 | [`docs/checklists/`](docs/checklists/README.md) | in-game checklists: the addon cannot be tested outside the game, so each feature has one |
 | [`docs/languages.md`](docs/languages.md) | the interface languages and the rules for translation files |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | what is not built yet |

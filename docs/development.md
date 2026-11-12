@@ -82,7 +82,7 @@ stays at the root of `tests/`:
 | `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `map_views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
 | `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `spot_pin_test.lua`, `load_test.lua` |
 | `exchange/comm/`, `exchange/channel/`, `exchange/share/` | [exchange.md](architecture/exchange.md), one folder per module | `comm/transport_test.lua`, `channel/joining_test.lua`, `channel/sim_test.lua`, `share/protocol_test.lua` |
-| `ui/` | [ui.md](architecture/ui.md): the statistics window and its tabs, settings, the exchange's notice, tooltips, the spike | `stats_window_test.lua`, `here_page_test.lua`, `catalog_list_test.lua`, `shared_page_test.lua`, `notice_test.lua` |
+| `ui/` | [ui.md](architecture/ui.md): the statistics window and its tabs, settings, the exchange's notice, tooltips | `stats_window_test.lua`, `here_page_test.lua`, `catalog_list_test.lua`, `shared_page_test.lua`, `notice_test.lua` |
 | `tools/` | the Node tests of `tools/` | `harvest_test.mjs`, `gamedata_check_test.mjs`, `test_names_test.mjs` |
 
 A new test goes into the folder of its area. The folder names the module, so the file names only what it tests

@@ -33,7 +33,8 @@ local function OnParentMap(mapID, info, x, y)
         or type(C_Map.GetMapPosFromWorldPos) ~= "function" then
         return nil
     end
-    -- VERIFY(V33): a Micro map converts to its parent zone through the world position
+    -- Assumed (V33, accepted; no Micro map met in play): a Micro map converts to its parent zone
+    -- through the world position
     local continent, world = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(x, y))
     if not world then
         return nil

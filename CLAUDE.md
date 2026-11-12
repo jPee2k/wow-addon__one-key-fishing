@@ -42,7 +42,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
 | Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the checks left after 1.1.0 and what 1.2.0 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0, and what 1.2.1 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
 | History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database) |
 
@@ -84,12 +84,12 @@ area, the same areas as `docs/architecture/` and `tests/`. The layers, the rule 
 | 2 Data | `CatchDB/`, `Exchange/`, `Catalog/` | layers 0-2 |
 | 3 View | `UI/` | everything |
 
-`Core/Commands.lua` is the entry that may open a window; `Core/Debug.lua` and `Core/Spike.lua` read every module
-but the UI. `npm run check` enforces the rule and allows `CreateFrame` outside `UI/` only where `tools/addon.mjs`
-lists it. **Every new feature is built inside this architecture**: its data and rules in a module of layer 1 or 2
-(a new folder only for a new area, with its document in `docs/architecture/` and its folder in `tests/`), its
-frames in `UI/`, the two joined by messages and module functions, never by a lower layer naming a frame; its
-commands in `Core/Commands.lua`.
+`Core/Commands.lua` is the entry that may open a window; `Core/Debug.lua` reads every module but the UI.
+`npm run check` enforces the rule and allows `CreateFrame` outside `UI/` only where `tools/addon.mjs` lists it.
+**Every new feature is built inside this architecture**: its data and rules in a module of layer 1 or 2 (a new
+folder only for a new area, with its document in `docs/architecture/` and its folder in `tests/`), its frames in
+`UI/`, the two joined by messages and module functions, never by a lower layer naming a frame; its commands in
+`Core/Commands.lua`.
 
 | Module | Job | Details |
 |---|---|---|
@@ -111,7 +111,6 @@ commands in `Core/Commands.lua`.
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines | [catalog.md](docs/architecture/catalog.md) |
 | `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/StatsFrame.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers (also the skill range label and the scan button state), copy window, indicator, toast, the statistics window's tabs (what can be caught here, the catalog) and the window, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
-| `Core/Spike.lua` | temporary (`VERIFY(spike)`): `/okf spike`, removed before release 1.2.0 | [ui.md](docs/architecture/ui.md), [docs/checklists/spike.md](docs/checklists/spike.md) |
 | `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
 | `Core/Commands.lua` (last) | `ns.COMMANDS`: every slash command, sorted, English descriptions | [core.md](docs/architecture/core.md) |
 
