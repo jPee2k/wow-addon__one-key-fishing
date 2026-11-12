@@ -33,7 +33,7 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 | `npm run check` | Lua syntax, globals, line length, the layers, data-only `GameData/`, private tables, test names, locale keys, TOC, packaging, seed, docs and version checks; lists open `VERIFY` markers |
 | `npm test` | run the tests in `tests/` (`npm test -- lures` runs only the matching files) |
 | `npm run harvest` | before a release: build the bundled catch database `OneKeyFishing/CatchDB/SeedData.lua` from the saved catch data of your accounts (and saved files given as arguments) |
-| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder: restart the game once, then changes show up after a `/reload` (a new file or a TOC change needs a restart) |
+| `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder, deleting an installed copy there first (`prelink`): restart the game once, then changes show up after a `/reload` (a new file or a TOC change needs a restart) |
 | `npm run unlink` | remove that link |
 | `npm run dev` | package the working folder into `dist/` (folder + zip) |
 | `npm run build` | refuse uncommitted changes and open `VERIFY` markers, run the checks and tests, then package the last commit |

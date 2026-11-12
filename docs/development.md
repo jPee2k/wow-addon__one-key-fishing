@@ -121,7 +121,9 @@ only after the author confirms the behaviour in game.
 - `npm run build`: refuses uncommitted changes, runs check and test, then packages the last commit; it also
   refuses while any `VERIFY` marker is left.
 - `npm run link` / `npm run unlink`: link `Interface/AddOns/OneKeyFishing` to `OneKeyFishing/` (a junction on
-  Windows) for development without building; the unbuilt version shows as `dev`.
+  Windows) for development without building; the unbuilt version shows as `dev`. Before the link, npm runs
+  `prelink` (`tools/link.mjs --remove-copy`): an installed copy there (a real folder with `OneKeyFishing.toc`, as
+  `install-addon` leaves it) is deleted; a folder without the TOC is refused, a link is left alone.
 - `npm run install-addon`: `dev`, then copy into the game's AddOns folder.
 - `link`, `unlink`, `install-addon` and `harvest` read `WOW_ADDONS_DIR` from the environment or a git-ignored
   `.env` (see `.env.example`; `harvest` given only saved files may go without it) and refuse anything that is

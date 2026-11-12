@@ -23,6 +23,7 @@
     "build": "node tools/build.mjs --release",
     "install-addon": "node tools/build.mjs --dev && node tools/install.mjs",
     "harvest": "node tools/harvest.mjs",
+    "prelink": "node tools/link.mjs --remove-copy",
     "link": "node tools/link.mjs",
     "unlink": "node tools/link.mjs --remove"
   },
