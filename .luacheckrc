@@ -1,7 +1,7 @@
 std = "lua51"
 max_line_length = 120
 self = false
-exclude_files = { ".git/" }
+exclude_files = { ".git/", "static/" }
 
 -- Unused arguments are common in WoW event callbacks.
 unused_args = false

@@ -13,3 +13,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# The author's temporary files (examples, drafts); skipped by npm run check, never packaged
+static/

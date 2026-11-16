@@ -24,5 +24,6 @@ ignore:
   - specs
   - seed
   - dist
+  - static
   - .claude
   - .specify
