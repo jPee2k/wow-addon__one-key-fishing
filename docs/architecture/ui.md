@@ -57,7 +57,17 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
   `specs/004-public-channel-sync`);
 - the miss line uses the view's `missRate` (weighted), and is left out under a water filter;
 - the Water button shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
-- a click on a known item row opens the catalog on it (`StatsFrame.OpenCatalog(itemID)`).
+- a click on a known item row opens the catalog on it (`StatsFrame.OpenCatalog(itemID)`);
+- the items are grouped under kind headers (`Catalog.Group`, spec 014): a header is a row in header mode (the kind's
+  text only, no item, so its hover and click do nothing); headers take rows of the 16, and "and N more" counts the
+  items left out; the filter row stays Skill, Source and Water (150 each); the Kinds button sits apart at the top
+  right, beside the place's name (400 wide), so the filter row keeps its width in every language;
+- the Kinds button reads "Kinds: all" or "Kinds: N of 5" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
+  (`UI/Widgets.lua`, which shares its body with `ns.OpenRadioMenu`) with one checkbox per kind; a click goes
+  through `Catalog.SetKindShown`, and each tab redraws itself at once on `SETTINGS_CHANGED("hiddenKinds")` (a hidden
+  one when shown again); the menu stays open (the game's checkbox answers `MenuResponse.Refresh`); the choice is saved
+  (`settings.hiddenKinds`) and shared with the catalog; with items in the view and every kind hidden the message
+  is "The kind filter hides every item."
 
 ## CatalogTab
 
@@ -69,7 +79,13 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   counted and the empty states;
 - the item page: `Catalog.Places` as zone rows, each expanding into `Catalog.Spots` rows (indented), with the skill
   span, the chance or "Little data", the catches, and the players on hover;
-- without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37);
+- without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37; kind headers not counted);
+- the list is grouped like CatchHere's (spec 014): `{ header = kind }` elements before each kind's items, drawn as a
+  gold label without icon, zones, hover or click; the same Kinds button (CatchHere's menu) at the top right, beside the search box; the fallback rows never end with
+  a header (it needs room for one of its items, as in CatchHere); the status says "The kind
+  filter hides every item." or, with a search, "The kind filter hides the matches." when rows exist but none is
+  shown; `Show(itemID)` opens an item whatever its kind, while a name with one match chooses it only when its kind
+  is shown;
 - state in memory only; `Tick` reads the catalog every second and redraws, keeping the scroll, when
   `Catalog.GetVersion()` moved; a `Show(arg)` while the index of the filter is still building keeps `arg` pending
   (a text already fills the search) and `Tick` passes it on once the index is ready; the player's typing, the search's

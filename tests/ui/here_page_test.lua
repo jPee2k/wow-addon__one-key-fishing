@@ -53,10 +53,12 @@ test("60 own catches at the spot: chances in percent", function()
     tick(window)
     eq(here.counts.text:sub(1, #"60 catches"), (L["%d catches"]):format(60), "catches")
     assert(here.counts.text:find("2%", 1, true), "1 miss of 61 casts: " .. here.counts.text)
-    eq(here.rows[1].chance.text, "100%", "chance")
-    eq(here.rows[1].pieces.text, "1.0", "pieces per catch")
+    -- rows[1] is the kind header "Fish" (spec 014); the item follows it.
+    eq(here.rows[1].header.text, L["Fish"], "the kind header")
+    eq(here.rows[2].chance.text, "100%", "chance")
+    eq(here.rows[2].pieces.text, "1.0", "pieces per catch")
     eq(here.scope.text, "", "the spot's own numbers")
-    assert(not here.rows[2]:IsShown(), "one item")
+    assert(not here.rows[3]:IsShown(), "one item")
 end)
 
 test("a spot with few catches shows the whole map", function()
@@ -98,7 +100,7 @@ test("little data in a picked range suggests all skill levels", function()
     fishing_rank = 100
     cast({ { FISH, 1 } })
     ns.CatchHere.SetRange(1)
-    eq(here.rows[1].chance.text, L["Little data"], "no percentage")
+    eq(here.rows[2].chance.text, L["Little data"], "no percentage")
     assert(here.hint.text:find(L["Try \"All skill levels\": little data for your skill."], 1, true), here.hint.text)
     fishing_rank = 230
     ns.CatchHere.SetRange(3)
@@ -108,11 +110,11 @@ test("turning auction prices off redraws the prices", function()
     ns.db.prices[FISH] = { price = 5000, quantity = 100, time = 1 }
     ns.Fire("PRICES_CHANGED")
     tick(window)
-    eq(here.rows[1].price.text, "5000c", "auction price")
+    eq(here.rows[2].price.text, "5000c", "auction price")
     ns.db.settings.auctionPrices = false
     ns.Fire("SETTINGS_CHANGED")
     tick(window)
-    eq(here.rows[1].price.text, "0c", "vendor price (none in the test)")
+    eq(here.rows[2].price.text, "0c", "vendor price (none in the test)")
     ns.db.settings.auctionPrices = true
     ns.db.prices[FISH] = nil
     ns.Fire("SETTINGS_CHANGED")

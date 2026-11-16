@@ -437,4 +437,14 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "Schwimmers hervorsticht."
     L["Lifted in a fight; everything comes back when fishing mode ends."] =
         "Im Kampf aufgehoben; alles kehrt zurück, wenn der Angelmodus endet."
+    -- Item kinds (spec 014)
+    L["Fish"] = "Fisch"
+    L["Containers"] = "Behälter"
+    L["Potions & drinks"] = "Tränke & Getränke"
+    L["Reagents & herbs"] = "Reagenzien & Kräuter"
+    L["Other"] = "Sonstiges"
+    L["Kinds: all"] = "Arten: alle"
+    L["Kinds: %d of %d"] = "Arten: %d von %d"
+    L["The kind filter hides every item."] = "Der Artenfilter blendet alle Gegenstände aus."
+    L["The kind filter hides the matches."] = "Der Artenfilter blendet die Treffer aus."
 end)

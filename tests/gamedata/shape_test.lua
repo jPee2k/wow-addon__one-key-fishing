@@ -107,3 +107,22 @@ test("the catch database keeps its range step and number of ranges (the saved ke
     eq(ns.GameData.FishingSpells[1].cap, ns.CatchDB.RANGE_STEP, "a range per Fishing rank")
     eq(#ns.GameData.FishingSpells, ns.CatchDB.MAX_RANGE, "the highest range starts at the last cap")
 end)
+
+test("item kinds: every value a known kind, byItem keyed by item ID, byClass by class or class:subclass", function()
+    local known = {}
+    for _, kind in ipairs(ns.Catalog.KINDS) do
+        known[kind] = true
+    end
+    local kinds = GameData.ItemKinds
+    local count = 0
+    for itemID, kind in pairs(kinds.byItem) do
+        count = count + 1
+        assert(IsID(itemID), "item ID " .. tostring(itemID))
+        assert(known[kind], "kind of " .. itemID .. ": " .. tostring(kind))
+    end
+    assert(count > 0, "items listed")
+    for key, kind in pairs(kinds.byClass) do
+        assert(type(key) == "string" and (key:match("^%d+$") or key:match("^%d+:%d+$")), "class key " .. tostring(key))
+        assert(known[kind], "kind of class " .. key .. ": " .. tostring(kind))
+    end
+end)

@@ -2,7 +2,8 @@
 -- items and the maps they were caught on, made of CatchDB's per-map views and rebuilt only for the maps whose
 -- change stamp moved, in frame steps when there are many. It also keeps the items' names in the client's language
 -- and their search keys, and answers the catalog tab and the tooltips. No frames, so the tooltips use it without
--- the window; it sends no message (the tab follows GetVersion on the window's tick).
+-- the window; it sends no message about its data (the tab follows GetVersion on the window's tick), only the kind
+-- choice's SETTINGS_CHANGED (SetKindShown, spec 014).
 local _, ns = ...
 local L = ns.L
 
@@ -399,6 +400,113 @@ function Catalog.ZoneName(mapID)
     return zoneNames[mapID]
 end
 
+---------------------------------------------------------------------------
+-- Item kinds (specs/014-catch-filters): the lists of both tabs are grouped by kind, and the player may hide kinds.
+-- The kind filter applies to finished item lists only: the views, their sums and the indexes never see it, so a
+-- shown item's numbers are the same whatever is hidden (FR-010, research R2).
+---------------------------------------------------------------------------
+Catalog.KINDS = { "fish", "containers", "potions", "reagents", "other" }
+
+local KNOWN_KIND = {}
+for _, kind in ipairs(Catalog.KINDS) do
+    KNOWN_KIND[kind] = true
+end
+
+-- The kind of an item: the list by ID (every item of the bundled seed and every fished container, a test makes
+-- sure), then the client's class numbers, else "other" (also for an item the client does not know yet). Not cached: an
+-- item the game learns during the session gets its class kind at the next draw. Never by name or quality
+-- (Principle II, FR-005).
+function Catalog.ItemKind(itemID)
+    local kinds = ns.GameData.ItemKinds
+    local listed = kinds.byItem[itemID]
+    if listed then
+        return listed
+    end
+    local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
+    if classID then
+        return kinds.byClass[classID .. ":" .. tostring(subClassID)] or kinds.byClass[tostring(classID)] or "other"
+    end
+    return "other"
+end
+
+-- A kind's text in the addon's language, looked up when drawn (never while the files load).
+function Catalog.KindText(kind)
+    if kind == "fish" then
+        return L["Fish"]
+    elseif kind == "containers" then
+        return L["Containers"]
+    elseif kind == "potions" then
+        return L["Potions & drinks"]
+    elseif kind == "reagents" then
+        return L["Reagents & herbs"]
+    end
+    return L["Other"]
+end
+
+local function HiddenKinds()
+    return ns.db and ns.db.settings.hiddenKinds or {}
+end
+
+function Catalog.IsKindShown(kind)
+    return not HiddenKinds()[kind]
+end
+
+-- The hidden kinds in KINDS order (a saved name that is no kind is left out).
+local function HiddenKindList()
+    local hidden, list = HiddenKinds(), {}
+    for _, kind in ipairs(Catalog.KINDS) do
+        if hidden[kind] then
+            table.insert(list, kind)
+        end
+    end
+    return list
+end
+
+-- shown, total: how many of the kinds are shown, for the button.
+function Catalog.ShownKinds()
+    return #Catalog.KINDS - #HiddenKindList(), #Catalog.KINDS
+end
+
+-- The one way to change the choice (CLAUDE.md): fires SETTINGS_CHANGED("hiddenKinds") when it changed.
+function Catalog.SetKindShown(kind, shown)
+    if not KNOWN_KIND[kind] or not ns.db then
+        return
+    end
+    local hidden = ns.db.settings.hiddenKinds
+    local value = (not shown) or nil
+    if hidden[kind] == value then
+        return
+    end
+    hidden[kind] = value
+    ns.Fire("SETTINGS_CHANGED", "hiddenKinds")
+end
+
+-- list, hiddenCount: rows that carry itemID (in a view's order) as the lists draw them: { header = kind } before
+-- each shown kind's rows, in KINDS order, no header for an empty or hidden kind; the rows keep their order and are
+-- not copied. hiddenCount: the rows of hidden kinds.
+function Catalog.Group(items)
+    local hidden, byKind, hiddenCount = HiddenKinds(), {}, 0
+    for _, row in ipairs(items) do
+        local kind = Catalog.ItemKind(row.itemID)
+        if hidden[kind] then
+            hiddenCount = hiddenCount + 1
+        else
+            byKind[kind] = byKind[kind] or {}
+            table.insert(byKind[kind], row)
+        end
+    end
+    local list = {}
+    for _, kind in ipairs(Catalog.KINDS) do
+        if byKind[kind] then
+            table.insert(list, { header = kind })
+            for _, row in ipairs(byKind[kind]) do
+                table.insert(list, row)
+            end
+        end
+    end
+    return list, hiddenCount
+end
+
 local TOOLTIP_PLACES = 3 -- zones in an item tooltip, items in the minimap tooltip
 
 -- "N catches from K players" from 2 players on (part 3, FR-025), else "N catches" ("1 catch" for one).
@@ -517,5 +625,8 @@ function Catalog.Describe()
     end
     table.insert(lines, ("names known %d, unknown %d, requests sent %d, queued %d"):format(known, unknown, sent,
         #queue))
+    -- The kind choice (spec 014), last so the first line stays the index's.
+    local hidden = HiddenKindList()
+    table.insert(lines, "kinds hidden: " .. (#hidden > 0 and table.concat(hidden, ", ") or "none"))
     return lines
 end

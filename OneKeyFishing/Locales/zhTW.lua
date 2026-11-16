@@ -398,4 +398,14 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
         "音樂、環境音和對話靜音，音效調高，讓浮標的水花聲更清楚。"
     L["Lifted in a fight; everything comes back when fishing mode ends."] = "戰鬥中解除；釣魚模式結束後全部恢復。"
+    -- Item kinds (spec 014)
+    L["Fish"] = "魚類"
+    L["Containers"] = "容器"
+    L["Potions & drinks"] = "藥水和飲料"
+    L["Reagents & herbs"] = "材料和草藥"
+    L["Other"] = "其他"
+    L["Kinds: all"] = "類別：全部"
+    L["Kinds: %d of %d"] = "類別：%d/%d"
+    L["The kind filter hides every item."] = "類別篩選隱藏了所有物品。"
+    L["The kind filter hides the matches."] = "類別篩選隱藏了符合項目。"
 end)

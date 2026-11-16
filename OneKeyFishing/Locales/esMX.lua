@@ -433,4 +433,14 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
         "corcho."
     L["Lifted in a fight; everything comes back when fishing mode ends."] =
         "Se quita en combate; todo vuelve al terminar el modo de pesca."
+    -- Item kinds (spec 014)
+    L["Fish"] = "Peces"
+    L["Containers"] = "Contenedores"
+    L["Potions & drinks"] = "Pociones y bebidas"
+    L["Reagents & herbs"] = "Componentes y hierbas"
+    L["Other"] = "Otros"
+    L["Kinds: all"] = "Tipos: todos"
+    L["Kinds: %d of %d"] = "Tipos: %d de %d"
+    L["The kind filter hides every item."] = "El filtro de tipos oculta todos los objetos."
+    L["The kind filter hides the matches."] = "El filtro de tipos oculta las coincidencias."
 end)

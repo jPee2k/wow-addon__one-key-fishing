@@ -16,6 +16,10 @@ All notable changes to OneKeyFishing are listed here. The format follows
   - **Splash focus while fishing**: music, ambience and dialog silenced and effects raised, so the splash stands out.
   - In a fight the sounds are silent and the focus is lifted; everything the page changes comes back when fishing
     mode ends.
+- Catch kinds in **What can be caught here** and the **catch catalog**: the items are grouped under Fish,
+  Containers, Potions & drinks, Reagents & herbs and Other, and the **Kinds** button hides the kinds you do not want
+  to see. The choice is shared by both tabs and kept between sessions; hiding a kind does not change the numbers of
+  the others.
 
 ### Changed
 

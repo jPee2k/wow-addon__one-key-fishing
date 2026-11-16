@@ -1,7 +1,9 @@
 -- CatalogTab: the "Catch catalog" page of the statistics window (specs/005-catch-catalog, contracts/ui.md). The list
 -- of every item of the database with a search over the client's own names and the filters; choosing an item shows
 -- its zones, and each zone expands into its spots. Everything shown comes from Catalog.lua. The search, the
--- filters, the chosen item and the expanded zones live in memory only, so every login starts at the defaults.
+-- filters, the chosen item and the expanded zones live in memory only, so every login starts at the defaults. The
+-- list is grouped under kind headers, and the kind menu (shared with "What can be caught here") hides kinds
+-- (specs/014-catch-filters); that choice is saved, and an item opened by its ID shows whatever its kind.
 local _, ns = ...
 local L = ns.L
 
@@ -84,15 +86,26 @@ local function CreateList(parent, top, initialize)
             list.box:SetDataProvider(CreateDataProvider(elements), retain and true or nil)
             return
         end
+        -- A kind header (spec 014) never takes the last row: it needs room for one of its items, as in CatchHere.
+        local last = #list.rows
+        if elements[last] and elements[last].header then
+            last = last - 1
+        end
         for i, row in ipairs(list.rows) do
-            if elements[i] then
+            if i <= last and elements[i] then
                 list.initialize(row, elements[i])
                 row:Show()
             else
                 row:Hide()
             end
         end
-        local more = #elements - #list.rows
+        -- "and N more" counts the elements left out, kind headers not.
+        local more = 0
+        for i = last + 1, #elements do
+            if not elements[i].header then
+                more = more + 1
+            end
+        end
         list.more:SetText(more > 0 and (L["and %d more"]):format(more) or "")
     end
     return list
@@ -101,6 +114,7 @@ end
 ---------------------------------------------------------------------------
 -- The item list
 ---------------------------------------------------------------------------
+-- The list's elements: { header = kind } before each kind's items, or an item row of Catalog.Items.
 local function InitItemRow(row, element)
     if not row.name then
         row:SetSize(ROW_WIDTH, LINE_HEIGHT)
@@ -114,15 +128,36 @@ local function InitItemRow(row, element)
         row.zones = CreateText(row, "GameFontHighlight", "RIGHT")
         row.zones:SetPoint("RIGHT", -4, 0)
         row.zones:SetWidth(110)
+        -- A header row (kindHeader) has no item: hover and click do nothing on it.
         row:SetScript("OnEnter", function(self)
-            ns.ShowItemTooltip(self, self.itemID, true) -- with its own "Caught in" lines (UI/ItemHooks.lua)
+            if not self.kindHeader then
+                ns.ShowItemTooltip(self, self.itemID, true) -- with its own "Caught in" lines (UI/ItemHooks.lua)
+            end
         end)
         row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        row:SetScript("OnClick", function(self) CatalogTab.Show(self.itemID) end)
+        row:SetScript("OnClick", function(self)
+            if not self.kindHeader then
+                CatalogTab.Show(self.itemID)
+            end
+        end)
+    end
+    row.name:ClearAllPoints()
+    row.kindHeader = element.header -- the kind of a header row, nil for an item
+    if element.header then
+        row.itemID = nil
+        row.icon:Hide()
+        row.name:SetPoint("LEFT", 2, 0)
+        row.name:SetTextColor(1, 0.82, 0) -- the game's header gold
+        row.name:SetText(ns.Catalog.KindText(element.header))
+        row.zones:SetText("")
+        return
     end
     row.itemID = element.itemID
     local text, icon = ns.ItemDisplay(element.itemID)
     row.icon:SetTexture(icon)
+    row.icon:Show()
+    row.name:SetPoint("LEFT", 22, 0)
+    row.name:SetTextColor(1, 1, 1)
     row.name:SetText(text)
     row.zones:SetText((L["Zones: %d"]):format(element.zones))
 end
@@ -269,6 +304,9 @@ function CatalogTab.Create(parent)
         ns.CatchHere.OpenSourceMenu(self, function() return filter.source end, CatalogTab.SetSource)
     end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
+    -- The kind menu is the catch tab's: one choice for both (spec 014), at the top right beside the search box.
+    page.kindButton = ns.CreateButton(page.listView, "", ns.CatchHere.KIND_WIDTH, ns.CatchHere.OpenKindMenu)
+    page.kindButton:SetPoint("TOPRIGHT", -LABEL_X, TOP + 1)
     page.waterButton = ns.CreateButton(page.listView, "", 150, function(self)
         ns.CatchHere.OpenWaterMenu(self, function() return filter.water end, CatalogTab.SetWater)
     end)
@@ -303,11 +341,15 @@ function CatalogTab.Create(parent)
     return page
 end
 
-local function StatusText(items, state)
+-- items: the rows before the kind filter; shown: how many of them the kind filter lets through (spec 014).
+local function StatusText(items, state, shown)
     if state == "building" then
         return L["Counting the catch..."]
     elseif #items > 0 then
-        return ""
+        if shown > 0 then
+            return ""
+        end
+        return search ~= "" and L["The kind filter hides the matches."] or L["The kind filter hides every item."]
     elseif search ~= "" then
         return L["No item matches the search."]
     elseif filter.source == "mine" then
@@ -317,10 +359,12 @@ local function StatusText(items, state)
         .. L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."]
 end
 
+-- The items under their kind headers (spec 014); the status reads the rows before the kind filter.
 local function ShowList(retain)
     local items, state = ns.Catalog.Items(filter, search)
-    page.list.Show(items, retain)
-    page.status:SetText(StatusText(items, state))
+    local elements, hidden = ns.Catalog.Group(items)
+    page.list.Show(elements, retain)
+    page.status:SetText(StatusText(items, state, #items - hidden))
     return state
 end
 
@@ -356,6 +400,7 @@ function CatalogTab.Refresh(retain)
     end
     page.waterButton:SetText((L["Water: %s"]):format(ns.CatchHere.WaterLabel(filter.water)))
     page.waterButton:SetShown(pools)
+    page.kindButton:SetText(ns.CatchHere.KindLabel())
     page.listView:SetShown(chosen == nil)
     page.itemView:SetShown(chosen ~= nil)
     local state
@@ -411,9 +456,16 @@ function CatalogTab.Show(arg)
     elseif type(arg) == "string" then
         chosen = nil
         CatalogTab.SetSearch(arg)
-        local found = ns.Catalog.Find(arg)
-        if #found == 1 then
-            chosen, expanded = found[1], {}
+        -- A name is a search of the list: the one match the kind filter shows is chosen (spec 014 R9); an item asked
+        -- for by its ID (above) opens whatever its kind (FR-012).
+        local shown = {}
+        for _, itemID in ipairs(ns.Catalog.Find(arg)) do
+            if ns.Catalog.IsKindShown(ns.Catalog.ItemKind(itemID)) then
+                table.insert(shown, itemID)
+            end
+        end
+        if #shown == 1 then
+            chosen, expanded = shown[1], {}
         end
     else
         chosen = nil
@@ -429,4 +481,10 @@ function CatalogTab.SetSearch(text)
 end
 
 ns.On("PRICES_CHANGED", MarkDirty) -- the item tooltips' prices
-ns.On("SETTINGS_CHANGED", MarkDirty)
+-- A kind toggled in the menu redraws at once, keeping the scroll (FR-007); a hidden page redraws when shown (dirty).
+ns.On("SETTINGS_CHANGED", function(key)
+    MarkDirty()
+    if key == "hiddenKinds" then
+        CatalogTab.Refresh(true)
+    end
+end)

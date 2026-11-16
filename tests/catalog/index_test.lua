@@ -104,6 +104,15 @@ test("the default index is built 10 s after the first loading screen of the sess
     assert(describe():find("index all|all|all: ready, stale false, 5 maps", 1, true), describe())
 end)
 
+test("the report ends with the hidden kinds (spec 014)", function()
+    eq(describe():match("[^\n]*$"), "kinds hidden: none", "none by default")
+    ns.Catalog.SetKindShown("other", false)
+    ns.Catalog.SetKindShown("containers", false)
+    eq(describe():match("[^\n]*$"), "kinds hidden: containers, other", "in KINDS order")
+    ns.Catalog.SetKindShown("other", true)
+    ns.Catalog.SetKindShown("containers", true)
+end)
+
 test("a later loading screen does not start it again", function()
     local maps, reads = CatchDB.Maps, 0
     CatchDB.Maps = function(...)

@@ -165,7 +165,17 @@ local function BuildReport()
         end
         table.sort(names)
         for _, name in ipairs(names) do
-            add("%s = %s", name, tostring(ns.db.settings[name]))
+            local value = ns.db.settings[name]
+            if type(value) == "table" then
+                -- A set (hiddenKinds): its keys, sorted, never the table's address.
+                local keys = {}
+                for key in pairs(value) do
+                    table.insert(keys, tostring(key))
+                end
+                table.sort(keys)
+                value = #keys > 0 and ("{ " .. table.concat(keys, ", ") .. " }") or "{}"
+            end
+            add("%s = %s", name, tostring(value))
         end
     end)
 

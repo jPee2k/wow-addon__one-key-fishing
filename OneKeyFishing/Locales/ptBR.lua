@@ -428,4 +428,14 @@ ns.AddTranslation("ptBR", "Português", function(L)
         "A música, o ambiente e os diálogos silenciam e os efeitos sobem, para destacar o respingo da boia."
     L["Lifted in a fight; everything comes back when fishing mode ends."] =
         "Removido em combate; tudo volta quando o modo de pesca termina."
+    -- Item kinds (spec 014)
+    L["Fish"] = "Peixes"
+    L["Containers"] = "Recipientes"
+    L["Potions & drinks"] = "Poções e bebidas"
+    L["Reagents & herbs"] = "Reagentes e ervas"
+    L["Other"] = "Outros"
+    L["Kinds: all"] = "Tipos: todos"
+    L["Kinds: %d of %d"] = "Tipos: %d de %d"
+    L["The kind filter hides every item."] = "O filtro de tipos oculta todos os itens."
+    L["The kind filter hides the matches."] = "O filtro de tipos oculta os resultados."
 end)

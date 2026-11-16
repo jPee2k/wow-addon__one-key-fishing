@@ -34,3 +34,13 @@ test("the report lists the L lookups made before the language was set", function
     table.remove(ns.earlyLookups)
     assert(text:find("early L lookups: Apprentice", 1, true), "the early key:\n" .. text)
 end)
+
+test("a table setting is listed by its keys, not as a memory address (spec 014 hiddenKinds)", function()
+    local text = made()
+    assert(text:find("hiddenKinds = {}", 1, true), "an empty set:\n" .. text)
+    ns.db.settings.hiddenKinds = { other = true, containers = true }
+    text = made()
+    assert(text:find("hiddenKinds = { containers, other }", 1, true), "the hidden kinds, sorted:\n" .. text)
+    assert(not text:find("table: ", 1, true), "no address:\n" .. text)
+    ns.db.settings.hiddenKinds = {}
+end)
