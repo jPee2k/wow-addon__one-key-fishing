@@ -135,6 +135,17 @@ only after the author confirms the behaviour in game, or when the author accepts
   repository.
 - A new file or a TOC change needs a game restart, not just `/reload`.
 
+## `npm run sounds`
+
+Renders the volume steps of the addon's sounds (spec 013): for every master `OneKeyFishing/Media/Sounds/<name>.ogg`
+a copy at 10, 20 ... 90 % in `Media/Sounds/Volume<step>/<name>.ogg` (ffmpeg, amplitude `step / 100`, Ogg Vorbis
+quality 4). `PlaySoundFile` has no volume argument, so the addon plays the file of the chosen volume. Run it after
+adding, changing, renaming or removing a master (steps without a master are deleted) and commit the result;
+`npm run check` reports a master without its steps, a step without its master and any file under `Media/` that is
+not `.ogg`. It needs ffmpeg on `PATH` or its path in the
+`FFMPEG` environment variable (on Windows `winget install --id Gyan.FFmpeg -e`). A new sound file needs a game
+restart.
+
 ## `npm run harvest`
 
 Before a release, turns the catch data of every account under `WOW_ADDONS_DIR` (plus saved files given as

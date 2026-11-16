@@ -52,11 +52,12 @@ nil). Existing listeners ignore the new field.
 
 ## Sound module state (runtime, not saved)
 
+The fight is not kept here: `Mode.InFight()` (Fishing/Mode.lua) tells it.
+
 | Field | Meaning |
 |---|---|
 | `handles[event]` | the handle of the last sound per event (`bell`, `hook`, `rare`) |
-| `bellCast`, `hookCast` | the cast ID that already played its bell / hook sound |
-| `paused` | true from `PLAYER_REGEN_DISABLED` to `PLAYER_REGEN_ENABLED` |
+| `hookCast` | the cast ID that already played its hook sound (every `FISHING_CAST_START` is a new cast, so the bell needs none) |
 | `token` | increases on every stop; a delayed rare sound plays only with the token it was scheduled under |
 
 ## Sound files (packaged)

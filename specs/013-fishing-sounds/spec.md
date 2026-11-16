@@ -10,7 +10,7 @@
 checkbox (on/off), off by default; a checkbox for fishing sound in the background (off by default); a volume control
 for the custom fishing sounds (when they are on). I prepared 3 sounds (a bite, the hook (pulling the fish), a rare
 item caught and in the loot). The sounds are in static/audio; they are my own sounds, so no rights are infringed."
-(Translated from Ukrainian.) Research input: [docs/sounds-plan.md](../../docs/sounds-plan.md).
+(Translated from Ukrainian.) Research input: [docs/history/sounds-plan.md](../../docs/history/sounds-plan.md).
 
 ## Clarifications
 
@@ -192,7 +192,8 @@ splash is clear. Leave fishing mode: music and ambience come back at their old v
 
 - **FR-005**: The addon MUST play its sounds only while the sounds are on and fishing mode is on, except the
   volume sample the player asks for by moving the volume control (FR-010).
-- **FR-006**: The bell MUST play once when the bobber lands on the water (the fishing channel starts).
+- **FR-006**: The bell MUST play once when the line is cast (the fishing channel starts, the bobber flies out;
+  review 3 of 2026-11-16: the player-facing texts say "when you cast").
 - **FR-007**: The hook sound MUST play on the result of the player's hook press while the line is out (the fishing
   loot, or the game's "fish got away" or "no fish hooked" line), within half a second of the press, once per cast,
   whatever the result; a line that ends without a press (moving, the channel running out) plays no hook sound.
@@ -273,7 +274,7 @@ splash is clear. Leave fishing mode: music and ambience come back at their old v
   90 %, the master volume and the game's "all sound" switch untouched (a player who muted the game on purpose is not
   overruled).
 - The volume steps of 10 % are a consequence of the game playing an addon's file at the channel's volume only; the
-  files are prepared at each step (docs/sounds-plan.md, section 4).
+  files are prepared at each step (docs/history/sounds-plan.md, section 4).
 - Rare means quality Uncommon (green), Rare, Epic or better; fished containers and junk are not rare unless their
   quality is.
 - Existing installs get every new option off: nothing changes for a player until they choose it.

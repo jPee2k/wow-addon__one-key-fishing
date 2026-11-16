@@ -19,9 +19,6 @@ to the bobber by itself.
 
 ## Ideas to discuss
 
-- **Sounds**: a Sounds settings page with the addon's own sound (on catch, on a missed fish), its volume, and the
-  game's sound kept while WoW is in the background during fishing. Research and design in
-  [sounds-plan.md](sounds-plan.md); spec [013-fishing-sounds](../specs/013-fishing-sounds/spec.md).
 - **Shared auction prices**: the catch value without a scan of one's own (the freshest scan wins, prices older
   than 3 days are not shared). Left out of the shared catch database: it waits for the in-game answer to which
   auction house a player uses in WoW Forever (game modes split by faction, no realms), since a peer from another

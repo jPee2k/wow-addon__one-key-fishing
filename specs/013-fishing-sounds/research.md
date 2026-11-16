@@ -1,6 +1,6 @@
 # Research: Fishing Sounds
 
-Input: [spec.md](spec.md), [docs/sounds-plan.md](../../docs/sounds-plan.md) (the sound API of WoW Forever and how
+Input: [spec.md](spec.md), [docs/history/sounds-plan.md](../../docs/history/sounds-plan.md) (the sound API of WoW Forever and how
 ForeverFishing uses it). Sources checked on 2026-11-16: the local client export (build 1.60.1.70685), Ketho's
 Forever `GlobalAPI.lua`, `CVars.lua` and `GlobalStrings/enUS.lua`.
 
@@ -10,7 +10,8 @@ Forever `GlobalAPI.lua`, `CVars.lua` and `GlobalStrings/enUS.lua`.
 
 - fishing loot for the current cast (`LOOT_READY` through `FISH_CAUGHT`), or
 - the game's error line `ERR_FISH_ESCAPED` ("Your fish got away!") or `ERR_FISH_NOT_HOOKED` ("No fish are hooked.")
-  in `UI_ERROR_MESSAGE` while the line is out or within `HOOK_GRACE` (1 s) after the channel stopped.
+  in `UI_ERROR_MESSAGE` while the line is out or within 1 s after the channel stopped (Catch.lua's `LOOT_GRACE`;
+  review 2 moved this to Catch.lua as the message `FISH_ESCAPED`, which Sound.lua only listens to).
 
 Once per cast (keyed by `ns.GetFishingCastID()`). A channel that ends by moving, jumping or running out gives
 neither, so no hook sound plays for it, which is right: no hook was pressed.
@@ -77,7 +78,7 @@ the author's three files from `static/audio`, renamed to their event: `bell.ogg`
 (`retrive_dark_01`), `rare.ogg` (`notification_dark_01`); about 30 files, under 1 MB.
 
 **Rationale**: `PlaySoundFile` has no volume argument; `volumeOverride` exists only for Blizzard sound kits. Changing
-a game volume CVar would change the whole game mix (rejected in docs/sounds-plan.md). The steps match the spec's
+a game volume CVar would change the whole game mix (rejected in docs/history/sounds-plan.md). The steps match the spec's
 10 % steps.
 
 **Packaging**: today a packaged addon file must be listed in the TOC (`tools/addon.mjs` `packageEntries`,

@@ -229,12 +229,35 @@ is shown with **(few lots)** and the catch value uses the vendor price instead.
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
 scanned auction prices for catch value**.
 
+## Sound effects
+
+**Options → AddOns → OneKeyFishing → Sound effects**, or `/okf sound`. Every option starts off.
+
+- **Play fishing sounds**: while fishing mode is on, a bell rings when you cast, a sound plays
+  when you hook (on the game's answer: the loot, or "Your fish got away!" / "No fish are hooked."), and a
+  notification follows when the loot holds an Uncommon (green) or better item. Walking away with the line out plays
+  no hook sound. The minimap button's menu has the same switch: **Turn fishing sounds on** / **off**.
+- **Volume**: how loud these sounds are, from 0 to 100 % in steps of 10; moving the slider plays a sample. It
+  changes only the addon's sounds, never a game volume; the game's master volume and its "Enable Sound" switch still
+  apply to them. Greyed out while the sounds are off.
+- **Fishing sound in the background**: turns on the game's **Sound in Background** while fishing mode is on, so you
+  hear the splash and the addon's sounds with another window in front. It covers all game sound (the game has no
+  setting for one addon). Your own setting comes back when the mode ends.
+- **Splash focus while fishing**: while fishing mode is on, music, ambience and dialog are silent and sound effects
+  are on and at least 90 %, so the bobber's splash stands out. The addon cannot know when a fish bites (the game
+  tells addons nothing about it), so this is how it helps you hear the bite.
+
+In a fight the addon plays none of its sounds and lifts the splash focus at once; both come back after the fight if
+fishing mode is still on. Every game setting the page changes is put back when fishing mode ends (also after a
+`/reload`, a logout or a crash); a setting you changed yourself while fishing keeps your value. The sounds are the
+author's own and ship under the addon's MIT license.
+
 ## Minimap button
 
 - **Left-click**: toggle fishing mode.
 - **Shift+Left-click**: statistics.
-- **Right-click**: a menu with every action (mode, statistics, settings, auction scan, a map pin for the next
-  Fishing rank when it has a place, reset indicator position, debug report).
+- **Right-click**: a menu with every action (mode, statistics, settings, the fishing sounds on or off, auction scan,
+  a map pin for the next Fishing rank when it has a place, reset indicator position, debug report).
 - **Drag**: move the button around the minimap.
 - The tooltip shows the mode, your Fishing skill and the next rank, the session time, your key bindings and short
   instructions; in fishing mode also the most likely catches of the place you stand at. The button is grey while
@@ -276,6 +299,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
 - **Fishing gear**: a page of its own, see [Fishing gear](#fishing-gear).
 - **Shared database**: a page of its own: **Use the shared catch database**, what is shared and the current state;
   see [Shared catch database](#shared-catch-database).
+- **Sound effects**: a page of its own, see [Sound effects](#sound-effects).
 
 ## Commands
 
@@ -291,6 +315,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
 | `/okf scan` | scan auction prices (the auction house must be open) |
 | `/okf share` | show the state of the shared catch database |
+| `/okf sound` | open the Sound effects settings |
 | `/okf debug` | show a report to copy into a bug report |
 
 ## Troubleshooting

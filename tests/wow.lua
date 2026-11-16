@@ -41,6 +41,15 @@
 --   known_spells[spellID] = true        C_SpellBook.IsSpellKnown and IsSpellKnown
 --   Frame:SetAttribute / GetAttribute   stored per frame (a secure snippet can be read back)
 -- Helpers: enter_fishing_mode(), owe_gear(), equipped_slots(), chat_count(text).
+-- The fishing sounds (specs/013-fishing-sounds):
+--   sound_calls                         PlaySoundFile calls, { path, channel } (read; emptied by enter_fishing_mode)
+--   sound_stops                         StopSound calls, { handle, fadeout } (read; emptied by enter_fishing_mode)
+--   sound_play_result = false           PlaySoundFile plays nothing and returns false (default: true, a new handle)
+--   loot.items[i][3] = quality          the 5th value of GetLootSlotInfo (the slot's item quality; nil by default)
+--   menu_entries                        the last MenuUtil context menu: { kind, text, isSelected, onClick } (read)
+--   MinimalSliderWithSteppersTemplate   CreateFrame gives a slider with Init, SetValue (fires OnValueChanged),
+--                                       Slider:GetValue (not on the frame, as in the game), SetEnabled /
+--                                       IsSliderEnabled, RegisterCallback
 -- The catch exchange (Comm.lua, Share.lua):
 --   addon_prefixes[prefix] = true       prefixes registered with C_ChatInfo.RegisterAddonMessagePrefix (read)
 --   addon_sent                          C_ChatInfo.SendAddonMessage calls, { prefix, text, chatType, target, at }
@@ -579,6 +588,40 @@ function CreateFrame(_, name, parent, template)
     end
     local frame = NewFrame(parent)
     frame.template = template
+    if template == "MinimalSliderWithSteppersTemplate" then
+        frame.callbacks = {}
+        function frame:Init(value, minValue, maxValue, steps, formatters)
+            self.value, self.minValue, self.maxValue, self.steps, self.formatters = value, minValue, maxValue, steps,
+                formatters
+        end
+        -- As the export's MinimalSliderWithSteppersMixin: the outer frame has no GetValue; the value lives on its
+        -- child Slider, and a new value fires OnValueChanged (also when the addon sets it).
+        frame.Slider = NewFrame(frame)
+        -- The stubs answer every unknown method with a no-op; this one must fail as the game's nil method does.
+        function frame:GetValue()
+            error("attempt to call method 'GetValue' (a nil value)", 2)
+        end
+        function frame.Slider:GetValue()
+            return frame.value
+        end
+        function frame:SetValue(value)
+            self.value = value
+            for _, callback in ipairs(self.callbacks) do
+                callback.fn(callback.owner, value)
+            end
+        end
+        function frame:RegisterCallback(event, fn, owner)
+            if event == MinimalSliderWithSteppersMixin.Event.OnValueChanged then
+                table.insert(self.callbacks, { fn = fn, owner = owner })
+            end
+        end
+        function frame:SetEnabled(enabled)
+            self.sliderEnabled = enabled and true or false
+        end
+        function frame:IsSliderEnabled()
+            return self.sliderEnabled ~= false
+        end
+    end
     if template == "SearchBoxTemplate" then
         frame.Instructions = NewFrame(frame)
         -- the clear button: SetText(""), so OnTextChanged with userInput false
@@ -873,7 +916,16 @@ C_AddOns = {
     end,
 }
 
-local cvars = {}
+-- The sound CVars start at the game's defaults (CVars.lua of the Forever export); others read "0".
+local cvars = {
+    Sound_EnableSoundWhenGameIsInBG = "0",
+    Sound_MusicVolume = "0.4",
+    Sound_AmbienceVolume = "0.6",
+    Sound_DialogVolume = "1.0",
+    Sound_EnableSFX = "1",
+    Sound_SFXVolume = "1.0",
+}
+
 C_CVar = {
     GetCVar = function(name)
         return cvars[name] or "0"
@@ -1189,14 +1241,80 @@ function GetLootSlotLink(slot)
     return item and ("|cffffffff|Hitem:%d::::::::|h[Item %d]|h|r"):format(item[1], item[1])
 end
 
--- icon, name, quantity
+-- icon, name, quantity, currencyID, quality (loot.items[slot][3], nil when not given)
 function GetLootSlotInfo(slot)
     local current = Loot()
     local item = current and current.items[slot]
     if item then
-        return 134400, "Item " .. item[1], item[2]
+        return 134400, "Item " .. item[1], item[2], nil, item[3]
     end
 end
+
+---------------------------------------------------------------------------
+-- Sounds (specs/013-fishing-sounds)
+---------------------------------------------------------------------------
+sound_calls, sound_stops = {}, {}
+sound_play_result = true
+local nextSoundHandle = 0
+
+function PlaySoundFile(path, channel)
+    table.insert(sound_calls, { path = path, channel = channel })
+    if not sound_play_result then
+        return false
+    end
+    nextSoundHandle = nextSoundHandle + 1
+    return true, nextSoundHandle
+end
+
+function StopSound(handle, fadeout)
+    table.insert(sound_stops, { handle = handle, fadeout = fadeout })
+end
+
+-- The game's own lines (GlobalStrings, enUS) the hook sound waits for.
+ERR_FISH_ESCAPED = "Your fish got away!"
+ERR_FISH_NOT_HOOKED = "No fish are hooked."
+
+-- The paths of the sounds played since the last reset, in order (only the file name: "bell.ogg").
+function sounds_played()
+    local list = {}
+    for _, call in ipairs(sound_calls) do
+        table.insert(list, call.path:match("([^\\]+)$"))
+    end
+    return list
+end
+
+-- The context menu of MenuUtil (UI/Minimap.lua): the entries of the last menu built.
+menu_entries = {}
+local function MenuRoot()
+    local root = {}
+    local function Add(kind, text, a, b)
+        local entry = { kind = kind, text = text }
+        if kind == "checkbox" then
+            entry.isSelected, entry.onClick = a, b
+        else
+            entry.onClick = a
+        end
+        table.insert(menu_entries, entry)
+        return { SetEnabled = function(_, enabled) entry.enabled = enabled end }
+    end
+    function root:CreateTitle(text) return Add("title", text) end
+    function root:CreateButton(text, onClick) return Add("button", text, onClick) end
+    function root:CreateCheckbox(text, isSelected, onClick) return Add("checkbox", text, isSelected, onClick) end
+    function root:CreateDivider() return Add("divider") end
+    return root
+end
+
+MenuUtil = {
+    CreateContextMenu = function(owner, generator)
+        menu_entries = {}
+        generator(owner, MenuRoot())
+    end,
+}
+
+MinimalSliderWithSteppersMixin = {
+    Event = { OnValueChanged = "OnValueChanged" },
+    Label = { Left = 1, Right = 2, Top = 3, Min = 4, Max = 5 },
+}
 
 -- The values do not matter, only that the names exist and compare as numbers.
 Enum = {
@@ -1959,6 +2077,7 @@ function enter_fishing_mode()
     ns.db.settings.gear, ns.db.settings.camera = false, false
     in_combat = false
     ns.Mode.Enter()
+    sound_calls, sound_stops = {}, {}
     assert(ns.Mode.IsActive(), "fishing mode did not turn on")
     equip_calls, chat = {}, {}
 end

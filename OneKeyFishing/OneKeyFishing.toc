@@ -68,6 +68,8 @@ Catch\Prices.lua
 Catch\Auction.lua
 Fishing\Skill.lua
 Catch\Stats.lua
+# Sounds: the fishing sounds (Fishing/Sound.lua reads the messages of Catch.lua and Action.lua)
+Fishing\Sound.lua
 # Catch database
 CatchDB\SeedData.lua
 CatchDB\CatchDB.lua

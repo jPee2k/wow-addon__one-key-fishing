@@ -87,6 +87,18 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 
 ## Verified in game
 
+- The fishing sounds' settings page (spec 013, 2026-11-16, enUS): `MinimalSliderWithSteppersTemplate` in a canvas
+  settings page works as in the export (`Init(value, min, max, steps, formatters)`, the `Label.Right` formatter,
+  `RegisterCallback(Event.OnValueChanged)`, the value on the child `.Slider`) (V50). An addon `.ogg` played with
+  `PlaySoundFile(path, "Master")` is heard, and the pre-rendered volume steps sound quieter (V46); switching
+  the sounds off mid-sound stops it (`StopSound(handle, fade)`). `PlaySoundFile` has no volume argument.
+  The sound CVars (`Sound_MusicVolume`, `Sound_AmbienceVolume`, `Sound_DialogVolume`) set by `C_CVar.SetCVar` show
+  at once in Options -> Audio (V48, entry side). The fish line "No fish are hooked." (`ERR_FISH_NOT_HOOKED`) comes
+  as `UI_INFO_MESSAGE` (messageType 417, the text as 2nd argument), not as `UI_ERROR_MESSAGE`, and a too-early
+  press ends the fishing channel; the loot of a hook comes at once (V47). `Sound_EnableSoundWhenGameIsInBG` set by
+  `C_CVar.SetCVar` keeps all game sound, the addon's `PlaySoundFile` included, with the window unfocused (V49).
+  The sound CVars can be set at `PLAYER_REGEN_DISABLED` and take effect at once: the music comes back as the fight
+  starts (V48).
 - The addon list (character screen -> AddOns) reads `## Notes-<code>` and `## Category-<code>` from the TOC in the
   client's language, UTF-8 included (checked on a German client, 2026-11-03).
 - Client answers on launch day (EU realm, ruRU client, game 1.60.1 build 70790, 2026-11-05):
@@ -285,6 +297,8 @@ move to "Verified in game":
   Accepted without a check for 1.2.0 (2026-11-12): the same "First Last" rule as the senders seen.
 - Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the
   skill ranges of the place key can go.
+- Does `GetLootSlotInfo(i)` give the item quality as its 5th value for fishing loot, also for an item the client has
+  not cached (the rare sound of spec 013, V51, `docs/checklists/sounds.md` step 3)?
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
 

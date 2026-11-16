@@ -3,7 +3,7 @@
 **Branch**: `013-fishing-sounds` | **Date**: 2026-11-16 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/013-fishing-sounds/spec.md`; research input
-[docs/sounds-plan.md](../../docs/sounds-plan.md)
+[docs/history/sounds-plan.md](../../docs/history/sounds-plan.md)
 
 ## Summary
 

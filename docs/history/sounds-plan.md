@@ -1,9 +1,10 @@
 # Sounds plan
 
-A plan, not built yet. It records how an addon plays sound in WoW Forever (what the client offers, what another
-Forever addon does, what the rules allow) and how a **Sounds** settings page fits into OneKeyFishing: our own sound
-on or off, its volume, and sound while the game window is in the background. The feature gets its own spec
-(`specs/013-fishing-sounds/`) before work starts; this document is its research input.
+A finished plan, kept as a record: built by spec `specs/013-fishing-sounds/` (the "Sound effects" page). It records
+how an addon plays sound in WoW Forever (what the client offers, what another Forever addon does, what the rules
+allow) and how the page fits into OneKeyFishing. The spec's research, plan and the code are the current truth where
+they differ from the design below (the bell, hook and rare sounds, the hook heard on its result, the splash focus
+built after all).
 
 ## 1. How sound works in the WoW client
 
@@ -182,7 +183,7 @@ No new message: the page writes `ns.db.settings` and fires `SETTINGS_CHANGED` (t
 - Improvement worth taking from ForeverFishing for this CVar (and the others in `CVARS`): on restore, put the old
   value back **only if the CVar still holds the value we applied**; a value the player changed in Options while
   fishing is theirs. Today `RestoreCVars` writes the old value unconditionally (to note in
-  [tech-debt.md](tech-debt.md) if not fixed in the spec).
+  [tech-debt.md](../tech-debt.md) if not fixed in the spec).
 - Not done: a separate "mirror Blizzard's checkbox" toggle. The game's own Options already does that.
 
 ### Stopping

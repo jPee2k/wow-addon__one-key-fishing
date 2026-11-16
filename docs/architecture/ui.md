@@ -19,6 +19,13 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
   sentences about the channel.
 - Bags cannot be opened while the Settings panel is open, so items are added through Alt+Click in bags
   (ItemHooks), not from the panel.
+- The "Sound effects" subcategory (spec 013, `SettingsUI.OpenSounds()`, `/okf sound`), top to bottom: "Play fishing
+  sounds" (`Sound.IsEnabled` / `Sound.SetEnabled`), the volume (Blizzard's `MinimalSliderWithSteppersTemplate`,
+  0-100 in steps of 10, greyed while the sounds are off; a value the player picks is stored and plays
+  `Sound.Preview()`; a client without the template keeps the page without the slider), "Fishing sound in the
+  background" and "Splash focus while fishing" (they write `settings.backgroundSound` / `splashFocus` and fire
+  `SETTINGS_CHANGED`, which Mode.lua applies at once while fishing; never greyed). Each has its explanation under
+  it; `SETTINGS_CHANGED("fishingSounds")` from the minimap menu updates the shown page.
 
 ## StatsFrame
 
@@ -74,6 +81,9 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   click). The navigation CVar is never touched.
 
 ## Other frames
+
+- The minimap button's menu has a button "Turn fishing sounds on" / "Turn fishing sounds off" (its text follows
+  `Sound.IsEnabled()`, a click calls `Sound.SetEnabled`), like the fishing mode entry; spec 013.
 
 - Widgets: the frame helpers of every window and page: `ns.CreateButton` (the panel button, which grows to its
   text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`

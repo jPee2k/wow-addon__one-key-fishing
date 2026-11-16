@@ -15,6 +15,7 @@ verified only after that (constitution, Principle IV).
 | [catch-exchange.md](catch-exchange.md) | the exchange with guild, group and friends | `specs/003-guild-group-sync` | a second player (and a third) |
 | [public-channel.md](public-channel.md) | the hidden public channel and the protections | `specs/004-public-channel-sync` | three accounts sharing nothing |
 | [catch-catalog.md](catch-catalog.md) | the catalog tab, map pins, subzones, tooltips | `specs/005-catch-catalog` | two client languages, a fresh item cache |
+| [sounds.md](sounds.md) | the "Sound effects" page: the fishing sounds, their volume, background sound, splash focus | `specs/013-fishing-sounds` | one character, a mob for a fight, a second window |
 
 The steps still open after 1.2.0 are listed in [docs/release-plan.md](../release-plan.md).
 

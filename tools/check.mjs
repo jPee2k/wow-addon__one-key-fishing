@@ -9,7 +9,7 @@ import path from "node:path";
 import luaparse from "luaparse";
 import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
   COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems,
-  parseToc, privateProblems, testNameProblem }
+  MEDIA_DIR, mediaFiles, mediaProblems, parseToc, privateProblems, testNameProblem }
   from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
@@ -208,8 +208,15 @@ if (!fs.existsSync(tocPath)) {
       problem(file, "missing (it is packaged with the addon)");
     }
   }
+  // The sound files under Media/ are packaged without a TOC line (constitution 1.5.4); mediaProblems reports any
+  // other file there and a master without its volume steps.
+  const media = mediaFiles();
+  for (const { file, message } of mediaProblems(media)) {
+    problem(`${ADDON}/${file}`, message);
+  }
   for (const file of files.filter(inAddon)) {
-    if (!packaged.has(relAddon(file))) {
+    const addonPath = relAddon(file);
+    if (!packaged.has(addonPath) && !addonPath.startsWith(`${MEDIA_DIR}/`)) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
     }
   }

@@ -56,6 +56,7 @@ read_globals = {
     "GetNormalizedRealmName", "GetZoneText", "GetSubZoneText",
     "GetCameraZoom", "CameraZoomIn", "CameraZoomOut",
     "IsInGuild", "IsInGroup", "IsInRaid", "IsInInstance", "GetNumGroupMembers", "BNGetNumFriends",
+    "PlaySoundFile", "StopSound", "ERR_FISH_ESCAPED", "ERR_FISH_NOT_HOOKED", "MinimalSliderWithSteppersMixin",
     "issecretvalue", "debugprofilestop", "Constants", "geterrorhandler", "debugstack",
     "GetCallstackHeight", "SetErrorCallstackHeight",
     "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName",

@@ -31,7 +31,7 @@ What the tests prove (research R11):
 
 1. `/okf sound` opens "Sound effects"; every option is off; the slider is greyed. Turn the sounds on: the slider
    wakes; moving it plays the hook sound louder or quieter.
-2. Fishing mode on, cast: the bell when the bobber lands. Hook at the splash: the hook sound within half a second.
+2. Fishing mode on, cast: the bell as the line goes out. Hook at the splash: the hook sound within half a second.
    Hook too early: the hook sound too ("No fish are hooked."). Walk away while the line is out: no hook sound. (V46, V47)
 3. Loot a green item: the hook sound, then the notification. A white fish: no notification.
 4. Background on, fishing, alt-tab: the splash and the sounds are still heard; leave the mode: Options -> Audio ->
@@ -41,5 +41,5 @@ What the tests prove (research R11):
 6. A fight while fishing ("Leave fishing mode when attacked" off): no addon sound, music back at once; after the
    fight the focus returns. With it on: after the fight the mode ends and the settings are back.
 7. `/reload` while fishing, and a forced quit while fishing then login: the audio settings are back.
-8. Minimap menu: "Fishing sounds" switches them; the open page follows.
+8. Minimap menu: "Turn fishing sounds on" / "off" switches them; the open page follows.
 9. Another interface language: the page is translated.

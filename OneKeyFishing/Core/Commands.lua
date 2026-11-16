@@ -13,6 +13,8 @@ ns.COMMANDS = {
         run = function() ns.Auction.Scan() end },
     { name = "share", description = "show the state of the shared catch database",
         run = function() ns.Share.PrintStatus() end },
+    { name = "sound", description = "open the sound effects settings",
+        run = function() ns.SettingsUI.OpenSounds() end },
     { name = "stats", description = "show the fishing statistics", run = function() ns.StatsFrame.Toggle() end },
     { name = "toggle", description = "enter or leave fishing mode", run = function() ns.Mode.Toggle() end },
 }

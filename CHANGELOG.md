@@ -4,6 +4,24 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- "Sound effects" settings page (also `/okf sound`), every option off until you turn it on:
+  - **Play fishing sounds**: a bell when you cast, a sound when you hook, and a notification when the loot
+    holds an Uncommon or better item; a "Turn fishing sounds on / off" entry in the minimap button's menu too.
+  - **Volume** of these sounds, 0 to 100 % in steps of 10, without touching the game's volumes.
+  - **Fishing sound in the background**: the game's "Sound in Background" for the time of fishing mode.
+  - **Splash focus while fishing**: music, ambience and dialog silenced and effects raised, so the splash stands out.
+  - In a fight the sounds are silent and the focus is lifted; everything the page changes comes back when fishing
+    mode ends.
+
+### Changed
+
+- Fishing mode puts a game setting back only while it still holds the addon's value: a setting you changed
+  yourself while fishing (in the game's options) keeps your value.
+
 ## [1.2.0] - 2026-11-12
 
 ### Added

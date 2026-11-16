@@ -30,7 +30,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008 and 009 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009 and 013 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -42,9 +42,9 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
 | Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0, and what 1.2.1 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet), [docs/sounds-plan.md](docs/sounds-plan.md) (how addon sound works in WoW Forever, the planned Sounds settings page: own sound, its volume, sound in the background) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0, and what 1.2.1 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
-| History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database) |
+| History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database; `sounds-plan.md`, how addon sound works in WoW Forever) |
 
 ## Workflow
 
@@ -59,7 +59,8 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   Tests run in fengari (Lua 5.3), the game is 5.1: keep the addon free of 5.1/5.3 differences.
 - `npm run dev` (package the working folder), `npm run build` (package the last commit; refuses uncommitted
   changes and `VERIFY` markers), `npm run link` / `unlink`, `npm run install-addon`, `npm run harvest` (the
-  bundled seed). Details: [docs/development.md](docs/development.md).
+  bundled seed), `npm run sounds` (the volume steps of the sound files, needs ffmpeg). Details:
+  [docs/development.md](docs/development.md).
 - A new file or a TOC change needs a game restart, not just `/reload`.
 - Addon Lua and XML must not contain packager keywords (`@project-version@`, `--@debug@` blocks).
 - Branches: a feature is built on its own branch (`NNN-<feature>`) off `develop` and merged back when its release
@@ -106,6 +107,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Catch/Prices.lua`, `Catch/Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `Fishing/Sound.lua` | the fishing sounds (bell, hook, rare loot) of the "Sound effects" page, their volume (files under `Media/Sounds/`), silent in fights; the page's game audio settings are rows of `Fishing/Mode.lua` | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
 | `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (off since spec 010: `Channel.AVAILABLE`); one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines | [catalog.md](docs/architecture/catalog.md) |
@@ -126,7 +128,10 @@ Cross-module rules:
   functions. `npm run check` reports a break.
 - Sharing is switched by `Share.SetEnabled`, never by a direct write of `settings.shareDB` (it fires
   `SHARED_DATA_CHANGED`, which drops cached views). The public channel likewise by `Channel.SetEnabled`, never by a
-  write of `settings.shareChannel` (it joins or leaves at once).
+  write of `settings.shareChannel` (it joins or leaves at once). The fishing sounds by `Sound.SetEnabled`, never by a
+  write of `settings.fishingSounds` (it stops the sounds and fires `SETTINGS_CHANGED`).
+- Fishing mode's CVars restore only while they still hold the addon's value; a row marked `live` follows its setting
+  at once while fishing, one marked `combat = "lift"` is restored for a fight ([fishing-mode.md](docs/architecture/fishing-mode.md)).
 - Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data lives
   in `ns.GameData` (`GameData/`, layer 0, one file per entity, data only: `npm run check` rejects a function, a call,
   `L` or another module there; [game-data.md](docs/architecture/game-data.md)); addon tuning stays in its module.
@@ -140,8 +145,11 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 
 - `MODE_CHANGED` (on/off), `ACTION_STATE` (the key's binding changed, or `"paused"`: a fight dropped it, `Action.IsPaused()`)
 - `FISHING_CAST_START` / `FISHING_CAST_STOP` (spellID)
-- `FISH_CAUGHT` (items: `{ link, itemID, quantity }`, castID) / `FISH_MISSED` (castID; each settles that cast
+- `FISH_CAUGHT` (items: `{ link, itemID, quantity, quality }`, castID; quality from the loot slot, else the item, may be nil) / `FISH_MISSED` (castID; each settles that cast
   and every earlier one)
+- `FISH_ESCAPED` (castID: the game's "fish got away" / "no fish hooked" line while the line is out or just after it,
+  once per cast; the answer of a hook press without a catch, for the hook sound; the cast still settles by
+  `FISH_MISSED`)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `SKILL_WARNING` (text, loud: a next-rank notice of `Fishing/Skill.lua`, loud at the cap; the toast shows it even
   with catch notifications off), `MAP_PIN_SET` (placeName, or nil when the game refused the pin: `Core/MapPin.lua`
@@ -186,3 +194,8 @@ go there.
   water; `GetExploredAreaIDsAtPosition` gives map regions, often not the subzone.
 - `C_Item.EquipItemByName` is protected in combat, weapons too (only `PLAYER_REGEN_DISABLED` runs before the
   lockdown).
+- `PlaySoundFile` has no volume argument (only Blizzard sound kits take `volumeOverride`), so the addon ships each
+  sound at every 10 % step; "Sound in Background" (`Sound_EnableSoundWhenGameIsInBG`) is one switch for all game
+  sound. The sound CVars can be set in a fight's start (`PLAYER_REGEN_DISABLED`) and take effect at once (V48).
+- The fish lines ("No fish are hooked.", `ERR_FISH_NOT_HOOKED`) come as `UI_INFO_MESSAGE` (type 417), not
+  `UI_ERROR_MESSAGE`; a too-early hook press ends the fishing channel (seen 2026-11-16).

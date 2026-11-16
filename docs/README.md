@@ -12,9 +12,8 @@
 | [release-plan.md](release-plan.md) | the accepted assumptions and in-game checks left after 1.2.0, and what 1.2.1 waits for |
 | [checklists/](checklists/README.md) | the in-game checklists, one per feature, with the template and the order |
 | [ROADMAP.md](ROADMAP.md) | what is not built yet |
-| [sounds-plan.md](sounds-plan.md) | the plan for addon sounds: the Forever sound API, what ForeverFishing does, the rules, the Sounds settings page |
 | [tech-debt.md](tech-debt.md) | the known issues with their severity, and the review history |
-| [history/](history/) | finished plans kept as a record: the MVP, the 1.0.0 publication, the shared catch database design |
+| [history/](history/) | finished plans kept as a record: the MVP, the 1.0.0 publication, the shared catch database design, the sound research ([sounds-plan.md](history/sounds-plan.md)) |
 | `../specs/<nnn>-<name>/` | one folder per feature (Spec Kit): spec, plan, research, data model, contracts, tasks, `verification.md` (the `VERIFY` ids), `quickstart.md` (what the tests prove) |
 
 The player manual is [`../OneKeyFishing/README.md`](../OneKeyFishing/README.md); it ships inside the addon.

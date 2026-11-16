@@ -10,21 +10,21 @@ layer 3, `Core/Commands.lua` the entry that may open a window.
 | `Sound.IsEnabled()` | `settings.fishingSounds == true` |
 | `Sound.SetEnabled(value)` | writes `settings.fishingSounds`; off stops every sound (C1 `StopAll`); fires `SETTINGS_CHANGED("fishingSounds")`. The only writer of that key |
 | `Sound.Volume()` | `settings.soundVolume` clamped to 0-100 and rounded to a multiple of 10 |
-| `Sound.SetVolume(percent)` | stores the clamped, rounded value; fires `SETTINGS_CHANGED("soundVolume")` |
+| `Sound.SetVolume(percent)` | stores the clamped, rounded value (no message: only Sound.lua and the slider read it) |
 | `Sound.Path(event, volume)` | the file path for `"bell"`, `"hook"`, `"rare"` at a volume step, nil at 0 (pure, tested) |
 | `Sound.Preview()` | plays the hook sound at the current volume, also outside fishing mode and with the sounds off (the page's slider is greyed then, so only the slider calls it); not in a fight |
 | `Sound.StopAll()` | stops every handle with a short fade and cancels a pending rare sound |
 
-Plays (all require: sounds on, fishing mode on, not paused, volume above 0):
+Plays (all require: sounds on, fishing mode on, not `Mode.InFight()`, volume above 0):
 
 | Event | Trigger | Once per |
 |---|---|---|
 | `bell` | `FISHING_CAST_START` | cast |
-| `hook` | `FISH_CAUGHT` for the current cast, or `UI_ERROR_MESSAGE` whose message is `ERR_FISH_ESCAPED` or `ERR_FISH_NOT_HOOKED` while channeling or within `HOOK_GRACE` after `FISHING_CAST_STOP` | cast |
+| `hook` | `FISH_CAUGHT` or `FISH_ESCAPED` of the cast (C3) | cast |
 | `rare` | `FISH_CAUGHT` with an item of `quality >= Enum.ItemQuality.Uncommon`; `RARE_DELAY` after the hook sound | loot |
 
-Stops: `MODE_CHANGED(false)`, `Sound.SetEnabled(false)`, `PLAYER_REGEN_DISABLED` (then paused until
-`PLAYER_REGEN_ENABLED`). A new sound of an event stops that event's previous one.
+Stops: `MODE_CHANGED(false)`, `Sound.SetEnabled(false)`, `PLAYER_REGEN_DISABLED` (then silent while
+`Mode.InFight()`). A new sound of an event stops that event's previous one.
 
 `PlaySoundFile` and `StopSound` are called in `pcall`; a failure plays nothing and raises no error.
 
@@ -34,17 +34,19 @@ Stops: `MODE_CHANGED(false)`, `Sound.SetEnabled(false)`, `PLAYER_REGEN_DISABLED`
 |---|---|
 | `CVARS` rows | gain `live` and `combat` (data-model.md); six sound rows added |
 | `Mode.CVAR_NAMES` | every row's name (ten), for the debug report |
-| `SyncCVars()` (local) | applies the wanted rows not yet saved, restores the saved rows no longer wanted (C3); called by `Enter`, `Exit`, `PLAYER_REGEN_DISABLED`, `PLAYER_REGEN_ENABLED` (mode still on), and `SETTINGS_CHANGED` of a `live` row's setting |
+| `SyncCVars(include)` (local) | applies the wanted rows not yet saved, restores the saved rows no longer wanted; `include(row)` limits it to an event's rows: `Enter` all, `PLAYER_REGEN_DISABLED` / `ENABLED` the `combat = "lift"` rows, `SETTINGS_CHANGED` the `live` rows of that setting; `Exit`, logout and login restore every saved row |
 | Restore rule | a saved CVar is set back only when its current value equals the row's applied value for the saved old value (numbers compared as numbers); otherwise its record is dropped and the player's value stays. A saved name without a row is set back as before |
 | `PLAYER_LOGOUT`, `PLAYER_LOGIN` | unchanged: restore every saved CVar (with the rule above) |
 
 The existing rows (`SoftTargetInteract`, `autoLootDefault`, the two icons) are not `live`: their settings still apply
 the next time the mode is entered.
 
-## C3. `FISH_CAUGHT` (`Catch/Catch.lua`, changed)
+## C3. `FISH_CAUGHT` and `FISH_ESCAPED` (`Catch/Catch.lua`, changed; `FISH_ESCAPED` added by review 2)
 
-`items[i].quality`: the 5th return of `GetLootSlotInfo(i)`, or `C_Item.GetItemQualityByID(itemID)`, or nil. Listed
-in CLAUDE.md's messages.
+`items[i].quality`: the 5th return of `GetLootSlotInfo(i)`, or `C_Item.GetItemQualityByID(itemID)`, or nil.
+`FISH_ESCAPED(castID)`: the game's `ERR_FISH_ESCAPED` / `ERR_FISH_NOT_HOOKED` line (`UI_INFO_MESSAGE` or `UI_ERROR_MESSAGE`, compared with
+the client's own strings) while the line is out (the current cast) or within `LOOT_GRACE` after it (the cast that
+stopped), once per cast and not for a cast whose loot came. Both are listed in CLAUDE.md's messages.
 
 ## C4. Settings UI (`UI/Settings.lua`, changed)
 
@@ -59,7 +61,8 @@ in CLAUDE.md's messages.
 
 ## C5. Minimap menu (`UI/Minimap.lua`, changed)
 
-A checkbox entry `L["Fishing sounds"]`: checked = `Sound.IsEnabled()`, click = `Sound.SetEnabled(not ...)`.
+A button (the author asked for text, not a checkbox, 2026-11-16): `L["Turn fishing sounds off"]` while
+`Sound.IsEnabled()`, else `L["Turn fishing sounds on"]`; click = `Sound.SetEnabled(not ...)`.
 
 ## C6. Command (`Core/Commands.lua`, changed)
 
@@ -76,5 +79,5 @@ English description; documented in `OneKeyFishing/README.md` (`npm run check`).
 
 ## C8. Messages
 
-No new message. `SETTINGS_CHANGED` carries the new keys `fishingSounds`, `soundVolume`, `backgroundSound`,
-`splashFocus`.
+One new message, `FISH_ESCAPED` (castID, C3), listed in CLAUDE.md. `SETTINGS_CHANGED` carries the new keys `fishingSounds`,
+`backgroundSound`, `splashFocus` (not `soundVolume`, which only Sound.lua and the slider read).
