@@ -43,5 +43,4 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 
 ## 1.2.1
 
-- [tech-debt.md](tech-debt.md) batch 11: a partner who relogs counts twice for an hour in the status line.
 - Whatever the checks above find.

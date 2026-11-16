@@ -461,7 +461,9 @@ test("a remembered peer's new tag replaces its old one in byTag (FR-009)", funct
     eq(c.node.byTag[tag], "w:R", "the current one")
 end)
 
-test("a new tag from the other path of a client keeps the tag that names its first address", function()
+-- Spec 015 review 3: the first address of the client takes the new tag too (the same client, relogged), so the old
+-- tag names nobody and leaves byTag (still bounded, spec 004 FR-009).
+test("a new tag from the other path of a client moves its first address to the new tag", function()
     NewNet()
     local c = NewNode("C", "caaaaaa2", { channel = true })
     local same = c.node:HashText()
@@ -471,8 +473,13 @@ test("a new tag from the other path of a client keeps the tag that names its fir
     c.node:Receive("b:7", "bnet", text)
     eq(c.node.peers["b:7"].node, tag, "the same client by Battle.net")
     advance(61)
-    c.node:Receive("b:7", "bnet", StrangerHello(same))
-    eq(c.node.byTag[tag], "w:A", "still names the whisper address")
+    text = StrangerHello(same)
+    c.node:Receive("b:7", "bnet", text)
+    local new = text:match("^H (%w+)")
+    eq(c.node.peers["w:A"].node, new, "the whisper address takes the new tag")
+    eq(c.node.byTag[tag], nil, "the old tag names nobody")
+    eq(c.node.byTag[new], "b:7", "the new tag names the address that brought it")
+    eq(c.node:SameClient("w:A", "b:7"), true, "still one client")
 end)
 
 test("a relog heard first by Battle.net drops the old tag of the client's guild address", function()

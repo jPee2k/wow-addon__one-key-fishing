@@ -374,14 +374,18 @@ function Node:ArmTimeout(session, delay)
     end)
 end
 
+-- The client behind an address: its peer's node tag, or the address itself while no tag is known. The one definition
+-- of "the same client" (SameClient, the activity counts; spec 015): an address starts with "w:" or "b:", so it never
+-- equals a 4-character tag.
+function Node:ClientKey(address)
+    local peer = self.peers[address]
+    return peer and peer.node or address
+end
+
 -- True when the addresses are one client: the same address, or the same node tag on its other path (guild and
 -- Battle.net).
 function Node:SameClient(a, b)
-    if a == b then
-        return true
-    end
-    local peerA, peerB = self.peers[a], self.peers[b]
-    return peerA ~= nil and peerB ~= nil and peerA.node ~= nil and peerA.node == peerB.node
+    return self:ClientKey(a) == self:ClientKey(b)
 end
 
 -- True when a near (guild, group or friend) peer that cannot start now must be considered again once the pause, or a
@@ -427,8 +431,8 @@ function Node:CanStart(address, peer, now)
     -- channel stranger has one address (and its tag may match another stranger's by chance).
     if peer.node and peer.via ~= "channel" then
         for other, otherPeer in pairs(self.peers) do
-            if other ~= address and otherPeer.via ~= "channel" and otherPeer.node == peer.node and otherPeer.lastSession
-                and now - otherPeer.lastSession < cooldown then
+            if other ~= address and otherPeer.via ~= "channel" and self:SameClient(other, address)
+                and otherPeer.lastSession and now - otherPeer.lastSession < cooldown then
                 return false
             end
         end

@@ -304,6 +304,10 @@ move to "Verified in game":
   Accepted without a check for 1.2.0 (2026-11-12): the same "First Last" rule as the senders seen.
 - Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the
   skill ranges of the place key can go.
+- Does a crash write saved variables, or keep a CVar set during the session (spec 015 review 4)? WoW writes
+  saved variables only at a logout, a `/reload` or the exit; if a crash in fishing mode with the splash focus on
+  leaves music, ambience and dialog at 0 on the next start, reopen the dropped item of `docs/tech-debt.md`
+  ("History", 2026-11-16).
 - Does `GetLootSlotInfo(i)` give the item quality as its 5th value for fishing loot, also for an item the client has
   not cached (the rare sound of spec 013, V51, `docs/checklists/sounds.md` step 3)?
 - Do addon messages in a custom channel work now (V19 again)? On 2026-11-16 the sender got its own message back

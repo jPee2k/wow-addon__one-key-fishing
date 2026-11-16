@@ -121,8 +121,9 @@ Cross-module rules:
 - Bump `DB_SCHEMA` and add a migration in `Core/Core.lua` whenever a saved field is renamed, moved or reshaped;
   `ApplyDefaults` fills missing keys without overwriting. `OneKeyFishingDB` is account-wide, `OneKeyFishingCharDB`
   per character; the fields are listed in [core.md](docs/architecture/core.md).
-- Everything fishing mode changes (CVars, gear, camera) is stored in the character DB *before* it is changed;
-  what is restored when is in constitution Principle III and [fishing-mode.md](docs/architecture/fishing-mode.md).
+- Everything fishing mode changes (CVars, gear, camera) is stored in the character DB *before* it is changed; the
+  "Sound effects" rows the player changed by hand survive a `/reload` in its `resumeOwned`; what is restored when is
+  in constitution Principle III and [fishing-mode.md](docs/architecture/fishing-mode.md).
 - Slash commands are declared only in `Core/Commands.lua`; modules register none.
 - The layers (table above): a lower layer never names a UI module; the UI listens to messages and calls module
   functions. `npm run check` reports a break.

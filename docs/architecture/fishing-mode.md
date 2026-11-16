@@ -27,11 +27,16 @@ Enter and exit fishing mode.
 
 - Every changed CVar, the gear swap and the camera zoom are stored in the character DB *before* changing anything.
   As a result, exit, logout, `/reload` (which also fires `PLAYER_LOGOUT`) and crashes restore the CVars
-  (`PLAYER_LOGIN` restores any left over) and the gear.
+  (`PLAYER_LOGIN` restores any left over) and the gear. WoW writes saved variables only at a logout, a
+  `/reload` or the exit, never at a crash (general WoW behaviour, not checked on Forever: `docs/forever-api.md`), and the logout restores the CVars before that write: a crash leaves no
+  record on disk, so the login restore covers what an earlier session left (spec 015 review 4).
 - The saved zoom (Camera.lua) survives a `/reload` but is dropped on a real login (`isInitialLogin`), so after a
   logout, crash or disconnect in fishing mode the previous zoom is not restored.
-- `PLAYER_LOGOUT` with the mode on restores the CVars and sets `resumeMode`; `PLAYER_ENTERING_WORLD` resumes only
-  when `isReloadingUi` is true too, after a 1 second delay, because bindings and the spellbook are not ready then.
+- `PLAYER_LOGOUT` with the mode on restores the CVars, sets `resumeMode`, and keeps the live rows the player owns
+  (below; the "Sound effects" rows, which their switch takes back; the others are set again by the resume) in
+  `charDB.resumeOwned`; `PLAYER_ENTERING_WORLD` takes and clears both and resumes only
+  when `isReloadingUi` is true too, starting with those rows as the player's (a real login or a resume that does not
+  happen drops them), after a 1 second delay, because bindings and the spellbook are not ready then.
   If it cannot resume (combat), the camera comes back at once and the gear after combat.
 - Leaving in combat only sets a pending exit and says "Leaving fishing mode after combat." once; nothing is equipped
   in the lockdown, and the whole exit (gear, camera, CVars) runs on `PLAYER_REGEN_ENABLED`.
@@ -52,7 +57,8 @@ Enter and exit fishing mode.
 - A restore puts the old value back only while the CVar still holds the row's applied value (numbers compared as
   numbers); a value the player changed while fishing stays and only its record is dropped (constitution Principle
   III, spec 013). Such a row is not set again in the same session (a fight's end does not silence the music the
-  player turned up), until its setting is switched on again or the next entry. A lifted row the player changes during
+  player turned up), also across a `/reload` that resumes the mode (spec 015), until its setting is switched on
+  again or the next entry. A lifted row the player changes during
   the fight is marked the same way: its value right after the lift is kept and compared at the fight's end. A saved name without a row (an older
   build's) is set back as it was.
 - The rows of the "Sound effects" page (spec 013): `Sound_EnableSoundWhenGameIsInBG` (`backgroundSound`, live, kept

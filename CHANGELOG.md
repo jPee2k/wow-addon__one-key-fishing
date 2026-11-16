@@ -26,6 +26,10 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - Fishing mode puts a game setting back only while it still holds the addon's value: a setting you changed
   yourself while fishing (in the game's options) keeps your value.
 
+### Fixed
+
+- A partner who logs in again no longer counts twice in the exchange's player count for an hour.
+
 ## [1.2.0] - 2026-11-12
 
 ### Added

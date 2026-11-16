@@ -150,6 +150,50 @@ test("a hand change of the music while fishing is kept, the rest put back", func
     eq(mix(), "0.3 0.6 1.0 1 0.5", "the music as the player set it")
 end)
 
+-- Spec 015 (contract M3): a /reload with the mode on keeps the rows the player changed by hand.
+test("a logout with the mode on keeps the hand-changed music for the resume", function()
+    ns.db.settings.splashFocus = true
+    set_mix("0.4", "0.6", "1.0", "1", "0.5")
+    enter_fishing_mode()
+    eq(cvar("Sound_MusicVolume"), "0", "silenced")
+    C_CVar.SetCVar("Sound_MusicVolume", "0.7") -- by hand
+    fire("PLAYER_LOGOUT")
+    eq(cvar("Sound_MusicVolume"), "0.7", "the player's value")
+    eq(cvar("Sound_AmbienceVolume"), "0.6", "the rest restored")
+    eq(ns.charDB.resumeMode, true, "the mode resumes after a /reload")
+    eq(ns.charDB.resumeOwned and ns.charDB.resumeOwned.Sound_MusicVolume, true, "the music is the player's")
+    eq(ns.charDB.resumeOwned.Sound_AmbienceVolume, nil, "the ambience is not")
+    ns.Mode.Exit()
+    ns.charDB.resumeMode, ns.charDB.resumeOwned = nil, nil
+end)
+
+-- Review 2 of spec 015: only the rows of the "Sound effects" page (live, taken back by their switch) stay the
+-- player's across a /reload; a hand change of the soft target, which the hook key needs, is set again by the resume.
+test("a logout keeps only the hand-changed sound rows, not the soft target", function()
+    ns.db.settings.splashFocus = true
+    set_mix("0.4", "0.6", "1.0", "1", "0.5")
+    C_CVar.SetCVar("SoftTargetInteract", "0")
+    enter_fishing_mode()
+    C_CVar.SetCVar("Sound_MusicVolume", "0.7") -- by hand
+    C_CVar.SetCVar("SoftTargetInteract", "1") -- by hand, or by another addon
+    fire("PLAYER_LOGOUT")
+    eq(ns.charDB.resumeOwned and ns.charDB.resumeOwned.Sound_MusicVolume, true, "the music stays the player's")
+    eq(ns.charDB.resumeOwned.SoftTargetInteract, nil, "the soft target is set again after the /reload")
+    ns.Mode.Exit()
+    ns.charDB.resumeMode, ns.charDB.resumeOwned = nil, nil
+end)
+
+test("a logout with no hand change keeps no list", function()
+    ns.db.settings.splashFocus = true
+    set_mix("0.4", "0.6", "1.0", "1", "0.5")
+    enter_fishing_mode()
+    fire("PLAYER_LOGOUT")
+    eq(ns.charDB.resumeMode, true, "resumes")
+    eq(ns.charDB.resumeOwned, nil, "no list")
+    ns.Mode.Exit()
+    ns.charDB.resumeMode = nil
+end)
+
 test("a fight lifts the focus at once and it comes back after the fight", function()
     set_mix("0.4", "0.6", "1.0", "1", "0.5")
     enter_fishing_mode()

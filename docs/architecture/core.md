@@ -122,6 +122,7 @@ new field only needs a default.
 |---|---|---|
 | `gear` | `pole` (the chosen pole, nil = the best in the bags) and `items` (extra fishing item IDs) | Gear.lua |
 | `gearSwap`, the CVar and camera snapshots, `resumeMode` | what fishing mode changed, stored *before* the change so that exit, logout, `/reload` and crashes restore it ([fishing-mode.md](fishing-mode.md)) | Mode.lua, Gear.lua, Camera.lua |
+| `resumeOwned` | CVar name -> true: the live rows ("Sound effects") the player changed by hand while fishing, from the logout of a `/reload` to the resume, so the resumed mode leaves them alone (spec 015); nil otherwise | Mode.lua |
 | `savedCameraZoom` | the zoom before fishing mode; survives a `/reload`, dropped on a real login | Camera.lua |
 | `stats`, `countedCast` | the statistics buckets and the cast running across a `/reload` | Stats.lua |
 | `session` | the current fishing session (its counts and times; `skillStart`, the Fishing rank it began with, read by Fishing/Skill.lua) | Catch/Stats.lua, Fishing/Skill.lua (`skillStart`) |

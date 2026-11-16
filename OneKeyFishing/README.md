@@ -256,8 +256,8 @@ scanned auction prices for catch value**.
 
 In a fight the addon plays none of its sounds and lifts the splash focus at once; both come back after the fight if
 fishing mode is still on. Every game setting the page changes is put back when fishing mode ends (also after a
-`/reload`, a logout or a crash); a setting you changed yourself while fishing keeps your value. The sounds are the
-author's own and ship under the addon's MIT license.
+`/reload`, a logout or a crash); a setting you changed yourself while fishing keeps your value, also across a
+`/reload`. The sounds are the author's own and ship under the addon's MIT license.
 
 ## Minimap button
 
