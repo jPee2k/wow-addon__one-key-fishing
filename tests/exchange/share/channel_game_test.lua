@@ -2,8 +2,6 @@
 -- HELLO rounds, Share.HeardInChannel and the status count. The notice (and the channel's) was closed in an earlier
 -- session. The tests run in order and share one login.
 
-channel_on = true
-
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 load_addon()
 

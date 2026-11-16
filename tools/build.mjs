@@ -2,6 +2,8 @@
 //   --dev      files from the working folder, version "<package version>-dev+<commit>"
 //   --release  files from the last commit, version from package.json; refuses uncommitted changes, then
 //              runs tools/check.mjs --release (which also refuses open VERIFY markers) and the tests
+//   --force    with --release (`npm run build -- --force`): open VERIFY markers ship, listed as a warning; every
+//              other refusal stays
 // Only the TOC, the files it lists, Bindings.xml, the .ogg files under Media/ and LICENSE / README.md / CHANGELOG.md
 // are packaged (tools/addon.mjs), so nothing else can slip in.
 import fs from "node:fs";
@@ -11,8 +13,9 @@ import { zipSync } from "fflate";
 import { ADDON, ROOT, DIST, TOC, MEDIA_DIR, mediaFiles, packageEntries, fail } from "./addon.mjs";
 
 const mode = process.argv[2];
-if (mode !== "--dev" && mode !== "--release") {
-  fail("usage: node tools/build.mjs --dev | --release");
+const force = process.argv.slice(3).includes("--force");
+if ((mode !== "--dev" && mode !== "--release") || (force && mode !== "--release")) {
+  fail("usage: node tools/build.mjs --dev | --release [--force]");
 }
 const release = mode === "--release";
 
@@ -39,7 +42,8 @@ if (release) {
   if (gitText("status", "--porcelain") !== "") {
     fail("there are uncommitted changes; commit them first (or use `npm run dev`)");
   }
-  runScript("tools/check.mjs", "--release"); // also refuses open VERIFY markers
+  // Also refuses open VERIFY markers; with --force they ship, listed as a warning.
+  runScript("tools/check.mjs", "--release", ...(force ? ["--force"] : []));
   runScript("tests/run.mjs");
   readFile = (file) => git("show", `HEAD:${file}`);
   version = JSON.parse(readFile("package.json").toString("utf8")).version;

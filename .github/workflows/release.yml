@@ -21,10 +21,20 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
-      # A release must not ship code built on an assumption that waits for an in-game check (`-- VERIFY(<id>)`).
+      # A release must not ship code built on an assumption that waits for an in-game check (`-- VERIFY(<id>)`),
+      # unless the tag's message says --force (`git tag -a 1.3.0 -m "Release 1.3.0 --force"`): then the markers
+      # ship, listed as a warning. The checkout leaves an annotated tag as a plain ref, so the tag is fetched first.
+      # Only an annotated tag's own message counts: for a lightweight tag %(contents) is the commit's message.
       - name: No open VERIFY markers
         if: startsWith(github.ref, 'refs/tags/')
-        run: node tools/check.mjs --release
+        run: |
+          git fetch --force origin "+$GITHUB_REF:$GITHUB_REF"
+          if [ "$(git cat-file -t "$GITHUB_REF")" = tag ] \
+            && git tag -l --format='%(contents)' "$GITHUB_REF_NAME" | grep -qE -- '(^|[[:space:]])--force([[:space:]]|$)'; then
+            node tools/check.mjs --release --force
+          else
+            node tools/check.mjs --release
+          fi
 
   release:
     needs: check

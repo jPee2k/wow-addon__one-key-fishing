@@ -28,7 +28,9 @@ Comm.BUDGET = BUDGET -- Share.lua derives its per-sender limits from it
 -- session and part timeouts (Share.lua): a longer hold mid-session makes the peer give up and drop what it got.
 local THROTTLE_BACKOFF, MAX_THROTTLE_BACKOFF = 2, 8
 local LOCKDOWN_BACKOFF, MAX_LOCKDOWN_BACKOFF = 60, 15 * 60 -- seconds of pause after AddOnMessageLockdown
-local CHANNEL_REFUSALS = 2 -- refusals in a row on the channel path before Channel.lua moves on (research R4, R6)
+-- Refused sends in a row on the channel path before Channel.lua moves on (research R4, R6), and NOT_ALLOWED_IN_CHANNEL
+-- notices on one join before it stops for the session (spec 016).
+local CHANNEL_REFUSALS = 2
 local FILTER_WINDOW = 10 -- seconds a whispered name's "No player named ..." line is hidden
 local PAUSE_RECHECK = 5 -- seconds between checks while paused
 local MAX_REFUSALS = 5 -- refusals in a row before a path is left out until logout
@@ -251,15 +253,20 @@ local function SendNow(message)
 end
 
 -- One refusal of the channel path: a refused send (in a row), or the server's NOT_ALLOWED_IN_CHANNEL notice
--- (`notice`, from Channel.lua: counted on the current join, since its send returned success). At CHANNEL_REFUSALS
--- the channel moves on.
+-- (`notice`, from Channel.lua: counted on the current join, since its send returned success). The two counts stay
+-- apart (spec 016 contracts C4): CHANNEL_REFUSALS notices mean the server refuses every custom channel, and the
+-- channel stops for the session (OnRefused("server")); CHANNEL_REFUSALS refused sends belong to this channel, and it
+-- moves on to the next one (OnRefused()).
 function Comm.ChannelRefused(notice)
     if notice then
         channelNotices = channelNotices + 1
     else
         channelRefusals = channelRefusals + 1
     end
-    if channelRefusals >= CHANNEL_REFUSALS or channelNotices >= CHANNEL_REFUSALS then
+    if channelNotices >= CHANNEL_REFUSALS then
+        channelRefusals, channelNotices = 0, 0
+        ns.Channel.OnRefused("server")
+    elseif channelRefusals >= CHANNEL_REFUSALS then
         channelRefusals, channelNotices = 0, 0
         ns.Channel.OnRefused()
     end
@@ -309,7 +316,8 @@ local function Deliver(message)
             channelRefusals = 0
         end
     elseif result == ADDON_THROTTLE or result == CHANNEL_THROTTLE then
-        -- Addon messages to a channel throttle as on Retail and report ChannelThrottle (not shipped, V19).
+        -- VERIFY(V25): addon messages to a channel throttle as on Retail and report ChannelThrottle
+        -- (ten sent in one frame all arrived on 2026-11-16).
         Enqueue(message, true)
         throttleBackoff = throttleBackoff and math.min(throttleBackoff * 2, MAX_THROTTLE_BACKOFF) or THROTTLE_BACKOFF
         holdUntil = GetTime() + throttleBackoff
@@ -574,7 +582,8 @@ function Comm.Describe()
         ("back-off: throttle %s s, lockdown %s s"):format(tostring(throttleBackoff or 0),
             tostring(lockdownBackoff or 0)),
         "paths with refusals: " .. (#out > 0 and table.concat(out, ", ") or "none"),
-        ("channel refusals in a row %d, senders flooding parts %d"):format(channelRefusals, ns.CountKeys(flooded)),
+        ("channel refusals in a row %d, notices %d, senders flooding parts %d"):format(channelRefusals,
+            channelNotices, ns.CountKeys(flooded)),
     }
 end
 

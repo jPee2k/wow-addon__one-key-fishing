@@ -1,6 +1,8 @@
 # In-game checklist: the hidden public channel
 
-**Status**: the public channel is off in 1.2.0 (spec 010); this checklist applies only if it is switched on again.
+**Status**: the public channel was off in 1.2.0 (spec 010) and comes back in 1.3.0 (spec 016,
+`specs/016-public-channel-return`): V19 passed again on 2026-11-16, so every step below applies. Run it on a build of
+spec 016.
 The protections (steps 9 and 11) are checked with the exchange of [catch-exchange.md](catch-exchange.md) meanwhile.
 
 **Feature**: the exchange through the hidden public channel and the protections against data from strangers
@@ -18,6 +20,12 @@ release ships without the channel; skip steps 1-8 and 10 and run only steps 9 an
 message in a custom channel). Spec 010 set `Channel.AVAILABLE = false` and closed C6 as not shipped: only steps 9
 and 11 stay.
 
+**Status 2026-11-16**: `/run` tests showed V19 passing again (two players, levels 4 to 31, also in
+`OneKeyFishingShare`; the password and owner notices as the code expects: `docs/forever-api.md` "Verified in game").
+Spec 016 switches the channel on: all steps apply again. Step 2 needs two accounts that are not Battle.net friends
+(Battle.net carries the exchange too and would hide whether the channel did); the other faction (V20) cannot be
+checked on a PvE realm and stays open.
+
 ## Setup
 
 1. Install the build on every client (`npm run install-addon`), or link the working folder once (`npm run link`);
@@ -33,7 +41,9 @@ and 11 stay.
 2. [ ] **Strangers** (V19, V20): A and B fish at different places and stay online; within a few hours each one's
    "What can be caught here" at the other's place counts the other's catches, and "from K players" includes the
    other.
-3. [ ] **Not fishing** (V19): A stays in the channel outside fishing mode (`/okf share`).
+3. [ ] **Not fishing** (V19): A stays in the channel outside fishing mode (`/okf share`). `/okf debug` shows
+   `refused false`; after a refusal by the server it shows `refused server`, the state is locked and no fallback is
+   joined until the next login (spec 016 US4).
 4. [ ] **Lock** (V24): C takes the channel over (joins it first, or becomes its owner) and sets a password. A and B
    move to `OneKeyFishingShare2` (`/okf share`: "in use (fallback channel 2)") and keep exchanging; nothing shows in
    chat and no password prompt stays on screen. When C leaves and A becomes the owner of a locked channel, A clears

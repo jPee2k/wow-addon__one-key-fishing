@@ -13,7 +13,8 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
 
 - Canvas pages built from plain widgets, not the Settings setting-type API.
 - The "Shared database" subcategory holds the exchange setting, its text and a status line updated every second;
-  `SettingsUI.OpenShare()` opens it. While the release has the public channel (`Channel.AVAILABLE`), a second
+  `SettingsUI.OpenShare()` opens it. While the public channel is on (`Channel.AVAILABLE`, as it ships since spec
+  016; off only with the kill switch), a second
   checkbox "Use the public channel" sits under the first (greyed out while sharing is off, re-read on
   `SETTINGS_CHANGED`), with the channel's state line (`Share.ChannelLine()`) under it, and the text gains two
   sentences about the channel.

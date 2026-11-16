@@ -41,6 +41,19 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.2.1
+## 1.3.0 (next)
 
+Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sounds (spec 013), the catch kinds
+(spec 014), the tech-debt fixes (spec 015) and the public channel back (spec 016,
+`specs/016-public-channel-return`), released together.
+
+- Waits for: V51 (the rare sound, `checklists/sounds.md` step 3); spec 016 built and its in-game checks
+  ([checklists/public-channel.md](checklists/public-channel.md); step 2 needs two accounts that are not Battle.net
+  friends; V20, the other faction, stays open on a PvE realm).
+- The channel's markers (V21-V25, V41 of `specs/004-public-channel-sync/verification.md`, and V53 of
+  `specs/016-public-channel-return/verification.md`) block `npm run build` until the checklist runs, the author
+  accepts them, or the author releases with `--force`.
+- Already checked for spec 016 (2026-11-16, `/run`, not repeated): addon messages between players in a custom
+  channel, in `OneKeyFishingShare`, from level 4, ten in a frame, 255 bytes; the password, wrong password and owner
+  notices (`forever-api.md` "Verified in game").
 - Whatever the checks above find.

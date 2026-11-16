@@ -118,12 +118,18 @@ Code built on an assumption that only the game can confirm (while the game canno
 only after the author confirms the behaviour in game, or when the author accepts the assumption without a check
 (its row then says "Accepted", with what happens if it is wrong).
 
+`npm run build -- --force` is the author's way to release with markers still open: the markers ship, listed as a
+warning, and every other refusal of the build stays (uncommitted changes, the checks, the tests). The release
+workflow does the same for a tag whose message says `--force` (`git tag -a 1.3.0 -m "Release 1.3.0 --force"`). The
+open rows stay open in their `verification.md` and in [release-plan.md](release-plan.md).
+
 ## Building and installing
 
 - `npm run dev`: packages the working folder into `dist/OneKeyFishing/` and `dist/OneKeyFishing-<version>.zip`
   (version `x.y.z-dev+<commit>`; the zip name has `-` in place of the `+`).
 - `npm run build`: refuses uncommitted changes, runs check and test, then packages the last commit; it also
-  refuses while any `VERIFY` marker is left.
+  refuses while any `VERIFY` marker is left. `npm run build -- --force` packages with open markers, listed as a
+  warning ("Verification debt" above).
 - `npm run link` / `npm run unlink`: link `Interface/AddOns/OneKeyFishing` to `OneKeyFishing/` (a junction on
   Windows) for development without building; the unbuilt version shows as `dev`. Before the link, npm runs
   `prelink` (`tools/link.mjs --remove-copy`): an installed copy there (a real folder with `OneKeyFishing.toc`, as

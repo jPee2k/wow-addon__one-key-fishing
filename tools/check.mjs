@@ -8,13 +8,15 @@ import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
 import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
-  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems,
+  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems, markerVerdict,
   MEDIA_DIR, mediaFiles, mediaProblems, parseToc, privateProblems, testNameProblem }
   from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
 // --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
+// --release --force (npm run build -- --force, or a release tag whose message has --force): they ship, with a warning.
 const release = process.argv.includes("--release");
+const force = process.argv.includes("--force");
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
@@ -439,15 +441,18 @@ for (const file of files.filter((f) => f.endsWith(".md"))) {
   });
 }
 
-// Verification debt (findMarkers in addon.mjs): listed; with --release they are problems.
+// Verification debt (findMarkers and markerVerdict in addon.mjs): listed; with --release they are problems, unless
+// --force ships them with a warning.
 const markers = luaFiles.flatMap((file) => findMarkers(fs.readFileSync(file, "utf8"))
   .map((m) => `${rel(file)}:${m.line} ${m.id} ${m.what}`.trimEnd()));
-if (release) {
-  for (const marker of markers) {
-    problem(marker, "open VERIFY marker: close the verification debt before a release");
-  }
-} else if (markers.length > 0) {
-  console.log(`open verification markers (${markers.length}):\n${markers.map((m) => `  ${m}`).join("\n")}`);
+const verdict = markerVerdict(markers, { release, force });
+problems.push(...verdict.problems);
+const listed = verdict.list.map((m) => `  ${m}`).join("\n");
+if (verdict.forced) {
+  console.warn(`WARNING: --force: releasing with ${verdict.list.length} open verification marker(s), each an ` +
+    `assumption not confirmed in game:\n${listed}`);
+} else if (verdict.list.length > 0) {
+  console.log(`open verification markers (${verdict.list.length}):\n${listed}`);
 }
 
 if (problems.length > 0) {

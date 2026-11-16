@@ -1,6 +1,8 @@
--- Channel.lua with the public channel off, as it ships (specs/010-exchange-forever-fixes US2, contracts C1, C3): no
--- join, and a channel an earlier build left joined is left once at login, silently.
+-- Channel.lua with the public channel switched off (the kill switch, Channel.AVAILABLE false; spec 010 shipped it so,
+-- specs/010-exchange-forever-fixes US2, contracts C1, C3): no join, and a channel an earlier build left joined is left
+-- once at login, silently.
 
+channel_off = true
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 channels_joined = { { name = "OneKeyFishingShare", number = 1 } } -- joined by an earlier build
 chat_window_add(1, "OneKeyFishingShare")

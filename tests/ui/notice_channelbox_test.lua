@@ -2,8 +2,6 @@
 -- the channel's setting changed while the notice is owed (specs/003-guild-group-sync,
 -- data-model.md: a setting changed on the page that says what is shared counts as reading the notice). One login.
 
-channel_on = true
-
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"
 
 OneKeyFishingDB = { shareNotice = true } -- the channel's notice not read yet (FR-022)

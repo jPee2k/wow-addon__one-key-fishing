@@ -20,7 +20,8 @@ for step 7. Steps marked "B" are done on the second client.
    the setting on. After `/reload` the popup does not come back; on another character of the account neither.
 2. [ ] **Group** (V10, V11, V17): A and B fish at different places (a few casts each), then form a group. Within
    5 minutes each one's "What can be caught here" at the other's place shows the other's catches, "from 2 players".
-   The chat shows nothing at any point, and the addon joins no chat channel (the public channel is off, spec 010).
+   The chat shows nothing at any point, and the only chat channel the addon joins is the hidden public channel
+   ([public-channel.md](public-channel.md)).
    Partly: the spike (2026-11-06, 2026-11-08) saw `PARTY` return 0 and echo; the sessions of 2026-11-10/11 ran
    over Battle.net and the guild, so an exchange over the group itself is not seen yet (`/okf debug`: group 1 heard).
    2026-11-12, a group of three Battle.net friends: every `/okf share` says "group 0", as designed: a client is one

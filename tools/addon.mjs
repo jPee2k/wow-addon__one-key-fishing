@@ -57,6 +57,18 @@ export function findMarkers(text) {
   return markers;
 }
 
+// What the open markers mean for one check (each marker a string "file:line id what"):
+//   a normal check lists them; --release makes each one a problem; --release --force (the author releases with the
+//   assumptions still open) ships them and lists them as a warning instead.
+// Returns { problems, list, forced }: the problems to report, the markers to print, whether --force let them pass.
+export function markerVerdict(markers, { release = false, force = false } = {}) {
+  if (release && !force) {
+    return { problems: markers.map((m) => `${m}: open VERIFY marker: close the verification debt before a release`),
+      list: [], forced: false };
+  }
+  return { problems: [], list: markers, forced: release && force && markers.length > 0 };
+}
+
 // GameData/ holds data only (docs/architecture/game-data.md): its code has no function, no call, no L lookup and
 // names no module but ns.GameData. Only the code is read: string literals and comments (line and block) are left out, so
 // official names and explanations may say anything. Returns { line, message } per offending line.
