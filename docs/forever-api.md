@@ -259,6 +259,13 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   "[%s] That operation is not permitted in this channel."); no `CHAT_MSG_ADDON` echo comes back. The same for a
   channel the player owns and for `OneKeyFishingShare` (V19 fails). A send to channel number 0 returns 7
   (`InvalidChannel`). The addon's channel is off (spec 010).
+- Addon messages in a custom channel, again (`/run` test, 2026-11-16, Drog Earthshaker): `JoinTemporaryChannel("OkfTest42")`
+  gives `YOU_CHANGED` on channel 5; `C_ChatInfo.SendAddonMessage("OKFT", "ping", "CHANNEL", 5)` returns `0`, **no**
+  `NOT_ALLOWED_IN_CHANNEL` comes, and the sender's own `CHAT_MSG_ADDON` (`OKFT`, `ping`, `CHANNEL`, "Drog
+  Earthshaker") comes back; `LeaveChannelByName` gives `YOU_LEFT`. The refusal of 2026-11-06 no longer shows for
+  this character; why (a server change, or a limit by character level or account: the 11-06 test was at level 11)
+  is open, and whether another player receives the message is not seen yet (see "Open questions"). The addon's
+  channel stays off until then.
 - Character names (`/run` tests, 2026-11-06): a Forever character has a first and a last name, written with a space
   ("Drog Earthshaker"); players whisper with `/w First Last`, and chat shows "[First Last]". `UnitName("player")`
   returns two values, the first name and the last name ("Drog", "Earthshaker"; the second is not a realm), so
@@ -299,6 +306,18 @@ move to "Verified in game":
   skill ranges of the place key can go.
 - Does `GetLootSlotInfo(i)` give the item quality as its 5th value for fishing loot, also for an item the client has
   not cached (the rare sound of spec 013, V51, `docs/checklists/sounds.md` step 3)?
+- Do addon messages in a custom channel work now (V19 again)? On 2026-11-16 the sender got its own message back
+  and no `NOT_ALLOWED_IN_CHANNEL` (see "Verified in game"). Left to check with a friend, with the `/run` lines of
+  that test (a listener frame for `CHAT_MSG_ADDON` with prefix `OKFT` and `CHAT_MSG_CHANNEL_NOTICE`,
+  `RegisterAddonMessagePrefix("OKFT")`, `JoinTemporaryChannel`, `SendAddonMessage(..., "CHANNEL", id)`):
+  1. Another player in the same channel receives the message (`CHAT_MSG_ADDON OKFT ping CHANNEL <sender>`), both
+     ways; the two share no guild, group or friends list.
+  2. The same under the addon's own name `OneKeyFishingShare` (refused on 2026-11-06).
+  3. A low-level character (below 10, and one at 11 like the 11-06 test) sends without `NOT_ALLOWED_IN_CHANNEL`:
+     if it is refused, the limit is by level and the channel must handle it.
+  4. Several messages in a row (ten `ping`s in a second) all arrive: the server's rate limit for the channel.
+  If all pass, the channel comes back in its own feature (`Channel.AVAILABLE = true`, the checks of
+  [checklists/public-channel.md](checklists/public-channel.md), a review of `Exchange/Channel.lua`).
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
 
