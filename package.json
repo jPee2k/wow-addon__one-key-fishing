@@ -25,7 +25,8 @@
     "harvest": "node tools/harvest.mjs",
     "prelink": "node tools/link.mjs --remove-copy",
     "link": "node tools/link.mjs",
-    "unlink": "node tools/link.mjs --remove"
+    "unlink": "node tools/link.mjs --remove",
+    "sounds": "node tools/sounds.mjs"
   },
   "devDependencies": {
     "fengari": "0.1.5",

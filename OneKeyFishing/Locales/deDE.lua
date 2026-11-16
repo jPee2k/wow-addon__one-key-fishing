@@ -411,4 +411,30 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Everywhere"] = "Überall"
     L["Open water"] = "Offenes Wasser"
     L["Pools"] = "Schwärme"
+    -- Fishing/Sound.lua, UI/Settings.lua, UI/Minimap.lua: the fishing sounds (spec 013)
+    L["Sound effects"] = "Soundeffekte"
+    L["Play fishing sounds"] = "Angelgeräusche abspielen"
+    L["A bell rings when you cast, and a sound plays when you hook."] =
+        "Eine Glocke läutet beim Auswerfen, und ein Ton erklingt beim Anhieb."
+    L["A notification follows when the loot holds an Uncommon or better item."] =
+        "Eine Benachrichtigung folgt, wenn die Beute einen seltenen oder besseren Gegenstand enthält."
+    L["Only while fishing mode is on; silent in a fight."] = "Nur im Angelmodus; im Kampf still."
+    L["Turn fishing sounds on"] = "Angelgeräusche einschalten"
+    L["Turn fishing sounds off"] = "Angelgeräusche ausschalten"
+    -- UI/Settings.lua: the volume of the fishing sounds (spec 013)
+    L["Volume"] = "Lautstärke"
+    L["%d%%"] = "%d%%"
+    -- UI/Settings.lua: game sound in the background while fishing (spec 013)
+    L["Fishing sound in the background"] = "Angelgeräusche im Hintergrund"
+    L["All game sound keeps playing while the game window is in the background."] =
+        "Der gesamte Spielsound läuft weiter, während das Spielfenster im Hintergrund ist."
+    L["Only while fishing mode is on; your own game setting comes back when the mode ends."] =
+        "Nur im Angelmodus; deine eigene Spieleinstellung kehrt zurück, wenn der Modus endet."
+    -- UI/Settings.lua: the splash focus (spec 013)
+    L["Splash focus while fishing"] = "Platschen beim Angeln hervorheben"
+    L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
+        "Musik, Umgebung und Dialoge verstummen und die Soundeffekte werden lauter, damit das Platschen des " ..
+        "Schwimmers hervorsticht."
+    L["Lifted in a fight; everything comes back when fishing mode ends."] =
+        "Im Kampf aufgehoben; alles kehrt zurück, wenn der Angelmodus endet."
 end)

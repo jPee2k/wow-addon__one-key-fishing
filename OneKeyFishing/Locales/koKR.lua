@@ -382,4 +382,26 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Everywhere"] = "모든 곳"
     L["Open water"] = "탁 트인 물"
     L["Pools"] = "물고기 떼"
+    -- Fishing/Sound.lua, UI/Settings.lua, UI/Minimap.lua: the fishing sounds (spec 013)
+    L["Sound effects"] = "효과음"
+    L["Play fishing sounds"] = "낚시 효과음 재생"
+    L["A bell rings when you cast, and a sound plays when you hook."] = "던질 때 종이 울리고, 낚아챌 때 소리가 납니다."
+    L["A notification follows when the loot holds an Uncommon or better item."] = "전리품에 고급 이상의 아이템이 있으면 알림음이 이어집니다."
+    L["Only while fishing mode is on; silent in a fight."] = "낚시 모드에서만 재생되며, 전투 중에는 울리지 않습니다."
+    L["Turn fishing sounds on"] = "낚시 효과음 켜기"
+    L["Turn fishing sounds off"] = "낚시 효과음 끄기"
+    -- UI/Settings.lua: the volume of the fishing sounds (spec 013)
+    L["Volume"] = "음량"
+    L["%d%%"] = "%d%%"
+    -- UI/Settings.lua: game sound in the background while fishing (spec 013)
+    L["Fishing sound in the background"] = "백그라운드에서도 낚시 소리"
+    L["All game sound keeps playing while the game window is in the background."] =
+        "게임 창이 백그라운드에 있어도 모든 게임 소리가 계속 재생됩니다."
+    L["Only while fishing mode is on; your own game setting comes back when the mode ends."] =
+        "낚시 모드에서만 적용되며, 모드가 끝나면 원래 게임 설정으로 돌아갑니다."
+    -- UI/Settings.lua: the splash focus (spec 013)
+    L["Splash focus while fishing"] = "낚시 중 물소리 강조"
+    L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
+        "음악, 환경음, 대화가 꺼지고 효과음이 커져서 찌의 물소리가 잘 들립니다."
+    L["Lifted in a fight; everything comes back when fishing mode ends."] = "전투 중에는 해제되며, 낚시 모드가 끝나면 모두 원래대로 돌아갑니다."
 end)

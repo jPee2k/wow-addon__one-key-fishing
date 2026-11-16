@@ -28,6 +28,4 @@ to the bobber by itself.
 - **Fishing pools**: notice and point out nearby pools. The catch database already tells pool catches apart when
   the game does (the "Water" filter).
 - **Skill-up forecast**: how many catches until the next skill point or rank cap.
-- **Other game versions** (Classic, Anniversary, Season of Discovery): the map IDs differ, so the catch database
-  would need a seed per game version and `WOW_PROJECT_ID` in its records; addon messages in custom channels are
-  disabled there.
+

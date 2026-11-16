@@ -35,3 +35,14 @@ test("CatchDB records both items in the own cell", function()
     eq(unknown and unknown[1], 1, "one catch of the unknown item")
     eq(unknown and unknown[2], 1, "one piece of it")
 end)
+
+-- Spec 013 research R2: each item carries its quality, from the loot slot, else from the item ID, else nil.
+test("a caught item carries the loot slot's quality, else the item's, else none", function()
+    local caught
+    ns.On("FISH_CAUGHT", function(items) caught = items end)
+    item_qualities[KNOWN] = 3
+    fish_cast({ { KNOWN, 1, 2 }, { KNOWN, 1 }, { UNKNOWN, 1 } })
+    eq(caught[1].quality, 2, "the slot's quality")
+    eq(caught[2].quality, 3, "the item's quality when the slot has none")
+    eq(caught[3].quality, nil, "an unknown item without a slot quality has none")
+end)

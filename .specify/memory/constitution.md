@@ -117,8 +117,10 @@ Rationale: a small addon stays maintainable only while each module has one clear
 ## Technical Constraints
 
 - Shipped files live in `OneKeyFishing/` and are exactly the TOC, the files it lists,
-  `Bindings.xml` and the player manual `README.md`; the package adds only `LICENSE` and
-  `CHANGELOG.md` from the repository root.
+  `Bindings.xml`, the player manual `README.md` and the sound files (`.ogg` only) under
+  `OneKeyFishing/Media/`; the package adds only `LICENSE` and `CHANGELOG.md` from the repository
+  root. The game plays an addon's sound only from the addon folder, and a TOC cannot list sound
+  files; `Media/` holds no code and no other file type.
 - Lua, TOC and XML files are ASCII-only and lines are at most 120 characters, with three
   exceptions:
   - translation files (`Locales/<code>.lua` other than `enUS.lua`): UTF-8 text in their own
@@ -158,4 +160,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.5.3 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-07
+**Version**: 1.5.4 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-16

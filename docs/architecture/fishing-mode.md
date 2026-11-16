@@ -39,6 +39,46 @@ Enter and exit fishing mode.
   weapons back, sets the pending exit and prints the same line once; the key hint waits 5 s before repeating it.
 - While the mode is on, the plain binding body of the action key only runs when combat dropped the overrides, so
   `OneKeyFishing_ActionKeyIdle` says why the key does nothing.
+- The CVars are rows of `CVARS` (`name`, `value` or `value(old)`, `setting`, `live`, `combat`); `Mode.CVAR_NAMES`
+  lists them for the debug report. `SyncCVars()` brings every row to what it wants now (the mode on, its setting
+  on, not lifted by a fight): a wanted row not yet saved is recorded in `charDB.savedCVars` (`name -> old value`)
+  and then set (recorded also when it already holds the value, so a later hand change is seen); a saved row no
+  longer wanted is restored. The login line "Restored game settings..." shows only when a value came back. Enter
+  (after `active`)
+  syncs every row, `PLAYER_REGEN_DISABLED` / `ENABLED` only the `combat = "lift"` rows, `SETTINGS_CHANGED` only the
+  `live` rows of that setting, so the other rows keep their "next time" behaviour; exit, logout and `PLAYER_LOGIN`
+  restore every saved row. `Mode.InFight()` tells the fight (from `PLAYER_REGEN_DISABLED` to `ENABLED`, at load from
+  the lockdown, for a `/reload` in a fight); Fishing/Sound.lua reads it.
+- A restore puts the old value back only while the CVar still holds the row's applied value (numbers compared as
+  numbers); a value the player changed while fishing stays and only its record is dropped (constitution Principle
+  III, spec 013). Such a row is not set again in the same session (a fight's end does not silence the music the
+  player turned up), until its setting is switched on again or the next entry. A lifted row the player changes during
+  the fight is marked the same way: its value right after the lift is kept and compared at the fight's end. A saved name without a row (an older
+  build's) is set back as it was.
+- The rows of the "Sound effects" page (spec 013): `Sound_EnableSoundWhenGameIsInBG` (`backgroundSound`, live, kept
+  in a fight) and the splash focus (`splashFocus`, live, `combat = "lift"`): `Sound_MusicVolume`,
+  `Sound_AmbienceVolume`, `Sound_DialogVolume` to 0, `Sound_EnableSFX` to 1, `Sound_SFXVolume` to `max(old, 0.9)`.
+  A fight restores the focus rows at its start (before the lockdown) and sets them again at its end while the mode
+  stays on. The other rows keep their "next time you enter fishing mode" behaviour.
+
+## Fishing/Sound.lua
+
+The fishing sounds of the "Sound effects" page (spec 013), `ns.Sound`, loaded after `Catch/Catch.lua`.
+
+- Plays the author's files from `Media/Sounds/` through `PlaySoundFile(path, "Master")` in `pcall`, one handle per
+  event, the event's previous sound stopped first: `bell` on `FISHING_CAST_START` (once per cast), `hook` on the
+  result of the hook press (`FISH_CAUGHT` or `FISH_ESCAPED` of the cast, Catch.lua, once per cast), `rare` 0.4 s
+  after the hook sound when an item of the loot has `quality >= Enum.ItemQuality.Uncommon`. The fishing key runs the game's
+  interact action while the line is out, so no addon code sees the press; its result is what the addon hears.
+- Only while `settings.fishingSounds` is on, fishing mode is on and no fight is running (`Mode.InFight()`);
+  `MODE_CHANGED(false)`, `Sound.SetEnabled(false)` and `PLAYER_REGEN_DISABLED` stop every sound (a delayed rare sound
+  checks a token).
+- The volume (`settings.soundVolume`, 0-100 in steps of 10, `Sound.Volume()` clamps a saved value) picks the file:
+  100 % the master `Media/Sounds/<name>.ogg`, a step its copy in `Media/Sounds/Volume<step>/` (rendered by
+  `npm run sounds`: `PlaySoundFile` has no volume argument), 0 % nothing (`Sound.Path`).
+- `Sound.SetEnabled` is the only writer of `settings.fishingSounds` (fires `SETTINGS_CHANGED`); `Sound.Preview()`
+  plays the hook sound at the current volume for the settings slider, also outside fishing mode, not in a fight.
+- The game audio settings of the same page are rows of Mode.lua (above), not of this module.
 
 ## Fishing/Gear.lua
 

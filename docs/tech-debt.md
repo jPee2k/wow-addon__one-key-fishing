@@ -20,7 +20,36 @@ Seen in game; the fix and its test run without the game.
 
 - "A partner who relogs counts twice for an hour" (low)
 
+### Batch 12: game settings after a crash on another character (any time; no game needed)
+
+Found by the review of spec 013; the fix and its test run without the game.
+
+- "A crash leaves the game's sound settings to the character who fished" (medium)
+- "A /reload while fishing forgets the sound settings the player changed by hand" (low)
+
 ## Open items
+
+### A /reload while fishing forgets the sound settings the player changed by hand (low)
+
+- **Found**: code review of spec 013 (2026-11-16).
+- **Cause**: `Fishing/Mode.lua` keeps the rows whose value the player changed while fishing in `playerOwned`, in
+  memory only. A `/reload` restores every CVar at `PLAYER_LOGOUT` (the player's value stays) and resumes the mode
+  through `Mode.Enter`, which starts a new `playerOwned`; the splash focus silences the music the player had turned
+  up again.
+- **Direction**: keep `playerOwned` in the character record next to `resumeMode` across a `/reload` (dropped on a
+  real login and on exit). Test: a hand-changed music volume, `/reload` with the mode on, the music keeps the value.
+
+### A crash leaves the game's sound settings to the character who fished (medium)
+
+- **Found**: code review of spec 013 (2026-11-16). The spec's edge cases accept it ("the restore at the next login
+  happens when the character who fished logs in"); the splash focus makes it more visible than the older rows.
+- **Cause**: `charDB.savedCVars` (`Fishing/Mode.lua`) is per character, but the CVars are not: the game keeps them in
+  `Config.wtf`, shared by every character on the computer. After a crash or a disconnect in fishing mode with the
+  splash focus on, music, ambience and dialog stay at 0 until that same character logs in again; another character
+  plays without them, and if it enters fishing mode it records the 0 as its own value.
+- **Direction**: keep the record of the CVars in the account-wide `OneKeyFishingDB` (a moved saved field: bump
+  `DB_SCHEMA` with a migration from the character record), restore it at any character's login, and drop it when the
+  CVar no longer holds the applied value. Test: a record left by character A is restored when character B logs in.
 
 ### A partner who relogs counts twice for an hour (low)
 

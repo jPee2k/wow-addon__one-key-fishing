@@ -9,7 +9,7 @@ import path from "node:path";
 import luaparse from "luaparse";
 import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
   COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems,
-  parseToc, privateProblems, testNameProblem }
+  MEDIA_DIR, mediaFiles, mediaProblems, parseToc, privateProblems, testNameProblem }
   from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
@@ -18,6 +18,8 @@ const release = process.argv.includes("--release");
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
+// Git-ignored folders of the repository root only: `static/` holds the author's temporary files (examples, drafts).
+const SKIP_ROOT_DIRS = new Set(["static"]);
 // Globals of the Lua runtime itself; WoW API names belong in .luacheckrc.
 const LUA_BUILTINS = new Set(("_G assert error ipairs pairs next pcall print select tonumber tostring type unpack " +
   "math string table os coroutine setmetatable getmetatable rawget rawset rawequal xpcall").split(" "));
@@ -36,7 +38,7 @@ const inTests = (file) => rel(file).startsWith("tests/");
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) {
+      if (!SKIP_DIRS.has(entry.name) && !(dir === ROOT && SKIP_ROOT_DIRS.has(entry.name))) {
         walk(path.join(dir, entry.name), out);
       }
     } else if (!SKIP_FILES.has(entry.name)) {
@@ -206,8 +208,15 @@ if (!fs.existsSync(tocPath)) {
       problem(file, "missing (it is packaged with the addon)");
     }
   }
+  // The sound files under Media/ are packaged without a TOC line (constitution 1.5.4); mediaProblems reports any
+  // other file there and a master without its volume steps.
+  const media = mediaFiles();
+  for (const { file, message } of mediaProblems(media)) {
+    problem(`${ADDON}/${file}`, message);
+  }
   for (const file of files.filter(inAddon)) {
-    if (!packaged.has(relAddon(file))) {
+    const addonPath = relAddon(file);
+    if (!packaged.has(addonPath) && !addonPath.startsWith(`${MEDIA_DIR}/`)) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
     }
   }
@@ -257,7 +266,7 @@ const ignoreBlock = pkgmeta.match(/^ignore:\s*\n((?:[ \t]+-[^\n]*\n?)*)/m);
 const ignored = new Set(ignoreBlock ? [...ignoreBlock[1].matchAll(/-\s*(\S+)/g)].map((m) => m[1]) : []);
 const packagedRoot = new Set([ADDON, ...ROOT_EXTRAS]);
 for (const entry of fs.readdirSync(ROOT)) {
-  if (entry.startsWith(".") || SKIP_DIRS.has(entry) || SKIP_FILES.has(entry)) {
+  if (entry.startsWith(".") || SKIP_DIRS.has(entry) || SKIP_ROOT_DIRS.has(entry) || SKIP_FILES.has(entry)) {
     continue;
   }
   if (!packagedRoot.has(entry) && !ignored.has(entry)) {

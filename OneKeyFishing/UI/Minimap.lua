@@ -19,6 +19,9 @@ local function OpenMenu(owner)
         root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
         root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
         root:CreateButton(L["Settings"], ns.SettingsUI.Open)
+        -- A button whose text says what a click does, like the fishing mode entry above.
+        root:CreateButton(ns.Sound.IsEnabled() and L["Turn fishing sounds off"] or L["Turn fishing sounds on"],
+            function() ns.Sound.SetEnabled(not ns.Sound.IsEnabled()) end)
         local scan = root:CreateButton(L["Scan auction prices"], ns.Auction.Scan)
         if not ns.Auction.CanScan() then
             scan:SetEnabled(false)

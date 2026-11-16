@@ -377,4 +377,25 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Everywhere"] = "所有地方"
     L["Open water"] = "开阔水域"
     L["Pools"] = "鱼群"
+    -- Fishing/Sound.lua, UI/Settings.lua, UI/Minimap.lua: the fishing sounds (spec 013)
+    L["Sound effects"] = "音效"
+    L["Play fishing sounds"] = "播放钓鱼音效"
+    L["A bell rings when you cast, and a sound plays when you hook."] = "抛竿时响起铃声，收竿时播放音效。"
+    L["A notification follows when the loot holds an Uncommon or better item."] = "战利品中有优秀或更高品质的物品时，随后播放提示音。"
+    L["Only while fishing mode is on; silent in a fight."] = "仅在钓鱼模式中播放；战斗中静音。"
+    L["Turn fishing sounds on"] = "开启钓鱼音效"
+    L["Turn fishing sounds off"] = "关闭钓鱼音效"
+    -- UI/Settings.lua: the volume of the fishing sounds (spec 013)
+    L["Volume"] = "音量"
+    L["%d%%"] = "%d%%"
+    -- UI/Settings.lua: game sound in the background while fishing (spec 013)
+    L["Fishing sound in the background"] = "后台钓鱼声音"
+    L["All game sound keeps playing while the game window is in the background."] = "游戏窗口在后台时，所有游戏声音继续播放。"
+    L["Only while fishing mode is on; your own game setting comes back when the mode ends."] =
+        "仅在钓鱼模式中生效；模式结束后恢复你原来的游戏设置。"
+    -- UI/Settings.lua: the splash focus (spec 013)
+    L["Splash focus while fishing"] = "钓鱼时突出水花声"
+    L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
+        "音乐、环境音和对话静音，音效调高，让浮标的水花声更清楚。"
+    L["Lifted in a fight; everything comes back when fishing mode ends."] = "战斗中解除；钓鱼模式结束后全部恢复。"
 end)

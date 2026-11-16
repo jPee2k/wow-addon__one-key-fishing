@@ -399,4 +399,29 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Everywhere"] = "Усюди"
     L["Open water"] = "Відкрита вода"
     L["Pools"] = "Косяки"
+    -- Fishing/Sound.lua, UI/Settings.lua, UI/Minimap.lua: the fishing sounds (spec 013)
+    L["Sound effects"] = "Звукові ефекти"
+    L["Play fishing sounds"] = "Відтворювати звуки риболовлі"
+    L["A bell rings when you cast, and a sound plays when you hook."] =
+        "Дзвоник лунає, коли ви закидаєте, а звук — коли підсікаєте."
+    L["A notification follows when the loot holds an Uncommon or better item."] =
+        "Далі лунає сповіщення, коли в здобичі є предмет незвичайної якості або кращий."
+    L["Only while fishing mode is on; silent in a fight."] = "Лише в режимі риболовлі; у бою тиша."
+    L["Turn fishing sounds on"] = "Увімкнути звуки риболовлі"
+    L["Turn fishing sounds off"] = "Вимкнути звуки риболовлі"
+    -- UI/Settings.lua: the volume of the fishing sounds (spec 013)
+    L["Volume"] = "Гучність"
+    L["%d%%"] = "%d%%"
+    -- UI/Settings.lua: game sound in the background while fishing (spec 013)
+    L["Fishing sound in the background"] = "Звук риболовлі у фоні"
+    L["All game sound keeps playing while the game window is in the background."] =
+        "Увесь звук гри грає далі, коли вікно гри у фоні."
+    L["Only while fishing mode is on; your own game setting comes back when the mode ends."] =
+        "Лише в режимі риболовлі; ваше власне налаштування гри повертається, коли режим завершується."
+    -- UI/Settings.lua: the splash focus (spec 013)
+    L["Splash focus while fishing"] = "Фокус на сплеск під час риболовлі"
+    L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
+        "Музика, звуки оточення і діалоги вимикаються, а звукові ефекти гучнішають, щоб сплеск поплавця було чути."
+    L["Lifted in a fight; everything comes back when fishing mode ends."] =
+        "У бою знімається; усе повертається, коли режим риболовлі завершується."
 end)
