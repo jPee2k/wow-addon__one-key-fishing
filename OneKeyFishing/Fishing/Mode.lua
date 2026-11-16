@@ -166,7 +166,9 @@ function Mode.IsExiting()
     return pendingExit
 end
 
-function Mode.Enter()
+-- `owned`: the rows the player changed by hand before a /reload, which the resumed mode leaves to them (spec 015
+-- FR-005); nil for every other entry, which starts with none.
+local function Enter(owned)
     if active then
         return
     end
@@ -183,10 +185,16 @@ function Mode.Enter()
     ns.Camera.Apply()
     active = true
     pendingExit = false
-    playerOwned = {}
+    playerOwned = owned or {}
     SyncCVars() -- after `active`, which the rows read
     ns.Print(L["Fishing mode %s."], "|cff00ff00" .. L["ON"] .. "|r")
     ns.Fire("MODE_CHANGED", true)
+end
+
+-- Enter(owned) stays private: every caller from outside (the key, the toggle, the commands) starts with no
+-- player-owned rows (spec 015 contract M5).
+function Mode.Enter()
+    Enter(nil)
 end
 
 function Mode.Exit()
@@ -303,8 +311,20 @@ end)
 -- PLAYER_LOGOUT also fires on /reload: restore CVars now and resume the mode if it was only a reload.
 ns.RegisterEvent("PLAYER_LOGOUT", function()
     if active then
-        RestoreCVars()
+        RestoreCVars() -- marks every row the player changed by hand as theirs
         ns.charDB.resumeMode = true
+        -- Kept for the resume, so the mode does not silence again what the player turned up (spec 015 FR-005). Only
+        -- the live rows (the "Sound effects" page), which their switch takes back: the other rows are set again by the
+        -- resume as before, so a soft target changed by hand or by another addon cannot keep the hook key from the
+        -- bobber past a /reload.
+        local owned
+        for name in pairs(playerOwned) do
+            if ROWS[name] and ROWS[name].live then
+                owned = owned or {}
+                owned[name] = true
+            end
+        end
+        ns.charDB.resumeOwned = owned
     end
 end)
 
@@ -313,14 +333,17 @@ local RESUME_DELAY = 1
 
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadingUi)
     local resume = ns.charDB.resumeMode and isReloadingUi
-    ns.charDB.resumeMode = nil
+    -- The hand-changed rows count only for this resume; a real login or a resume that does not happen (a fight) is
+    -- the end of the mode, and drops them (spec 015 FR-006).
+    local owned = resume and ns.charDB.resumeOwned or nil
+    ns.charDB.resumeMode, ns.charDB.resumeOwned = nil, nil
     -- Only on a real login: loading screens also fire this event while the mode stays on.
     if isInitialLogin then
         ns.Camera.Forget()
     end
     C_Timer.After(RESUME_DELAY, function()
         if resume then
-            Mode.Enter()
+            Enter(owned)
         end
         if not active then
             -- Logged out or crashed in fishing gear, or the mode could not resume (e.g. in combat):

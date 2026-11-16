@@ -19,10 +19,29 @@ local function Recent(counts, now, weight)
 end
 
 -- A peer announcing a new tag: its previous one went with its old session (a relog draws a new one), so it leaves
--- byTag, unless it names another address (the same client by another path).
+-- byTag. The client's other address that still carries the old tag (its other path, already the same client) takes
+-- the new one at once, so the client counts once in the activity without waiting for its own HELLO (spec 015
+-- FR-007, review 3). Only an address of the other kind, as in Handlers.H (a client has one whisper and at most one
+-- Battle.net address), and no channel peer: a tag shared by chance or announced by another name is not followed.
 local function DropOldTag(self, address, peer, tag)
-    if peer.node and peer.node ~= tag and self.byTag[peer.node] == address then
-        self.byTag[peer.node] = nil
+    local old = peer.node
+    if not old or old == tag then
+        return
+    end
+    if self.byTag[old] == address then
+        self.byTag[old] = nil
+    end
+    if peer.via == "channel" then
+        return
+    end
+    -- Called before peer.node takes the new tag, so SameClient still compares the old one.
+    for other, otherPeer in pairs(self.peers) do
+        if other:sub(1, 1) ~= address:sub(1, 1) and otherPeer.via ~= "channel" and self:SameClient(other, address) then
+            otherPeer.node = tag
+            if self.byTag[old] == other then
+                self.byTag[old] = nil
+            end
+        end
     end
 end
 
@@ -586,18 +605,35 @@ local function NoActivity()
 end
 
 -- The peers of the last hour: heard per path, exchanged with, anybody in the last 30 minutes, the last exchange.
+-- Per client, not per address (spec 015 FR-007): the addresses of one ClientKey count once, under the path of the one
+-- whose HELLO was taken last (the other path's HELLOs of the same client only note the tag), so a partner who relogs
+-- does not count twice. Channel peers count per address, as before.
 function Node:Activity()
     local now, activity = self.env.now(), NoActivity()
-    for _, peer in pairs(self.peers) do
-        if peer.heard and now - peer.heard < HOUR then
-            local path = peer.via == "whisper" and "friend" or peer.via
-            activity.heard[path] = (activity.heard[path] or 0) + 1
+    local latest, synced = {}, {} -- ClientKey -> its peer heard latest; ClientKey -> true when synced
+    for address, peer in pairs(self.peers) do
+        local heard = peer.heard and now - peer.heard < HOUR
+        local key = address -- a channel peer by its address, as before
+        if peer.via == "channel" then
+            if heard then
+                activity.heard.channel = activity.heard.channel + 1
+            end
+        else
+            key = self:ClientKey(address)
+            if heard and (not latest[key] or peer.heard > latest[key].heard) then
+                latest[key] = peer
+            end
+        end
+        if peer.synced and now - peer.synced < HOUR then
+            synced[key] = true
         end
         activity.recent = activity.recent or (peer.heard ~= nil and now - peer.heard < ALONE_AFTER)
-        if peer.synced and now - peer.synced < HOUR then
-            activity.exchanged = activity.exchanged + 1
-        end
     end
+    for _, peer in pairs(latest) do
+        local path = peer.via == "whisper" and "friend" or peer.via
+        activity.heard[path] = (activity.heard[path] or 0) + 1
+    end
+    activity.exchanged = ns.CountKeys(synced)
     activity.lastExchange = self.lastExchange and now - self.lastExchange
     return activity
 end

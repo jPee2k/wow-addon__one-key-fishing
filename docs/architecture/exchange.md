@@ -140,10 +140,17 @@ with no chat line. Its tests switch it on with the stub flag `channel_on`.
 - Crossing `SUM`s: the smaller node tag leads, also when the two know each other by different addresses (a `SUM`
   is matched to the session by the tag).
 - One client on two paths (a guildmate or group member who is also a Battle.net friend) is one peer: a `HELLO`
-  whose tag was heard from an address of the other kind in the last 30 min only notes the tag there. So the client
-  counts once in `/okf share` and the status line, under the path heard first (each side may name a different
-  one), and keeps that path's cooldown: a Battle.net friend who joins the group stays on the 30 min cooldown and is
-  not counted under the group (seen in game 2026-11-12).
+  whose tag was heard from an address of the other kind in the last 30 min only notes the tag there. The client
+  keeps that path's cooldown: a Battle.net friend who joins the group stays on the 30 min cooldown (seen in game
+  2026-11-12). `Node:ClientKey(address)` (`ShareNode.lua`: the peer's tag, else the address) is the one definition
+  of the same client; `SameClient` compares it.
+- `Node:Activity` (`/okf share`, the status line, the debug report) counts clients, not addresses (spec 015): the
+  addresses of one `ClientKey` count once in "heard", under the path of the one whose `HELLO` was taken last (the
+  path that greeted first with the current tag), and once in "exchanged". A partner who relogs gets a new tag; the
+  first `HELLO` with it, by whichever path, moves the client's address of the other kind (`w:` / `b:`, not a channel
+  peer) that still carries the old tag to the new one and drops the old tag from `byTag` (`DropOldTag`), so the partner counts once at once (before
+  spec 015 it counted twice for an hour).
+  Channel peers count per address, in "heard" under the channel.
 - Received records are decoded, checked and stored one per `C_Timer.After(0)` step.
 - A sender of broken, unwanted or too much data is ignored until logout (not for an item this client does not
   know; the hourly limits are twice what an honest client can send to one peer, derived from `Comm.BUDGET` and the

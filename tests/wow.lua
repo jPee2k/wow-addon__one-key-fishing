@@ -2096,11 +2096,17 @@ function ClearOverrideBindings(owner)
     override_bindings[owner] = {}
 end
 
--- Turns fishing mode on out of combat without a gear swap or a camera zoom (Fishing is known, a key is bound),
--- then starts the equip and chat records afresh.
-function enter_fishing_mode()
+-- What fishing mode needs to start: Fishing is known and the action key is bound. It touches neither ns.db nor
+-- in_combat, so a test can call it before the addon loads (a /reload that resumes the mode, spec 015) or in a fight.
+function fishing_ready()
     known_spells[7620] = true
     bindings["ONEKEYFISHING_ACTION"] = { "`" }
+end
+
+-- Turns fishing mode on out of combat without a gear swap or a camera zoom (fishing_ready), then starts the equip
+-- and chat records afresh.
+function enter_fishing_mode()
+    fishing_ready()
     ns.db.settings.gear, ns.db.settings.camera = false, false
     in_combat = false
     ns.Mode.Enter()
@@ -2135,7 +2141,7 @@ end
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.
 -- The tests run on an empty bundled seed, whatever the harvest wrote into SeedData.lua (kept as bundled_seed for the
 -- tests that check it); beforeLogin runs between the files and the login, e.g. to set a test's own seed (ns.SeedData).
-function load_addon(beforeLogin)
+local function LoadAndEnter(beforeLogin, isInitialLogin, isReloadingUi)
     load_files(TOC_FILES)
     bundled_seed = ns.SeedData
     ns.SeedData = { epoch = 0, built = "", build = "", absorbed = {}, resets = {}, cells = {} }
@@ -2144,8 +2150,22 @@ function load_addon(beforeLogin)
     end
     fire("ADDON_LOADED", "OneKeyFishing")
     fire("PLAYER_LOGIN")
-    fire("PLAYER_ENTERING_WORLD", true, false)
+    fire("PLAYER_ENTERING_WORLD", isInitialLogin, isReloadingUi)
     check_no_errors() -- a handler that failed while loading stops the file
+end
+
+function load_addon(beforeLogin)
+    LoadAndEnter(beforeLogin, true, false)
+end
+
+-- A login or a /reload with the given saved data (spec 015): db and charDB become OneKeyFishingDB and
+-- OneKeyFishingCharDB (nil: a character or an account never seen), then the load as load_addon, entering the world
+-- as a real login (isInitialLogin) or a /reload (isReloadingUi), and the one second that Fishing/Mode.lua waits
+-- before it resumes the mode (RESUME_DELAY).
+function login_with(db, charDB, isInitialLogin, isReloadingUi)
+    OneKeyFishingDB, OneKeyFishingCharDB = db, charDB
+    LoadAndEnter(nil, isInitialLogin, isReloadingUi)
+    advance(1)
 end
 
 ---------------------------------------------------------------------------
