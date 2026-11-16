@@ -30,6 +30,8 @@
 --                                       { name, frame or tab, value }; set PanelTemplates_SetTab = nil to test
 --                                       the fallback without the game's tab functions
 --   known_items = { [itemID] = true }   C_Item.GetItemInfoInstant knows only these item IDs (nil: every ID)
+--   item_classes[itemID] = { classID, subClassID }  C_Item.GetItemInfoInstant returns the seven values with these
+--                                       class numbers (specs/014-catch-filters)
 --   settings_pages[name] = frame        the canvas pages registered as settings subcategories (read only)
 --   popup_frames_busy = true            StaticPopup_Show shows nothing and returns nil (every dialog frame taken)
 -- Fishing mode in a fight (specs/009-pin-combat-fixes):
@@ -46,7 +48,8 @@
 --   sound_stops                         StopSound calls, { handle, fadeout } (read; emptied by enter_fishing_mode)
 --   sound_play_result = false           PlaySoundFile plays nothing and returns false (default: true, a new handle)
 --   loot.items[i][3] = quality          the 5th value of GetLootSlotInfo (the slot's item quality; nil by default)
---   menu_entries                        the last MenuUtil context menu: { kind, text, isSelected, onClick } (read)
+--   menu_entries                        the last MenuUtil context menu: { kind, text, isSelected, onClick } (read);
+--                                       menu_entry(text) is the entry with that text
 --   MinimalSliderWithSteppersTemplate   CreateFrame gives a slider with Init, SetValue (fires OnValueChanged),
 --                                       Slider:GetValue (not on the frame, as in the game), SetEnabled /
 --                                       IsSliderEnabled, RegisterCallback
@@ -705,6 +708,15 @@ function scroll_rows(box)
     return rows
 end
 
+-- The elements of a scroll box's data provider, in order.
+function scroll_elements(box)
+    local elements = {}
+    for _, element in box.provider:Enumerate() do
+        table.insert(elements, element)
+    end
+    return elements
+end
+
 -- Types into a search box: its text, then OnTextChanged with userInput true.
 function type_text(box, text)
     box:SetText(text)
@@ -1113,6 +1125,10 @@ C_Item = {
         if (known and not known[itemID]) or unknown_items[itemID] then
             return nil
         end
+        local class = item_classes[itemID]
+        if class then
+            return itemID, "", "", "", 134400, class[1], class[2]
+        end
         return itemID
     end,
     DoesItemExistByID = function(item)
@@ -1192,6 +1208,8 @@ end
 -- Items the game client does not know yet (WoW Forever reveals some only when found): GetItemInfoInstant returns
 -- nil and DoesItemExistByID false for them. item_load_requests: the IDs passed to RequestLoadItemDataByID.
 unknown_items, item_load_requests = {}, {}
+-- itemID -> { classID, subClassID } for GetItemInfoInstant (the kinds of spec 014).
+item_classes = {}
 
 -- The game answers a RequestLoadItemDataByID: on success the client knows the item from then on.
 function item_loaded(itemID, success)
@@ -1302,6 +1320,15 @@ local function MenuRoot()
     function root:CreateCheckbox(text, isSelected, onClick) return Add("checkbox", text, isSelected, onClick) end
     function root:CreateDivider() return Add("divider") end
     return root
+end
+
+-- The entry of the last menu whose text is `text`, or nil.
+function menu_entry(text)
+    for _, entry in ipairs(menu_entries) do
+        if entry.text == text then
+            return entry
+        end
+    end
 end
 
 MenuUtil = {
@@ -2106,10 +2133,11 @@ function owe_gear()
 end
 
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.
--- The tests run on an empty bundled seed, whatever the harvest wrote into SeedData.lua; beforeLogin runs between
--- the files and the login, e.g. to set a test's own seed (ns.SeedData).
+-- The tests run on an empty bundled seed, whatever the harvest wrote into SeedData.lua (kept as bundled_seed for the
+-- tests that check it); beforeLogin runs between the files and the login, e.g. to set a test's own seed (ns.SeedData).
 function load_addon(beforeLogin)
     load_files(TOC_FILES)
+    bundled_seed = ns.SeedData
     ns.SeedData = { epoch = 0, built = "", build = "", absorbed = {}, resets = {}, cells = {} }
     if beforeLogin then
         beforeLogin()

@@ -213,6 +213,9 @@ local DB_DEFAULTS = {
         soundVolume = 100, -- the addon's sounds, 0-100 in steps of 10 (Sound.Volume clamps and rounds it)
         backgroundSound = false, -- game sound in the background while fishing (a live CVar row of Fishing/Mode.lua)
         splashFocus = false, -- music, ambience, dialog off, effects up while fishing (Mode.lua rows, lifted in fights)
+        -- The item kinds hidden in "What can be caught here" and the catalog (spec 014): kind name -> true; written
+        -- only by Catalog.SetKindShown.
+        hiddenKinds = {},
     },
     shareNotice = false, -- true once the one-time popup about the exchange was closed (Exchange/ShareGame.lua)
     shareNoticeChannel = false, -- true once the notice that names the public channel was closed (ShareGame.lua)

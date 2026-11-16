@@ -424,4 +424,14 @@ ns.AddTranslation("ukUA", "Українська", function(L)
         "Музика, звуки оточення і діалоги вимикаються, а звукові ефекти гучнішають, щоб сплеск поплавця було чути."
     L["Lifted in a fight; everything comes back when fishing mode ends."] =
         "У бою знімається; усе повертається, коли режим риболовлі завершується."
+    -- Item kinds (spec 014)
+    L["Fish"] = "Риба"
+    L["Containers"] = "Контейнери"
+    L["Potions & drinks"] = "Зілля й напої"
+    L["Reagents & herbs"] = "Реагенти й трави"
+    L["Other"] = "Інше"
+    L["Kinds: all"] = "Види: усі"
+    L["Kinds: %d of %d"] = "Види: %d з %d"
+    L["The kind filter hides every item."] = "Фільтр видів приховує всі предмети."
+    L["The kind filter hides the matches."] = "Фільтр видів приховує збіги."
 end)

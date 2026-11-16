@@ -4,7 +4,8 @@
 model and contracts are in `specs/005-catch-catalog/` (`data-model.md` "Catalog", `contracts/api.md`); the tab itself is
 in [ui.md](ui.md), the per-map views it is built from in [catch-db.md](catch-db.md); the in-game checklist is
 [catch-catalog.md](../checklists/catch-catalog.md). It owns no frames, so the tooltips use it without the window,
-and it sends no message: the tab polls `Catalog.GetVersion()` on the window's tick.
+and it sends no message about its data: the tab polls `Catalog.GetVersion()` on the window's tick. Its one message
+is a setting's, `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (spec 014, "Item kinds" below).
 
 ## The index
 
@@ -56,8 +57,31 @@ and it sends no message: the tab polls `Catalog.GetVersion()` on the window's ti
   `Catalog.CommandArg(rest)` turns an item link into its ID.
 - `Catalog.Describe()`: lines for `/okf debug`, counts and times only, never an item name.
 
+## Item kinds
+
+`specs/014-catch-filters`: both lists ("What can be caught here" and the catalog's) are grouped by kind, and the
+player may hide kinds.
+
+- `Catalog.KINDS` = `fish`, `containers`, `potions`, `reagents`, `other`, in display order; `Catalog.KindText(kind)`
+  is the translated name, looked up when drawn.
+- `Catalog.ItemKind(itemID)`: `GameData.ItemKinds.byItem` by ID, else `byClass` by the class numbers of
+  `C_Item.GetItemInfoInstant` (`"<class>:<subclass>"`, then `"<class>"`), else `"other"` (also for an item the
+  client does not know yet). Never by name or quality; not cached, so an item learned in the session moves at the
+  next draw ([game-data.md](game-data.md)).
+- `Catalog.Group(items)`: `list, hiddenCount`; `list` is what both tabs draw: `{ header = kind }` before each shown
+  kind's rows, in `KINDS` order, no header for an empty or hidden kind, the rows in their input order (not copied);
+  `hiddenCount` counts the rows of hidden kinds.
+- The choice: `settings.hiddenKinds` (hidden kind -> true, account-wide), read by `IsKindShown` and `ShownKinds`,
+  written only by `SetKindShown`, which fires `SETTINGS_CHANGED("hiddenKinds")` when it changed; a saved name that
+  is no kind is ignored, a kind the set does not name is shown.
+- The filter applies to finished lists only: the views, their sums, their cache keys (`CatchDB.FilterKey`) and the
+  indexes never see it, so a shown item's chance, pieces, price and players are the same whatever is hidden, and a
+  click costs no index rebuild (research R2 of spec 014). `Places`, `Spots`, `TooltipLines` and `MinimapLines`
+  ignore it; `Describe` ends with `kinds hidden: ...`.
+
 ## Tests
 
+`tests/catalog/kinds_test.lua` (the kinds, the seed coverage, `Group`, the choice),
 `tests/catalog/index_test.lua` (items, search, order, places, spots, names, tooltips, the name queue),
 `tests/catalog/spot_pin_test.lua` (a spot's pin target and the pin button; the pin itself is tested in
 `tests/core/pin_target_test.lua` and `pin_set_test.lua`), `tests/catalog/load_test.lua` (the largest

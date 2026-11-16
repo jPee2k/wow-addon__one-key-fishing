@@ -404,4 +404,14 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
         "음악, 환경음, 대화가 꺼지고 효과음이 커져서 찌의 물소리가 잘 들립니다."
     L["Lifted in a fight; everything comes back when fishing mode ends."] = "전투 중에는 해제되며, 낚시 모드가 끝나면 모두 원래대로 돌아갑니다."
+    -- Item kinds (spec 014)
+    L["Fish"] = "물고기"
+    L["Containers"] = "보관함"
+    L["Potions & drinks"] = "물약 및 음료"
+    L["Reagents & herbs"] = "재료 및 약초"
+    L["Other"] = "기타"
+    L["Kinds: all"] = "종류: 전체"
+    L["Kinds: %d of %d"] = "종류: %d/%d"
+    L["The kind filter hides every item."] = "종류 필터가 모든 아이템을 숨깁니다."
+    L["The kind filter hides the matches."] = "종류 필터가 검색 결과를 숨깁니다."
 end)

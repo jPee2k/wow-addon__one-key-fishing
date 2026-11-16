@@ -370,3 +370,13 @@ L["Only while fishing mode is on; your own game setting comes back when the mode
 L["Splash focus while fishing"] = true
 L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] = true
 L["Lifted in a fight; everything comes back when fishing mode ends."] = true
+-- Catalog.lua, UI/CatchHere.lua, UI/CatalogTab.lua: the item kinds (spec 014)
+L["Fish"] = true
+L["Containers"] = true
+L["Potions & drinks"] = true
+L["Reagents & herbs"] = true
+L["Other"] = true
+L["Kinds: all"] = true
+L["Kinds: %d of %d"] = true
+L["The kind filter hides every item."] = true
+L["The kind filter hides the matches."] = true

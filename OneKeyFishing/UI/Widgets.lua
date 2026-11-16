@@ -1,6 +1,6 @@
 -- Widgets: the frame helpers shared by the windows and pages of UI/: the panel button that grows to its text,
--- font strings, an item's link and icon, the item tooltip with the auction price, radio menus, the skill range label
--- and the auction scan button's state.
+-- font strings, an item's link and icon, the item tooltip with the auction price, radio and checkbox menus, the
+-- skill range label and the auction scan button's state.
 local _, ns = ...
 
 -- Widens a button to its text when the text is wider than the button's own width (translations are often
@@ -61,22 +61,35 @@ end
 
 local CHECK_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t "
 
--- A menu of choices ({ value, text }) with the selected one marked; choose(value) runs on a click.
-function ns.OpenRadioMenu(owner, choices, isSelected, choose)
+-- A menu of choices ({ value, text }) built with the game's element `method` ("CreateRadio" or "CreateCheckbox"):
+-- isMarked(value) marks a choice, onClick(value) runs on a click. Without that element: buttons with the check mark.
+local function OpenMarkedMenu(owner, choices, isMarked, onClick, method)
     if not (MenuUtil and MenuUtil.CreateContextMenu) then
         return
     end
     MenuUtil.CreateContextMenu(owner, function(_, root)
         for _, choice in ipairs(choices) do
-            local function IsSelected() return isSelected(choice.value) end
-            local function Select() choose(choice.value) end
-            if root.CreateRadio then
-                root:CreateRadio(choice.text, IsSelected, Select)
+            local function IsMarked() return isMarked(choice.value) end
+            local function Click() onClick(choice.value) end
+            if root[method] then
+                root[method](root, choice.text, IsMarked, Click)
             else
-                root:CreateButton((IsSelected() and CHECK_MARK or "") .. choice.text, Select)
+                root:CreateButton((IsMarked() and CHECK_MARK or "") .. choice.text, Click)
             end
         end
     end)
+end
+
+-- A menu of choices with the selected one marked; choose(value) runs on a click.
+function ns.OpenRadioMenu(owner, choices, isSelected, choose)
+    OpenMarkedMenu(owner, choices, isSelected, choose, "CreateRadio")
+end
+
+-- A menu of checkboxes; toggle(value) runs on a click. The game's checkbox keeps the menu open and redraws its marks
+-- (MenuResponse.Refresh in Blizzard_Menu/MenuTemplates.lua); the fallback buttons close it after a click
+-- (specs/014-catch-filters, research R6).
+function ns.OpenCheckboxMenu(owner, choices, isChecked, toggle)
+    OpenMarkedMenu(owner, choices, isChecked, toggle, "CreateCheckbox")
 end
 
 -- Every key bound to a binding, readable, joined with " / " (players bind a punctuation key once per keyboard

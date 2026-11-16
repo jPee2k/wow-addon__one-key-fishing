@@ -119,6 +119,11 @@ The second tab of the statistics window lists what the spot you stand at gives:
 - **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
   you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from 3
   players");
+- the items are grouped by kind, under **Fish**, **Containers** (chests, crates, trunks, clams), **Potions &
+  drinks**, **Reagents & herbs** and **Other**; **Kinds** hides the kinds you do not want to see: tick and untick
+  them in its menu ("Kinds: 2 of 5" says a filter is on). The choice is the same in the catch catalog and is kept
+  between sessions. Hiding a kind does not change the chances of the others; with every kind hidden the tab says
+  "The kind filter hides every item.";
 - WoW Forever does not tell a catch from a fish pool apart from open water, so the numbers count both together;
 - an item your game client does not know yet (some items in WoW Forever stay unknown until you find one) shows as
   **Unknown item** with a question mark icon; its tooltip says how many players reported it on this map, whether the
@@ -142,8 +147,10 @@ and, with the shared catch database on, what other players reported.
 - **Search**: type part of an item name, in your game client's language and in any letter case; the list narrows
   with every letter. Grey items only show when you search for them. An item your game client does not know yet
   stays out of the list until the game loads it.
-- **Filters**: **Skill** (all ranges by default) and **Source** (**All** or **Only mine**), as on the "What can be
-  caught here" tab.
+- **Filters**: **Skill** (all ranges by default), **Source** (**All** or **Only mine**) and **Kinds**, as on the
+  "What can be caught here" tab: the list is grouped under the same kind headers, and a kind you hide there is hidden
+  here too. A search whose matches are all hidden says "The kind filter hides the matches."; an item opened by its
+  link or from the other tab always shows, whatever its kind.
 - **An item**: click it to see the zones it was caught in, with its chance there, the zone's catches and the span
   of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
   data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
