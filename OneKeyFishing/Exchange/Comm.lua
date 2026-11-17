@@ -316,7 +316,7 @@ local function Deliver(message)
             channelRefusals = 0
         end
     elseif result == ADDON_THROTTLE or result == CHANNEL_THROTTLE then
-        -- VERIFY(V25): addon messages to a channel throttle as on Retail and report ChannelThrottle
+        -- Addon messages to a channel throttle as on Retail and report ChannelThrottle (V25, accepted 2026-11-17)
         -- (ten sent in one frame all arrived on 2026-11-16).
         Enqueue(message, true)
         throttleBackoff = throttleBackoff and math.min(throttleBackoff * 2, MAX_THROTTLE_BACKOFF) or THROTTLE_BACKOFF

@@ -37,7 +37,8 @@ mob to start a fight; a second window (a browser) to put in front for step 4; a 
    the line was `UI_INFO_MESSAGE 417 No fish are hooked.`, and the too-early press ends the line. V46, V47 confirmed.
 3. [ ] **The rare sound** (V51, FR-008): fish until a green (Uncommon) or better item comes (or a fished container of
    that quality). Expected: the hook sound, then the notification a moment later. A white fish: no notification.
-   Skipped 2026-11-16: no green item caught yet; the author reports back when one comes. While fishing, note too
+   Skipped 2026-11-16: no green item caught yet; the author reports back when one comes. **Accepted 2026-11-17**
+   without a check for release 1.3.0 (V51 row); still to check when a green item comes. While fishing, note too
    whether "Your fish got away!" ever shows without a press (a bite left alone): it would play a hook sound then.
 4. [x] **In the background** (V49, US3): turn on "Fishing sound in the background", enter fishing mode, cast and put
    the browser in front of the game. Expected: the splash and the addon's sounds are heard. Options -> Audio shows

@@ -164,7 +164,8 @@ end
 ---------------------------------------------------------------------------
 -- A chat window shows the lines and notices of the channels in its own list only, so the channel is taken out of
 -- every list that has it (also after the game reloads the lists).
--- VERIFY(V21): removing the channel from every chat window and the CHAT_MSG_CHANNEL* filters hide all its lines
+-- Removing the channel from every chat window and the CHAT_MSG_CHANNEL* filters hide all its lines (a stranger's
+-- text typed into it showed nowhere, 2026-11-17, V21).
 -- index: one of the names (default: the current one).
 local function RemoveFromWindows(index)
     index = index or current
@@ -205,7 +206,8 @@ local function OnJoined()
 end
 
 -- Every leave of one of our names goes through here, so its YOU_LEFT is known for the addon's own.
--- VERIFY(V41): one YOU_LEFT per leave of addon code, answered before a later join of the name
+-- One YOU_LEFT per leave of addon code, answered before a later join of the name (V41, 2026-11-17: a leave by hand
+-- was told from the addon's own leaves)
 -- (one per typed leave seen on 2026-11-06; a join typed right after a leave in one macro was lost).
 local function LeaveName(index)
     echoes[index] = echoes[index] or {}
@@ -464,7 +466,8 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
         if owner and sawPassword then
             SelfHeal()
         end
-    -- VERIFY(V24): PLAYER_KICKED, PLAYER_BANNED and MUTED name the player in argument 2, as on Retail
+    -- PLAYER_KICKED, PLAYER_BANNED and MUTED name the player in argument 2, as on Retail (V24, accepted 2026-11-17:
+    -- players cannot kick in Forever)
     elseif token == "PLAYER_KICKED" then
         if IsMe(player) then
             Kicked()
@@ -486,7 +489,7 @@ ns.RegisterEvent("CHAT_MSG_CHANNEL_NOTICE_USER", OnNotice)
 ns.RegisterEvent("CHANNEL_PASSWORD_REQUEST", function(_, channel)
     local index = IndexOf(channel)
     if index then
-        -- VERIFY(V21): hiding the password prompt in the same frame leaves no visible flash and no blocked action
+        -- Hiding the password prompt in the same frame leaves no visible flash (seen 2026-11-17, V21).
         StaticPopup_Hide(POPUP)
         Lock(index)
     end
@@ -552,7 +555,7 @@ local function Restore(saved)
     return saved.lockWait == true, saved.sawPassword == true
 end
 
--- VERIFY(V22): joined 30-60 s after the login, General, Trade and the player's channels keep their numbers
+-- Joined 30-60 s after the login, General, Trade and the player's channels keep their numbers (V22, 2026-11-17)
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadingUi)
     local saved = ns.charDB.channelSession
     ns.charDB.channelSession = nil -- read once; a real login starts afresh

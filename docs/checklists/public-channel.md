@@ -40,7 +40,7 @@ checked on a PvE realm and stays open.
    line: nothing shows on A. **Passed in part 2026-11-17** (one login): A's channels by `GetChannelList()` are General 1,
    Trade 2, LocalDefense 3, Services 4, TradeLocal 5, the player's OOC 6 and `OneKeyFishingShare` 7, after all of
    them; B typed `/7 test from tester` into the addon's channel and no line showed on A or on B (`/chatlist` prints
-   nothing in Forever). Left: the numbers over three logins.
+   nothing in Forever). Three more logins kept General 1, Trade 2, LocalDefense 3, Services 4, TradeLocal 5 (V22).
 2. [x] **Strangers** (V19, V20): A and B fish at different places and stay online; within a few hours each one's
    "What can be caught here" at the other's place counts the other's catches, and "from K players" includes the
    other. **Passed 2026-11-17** (build `30cedf5`; A Green Neerg, B Corvus Druidus, not friends in game or on
@@ -72,13 +72,15 @@ checked on a PvE realm and stays open.
    waits for free slots). Left: leaving two channels brings the addon back.
 6. [ ] **Setting**: "Use the public channel" off leaves the channel at once, the guild exchange goes on, data from B
    stays counted; on joins at once. With "Use the shared catch database" off the channel setting is greyed out.
-7. [ ] **Left by hand** (V41): `/leave` the channel: the addon stays out until the next login (`/okf share`: "you
+7. [x] **Left by hand** (V41): `/leave` the channel: the addon stays out until the next login (`/okf share`: "you
    left it, back at the next login"). The same when the `/leave` comes within a few seconds of the addon's join (right
    after the login delay, or 60 s after a kick), of the move to a fallback channel (step 4), or of turning "Use the
    public channel" off and on again; turning it off and on twice in a row leaves the addon in the channel.
    `/join OneKeyFishingShare` by hand after that, then `/reload`: the channel stays in the chat window and the addon
    does not leave it (also with "Use the public channel" turned off). The setting's checkbox ticked while the notice
-   popup is open closes the popup.
+   popup is open closes the popup. **Passed in part
+   2026-11-17**: `/leave OneKeyFishingShare` gave "you left it, back at the next login" (V41). Left: the leaves within
+   a few seconds of a join, and a `/join` by hand kept over a `/reload`.
 8. [ ] **Slow join and kicks** (V24): `/okf debug` after a login on a busy realm: the channel is the main one
    (index 1), not a fallback, also when the join took a few seconds. C kicks A while A fights: A is back in the
    channel within about a minute of the combat's end, and B (who has not heard A this hour) counts A among the
@@ -106,8 +108,9 @@ checked on a PvE realm and stays open.
   3, 4 (a lock before the join, a lock while in, the addon owner's self-heal), 5 (the give-way; not yet the way
   back), 9 (the notice again) passed; step 8's kick cannot be done in Forever. Found and fixed: a join of the addon
   at the 20-channel limit returned nothing and stopped the channel for the session (now it waits for free slots).
-  Open: steps 1 over three logins, 5 the way back, 6, 7, 8 (slow join), 10, 11; a third account for two addon
-  clients moving together; the other faction (V20).
+  Later the same night: step 1 over three logins (V22) and step 7's leave by hand (V41) passed; V24 (kicks) and V25
+  (the throttle) were accepted without a check, to check later (`docs/release-plan.md`). Open: 5 the way back, 6, the
+  rest of 7, 8 (slow join), 10, 11; a third account for two addon clients moving together; the other faction (V20).
 
 - Date, build, accounts used:
 - Problems found:

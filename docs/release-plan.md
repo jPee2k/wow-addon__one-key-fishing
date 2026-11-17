@@ -43,15 +43,23 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 
 ## 1.3.0 (next)
 
+**Status 2026-11-17: no `VERIFY` marker left.** V21, V22, V23, V41 and V53 were confirmed in game; V24, V25 and V51
+were accepted by the author without a check, to be checked after the release:
+
+| ID | To check later | How |
+| --- | --- | --- |
+| V24 | A kick, ban or mute from a custom channel is noticed | When a way to kick in Forever is found: `checklists/public-channel.md` step 8 |
+| V25 | Channel messages throttle as on Retail | `checklists/public-channel.md` step 10 (a week with the channel on) |
+| V51 | The rare sound plays for an Uncommon catch | `checklists/sounds.md` step 3 |
+
 Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sounds (spec 013), the catch kinds
 (spec 014), the tech-debt fixes (spec 015) and the public channel back (spec 016,
 `specs/016-public-channel-return`), released together.
 
-- Waits for: V51 (the rare sound, `checklists/sounds.md` step 3); spec 016 built and its in-game checks
-  ([checklists/public-channel.md](checklists/public-channel.md); step 2 needs two accounts that are not Battle.net
-  friends; V20, the other faction, stays open on a PvE realm).
-- The channel's markers (V21-V25, V41 of `specs/004-public-channel-sync/verification.md`; V53 confirmed on 2026-11-17) block `npm run build` until the checklist runs, the author
-  accepts them, or the author releases with `--force`.
+- Waits for: the merge of `016-public-channel-return` into `develop`, the harvest (`checklists/public-channel.md`
+  step 11), then the release steps of [publishing.md](publishing.md). The in-game checks it waited for are done or
+  accepted (status above); V20, the other faction, stays open on a PvE realm.
+- No channel marker is left (status above); `npm run build` passes without `--force`.
 - Already checked for spec 016 (2026-11-16, `/run`, not repeated): addon messages between players in a custom
   channel, in `OneKeyFishingShare`, from level 4, ten in a frame, 255 bytes; the password, wrong password and owner
   notices (`forever-api.md` "Verified in game").
@@ -59,6 +67,6 @@ Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sou
   channel's name in `CHAT_MSG_ADDON`), the exchange through the channel (step 2), hiding and channel numbers (1),
   locks and the owner's self-heal (4), the give-way at the 20-channel limit (5, V23 closed), the notice again (9);
   the kick cannot be done in Forever. A bug found there (a join at the limit stopped the channel for the session) is
-  fixed. Still open: steps 6, 7, 5's way back, the slow join (8), a week (10), the harvest (11), and markers V21,
-  V22, V24, V25, V41.
+  fixed. Later the same night: V21, V22 and V41 confirmed. Still open, not blocking: steps 6, the rest of 7, 5's
+  way back, the slow join (8), a week (10).
 - Whatever the checks above find.
