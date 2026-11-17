@@ -4,6 +4,15 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Sort** in the catch catalog: by name, by price (the dearest first, with the price of each item in its row;
+  "No price" for items without one) or by chance (the chance in the item's best zone). The order applies inside each
+  kind and is kept between sessions. The catalog's buttons are now in three rows: the search; Skill, Source and Water;
+  Sort and Kinds.
+
 ## [1.3.0] - 2026-11-17
 
 ### Added

@@ -17,6 +17,7 @@ verified only after that (constitution, Principle IV).
 | [catch-catalog.md](catch-catalog.md) | the catalog tab, map pins, subzones, tooltips | `specs/005-catch-catalog` | two client languages, a fresh item cache |
 | [sounds.md](sounds.md) | the "Sound effects" page: the fishing sounds, their volume, background sound, splash focus | `specs/013-fishing-sounds` | one character, a mob for a fight, a second window |
 | [catch-filters.md](catch-filters.md) | the item kinds of "What can be caught here" and the catalog: the kind headers, the Kinds menu, the remembered choice | `specs/014-catch-filters` | one character, the bundled data, a second interface language |
+| [catalog-sort.md](catalog-sort.md) | the catalog's Sort button: by name, price and chance, the right column, the remembered order, the three rows of buttons | `specs/017-catalog-sort` | one character, the bundled data, an auction scan, a second character, French |
 
 The steps still open after 1.2.0 are listed in [docs/release-plan.md](../release-plan.md).
 

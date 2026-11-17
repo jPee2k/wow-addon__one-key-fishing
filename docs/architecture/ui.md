@@ -75,14 +75,20 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn from the reads of
 [catalog.md](catalog.md):
 
-- the list: a `SearchBoxTemplate` box (its `OnTextChanged` hooked, not set), the Skill, Source and Water buttons
-  (CatchHere's labels and menus), and a `WowScrollBoxList` of `Catalog.Items`; a status line for the index being
-  counted and the empty states;
+- the list: three rows of controls over a `WowScrollBoxList` of `Catalog.Items` (spec 017): a `SearchBoxTemplate`
+  box (its `OnTextChanged` hooked, not set); the Skill, Source and Water buttons (CatchHere's labels and menus; with
+  the longest translations they fill the row); the Sort button (a radio menu of `Catalog.SORTS`, the choice through
+  `Catalog.SetSort`) and the Kinds button; a status line for the index being counted and the empty states;
+- an item row's right column shows what the list is ordered by: `Zones: N` by name, the price per piece
+  (`ns.FormatMoney(Prices.Get)`, or "No price" in grey) by price, the best place's chance (`Catalog.ChanceText`) by
+  chance; its color is set on every draw, as rows are reused. `SETTINGS_CHANGED("catalogSort")` redraws the list
+  from its top; by price, `GET_ITEM_INFO_RECEIVED` of an item the list shows marks the page dirty (a vendor price
+  that arrives late; other items are ignored, as on the other tabs);
 - the item page: `Catalog.Places` as zone rows, each expanding into `Catalog.Spots` rows (indented), with the skill
   span, the chance or "Little data", the catches, and the players on hover;
 - without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37; kind headers not counted);
 - the list is grouped like CatchHere's (spec 014): `{ header = kind }` elements before each kind's items, drawn as a
-  gold label without icon, zones, hover or click; the same Kinds button (CatchHere's menu) at the top right, beside the search box; the fallback rows never end with
+  gold label without icon, zones, hover or click; the same Kinds button (CatchHere's menu) in the third row, after Sort; the fallback rows never end with
   a header (it needs room for one of its items, as in CatchHere); the status says "The kind
   filter hides every item." or, with a search, "The kind filter hides the matches." when rows exist but none is
   shown; `Show(itemID)` opens an item whatever its kind, while a name with one match chooses it only when its kind

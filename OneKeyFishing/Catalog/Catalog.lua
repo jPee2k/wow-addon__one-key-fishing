@@ -2,8 +2,8 @@
 -- items and the maps they were caught on, made of CatchDB's per-map views and rebuilt only for the maps whose
 -- change stamp moved, in frame steps when there are many. It also keeps the items' names in the client's language
 -- and their search keys, and answers the catalog tab and the tooltips. No frames, so the tooltips use it without
--- the window; it sends no message about its data (the tab follows GetVersion on the window's tick), only the kind
--- choice's SETTINGS_CHANGED (SetKindShown, spec 014).
+-- the window; it sends no message about its data (the tab follows GetVersion on the window's tick), only two
+-- settings' SETTINGS_CHANGED: the kind choice's (SetKindShown, spec 014) and the list order's (SetSort, spec 017).
 local _, ns = ...
 local L = ns.L
 
@@ -251,7 +251,8 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function()
     end
 end)
 
--- The known items of an index, sorted by name ({ itemID, name, zones, key, poor }); kept until the version moves.
+-- The known items of an index, sorted by name ({ itemID, name, zones, key, poor, chance, littleData: the item's best
+-- place in PlaceBefore order }); kept until the version moves.
 local function SortedItems(index)
     if index.sorted and index.sortedVersion == version then
         return index.sorted
@@ -261,7 +262,7 @@ local function SortedItems(index)
         local entry = NameOf(itemID)
         if entry.known then
             table.insert(rows, { itemID = itemID, name = entry.name, zones = #places, key = entry.key,
-                poor = IsPoor(entry) })
+                poor = IsPoor(entry), chance = places[1].chance, littleData = places[1].littleData })
         end
     end
     table.sort(rows, function(a, b)
@@ -287,9 +288,74 @@ function Catalog.State(filter)
     return index.state == "ready" and "ready" or "building"
 end
 
--- items, state: the items of the filter as { itemID, name, zones }, sorted by name (FR-002 to FR-005): known items
--- only, grey ones only with search text, and with search text only those whose name contains it. state is
--- "building" while no complete index exists, else "ready" (maybe stale).
+---------------------------------------------------------------------------
+-- The list's order (specs/017-catalog-sort)
+---------------------------------------------------------------------------
+Catalog.SORTS = { "name", "price", "chance" } -- the menu's order; "name" is the default
+
+local KNOWN_SORT = {}
+for _, sort in ipairs(Catalog.SORTS) do
+    KNOWN_SORT[sort] = true
+end
+
+-- The saved order of the catalog's list; a saved value that is no order reads as "name".
+function Catalog.GetSort()
+    local sort = ns.db and ns.db.settings.catalogSort
+    return KNOWN_SORT[sort] and sort or "name"
+end
+
+-- The one way to change the order (CLAUDE.md): fires SETTINGS_CHANGED("catalogSort") when it changed.
+function Catalog.SetSort(sort)
+    if not KNOWN_SORT[sort] or not ns.db or Catalog.GetSort() == sort then
+        return
+    end
+    ns.db.settings.catalogSort = sort
+    ns.Fire("SETTINGS_CHANGED", "catalogSort")
+end
+
+-- An order's text in the addon's language, looked up when drawn.
+function Catalog.SortText(sort)
+    if sort == "price" then
+        return L["Price"]
+    elseif sort == "chance" then
+        return L["Chance"]
+    end
+    return L["Name"]
+end
+
+-- Sorts the rows (by name already) in place by the saved order: "price" by Prices.Get (the value of the statistics:
+-- vendor or a trusted auction price), highest first; "chance" by the chance of the item's best place, highest first,
+-- the items with little data everywhere after the others. Ties keep the order by name. Prices are read here, not
+-- cached: a scan moves them without moving the catalog's version.
+local function SortRows(list)
+    local sort = Catalog.GetSort()
+    if sort == "name" then
+        return
+    end
+    local position, value = {}, {}
+    for i, row in ipairs(list) do
+        position[row] = i
+        if sort == "price" then
+            value[row] = ns.Prices.Get(row.itemID) -- once per row, not in the comparator
+        else
+            value[row] = row.chance or 0
+        end
+    end
+    table.sort(list, function(a, b)
+        if sort == "chance" and (a.littleData or false) ~= (b.littleData or false) then
+            return not a.littleData
+        end
+        if value[a] ~= value[b] then
+            return value[a] > value[b]
+        end
+        return position[a] < position[b]
+    end)
+end
+
+-- items, state: the items of the filter as { itemID, name, zones, chance, littleData }, in the saved order (by name
+-- unless the player chose another, spec 017; FR-002 to FR-005): known items only, grey ones only with search text,
+-- and with search text only those whose name contains it. state is "building" while no complete index exists, else
+-- "ready" (maybe stale).
 function Catalog.Items(filter, search)
     local index = IndexFor(filter)
     Freshen(index)
@@ -303,6 +369,7 @@ function Catalog.Items(filter, search)
             table.insert(list, row)
         end
     end
+    SortRows(list)
     return list, "ready"
 end
 
