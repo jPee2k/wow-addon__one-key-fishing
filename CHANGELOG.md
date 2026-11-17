@@ -4,7 +4,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] - 2026-11-17
 
 ### Added
 
@@ -29,6 +29,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 - Fishing mode puts a game setting back only while it still holds the addon's value: a setting you changed
   yourself while fishing (in the game's options) keeps your value.
+- The catch database that comes with the addon holds 72 places (26 before), from the catches shared so far.
 
 ### Fixed
 

@@ -56,8 +56,9 @@ Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sou
 (spec 014), the tech-debt fixes (spec 015) and the public channel back (spec 016,
 `specs/016-public-channel-return`), released together.
 
-- Waits for: the merge of `016-public-channel-return` into `develop`, the harvest (`checklists/public-channel.md`
-  step 11), then the release steps of [publishing.md](publishing.md). The in-game checks it waited for are done or
+- Prepared on 2026-11-17: `016-public-channel-return` merged into `develop`; the harvest (`checklists/public-channel.md`
+  step 11) made seed epoch 3 with 72 places from 6 contributions (outliers reported, none blocked); 21 new items got their kind in `GameData/ItemKinds.lua` (names and classes read in game); version 1.3.0.
+  Left: the pull request `develop` -> `main` and the tag ([publishing.md](publishing.md) steps 4-5). The in-game checks it waited for are done or
   accepted (status above); V20, the other faction, stays open on a PvE realm.
 - No channel marker is left (status above); `npm run build` passes without `--force`.
 - Already checked for spec 016 (2026-11-16, `/run`, not repeated): addon messages between players in a custom
