@@ -3,7 +3,8 @@
 -- its zones, and each zone expands into its spots. Everything shown comes from Catalog.lua. The search, the
 -- filters, the chosen item and the expanded zones live in memory only, so every login starts at the defaults. The
 -- list is grouped under kind headers, and the kind menu (shared with "What can be caught here") hides kinds
--- (specs/014-catch-filters); that choice is saved, and an item opened by its ID shows whatever its kind.
+-- (specs/014-catch-filters); that choice is saved, and an item opened by its ID shows whatever its kind. The Sort
+-- button orders the list by name, price or chance (specs/017-catalog-sort); that choice is saved too.
 local _, ns = ...
 local L = ns.L
 
@@ -13,8 +14,15 @@ ns.CatalogTab = CatalogTab
 local LABEL_X = 20
 local LINE_HEIGHT = 18
 local ROW_WIDTH = 520
+-- An item row: the icon, the name, and the right column (the zones, a price or a chance, spec 017); a price of three
+-- coins (123g 45s 67c with their icons) takes about 120 pixels.
+local ITEM_NAME_WIDTH = 350
+local ITEM_RIGHT_WIDTH = 140
 local TOP = -32 -- below the window title
-local LIST_TOP = TOP - 62 -- the item list, below the search box and the filter buttons
+-- Three rows over the list (spec 017): the search box; Skill, Source and Water; Sort and Kinds.
+local FILTER_TOP = TOP - 28 -- row 2: Skill, Source, Water
+local SORT_TOP = TOP - 54 -- row 3: Sort, Kinds
+local LIST_TOP = TOP - 88 -- the item list, below row 3
 local ITEM_LIST_TOP = TOP - 46 -- the zone rows, below the item header and the column headers
 local BOTTOM = 40 -- the lists end above the status line
 local WINDOW_HEIGHT = 660 -- the statistics window (UI/StatsFrame.lua)
@@ -38,6 +46,7 @@ local chosen -- the item ID of the item page, or nil for the list
 local pending -- what Show was asked for while the index was still building; Tick passes it on once it is ready
 local expanded = {} -- map ID -> true: zones of the chosen item that show their spots
 local drawn -- what the page shows now: { version, state }
+local listed = {} -- item ID -> true: the items of the list as last drawn by price (read only by price)
 local dirty = false
 
 -- The span of skill an item was caught with ({ min, max } ranges): "0-74", "75-224", "300+", "75+".
@@ -114,6 +123,25 @@ end
 ---------------------------------------------------------------------------
 -- The item list
 ---------------------------------------------------------------------------
+local GREY = 0.5 -- the right column's "No price"
+
+-- text, grey: the right column of an item row shows what the list is ordered by (spec 017, research R7): the price per
+-- piece (the statistics' value; "No price" in grey when there is none), the best place's chance, or by name the
+-- number of zones as before.
+local function RightColumn(element)
+    local sort = ns.Catalog.GetSort()
+    if sort == "price" then
+        local price = ns.Prices.Get(element.itemID)
+        if price > 0 then
+            return ns.FormatMoney(price), false
+        end
+        return L["No price"], true
+    elseif sort == "chance" then
+        return element.chance and ns.Catalog.ChanceText(element.chance, element.littleData) or "", false
+    end
+    return (L["Zones: %d"]):format(element.zones), false
+end
+
 -- The list's elements: { header = kind } before each kind's items, or an item row of Catalog.Items.
 local function InitItemRow(row, element)
     if not row.name then
@@ -123,11 +151,11 @@ local function InitItemRow(row, element)
         row.icon:SetPoint("LEFT")
         row.name = CreateText(row, "GameFontHighlight")
         row.name:SetPoint("LEFT", 22, 0)
-        row.name:SetWidth(380)
+        row.name:SetWidth(ITEM_NAME_WIDTH)
         row.name:SetWordWrap(false)
         row.zones = CreateText(row, "GameFontHighlight", "RIGHT")
         row.zones:SetPoint("RIGHT", -4, 0)
-        row.zones:SetWidth(110)
+        row.zones:SetWidth(ITEM_RIGHT_WIDTH)
         -- A header row (kindHeader) has no item: hover and click do nothing on it.
         row:SetScript("OnEnter", function(self)
             if not self.kindHeader then
@@ -159,7 +187,14 @@ local function InitItemRow(row, element)
     row.name:SetPoint("LEFT", 22, 0)
     row.name:SetTextColor(1, 1, 1)
     row.name:SetText(text)
-    row.zones:SetText((L["Zones: %d"]):format(element.zones))
+    local right, grey = RightColumn(element)
+    row.zones:SetText(right)
+    -- Set on every draw: a row frame is reused for other items.
+    if grey then
+        row.zones:SetTextColor(GREY, GREY, GREY)
+    else
+        row.zones:SetTextColor(1, 1, 1)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -260,6 +295,16 @@ function CatalogTab.SetWater(value)
     CatalogTab.Refresh()
 end
 
+-- The Sort menu: one radio entry per order; a click saves it through Catalog.SetSort, whose
+-- SETTINGS_CHANGED("catalogSort") redraws the list (the handler at the end of this file).
+local function OpenSortMenu(owner)
+    local choices = {}
+    for _, sort in ipairs(ns.Catalog.SORTS) do
+        table.insert(choices, { value = sort, text = ns.Catalog.SortText(sort) })
+    end
+    ns.OpenRadioMenu(owner, choices, function(value) return ns.Catalog.GetSort() == value end, ns.Catalog.SetSort)
+end
+
 -- A search box: the game's SearchBoxTemplate, or a plain input box without it.
 local function CreateSearchBox(parent)
     local ok, box = pcall(CreateFrame, "EditBox", nil, parent, "SearchBoxTemplate")
@@ -299,19 +344,23 @@ function CatalogTab.Create(parent)
     page.skillButton = ns.CreateButton(page.listView, "", 150, function(self)
         ns.CatchHere.OpenSkillMenu(self, function() return filter.range end, CatalogTab.SetRange)
     end)
-    page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, TOP - 28)
+    page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, FILTER_TOP)
     page.sourceButton = ns.CreateButton(page.listView, "", 150, function(self)
         ns.CatchHere.OpenSourceMenu(self, function() return filter.source end, CatalogTab.SetSource)
     end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
-    -- The kind menu is the catch tab's: one choice for both (spec 014), at the top right beside the search box.
-    page.kindButton = ns.CreateButton(page.listView, "", ns.CatchHere.KIND_WIDTH, ns.CatchHere.OpenKindMenu)
-    page.kindButton:SetPoint("TOPRIGHT", -LABEL_X, TOP + 1)
+    -- Row 2 holds the three filters alone: with the longest translations (French) they take about 551 of its 560
+    -- pixels (specs/017-catalog-sort, research R6). Water shows only with pool data.
     page.waterButton = ns.CreateButton(page.listView, "", 150, function(self)
         ns.CatchHere.OpenWaterMenu(self, function() return filter.water end, CatalogTab.SetWater)
     end)
     page.waterButton:SetPoint("LEFT", page.sourceButton, "RIGHT", 8, 0)
     page.waterButton:Hide()
+    -- Row 3: the list's order, then the kind menu, which is the catch tab's: one choice for both (spec 014).
+    page.sortButton = ns.CreateButton(page.listView, "", 150, OpenSortMenu)
+    page.sortButton:SetPoint("TOPLEFT", LABEL_X - 4, SORT_TOP)
+    page.kindButton = ns.CreateButton(page.listView, "", ns.CatchHere.KIND_WIDTH, ns.CatchHere.OpenKindMenu)
+    page.kindButton:SetPoint("LEFT", page.sortButton, "RIGHT", 8, 0)
     page.list = CreateList(page.listView, LIST_TOP, InitItemRow)
 
     page.itemView = CreateFrame("Frame", nil, page)
@@ -362,6 +411,12 @@ end
 -- The items under their kind headers (spec 014); the status reads the rows before the kind filter.
 local function ShowList(retain)
     local items, state = ns.Catalog.Items(filter, search)
+    listed = {}
+    if ns.Catalog.GetSort() == "price" then
+        for _, row in ipairs(items) do
+            listed[row.itemID] = true
+        end
+    end
     local elements, hidden = ns.Catalog.Group(items)
     page.list.Show(elements, retain)
     page.status:SetText(StatusText(items, state, #items - hidden))
@@ -401,6 +456,7 @@ function CatalogTab.Refresh(retain)
     page.waterButton:SetText((L["Water: %s"]):format(ns.CatchHere.WaterLabel(filter.water)))
     page.waterButton:SetShown(pools)
     page.kindButton:SetText(ns.CatchHere.KindLabel())
+    page.sortButton:SetText((L["Sort: %s"]):format(ns.Catalog.SortText(ns.Catalog.GetSort())))
     page.listView:SetShown(chosen == nil)
     page.itemView:SetShown(chosen ~= nil)
     local state
@@ -480,11 +536,22 @@ function CatalogTab.SetSearch(text)
     end
 end
 
-ns.On("PRICES_CHANGED", MarkDirty) -- the item tooltips' prices
+ns.On("PRICES_CHANGED", MarkDirty) -- the item tooltips' prices, and by price the order and the right column
+-- An item's full info, its vendor price with it, may arrive after the draw (as on the other tabs): by price the order
+-- and the right column of the list follow at the next tick (spec 017). Only for an item the list shows: the game
+-- loads other items all the time (bags, the auction house, chat links).
+ns.RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
+    if success and listed[itemID] and chosen == nil and page and page:IsShown() and ns.Catalog.GetSort() == "price" then
+        MarkDirty()
+    end
+end)
 -- A kind toggled in the menu redraws at once, keeping the scroll (FR-007); a hidden page redraws when shown (dirty).
+-- A new order redraws at once from the top of the list (spec 017).
 ns.On("SETTINGS_CHANGED", function(key)
     MarkDirty()
     if key == "hiddenKinds" then
         CatalogTab.Refresh(true)
+    elseif key == "catalogSort" then
+        CatalogTab.Refresh()
     end
 end)

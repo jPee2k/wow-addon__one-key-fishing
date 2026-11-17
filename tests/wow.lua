@@ -49,7 +49,12 @@
 --   sound_play_result = false           PlaySoundFile plays nothing and returns false (default: true, a new handle)
 --   loot.items[i][3] = quality          the 5th value of GetLootSlotInfo (the slot's item quality; nil by default)
 --   menu_entries                        the last MenuUtil context menu: { kind, text, isSelected, onClick } (read);
---                                       menu_entry(text) is the entry with that text
+--                                       menu_entry(text) is the entry with that text; CreateCheckbox and CreateRadio
+--                                       entries (kind "checkbox", "radio") keep isSelected
+--   frame.points, frame.textColor       SetPoint calls (raw arguments, one per point; ClearAllPoints empties
+--                                       them) and the last SetTextColor { r, g, b, a } (read); anchor(frame,
+--                                       point) is the recorded point named `point` ("TOPLEFT", "LEFT", ...), or
+--                                       the first one without it
 --   MinimalSliderWithSteppersTemplate   CreateFrame gives a slider with Init, SetValue (fires OnValueChanged),
 --                                       Slider:GetValue (not on the frame, as in the game), SetEnabled /
 --                                       IsSliderEnabled, RegisterCallback
@@ -539,6 +544,37 @@ end
 
 function Frame:SetSize(width, height)
     self.width, self.height = width, height
+end
+
+-- Anchors are remembered as the raw SetPoint arguments, in order (specs/017-catalog-sort: the layout tests); as in
+-- the game, a second SetPoint of the same point replaces the first.
+function Frame:SetPoint(point, ...)
+    self.points = self.points or {}
+    for index, args in ipairs(self.points) do
+        if args[1] == point then
+            self.points[index] = { point, ... }
+            return
+        end
+    end
+    table.insert(self.points, { point, ... })
+end
+
+function Frame:ClearAllPoints()
+    self.points = {}
+end
+
+-- A font string's color: the last SetTextColor.
+function Frame:SetTextColor(r, g, b, a)
+    self.textColor = { r, g, b, a }
+end
+
+-- The recorded SetPoint arguments whose first one is `point`, or without `point` the first recorded; nil if none.
+function anchor(frame, point)
+    for _, args in ipairs(frame.points or {}) do
+        if point == nil or args[1] == point then
+            return args
+        end
+    end
 end
 
 -- A texture (CreateTexture makes a frame here): the file or file ID it shows.
@@ -1308,7 +1344,7 @@ local function MenuRoot()
     local root = {}
     local function Add(kind, text, a, b)
         local entry = { kind = kind, text = text }
-        if kind == "checkbox" then
+        if kind == "checkbox" or kind == "radio" then
             entry.isSelected, entry.onClick = a, b
         else
             entry.onClick = a
@@ -1319,6 +1355,7 @@ local function MenuRoot()
     function root:CreateTitle(text) return Add("title", text) end
     function root:CreateButton(text, onClick) return Add("button", text, onClick) end
     function root:CreateCheckbox(text, isSelected, onClick) return Add("checkbox", text, isSelected, onClick) end
+    function root:CreateRadio(text, isSelected, onClick) return Add("radio", text, isSelected, onClick) end
     function root:CreateDivider() return Add("divider") end
     return root
 end

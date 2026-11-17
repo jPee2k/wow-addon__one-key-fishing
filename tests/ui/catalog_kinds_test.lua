@@ -72,7 +72,11 @@ test("the catalog has the kind button; the filter row keeps its three buttons of
     for _, name in ipairs({ "skillButton", "sourceButton", "waterButton" }) do
         eq(tab[name].minWidth, 150, name .. ": the filter row as before spec 014")
     end
-    eq(tab.kindButton.minWidth, 120, "the Kinds button, at the top right")
+    eq(tab.kindButton.minWidth, 120, "the Kinds button")
+    local point = anchor(tab.kindButton, "LEFT")
+    assert(point, "the Kinds button follows another one (spec 017: row 3, after Sort)")
+    eq(point[2], tab.sortButton, "after the Sort button")
+    eq(point[3], "RIGHT", "to its right")
 end)
 
 test("a toggle from the catalog's own button updates its list at once (FR-007)", function()

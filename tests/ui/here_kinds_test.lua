@@ -103,6 +103,7 @@ end
 
 test("the kind button reads 'Kinds: all' and opens five checkboxes, all checked", function()
     eq(here.kindButton.text, L["Kinds: all"], "button")
+    assert(anchor(here.kindButton, "TOPRIGHT"), "at the top right (unchanged by spec 017's catalog layout)")
     here.kindButton.scripts.OnClick(here.kindButton)
     local texts = {}
     for _, entry in ipairs(menu_entries) do

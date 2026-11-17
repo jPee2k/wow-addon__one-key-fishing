@@ -216,6 +216,9 @@ local DB_DEFAULTS = {
         -- The item kinds hidden in "What can be caught here" and the catalog (spec 014): kind name -> true; written
         -- only by Catalog.SetKindShown.
         hiddenKinds = {},
+        -- The order of the catalog's list (spec 017): "name", "price" or "chance"; written only by
+        -- Catalog.SetSort.
+        catalogSort = "name",
     },
     shareNotice = false, -- true once the one-time popup about the exchange was closed (Exchange/ShareGame.lua)
     shareNoticeChannel = false, -- true once the notice that names the public channel was closed (ShareGame.lua)

@@ -380,3 +380,7 @@ L["Kinds: all"] = true
 L["Kinds: %d of %d"] = true
 L["The kind filter hides every item."] = true
 L["The kind filter hides the matches."] = true
+-- Catalog.lua, UI/CatalogTab.lua: the order of the catalog's list (spec 017)
+L["Sort: %s"] = true
+L["Name"] = true
+L["No price"] = true

@@ -414,4 +414,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Kinds: %d of %d"] = "종류: %d/%d"
     L["The kind filter hides every item."] = "종류 필터가 모든 아이템을 숨깁니다."
     L["The kind filter hides the matches."] = "종류 필터가 검색 결과를 숨깁니다."
+    L["Sort: %s"] = "정렬: %s"
+    L["Name"] = "이름"
+    L["No price"] = "가격 없음"
 end)

@@ -408,4 +408,7 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Kinds: %d of %d"] = "類別：%d/%d"
     L["The kind filter hides every item."] = "類別篩選隱藏了所有物品。"
     L["The kind filter hides the matches."] = "類別篩選隱藏了符合項目。"
+    L["Sort: %s"] = "排序：%s"
+    L["Name"] = "名稱"
+    L["No price"] = "無價格"
 end)
