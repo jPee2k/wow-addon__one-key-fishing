@@ -8,7 +8,8 @@ in [publishing.md](publishing.md).
 The addon lives in `OneKeyFishing/`: exactly what goes into `Interface/AddOns` (the TOC, `Bindings.xml`, the player
 manual `README.md`, and the Lua files in one folder per area of `docs/architecture/`: `Core/`, `Locales/`,
 `GameData/` (the game data model, data only: [game-data.md](architecture/game-data.md)), `Fishing/`, `Catch/`,
-`CatchDB/`, `Exchange/`, `Catalog/`, `UI/`; `Bindings.xml` stays at the root, the client loads it by name). The TOC
+`CatchDB/`, `Exchange/`, `Catalog/`, `UI/`; `Bindings.xml` stays at the root, the client loads it by name), plus
+`Media/` for the sound files (`.ogg` only, no code; constitution 1.5.4, spec 013). The TOC
 lists the files with their folder (`Core\Core.lua`), grouped by area, in load order; the folders the tools name
 (`Locales/enUS.lua`, `CatchDB/SeedData.lua`, `Core/Commands.lua`) are constants of `tools/addon.mjs`.
 
@@ -28,7 +29,8 @@ The tools need Node.js 18+ (`npm install` once).
 
 Run it after every change. It checks:
 
-- the addon folder holds only packaged files (TOC-listed + `Bindings.xml` + the manual `README.md`);
+- the addon folder holds only packaged files (TOC-listed + `Bindings.xml` + the manual `README.md` + `.ogg` files
+  under `Media/`);
 - Lua 5.1 syntax;
 - undeclared **and unused** globals against `.luacheckrc` (a new WoW API global goes into `read_globals`);
 - lines up to 120 characters;
@@ -38,7 +40,8 @@ Run it after every change. It checks:
   language, while their code and comments stay ASCII;
 - no `SetFont` call in the addon (the game's font objects pick a Korean, Chinese or Cyrillic font when needed);
 - Lua files only in `OneKeyFishing/` and `tests/` (test files get the syntax and line-length checks);
-- every repository root entry is either packaged or listed in the `.pkgmeta` `ignore` list;
+- every repository root entry is either packaged or listed in the `.pkgmeta` `ignore` list (the git-ignored
+  `static/`, the author's temporary files, is skipped by every check);
 - every Lua file is listed in the TOC, and every TOC file is in one of the area folders;
 - the layers: a file names only the module tables of its own layer or below, and `CreateFrame` outside `UI/` only
   where `tools/addon.mjs` allows it ([core.md](architecture/core.md), Layers);
@@ -115,12 +118,18 @@ Code built on an assumption that only the game can confirm (while the game canno
 only after the author confirms the behaviour in game, or when the author accepts the assumption without a check
 (its row then says "Accepted", with what happens if it is wrong).
 
+`npm run build -- --force` is the author's way to release with markers still open: the markers ship, listed as a
+warning, and every other refusal of the build stays (uncommitted changes, the checks, the tests). The release
+workflow does the same for a tag whose message says `--force` (`git tag -a 1.3.0 -m "Release 1.3.0 --force"`). The
+open rows stay open in their `verification.md` and in [release-plan.md](release-plan.md).
+
 ## Building and installing
 
 - `npm run dev`: packages the working folder into `dist/OneKeyFishing/` and `dist/OneKeyFishing-<version>.zip`
   (version `x.y.z-dev+<commit>`; the zip name has `-` in place of the `+`).
 - `npm run build`: refuses uncommitted changes, runs check and test, then packages the last commit; it also
-  refuses while any `VERIFY` marker is left.
+  refuses while any `VERIFY` marker is left. `npm run build -- --force` packages with open markers, listed as a
+  warning ("Verification debt" above).
 - `npm run link` / `npm run unlink`: link `Interface/AddOns/OneKeyFishing` to `OneKeyFishing/` (a junction on
   Windows) for development without building; the unbuilt version shows as `dev`. Before the link, npm runs
   `prelink` (`tools/link.mjs --remove-copy`): an installed copy there (a real folder with `OneKeyFishing.toc`, as
@@ -131,6 +140,17 @@ only after the author confirms the behaviour in game, or when the author accepts
   not `.../Interface/AddOns`; `link`, `unlink` and `install-addon` also refuse a target that is or contains the
   repository.
 - A new file or a TOC change needs a game restart, not just `/reload`.
+
+## `npm run sounds`
+
+Renders the volume steps of the addon's sounds (spec 013): for every master `OneKeyFishing/Media/Sounds/<name>.ogg`
+a copy at 10, 20 ... 90 % in `Media/Sounds/Volume<step>/<name>.ogg` (ffmpeg, amplitude `step / 100`, Ogg Vorbis
+quality 4). `PlaySoundFile` has no volume argument, so the addon plays the file of the chosen volume. Run it after
+adding, changing, renaming or removing a master (steps without a master are deleted) and commit the result;
+`npm run check` reports a master without its steps, a step without its master and any file under `Media/` that is
+not `.ogg`. It needs ffmpeg on `PATH` or its path in the
+`FFMPEG` environment variable (on Windows `winget install --id Gyan.FFmpeg -e`). A new sound file needs a game
+restart.
 
 ## `npm run harvest`
 
@@ -144,12 +164,14 @@ release.
 - `-- --block <id> "why"` leaves a contribution ID out of the seed and tells every client to drop it (the seed's
   `blocked`); `-- --unblock <id>` takes it back. The outlier report of a run says which IDs to look at.
 - `-- --synthetic 3000` writes a random seed for a load test (never commit it).
+- A seed with an item that `OneKeyFishing/GameData/ItemKinds.lua` does not list fails `tests/catalog/kinds_test.lua`:
+  give the new item its kind there (fish, containers, potions, reagents, other) in the same change (spec 014).
 - Format and rules: `specs/002-local-catch-db/contracts/`.
 
 ## Packaging
 
-- The package contains only the TOC, the files it lists, `Bindings.xml` and the player manual `README.md` from
-  `OneKeyFishing/`, plus `LICENSE` and `CHANGELOG.md` from the root (`tools/addon.mjs`); the root `README.md`
+- The package contains only the TOC, the files it lists, `Bindings.xml`, the player manual `README.md` and the
+  sound files (`.ogg`) under `Media/` from `OneKeyFishing/`, plus `LICENSE` and `CHANGELOG.md` from the root (`tools/addon.mjs`); the root `README.md`
   stays out (`.pkgmeta` `ignore`).
 - `## Version: @project-version@` is filled in at build time; `package.json` holds the version. An unbuilt addon
   is recognised by the version starting with `@` and shows `dev`.

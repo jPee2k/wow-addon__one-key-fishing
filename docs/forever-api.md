@@ -87,6 +87,18 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 
 ## Verified in game
 
+- The fishing sounds' settings page (spec 013, 2026-11-16, enUS): `MinimalSliderWithSteppersTemplate` in a canvas
+  settings page works as in the export (`Init(value, min, max, steps, formatters)`, the `Label.Right` formatter,
+  `RegisterCallback(Event.OnValueChanged)`, the value on the child `.Slider`) (V50). An addon `.ogg` played with
+  `PlaySoundFile(path, "Master")` is heard, and the pre-rendered volume steps sound quieter (V46); switching
+  the sounds off mid-sound stops it (`StopSound(handle, fade)`). `PlaySoundFile` has no volume argument.
+  The sound CVars (`Sound_MusicVolume`, `Sound_AmbienceVolume`, `Sound_DialogVolume`) set by `C_CVar.SetCVar` show
+  at once in Options -> Audio (V48, entry side). The fish line "No fish are hooked." (`ERR_FISH_NOT_HOOKED`) comes
+  as `UI_INFO_MESSAGE` (messageType 417, the text as 2nd argument), not as `UI_ERROR_MESSAGE`, and a too-early
+  press ends the fishing channel; the loot of a hook comes at once (V47). `Sound_EnableSoundWhenGameIsInBG` set by
+  `C_CVar.SetCVar` keeps all game sound, the addon's `PlaySoundFile` included, with the window unfocused (V49).
+  The sound CVars can be set at `PLAYER_REGEN_DISABLED` and take effect at once: the music comes back as the fight
+  starts (V48).
 - The addon list (character screen -> AddOns) reads `## Notes-<code>` and `## Category-<code>` from the TOC in the
   client's language, UTF-8 included (checked on a German client, 2026-11-03).
 - Client answers on launch day (EU realm, ruRU client, game 1.60.1 build 70790, 2026-11-05):
@@ -246,7 +258,46 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   then sends `CHAT_MSG_CHANNEL_NOTICE` `NOT_ALLOWED_IN_CHANNEL` with the channel name (`CHAT_NOT_ALLOWED_IN_CHANNEL_NOTICE`
   "[%s] That operation is not permitted in this channel."); no `CHAT_MSG_ADDON` echo comes back. The same for a
   channel the player owns and for `OneKeyFishingShare` (V19 fails). A send to channel number 0 returns 7
-  (`InvalidChannel`). The addon's channel is off (spec 010).
+  (`InvalidChannel`). The addon's channel is off (spec 010). Passes again since 2026-11-16 (below).
+- Addon messages in a custom channel, again (`/run` test, 2026-11-16, Drog Earthshaker): `JoinTemporaryChannel("OkfTest42")`
+  gives `YOU_CHANGED` on channel 5; `C_ChatInfo.SendAddonMessage("OKFT", "ping", "CHANNEL", 5)` returns `0`, **no**
+  `NOT_ALLOWED_IN_CHANNEL` comes, and the sender's own `CHAT_MSG_ADDON` (`OKFT`, `ping`, `CHANNEL`, "Drog
+  Earthshaker") comes back; `LeaveChannelByName` gives `YOU_LEFT`. The refusal of 2026-11-06 no longer shows for
+  this character: a server change, not a limit by character level (a level 4 character sends too, below).
+- Addon messages between two players in a custom channel (`/run` test, 2026-11-16, Drog Earthshaker level 31 and
+  Fowik Che level 27, client 1.60.1.70938; the `CHANNEL` path does not depend on guild, group or friends): in `OkfTest42` each one's
+  `SendAddonMessage(..., "CHANNEL", n)` returns `0`, the other receives `CHAT_MSG_ADDON` (`OKFT`, text, `CHANNEL`,
+  "First Last") and the sender its own echo; ten messages sent in one frame all arrive, in order; a 255-byte message
+  arrives whole; no `NOT_ALLOWED_IN_CHANNEL`. The same in `OneKeyFishingShare` (V19 passes, V20 in part). The
+  addon must be disabled for that test: 1.2.0 leaves a channel of its own names that it did not join
+  (`Exchange/Channel.lua`, `OnNotice`), so a `/run` join of `OneKeyFishingShare` gets `YOU_LEFT` within a second.
+  That leave also shows that `CHAT_MSG_CHANNEL_NOTICE` names the channel in argument 9 (its base name, matched by
+  `OnNotice` and the chat filters), and argument 4 is "<number>. <name>" (the `/run` listener printed it).
+- Addon messages in a custom channel, argument by argument (`/run` test, 2026-11-17, Green Neerg level 1 and Plague
+  Corvus level 8, not friends in game or on Battle.net): `CHAT_MSG_ADDON` gives prefix, text, `CHANNEL`, the sender
+  "First Last", argument 5 (`target`) "8. OkfTest42" and argument 8 (`name`) "OkfTest42", the base name (V53). A
+  level 1 character sends and receives. A client that has not registered the prefix gets nothing, its own echo
+  included, though its sends arrive (`C_ChatInfo.RegisterAddonMessagePrefix`).
+- Chat channel limit (2026-11-17, dev build): `C_ChatInfo.GetNumActiveChannels()` counts temporary channels too (it
+  equals the entries of `GetChannelList()`). With 20 channels taken, `JoinTemporaryChannel(name)` returns nothing and
+  the chat shows "You can only be in 20 channels at a time." (`ERR_TOO_MANY_CHAT_CHANNELS`); below the limit it
+  returns `0` (V23).
+- Channel moderation by players (2026-11-17, the owner of `OneKeyFishingShare`, no addon): `/ckick <channel> <name>`,
+  `/owner <channel>`, `/run ChannelKick(channel, "First Last")` and `/run DisplayChannelOwner(channel)` print nothing
+  and change nothing; the kicked player stays in the channel. `/password <channel> x` works (V24). `/chatlist` prints
+  nothing either; `GetChannelList()` lists the channels (number, name, disabled). A level 4 character
+  (Showtime Holyhell) sends and receives in `OkfTest42` the same way: no limit by level (V19 closed). Both
+  players were of one faction (one faction per account on a PvE realm): the other faction is not checked (V20).
+- Channel password and owner (`/run` test, 2026-11-16, two players in `OkfTest42`): the first to join owns it.
+  `/password OkfTest42 x` by the owner gives every member `CHAT_MSG_CHANNEL_NOTICE_USER` `PASSWORD_CHANGED` with
+  the owner's "First Last". A join without the password fires `CHANNEL_PASSWORD_REQUEST` (the channel name), then
+  the notice `WRONG_PASSWORD`; `GetChannelName` gives 0, and Blizzard's popup "Please enter a password for
+  '<name>'." stays on screen until closed. `JoinTemporaryChannel(name, "x")` with the password joins, and addon
+  messages pass. When the owner leaves, the leaver gets `SET_MODERATOR` with the new owner's first name only
+  ("Drog"), then `OWNER_CHANGED` ("First Last") and `YOU_LEFT`; the one who stays gets `OWNER_CHANGED` with its own
+  "First Last" and may then clear the password (`/password OkfTest42`: `PASSWORD_CHANGED` with its name); a join
+  without a password works again (V24, V21 in part). Once the second player's chat showed "Interface action failed
+  because of an AddOn" near these notices; its source is not known.
 - Character names (`/run` tests, 2026-11-06): a Forever character has a first and a last name, written with a space
   ("Drog Earthshaker"); players whisper with `/w First Last`, and chat shows "[First Last]". `UnitName("player")`
   returns two values, the first name and the last name ("Drog", "Earthshaker"; the second is not a realm), so
@@ -285,9 +336,19 @@ move to "Verified in game":
   Accepted without a check for 1.2.0 (2026-11-12): the same "First Last" rule as the senders seen.
 - Does the catch depend on the Fishing skill at all? Checked on the gathered data after the launch; if not, the
   skill ranges of the place key can go.
+- Does a crash write saved variables, or keep a CVar set during the session (spec 015 review 4)? WoW writes
+  saved variables only at a logout, a `/reload` or the exit; if a crash in fishing mode with the splash focus on
+  leaves music, ambience and dialog at 0 on the next start, reopen the dropped item of `docs/tech-debt.md`
+  ("History", 2026-11-16).
+- Does `GetLootSlotInfo(i)` give the item quality as its 5th value for fishing loot, also for an item the client has
+  not cached (the rare sound of spec 013, V51, `docs/checklists/sounds.md` step 3)?
 - Is the auction house in Forever per game mode, per faction or shared? This decides whether auction prices can
   ever be shared between players (`docs/ROADMAP.md`).
 
+Answered on 2026-11-16 (`/run`, see "Verified in game"): addon messages in a custom channel pass again between
+players, also in `OneKeyFishingShare` and from a level 4 character (V19). The channel comes back in its own feature
+(`Channel.AVAILABLE = true`, the checks of [checklists/public-channel.md](checklists/public-channel.md), a review of
+`Exchange/Channel.lua`).
 Answered on 2026-11-10: `C_BattleNet.SendGameData` reaches another Forever client with the addon (V13).
 Answered on 2026-11-08 (`/run`, see "Verified in game"): the subzone's area ID is found by `GetSubZoneText()`
 among the `C_Map.GetAreaInfo` names (V34), and a cave's continent map gives the zone under the point (V2, V33).

@@ -5,12 +5,19 @@ How casts become catch messages, how they are counted, and how items are valued.
 ## Catch/Catch.lua
 
 - Turns casts and loot into `FISH_CAUGHT` / `FISH_MISSED` messages.
-- The items of `FISH_CAUGHT` are `{ link, itemID, quantity }`; `itemID` is read once here from the loot link
+- The items of `FISH_CAUGHT` are `{ link, itemID, quantity, quality }`; `itemID` is read once here from the loot link
   (`ns.ItemIDFromLink`, also for an item the client does not know yet), so Stats and CatchDB do not look it up again.
+  `quality` is the loot slot's (`GetLootSlotInfo`, 5th value), else `C_Item.GetItemQualityByID`, else nil; the
+  fishing sounds read it for the rare sound (spec 013).
 - Whether the loot came from a fishing pool is not known: in Forever a pool catch has the bobber (35591) as its
   loot source, like open water (V3, spec 011).
 - A cast without loot is settled as a miss 1 s after it ends, also when the next cast already started.
-- The messages are consumed by Stats.lua, UI/Toast.lua and CatchDB/Events.lua ([catch-db.md](catch-db.md)).
+- The game's lines `ERR_FISH_ESCAPED` / `ERR_FISH_NOT_HOOKED` (`UI_INFO_MESSAGE` or `UI_ERROR_MESSAGE`, compared
+  with the client's own strings) while the line is out or within the same 1 s after it fire `FISH_ESCAPED` (castID), once per cast: the
+  answer of a hook press without a catch, which the hook sound needs (spec 013). The cast is still settled by
+  `FISH_MISSED`.
+- The messages are consumed by Stats.lua, UI/Toast.lua, CatchDB/Events.lua ([catch-db.md](catch-db.md)) and
+  Fishing/Sound.lua ([fishing-mode.md](fishing-mode.md)), which also reads `FISH_ESCAPED`.
 
 ## Catch/Stats.lua
 

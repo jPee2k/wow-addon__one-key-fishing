@@ -57,6 +57,18 @@ export function findMarkers(text) {
   return markers;
 }
 
+// What the open markers mean for one check (each marker a string "file:line id what"):
+//   a normal check lists them; --release makes each one a problem; --release --force (the author releases with the
+//   assumptions still open) ships them and lists them as a warning instead.
+// Returns { problems, list, forced }: the problems to report, the markers to print, whether --force let them pass.
+export function markerVerdict(markers, { release = false, force = false } = {}) {
+  if (release && !force) {
+    return { problems: markers.map((m) => `${m}: open VERIFY marker: close the verification debt before a release`),
+      list: [], forced: false };
+  }
+  return { problems: [], list: markers, forced: release && force && markers.length > 0 };
+}
+
 // GameData/ holds data only (docs/architecture/game-data.md): its code has no function, no call, no L lookup and
 // names no module but ns.GameData. Only the code is read: string literals and comments (line and block) are left out, so
 // official names and explanations may say anything. Returns { line, message } per offending line.
@@ -201,9 +213,75 @@ export function parseToc(text) {
   return { fields, files };
 }
 
+// The addon's sound files (constitution 1.5.4, spec 013): `.ogg` only, under Media/, packaged without a TOC line.
+// Each master Media/Sounds/<name>.ogg has a copy per volume step in Media/Sounds/Volume<step>/ (npm run sounds),
+// because PlaySoundFile has no volume argument.
+export const MEDIA_DIR = "Media";
+export const SOUNDS_DIR = "Media/Sounds";
+export const VOLUME_STEPS = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+
+// Every file under OneKeyFishing/Media/, as a forward-slash path relative to the addon folder, sorted.
+export function mediaFiles(addonDir = ADDON_DIR) {
+  const out = [];
+  const walk = (dir, prefix) => {
+    if (!fs.existsSync(dir)) {
+      return;
+    }
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const rel = `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) {
+        walk(path.join(dir, entry.name), rel);
+      } else {
+        out.push(rel);
+      }
+    }
+  };
+  walk(path.join(addonDir, MEDIA_DIR), MEDIA_DIR);
+  return out.sort();
+}
+
+// The rules for Media/ (npm run check): only .ogg files; a master in Media/Sounds/ has all its volume steps; a step
+// has its master. files: forward-slash paths relative to the addon folder. Returns [{ file, message }].
+export function mediaProblems(files) {
+  const problems = [];
+  const set = new Set(files);
+  // Lower-case names only: Fishing/Sound.lua builds each path from its event's name.
+  const stepPattern = new RegExp(`^${SOUNDS_DIR}/Volume(\\d+)/([a-z0-9_]+\\.ogg)$`);
+  const masterPattern = new RegExp(`^${SOUNDS_DIR}/([a-z0-9_]+\\.ogg)$`);
+  for (const file of files) {
+    if (!file.startsWith(`${MEDIA_DIR}/`)) {
+      continue;
+    }
+    if (!file.endsWith(".ogg")) {
+      problems.push({ file, message: "only .ogg sound files (lower-case extension) belong in Media/" });
+      continue;
+    }
+    const master = file.match(masterPattern);
+    if (master) {
+      const missing = VOLUME_STEPS.filter((step) => !set.has(`${SOUNDS_DIR}/Volume${step}/${master[1]}`));
+      if (missing.length > 0) {
+        problems.push({ file, message: `missing volume steps ${missing.join(", ")}: run npm run sounds` });
+      }
+      continue;
+    }
+    const step = file.match(stepPattern);
+    if (step) {
+      if (!VOLUME_STEPS.includes(Number(step[1]))) {
+        problems.push({ file, message: `Volume${step[1]} is not a volume step (${VOLUME_STEPS.join(", ")})` });
+      } else if (!set.has(`${SOUNDS_DIR}/${step[2]}`)) {
+        problems.push({ file, message: "a volume step without its master sound in Media/Sounds/" });
+      }
+    } else if (file.startsWith(`${SOUNDS_DIR}/`)) {
+      problems.push({ file, message: "Media/Sounds/ holds only masters and their Volume<step>/ copies" });
+    }
+  }
+  return problems;
+}
+
 // Every packaged file: `from` is relative to the repository root, `to` to the addon folder in the package.
-export function packageEntries(tocText) {
-  const addonFiles = [TOC, ...parseToc(tocText).files, ...ADDON_EXTRAS];
+export function packageEntries(tocText, media = mediaFiles()) {
+  const addonFiles = [TOC, ...parseToc(tocText).files, ...ADDON_EXTRAS,
+    ...media.filter((file) => file.toLowerCase().endsWith(".ogg"))];
   return [
     ...addonFiles.map((file) => ({ from: `${ADDON}/${file}`, to: file })),
     ...ROOT_EXTRAS.map((file) => ({ from: file, to: file })),

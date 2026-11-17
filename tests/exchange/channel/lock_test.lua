@@ -1,8 +1,6 @@
 -- Channel.lua: locks, kicks and bans while in the channel (specs/004-public-channel-sync, contracts/channel.md
 -- "Locks, kicks, bans", research R4). The tests run in order and share one login; each move goes one index on.
 
-channel_on = true
-
 local NAMES = {}
 
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }

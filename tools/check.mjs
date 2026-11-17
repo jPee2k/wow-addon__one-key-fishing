@@ -8,16 +8,20 @@ import fs from "node:fs";
 import path from "node:path";
 import luaparse from "luaparse";
 import { ADDON, ROOT, ADDON_DIR, TOC, ADDON_EXTRAS, ROOT_EXTRAS, ADDON_FOLDERS, LOCALES_DIR, BASE_LOCALE, SEED_FILE,
-  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems,
-  parseToc, privateProblems, testNameProblem }
+  COMMANDS_FILE, LAYERS, ENTRY_LAYERS, FRAMES_OUTSIDE_UI, MAX_LINE_LENGTH, findMarkers, gameDataProblems, markerVerdict,
+  MEDIA_DIR, mediaFiles, mediaProblems, parseToc, privateProblems, testNameProblem }
   from "./addon.mjs";
 import { MAX_SEED_BYTES, seedProblems } from "./harvest.mjs";
 
 // --release (npm run build, the release workflow): open VERIFY markers are problems, not only a list.
+// --release --force (npm run build -- --force, or a release tag whose message has --force): they ship, with a warning.
 const release = process.argv.includes("--release");
+const force = process.argv.includes("--force");
 // Git-ignored local folders and files (editor settings, the local AddOns path) are not part of the project.
 const SKIP_DIRS = new Set([".git", "node_modules", "dist", ".release", ".vscode", ".idea"]);
 const SKIP_FILES = new Set([".env"]);
+// Git-ignored folders of the repository root only: `static/` holds the author's temporary files (examples, drafts).
+const SKIP_ROOT_DIRS = new Set(["static"]);
 // Globals of the Lua runtime itself; WoW API names belong in .luacheckrc.
 const LUA_BUILTINS = new Set(("_G assert error ipairs pairs next pcall print select tonumber tostring type unpack " +
   "math string table os coroutine setmetatable getmetatable rawget rawset rawequal xpcall").split(" "));
@@ -36,7 +40,7 @@ const inTests = (file) => rel(file).startsWith("tests/");
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) {
+      if (!SKIP_DIRS.has(entry.name) && !(dir === ROOT && SKIP_ROOT_DIRS.has(entry.name))) {
         walk(path.join(dir, entry.name), out);
       }
     } else if (!SKIP_FILES.has(entry.name)) {
@@ -206,8 +210,15 @@ if (!fs.existsSync(tocPath)) {
       problem(file, "missing (it is packaged with the addon)");
     }
   }
+  // The sound files under Media/ are packaged without a TOC line (constitution 1.5.4); mediaProblems reports any
+  // other file there and a master without its volume steps.
+  const media = mediaFiles();
+  for (const { file, message } of mediaProblems(media)) {
+    problem(`${ADDON}/${file}`, message);
+  }
   for (const file of files.filter(inAddon)) {
-    if (!packaged.has(relAddon(file))) {
+    const addonPath = relAddon(file);
+    if (!packaged.has(addonPath) && !addonPath.startsWith(`${MEDIA_DIR}/`)) {
       problem(rel(file), `not listed in ${TOC}, so it would not be packaged`);
     }
   }
@@ -257,7 +268,7 @@ const ignoreBlock = pkgmeta.match(/^ignore:\s*\n((?:[ \t]+-[^\n]*\n?)*)/m);
 const ignored = new Set(ignoreBlock ? [...ignoreBlock[1].matchAll(/-\s*(\S+)/g)].map((m) => m[1]) : []);
 const packagedRoot = new Set([ADDON, ...ROOT_EXTRAS]);
 for (const entry of fs.readdirSync(ROOT)) {
-  if (entry.startsWith(".") || SKIP_DIRS.has(entry) || SKIP_FILES.has(entry)) {
+  if (entry.startsWith(".") || SKIP_DIRS.has(entry) || SKIP_ROOT_DIRS.has(entry) || SKIP_FILES.has(entry)) {
     continue;
   }
   if (!packagedRoot.has(entry) && !ignored.has(entry)) {
@@ -430,15 +441,18 @@ for (const file of files.filter((f) => f.endsWith(".md"))) {
   });
 }
 
-// Verification debt (findMarkers in addon.mjs): listed; with --release they are problems.
+// Verification debt (findMarkers and markerVerdict in addon.mjs): listed; with --release they are problems, unless
+// --force ships them with a warning.
 const markers = luaFiles.flatMap((file) => findMarkers(fs.readFileSync(file, "utf8"))
   .map((m) => `${rel(file)}:${m.line} ${m.id} ${m.what}`.trimEnd()));
-if (release) {
-  for (const marker of markers) {
-    problem(marker, "open VERIFY marker: close the verification debt before a release");
-  }
-} else if (markers.length > 0) {
-  console.log(`open verification markers (${markers.length}):\n${markers.map((m) => `  ${m}`).join("\n")}`);
+const verdict = markerVerdict(markers, { release, force });
+problems.push(...verdict.problems);
+const listed = verdict.list.map((m) => `  ${m}`).join("\n");
+if (verdict.forced) {
+  console.warn(`WARNING: --force: releasing with ${verdict.list.length} open verification marker(s), each an ` +
+    `assumption not confirmed in game:\n${listed}`);
+} else if (verdict.list.length > 0) {
+  console.log(`open verification markers (${verdict.list.length}):\n${listed}`);
 }
 
 if (problems.length > 0) {

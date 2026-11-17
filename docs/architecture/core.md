@@ -107,7 +107,7 @@ new field only needs a default.
 
 | Field | Holds | Written by |
 |---|---|---|
-| `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `auctionPrices`, `camera`, `minimapButton`, `tooltipChances`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`) | UI/Settings.lua; also Core.lua (`languageHintShown`), Fishing/Camera.lua (`cameraDistance`), Exchange/ShareGame.lua (`shareDB`), Exchange/Channel.lua (`shareChannel`) |
+| `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `auctionPrices`, `camera`, `minimapButton`, `tooltipChances`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`), the "Sound effects" page (spec 013): `fishingSounds` (only through `Sound.SetEnabled`), `soundVolume` (0-100, step 10), `backgroundSound`, `splashFocus` (Mode.lua CVar rows), `hiddenKinds` (spec 014: the item kinds hidden in the catch lists, only through `Catalog.SetKindShown`) | UI/Settings.lua; also Core.lua (`languageHintShown`), Fishing/Camera.lua (`cameraDistance`), Exchange/ShareGame.lua (`shareDB`), Exchange/Channel.lua (`shareChannel`), Fishing/Sound.lua (`fishingSounds`, `soundVolume`), Catalog/Catalog.lua (`hiddenKinds`, the kind menu of UI/CatchHere.lua) |
 | `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Exchange/ShareGame.lua |
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
 | `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
@@ -122,6 +122,7 @@ new field only needs a default.
 |---|---|---|
 | `gear` | `pole` (the chosen pole, nil = the best in the bags) and `items` (extra fishing item IDs) | Gear.lua |
 | `gearSwap`, the CVar and camera snapshots, `resumeMode` | what fishing mode changed, stored *before* the change so that exit, logout, `/reload` and crashes restore it ([fishing-mode.md](fishing-mode.md)) | Mode.lua, Gear.lua, Camera.lua |
+| `resumeOwned` | CVar name -> true: the live rows ("Sound effects") the player changed by hand while fishing, from the logout of a `/reload` to the resume, so the resumed mode leaves them alone (spec 015); nil otherwise | Mode.lua |
 | `savedCameraZoom` | the zoom before fishing mode; survives a `/reload`, dropped on a real login | Camera.lua |
 | `stats`, `countedCast` | the statistics buckets and the cast running across a `/reload` | Stats.lua |
 | `session` | the current fishing session (its counts and times; `skillStart`, the Fishing rank it began with, read by Fishing/Skill.lua) | Catch/Stats.lua, Fishing/Skill.lua (`skillStart`) |
@@ -132,7 +133,7 @@ new field only needs a default.
 
 `ns.COMMANDS`: every slash command in one place, sorted by name, with its English description and a `run`
 function that calls the module at runtime (constitution, Principles II and VI). Modules register no commands; the
-names, descriptions and `/okf` help are English on every client. `catalog` passes the rest of the line through
+names, descriptions and `/okf` help are English on every client. `sound` opens the "Sound effects" page (`SettingsUI.OpenSounds`). `catalog` passes the rest of the line through
 `Catalog.CommandArg` (an item link becomes its ID) to `StatsFrame.OpenCatalog`. Every command is documented in the
 player manual `OneKeyFishing/README.md` (`npm run check`), except a temporary one whose declaration carries a
 `VERIFY` marker.

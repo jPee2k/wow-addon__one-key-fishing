@@ -30,6 +30,8 @@
 --                                       { name, frame or tab, value }; set PanelTemplates_SetTab = nil to test
 --                                       the fallback without the game's tab functions
 --   known_items = { [itemID] = true }   C_Item.GetItemInfoInstant knows only these item IDs (nil: every ID)
+--   item_classes[itemID] = { classID, subClassID }  C_Item.GetItemInfoInstant returns the seven values with these
+--                                       class numbers (specs/014-catch-filters)
 --   settings_pages[name] = frame        the canvas pages registered as settings subcategories (read only)
 --   popup_frames_busy = true            StaticPopup_Show shows nothing and returns nil (every dialog frame taken)
 -- Fishing mode in a fight (specs/009-pin-combat-fixes):
@@ -41,6 +43,16 @@
 --   known_spells[spellID] = true        C_SpellBook.IsSpellKnown and IsSpellKnown
 --   Frame:SetAttribute / GetAttribute   stored per frame (a secure snippet can be read back)
 -- Helpers: enter_fishing_mode(), owe_gear(), equipped_slots(), chat_count(text).
+-- The fishing sounds (specs/013-fishing-sounds):
+--   sound_calls                         PlaySoundFile calls, { path, channel } (read; emptied by enter_fishing_mode)
+--   sound_stops                         StopSound calls, { handle, fadeout } (read; emptied by enter_fishing_mode)
+--   sound_play_result = false           PlaySoundFile plays nothing and returns false (default: true, a new handle)
+--   loot.items[i][3] = quality          the 5th value of GetLootSlotInfo (the slot's item quality; nil by default)
+--   menu_entries                        the last MenuUtil context menu: { kind, text, isSelected, onClick } (read);
+--                                       menu_entry(text) is the entry with that text
+--   MinimalSliderWithSteppersTemplate   CreateFrame gives a slider with Init, SetValue (fires OnValueChanged),
+--                                       Slider:GetValue (not on the frame, as in the game), SetEnabled /
+--                                       IsSliderEnabled, RegisterCallback
 -- The catch exchange (Comm.lua, Share.lua):
 --   addon_prefixes[prefix] = true       prefixes registered with C_ChatInfo.RegisterAddonMessagePrefix (read)
 --   addon_sent                          C_ChatInfo.SendAddonMessage calls, { prefix, text, chatType, target, at }
@@ -63,7 +75,8 @@
 -- Helpers: receive_addon(prefix, text, chatType, sender, target, localID, name), receive_bn(prefix, text,
 -- gameAccountID), filter_hides(event, ...).
 -- The public channel (Channel.lua, specs/004-public-channel-sync):
---   channel_on = true                   (before loading) switches the channel on (it ships off, spec 010)
+--   channel_off = true                  (before loading) switches the channel off (the kill switch; it ships on,
+--                                       spec 016)
 --   channels_joined                     { name, number } of the channels joined through JoinTemporaryChannel
 --   channel_extra = n                   the player's own other channels (numbers 1..n, counted as active)
 --   channel_join_result[name] = { ... } what JoinTemporaryChannel returns for that name ({}: nil)
@@ -579,6 +592,40 @@ function CreateFrame(_, name, parent, template)
     end
     local frame = NewFrame(parent)
     frame.template = template
+    if template == "MinimalSliderWithSteppersTemplate" then
+        frame.callbacks = {}
+        function frame:Init(value, minValue, maxValue, steps, formatters)
+            self.value, self.minValue, self.maxValue, self.steps, self.formatters = value, minValue, maxValue, steps,
+                formatters
+        end
+        -- As the export's MinimalSliderWithSteppersMixin: the outer frame has no GetValue; the value lives on its
+        -- child Slider, and a new value fires OnValueChanged (also when the addon sets it).
+        frame.Slider = NewFrame(frame)
+        -- The stubs answer every unknown method with a no-op; this one must fail as the game's nil method does.
+        function frame:GetValue()
+            error("attempt to call method 'GetValue' (a nil value)", 2)
+        end
+        function frame.Slider:GetValue()
+            return frame.value
+        end
+        function frame:SetValue(value)
+            self.value = value
+            for _, callback in ipairs(self.callbacks) do
+                callback.fn(callback.owner, value)
+            end
+        end
+        function frame:RegisterCallback(event, fn, owner)
+            if event == MinimalSliderWithSteppersMixin.Event.OnValueChanged then
+                table.insert(self.callbacks, { fn = fn, owner = owner })
+            end
+        end
+        function frame:SetEnabled(enabled)
+            self.sliderEnabled = enabled and true or false
+        end
+        function frame:IsSliderEnabled()
+            return self.sliderEnabled ~= false
+        end
+    end
     if template == "SearchBoxTemplate" then
         frame.Instructions = NewFrame(frame)
         -- the clear button: SetText(""), so OnTextChanged with userInput false
@@ -660,6 +707,15 @@ function scroll_rows(box)
         table.insert(rows, row)
     end
     return rows
+end
+
+-- The elements of a scroll box's data provider, in order.
+function scroll_elements(box)
+    local elements = {}
+    for _, element in box.provider:Enumerate() do
+        table.insert(elements, element)
+    end
+    return elements
 end
 
 -- Types into a search box: its text, then OnTextChanged with userInput true.
@@ -873,7 +929,16 @@ C_AddOns = {
     end,
 }
 
-local cvars = {}
+-- The sound CVars start at the game's defaults (CVars.lua of the Forever export); others read "0".
+local cvars = {
+    Sound_EnableSoundWhenGameIsInBG = "0",
+    Sound_MusicVolume = "0.4",
+    Sound_AmbienceVolume = "0.6",
+    Sound_DialogVolume = "1.0",
+    Sound_EnableSFX = "1",
+    Sound_SFXVolume = "1.0",
+}
+
 C_CVar = {
     GetCVar = function(name)
         return cvars[name] or "0"
@@ -1061,6 +1126,10 @@ C_Item = {
         if (known and not known[itemID]) or unknown_items[itemID] then
             return nil
         end
+        local class = item_classes[itemID]
+        if class then
+            return itemID, "", "", "", 134400, class[1], class[2]
+        end
         return itemID
     end,
     DoesItemExistByID = function(item)
@@ -1140,6 +1209,8 @@ end
 -- Items the game client does not know yet (WoW Forever reveals some only when found): GetItemInfoInstant returns
 -- nil and DoesItemExistByID false for them. item_load_requests: the IDs passed to RequestLoadItemDataByID.
 unknown_items, item_load_requests = {}, {}
+-- itemID -> { classID, subClassID } for GetItemInfoInstant (the kinds of spec 014).
+item_classes = {}
 
 -- The game answers a RequestLoadItemDataByID: on success the client knows the item from then on.
 function item_loaded(itemID, success)
@@ -1189,14 +1260,89 @@ function GetLootSlotLink(slot)
     return item and ("|cffffffff|Hitem:%d::::::::|h[Item %d]|h|r"):format(item[1], item[1])
 end
 
--- icon, name, quantity
+-- icon, name, quantity, currencyID, quality (loot.items[slot][3], nil when not given)
 function GetLootSlotInfo(slot)
     local current = Loot()
     local item = current and current.items[slot]
     if item then
-        return 134400, "Item " .. item[1], item[2]
+        return 134400, "Item " .. item[1], item[2], nil, item[3]
     end
 end
+
+---------------------------------------------------------------------------
+-- Sounds (specs/013-fishing-sounds)
+---------------------------------------------------------------------------
+sound_calls, sound_stops = {}, {}
+sound_play_result = true
+local nextSoundHandle = 0
+
+function PlaySoundFile(path, channel)
+    table.insert(sound_calls, { path = path, channel = channel })
+    if not sound_play_result then
+        return false
+    end
+    nextSoundHandle = nextSoundHandle + 1
+    return true, nextSoundHandle
+end
+
+function StopSound(handle, fadeout)
+    table.insert(sound_stops, { handle = handle, fadeout = fadeout })
+end
+
+-- The game's own lines (GlobalStrings, enUS) the hook sound waits for.
+ERR_FISH_ESCAPED = "Your fish got away!"
+ERR_FISH_NOT_HOOKED = "No fish are hooked."
+
+-- The paths of the sounds played since the last reset, in order (only the file name: "bell.ogg").
+function sounds_played()
+    local list = {}
+    for _, call in ipairs(sound_calls) do
+        table.insert(list, call.path:match("([^\\]+)$"))
+    end
+    return list
+end
+
+-- The context menu of MenuUtil (UI/Minimap.lua): the entries of the last menu built.
+menu_entries = {}
+local function MenuRoot()
+    local root = {}
+    local function Add(kind, text, a, b)
+        local entry = { kind = kind, text = text }
+        if kind == "checkbox" then
+            entry.isSelected, entry.onClick = a, b
+        else
+            entry.onClick = a
+        end
+        table.insert(menu_entries, entry)
+        return { SetEnabled = function(_, enabled) entry.enabled = enabled end }
+    end
+    function root:CreateTitle(text) return Add("title", text) end
+    function root:CreateButton(text, onClick) return Add("button", text, onClick) end
+    function root:CreateCheckbox(text, isSelected, onClick) return Add("checkbox", text, isSelected, onClick) end
+    function root:CreateDivider() return Add("divider") end
+    return root
+end
+
+-- The entry of the last menu whose text is `text`, or nil.
+function menu_entry(text)
+    for _, entry in ipairs(menu_entries) do
+        if entry.text == text then
+            return entry
+        end
+    end
+end
+
+MenuUtil = {
+    CreateContextMenu = function(owner, generator)
+        menu_entries = {}
+        generator(owner, MenuRoot())
+    end,
+}
+
+MinimalSliderWithSteppersMixin = {
+    Event = { OnValueChanged = "OnValueChanged" },
+    Label = { Left = 1, Right = 2, Top = 3, Min = 4, Max = 5 },
+}
 
 -- The values do not matter, only that the names exist and compare as numbers.
 Enum = {
@@ -1856,8 +2002,8 @@ function load_files(files)
         if file:match("[^/]+$") == "Data.lua" and ns.ProofStep and not rawget(_G, "real_proof") then
             ns.real_ProofStep, ns.ProofStep = ns.ProofStep, FastProofStep
         end
-        if file:match("[^/]+$") == "Channel.lua" and rawget(_G, "channel_on") then
-            ns.Channel.AVAILABLE = true -- the tests of the channel itself; it ships off (spec 010)
+        if file:match("[^/]+$") == "Channel.lua" and rawget(_G, "channel_off") then
+            ns.Channel.AVAILABLE = false -- a release without the channel (spec 010); it ships on (spec 016)
         end
     end
 end
@@ -1951,14 +2097,21 @@ function ClearOverrideBindings(owner)
     override_bindings[owner] = {}
 end
 
--- Turns fishing mode on out of combat without a gear swap or a camera zoom (Fishing is known, a key is bound),
--- then starts the equip and chat records afresh.
-function enter_fishing_mode()
+-- What fishing mode needs to start: Fishing is known and the action key is bound. It touches neither ns.db nor
+-- in_combat, so a test can call it before the addon loads (a /reload that resumes the mode, spec 015) or in a fight.
+function fishing_ready()
     known_spells[7620] = true
     bindings["ONEKEYFISHING_ACTION"] = { "`" }
+end
+
+-- Turns fishing mode on out of combat without a gear swap or a camera zoom (fishing_ready), then starts the equip
+-- and chat records afresh.
+function enter_fishing_mode()
+    fishing_ready()
     ns.db.settings.gear, ns.db.settings.camera = false, false
     in_combat = false
     ns.Mode.Enter()
+    sound_calls, sound_stops = {}, {}
     assert(ns.Mode.IsActive(), "fishing mode did not turn on")
     equip_calls, chat = {}, {}
 end
@@ -1987,18 +2140,33 @@ function owe_gear()
 end
 
 -- Loads the whole addon in TOC order and logs in: ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD.
--- The tests run on an empty bundled seed, whatever the harvest wrote into SeedData.lua; beforeLogin runs between
--- the files and the login, e.g. to set a test's own seed (ns.SeedData).
-function load_addon(beforeLogin)
+-- The tests run on an empty bundled seed, whatever the harvest wrote into SeedData.lua (kept as bundled_seed for the
+-- tests that check it); beforeLogin runs between the files and the login, e.g. to set a test's own seed (ns.SeedData).
+local function LoadAndEnter(beforeLogin, isInitialLogin, isReloadingUi)
     load_files(TOC_FILES)
+    bundled_seed = ns.SeedData
     ns.SeedData = { epoch = 0, built = "", build = "", absorbed = {}, resets = {}, cells = {} }
     if beforeLogin then
         beforeLogin()
     end
     fire("ADDON_LOADED", "OneKeyFishing")
     fire("PLAYER_LOGIN")
-    fire("PLAYER_ENTERING_WORLD", true, false)
+    fire("PLAYER_ENTERING_WORLD", isInitialLogin, isReloadingUi)
     check_no_errors() -- a handler that failed while loading stops the file
+end
+
+function load_addon(beforeLogin)
+    LoadAndEnter(beforeLogin, true, false)
+end
+
+-- A login or a /reload with the given saved data (spec 015): db and charDB become OneKeyFishingDB and
+-- OneKeyFishingCharDB (nil: a character or an account never seen), then the load as load_addon, entering the world
+-- as a real login (isInitialLogin) or a /reload (isReloadingUi), and the one second that Fishing/Mode.lua waits
+-- before it resumes the mode (RESUME_DELAY).
+function login_with(db, charDB, isInitialLogin, isReloadingUi)
+    OneKeyFishingDB, OneKeyFishingCharDB = db, charDB
+    LoadAndEnter(nil, isInitialLogin, isReloadingUi)
+    advance(1)
 end
 
 ---------------------------------------------------------------------------
@@ -2033,7 +2201,7 @@ local stubs = {}
 local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
     group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
     profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
-    channel_info = true, channel_on = true, player_full_name = true, map_at_position = true,
+    channel_info = true, channel_off = true, player_full_name = true, map_at_position = true,
     player_map_positions = true }
 setmetatable(_G, {
     __index = function(_, key)

@@ -1,7 +1,7 @@
 std = "lua51"
 max_line_length = 120
 self = false
-exclude_files = { ".git/" }
+exclude_files = { ".git/", "static/" }
 
 -- Unused arguments are common in WoW event callbacks.
 unused_args = false
@@ -56,6 +56,7 @@ read_globals = {
     "GetNormalizedRealmName", "GetZoneText", "GetSubZoneText",
     "GetCameraZoom", "CameraZoomIn", "CameraZoomOut",
     "IsInGuild", "IsInGroup", "IsInRaid", "IsInInstance", "GetNumGroupMembers", "BNGetNumFriends",
+    "PlaySoundFile", "StopSound", "ERR_FISH_ESCAPED", "ERR_FISH_NOT_HOOKED", "MinimalSliderWithSteppersMixin",
     "issecretvalue", "debugprofilestop", "Constants", "geterrorhandler", "debugstack",
     "GetCallstackHeight", "SetErrorCallstackHeight",
     "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName",

@@ -4,6 +4,37 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-11-17
+
+### Added
+
+- "Sound effects" settings page (also `/okf sound`), every option off until you turn it on:
+  - **Play fishing sounds**: a bell when you cast, a sound when you hook, and a notification when the loot
+    holds an Uncommon or better item; a "Turn fishing sounds on / off" entry in the minimap button's menu too.
+  - **Volume** of these sounds, 0 to 100 % in steps of 10, without touching the game's volumes.
+  - **Fishing sound in the background**: the game's "Sound in Background" for the time of fishing mode.
+  - **Splash focus while fishing**: music, ambience and dialog silenced and effects raised, so the splash stands out.
+  - In a fight the sounds are silent and the focus is lifted; everything the page changes comes back when fishing
+    mode ends.
+- Catch kinds in **What can be caught here** and the **catch catalog**: the items are grouped under Fish,
+  Containers, Potions & drinks, Reagents & herbs and Other, and the **Kinds** button hides the kinds you do not want
+  to see. The choice is shared by both tabs and kept between sessions; hiding a kind does not change the numbers of
+  the others.
+- The public channel is back: addon users who share no guild, group or friends list exchange catch data through a
+  hidden chat channel again, now that WoW Forever carries addon data in chat channels again. **Use the public
+  channel** on the Shared database page turns it off; a popup says so once. If the game stops carrying the data
+  again, the addon stops using the channel until the next login.
+
+### Changed
+
+- Fishing mode puts a game setting back only while it still holds the addon's value: a setting you changed
+  yourself while fishing (in the game's options) keeps your value.
+- The catch database that comes with the addon holds 72 places (26 before), from the catches shared so far.
+
+### Fixed
+
+- A partner who logs in again no longer counts twice in the exchange's player count for an hour.
+
 ## [1.2.0] - 2026-11-12
 
 ### Added

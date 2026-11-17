@@ -32,14 +32,13 @@ ns.StatsFrame.Toggle()
 local window = _G.OneKeyFishingStatsFrame
 local tab = window.catalogPage
 
--- The rows the list shows (the scroll list's, made the way the game makes the rows in sight).
+-- The rows the list shows (the scroll list's, made the way the game makes the rows in sight), without the kind
+-- headers of spec 014 (row.kindHeader).
 local function rows(list)
-    if list.box then
-        return scroll_rows(list.box)
-    end
+    local all = list.box and scroll_rows(list.box) or list.rows
     local shown = {}
-    for _, row in ipairs(list.rows) do
-        if row:IsShown() then
+    for _, row in ipairs(all) do
+        if row:IsShown() and not row.kindHeader then
             table.insert(shown, row)
         end
     end

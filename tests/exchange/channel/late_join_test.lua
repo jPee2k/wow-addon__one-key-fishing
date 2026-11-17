@@ -2,8 +2,6 @@
 -- (specs/004-public-channel-sync, contracts/channel.md "Joining", "Locks, kicks, bans"). The tests run in order and
 -- share one login.
 
-channel_on = true
-
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 local MAIN, SECOND = "OneKeyFishingShare", "OneKeyFishingShare2"
 channel_join_result[MAIN] = { 0, MAIN } -- the game answers; the test puts the player in the channel when it lands

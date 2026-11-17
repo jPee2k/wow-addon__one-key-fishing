@@ -208,6 +208,14 @@ local DB_DEFAULTS = {
         languageHintShown = false, -- the one-time hint for clients without a translation was shown
         shareDB = true, -- exchange catch data with guild, group and friends (Share.lua); off: nothing sent or received
         shareChannel = true, -- "Use the public channel" (Channel.lua); without effect while shareDB is off
+        -- The "Sound effects" page (spec 013): every option starts off.
+        fishingSounds = false, -- "Play fishing sounds" (Fishing/Sound.lua); written only by Sound.SetEnabled
+        soundVolume = 100, -- the addon's sounds, 0-100 in steps of 10 (Sound.Volume clamps and rounds it)
+        backgroundSound = false, -- game sound in the background while fishing (a live CVar row of Fishing/Mode.lua)
+        splashFocus = false, -- music, ambience, dialog off, effects up while fishing (Mode.lua rows, lifted in fights)
+        -- The item kinds hidden in "What can be caught here" and the catalog (spec 014): kind name -> true; written
+        -- only by Catalog.SetKindShown.
+        hiddenKinds = {},
     },
     shareNotice = false, -- true once the one-time popup about the exchange was closed (Exchange/ShareGame.lua)
     shareNoticeChannel = false, -- true once the notice that names the public channel was closed (ShareGame.lua)

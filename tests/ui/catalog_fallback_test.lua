@@ -46,8 +46,10 @@ test("without the templates: fixed rows with 'and N more', a plain search box th
     local rows = #tab.list.rows
     assert(rows >= 20, "a page of rows: " .. rows)
     eq(#shown(tab.list), rows, "every fixed row in use")
-    eq(tab.list.more.text, (L["and %d more"]):format(40 - rows), "the rest counted")
+    -- The 40 items have no class: one kind, "Other", whose header takes the first row (spec 014).
+    eq(tab.list.rows[1].name.text, L["Other"], "the kind header")
+    eq(tab.list.more.text, (L["and %d more"]):format(40 - (rows - 1)), "the rest counted, items only")
     type_text(tab.search, "Item 4001")
-    eq(#shown(tab.list), 10, "40010 to 40019")
+    eq(#shown(tab.list), 11, "the header and 40010 to 40019")
     eq(tab.list.more.text, "", "nothing more")
 end)

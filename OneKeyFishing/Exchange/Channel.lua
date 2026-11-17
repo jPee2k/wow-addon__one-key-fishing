@@ -2,16 +2,18 @@
 -- channel shared by every addon user the game lets meet there, keeps it out of every chat window, filters its lines,
 -- leaves the player a chat channel slot, and walks a fixed list of fallback channels when one is locked. It knows
 -- nothing about records: Comm sends the HELLO through it and Share listens to its state (CHANNEL_STATE).
--- See specs/004-public-channel-sync/contracts/channel.md and api.md, research.md R2-R4.
+-- See specs/004-public-channel-sync/contracts/channel.md and api.md, research.md R2-R4; it ships again since spec 016
+-- (specs/016-public-channel-return).
 local _, ns = ...
 local L = ns.L
 
 local Channel = {}
 ns.Channel = Channel
 
--- V19 failed in game (2026-11-06): the server refuses addon messages in a custom channel (NOT_ALLOWED_IN_CHANNEL);
--- the code stays, switched off (spec 010). False takes the channel out of the release (spec 004 FR-026).
-Channel.AVAILABLE = false
+-- V19 failed on 2026-11-06 (the server refused addon messages in a custom channel; spec 010 switched the channel off)
+-- and passes again since 2026-11-16 (docs/forever-api.md). False is the kill switch: no join, and a channel of ours
+-- left joined is left once at login (spec 004 FR-026, spec 016).
+Channel.AVAILABLE = true
 
 -- The main channel and its fallbacks, walked in this order by every client (contracts/channel.md "Names").
 Channel.NAMES = { "OneKeyFishingShare", "OneKeyFishingShare2", "OneKeyFishingShare3", "OneKeyFishingShare4",
@@ -26,6 +28,7 @@ local KICK_REJOIN = 60 -- seconds before joining again after a kick
 local REJOIN_MARGIN = 0.5 -- a timer may read GetTime() a hair before rejoinAt: that counts as reached
 local MAX_KICKS = 3 -- the third kick in a session counts as a ban
 local FREE_SLOTS = 2 -- chat channel slots that must be free to join: one always stays the player's (FR-005)
+local NIL_JOINS = 3 -- joins with no result in a session before they count as the game refusing the channel
 local POPUP = "CHAT_CHANNEL_PASSWORD" -- the game's password prompt for a locked channel
 
 local lowerNames = {}
@@ -41,12 +44,17 @@ local joins = 0 -- joins started this session (CHANNEL_STATE passes it: a new on
 -- join may wait), not the player's leave, and uses it up; older ones (a leave the server never answered) are dropped.
 local echoes = {}
 local locked = {} -- index -> true: found locked or banned this session
-local refused = false -- the game refuses the channel itself (a Trial account, an invalid name): until logout
+-- Why the channel is refused until the next real login (a /reload keeps it), or false (spec 016 data model):
+--   "game"    the game refuses the channel itself (a Trial account, an invalid name, a join with no result);
+--   "server"  the server refuses addon messages in custom channels (two NOT_ALLOWED_IN_CHANNEL on one join): every name
+--             would be refused alike, so no fallback is tried (research R1).
+local refused = false
 local left = false -- the player left by hand: out until the next login
 local gaveWay = false -- the slot was given up for the player: back when two slots are free
 local wayLinePrinted = false
 local loginReady = false -- the login delay has passed (or a /reload: the channel was there already)
 local kicks, rejoinAt = 0, nil -- rejoinAt: GetTime() before which a kicked client does not join again
+local nilJoins = 0 -- joins this session that returned nothing (Join)
 local owner = false -- this client owns the current channel (OWNER_CHANGED or CHANNEL_OWNER naming it)
 local sawPassword = false -- a password set by a player not heard announcing, on the current channel
 local lockTimer -- the token of the wait before moving on
@@ -156,7 +164,8 @@ end
 ---------------------------------------------------------------------------
 -- A chat window shows the lines and notices of the channels in its own list only, so the channel is taken out of
 -- every list that has it (also after the game reloads the lists).
--- Removing the channel from the chat windows hides it there; the filters drop its notices and lines (not shipped, V19).
+-- Removing the channel from every chat window and the CHAT_MSG_CHANNEL* filters hide all its lines (a stranger's
+-- text typed into it showed nowhere, 2026-11-17, V21).
 -- index: one of the names (default: the current one).
 local function RemoveFromWindows(index)
     index = index or current
@@ -197,8 +206,9 @@ local function OnJoined()
 end
 
 -- Every leave of one of our names goes through here, so its YOU_LEFT is known for the addon's own.
--- The server answers each leave of a channel with one YOU_LEFT of that name, before it answers a later join of the
--- same name (not shipped, V19).
+-- One YOU_LEFT per leave of addon code, answered before a later join of the name (V41, 2026-11-17: a leave by hand
+-- was told from the addon's own leaves)
+-- (one per typed leave seen on 2026-11-06; a join typed right after a leave in one macro was lost).
 local function LeaveName(index)
     echoes[index] = echoes[index] or {}
     table.insert(echoes[index], GetTime())
@@ -236,11 +246,26 @@ end
 local function Join(index)
     current, joining, joins = index, true, joins + 1
     local join = joins
-    -- An addon can join a custom channel this way, without a key press; a nil first value means the game refuses the
-    -- channel itself (not shipped, V19).
+    -- An addon can join a custom channel this way, without a key press (seen on 2026-11-06, 2026-11-16 and
+    -- 2026-11-17: it returns 0, then YOU_CHANGED).
     local ok, kind = pcall(JoinTemporaryChannel, Channel.NAMES[index])
-    if not ok or kind == nil then
-        joining, refused = false, true
+    if not ok then
+        joining, refused = false, "game"
+        Notify()
+        return
+    end
+    if kind == nil then
+        -- At the 20-channel limit the join returns nothing (seen 2026-11-17), also when the count of active channels
+        -- has not caught up with the player's joins still on their way: wait for two free slots, as after giving
+        -- way. A refusal of the channel itself (a Trial account, not seen) may look the same, so the NIL_JOINS-th
+        -- empty result in a session counts as the game's refusal and stops the retries.
+        nilJoins = nilJoins + 1
+        joining = false
+        if nilJoins >= NIL_JOINS then
+            refused = "game"
+        else
+            gaveWay = true
+        end
         Notify()
         return
     end
@@ -307,8 +332,17 @@ function Channel.CheckSlots()
     Update()
 end
 
--- Comm: two refusals in a row on the channel path; the channel cannot carry messages any more.
-function Channel.OnRefused()
+-- Comm: two refusals on the channel path. reason "server": two NOT_ALLOWED_IN_CHANNEL notices on one join, the server
+-- refusing addon messages in every custom channel (as on 2026-11-06): leave and stop until the next login, since a
+-- fallback would only be joined, refused and left in turn (spec 016 research R1). No reason: refused sends, which
+-- belong to this channel (moderated, muted, gone): lock it and move to the next one.
+function Channel.OnRefused(reason)
+    if reason == "server" then
+        Leave()
+        refused = "server"
+        Notify()
+        return
+    end
     Lock(current)
 end
 
@@ -375,7 +409,10 @@ local function Kicked()
     C_Timer.After(KICK_REJOIN, Update)
 end
 
--- The tokens and arguments of the channel notices are as on Retail (research R4; not shipped, V19).
+-- The tokens and arguments of the channel notices are as on Retail (research R4). Seen in game on 2026-11-16:
+-- YOU_CHANGED (a join), YOU_LEFT, PASSWORD_CHANGED and OWNER_CHANGED with the player's "First Last" in argument 2
+-- (argument 5 empty), WRONG_PASSWORD after the password request; SET_MODERATOR names the new owner by the first name
+-- only and is not read (ownership follows OWNER_CHANGED and CHANNEL_OWNER).
 local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
     local index = IndexOf(name)
     if not index or ns.IsSecret(token) then
@@ -409,7 +446,8 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
     elseif index ~= current then
         return
     elseif token == "NOT_ALLOWED_IN_CHANNEL" then
-        -- The server refuses addon messages in the channel (seen in game, V19), though the send returned 0.
+        -- The server refused addon messages in the channel this way on 2026-11-06 (gone on 2026-11-16), though the
+        -- send returned 0; two on one join stop the channel for the session (Comm.ChannelRefused, spec 016).
         if joined then
             ns.Comm.ChannelRefused(true)
         end
@@ -417,7 +455,7 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
         Lock(index)
     elseif token == "TRIAL_RESTRICTED" or token == "INVALID_NAME" then
         Leave()
-        refused = true
+        refused = "game"
         Notify()
     elseif token == "PASSWORD_CHANGED" or token == "MODERATION_ON" then
         if joined and not IsMe(by) then
@@ -428,6 +466,8 @@ local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
         if owner and sawPassword then
             SelfHeal()
         end
+    -- PLAYER_KICKED, PLAYER_BANNED and MUTED name the player in argument 2, as on Retail (V24, accepted 2026-11-17:
+    -- players cannot kick in Forever)
     elseif token == "PLAYER_KICKED" then
         if IsMe(player) then
             Kicked()
@@ -449,7 +489,7 @@ ns.RegisterEvent("CHAT_MSG_CHANNEL_NOTICE_USER", OnNotice)
 ns.RegisterEvent("CHANNEL_PASSWORD_REQUEST", function(_, channel)
     local index = IndexOf(channel)
     if index then
-        -- Hiding the prompt in the same frame leaves no visible flash (not shipped, V19).
+        -- Hiding the password prompt in the same frame leaves no visible flash (seen 2026-11-17, V21).
         StaticPopup_Hide(POPUP)
         Lock(index)
     end
@@ -458,8 +498,8 @@ end)
 ---------------------------------------------------------------------------
 -- The player's channel limit (FR-005; research R3)
 ---------------------------------------------------------------------------
--- The game reports the refused join of the player's own channel with this text, on one of the events (not shipped,
--- V19).
+-- The refused join at the 20-channel limit comes as this text ("You can only be in 20 channels at a time."), read on
+-- CHAT_MSG_SYSTEM and UI_ERROR_MESSAGE; the addon gave way on it in game (2026-11-17, V23).
 local limitText -- built once: every system line and UI error is compared with it
 
 local function OnLimit(text)
@@ -498,7 +538,10 @@ ns.RegisterEvent("PLAYER_LOGOUT", function()
 end)
 
 local function Restore(saved)
-    left, refused = saved.left == true, saved.refused == true
+    -- A 1.2.0 record holds true for the game's refusal (spec 016 data model).
+    left = saved.left == true
+    refused = (saved.refused == true or saved.refused == "game") and "game" or saved.refused == "server" and "server"
+        or false
     gaveWay, wayLinePrinted = saved.gaveWay == true, saved.wayLinePrinted == true
     kicks, rejoinAt = tonumber(saved.kicks) or 0, tonumber(saved.rejoinAt)
     for index in pairs(type(saved.locked) == "table" and saved.locked or {}) do
@@ -512,7 +555,7 @@ local function Restore(saved)
     return saved.lockWait == true, saved.sawPassword == true
 end
 
--- Joined this late, the channel leaves General, Trade and the player's channels on their numbers (not shipped, V19).
+-- Joined 30-60 s after the login, General, Trade and the player's channels keep their numbers (V22, 2026-11-17)
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadingUi)
     local saved = ns.charDB.channelSession
     ns.charDB.channelSession = nil -- read once; a real login starts afresh
@@ -533,10 +576,11 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
             waitLock, password = Restore(saved)
         end
         -- The client is still in it after a /reload: taken as joined (a second one of our names, or one found locked
-        -- whose leave the /reload cut off, is left). Not after a leave by hand: one joined again is the player's.
+        -- or refused whose leave the /reload cut off, is left). Not after a leave by hand: one joined again is the
+        -- player's.
         for index in ipairs(Channel.NAMES) do
             if NumberOf(index) and not left then
-                if joined or locked[index] then
+                if joined or locked[index] or refused then
                     LeaveName(index)
                 else
                     current, joined = index, true
@@ -589,8 +633,9 @@ function Channel.Describe()
     end
     table.sort(lockedList)
     return {
-        ("channel: %s%s, free slots %d, locked %s, kicks %d, owner %s, self-heals %d"):format(state,
+        ("channel: %s%s, free slots %d, locked %s, kicks %d, owner %s, self-heals %d, refused %s"):format(state,
             index and (" (index " .. index .. ")") or "", Channel.FreeSlots(),
-            #lockedList > 0 and table.concat(lockedList, ",") or "none", kicks, tostring(owner), selfHeals),
+            #lockedList > 0 and table.concat(lockedList, ",") or "none", kicks, tostring(owner), selfHeals,
+            tostring(refused)),
     }
 end

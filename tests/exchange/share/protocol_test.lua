@@ -981,3 +981,78 @@ test("a peer that only whispered is not held off by the budget: what it holds is
     assert(Count("D", "A", "X") > 0, "a session ran, A answering")
     eq(a.node.peers["w:X"].idle, nil, "no idle state for a peer without a HELLO")
 end)
+
+-- Spec 015 (batch 11, contract K1, K2, A1-A3): the activity counts clients, not addresses. A HELLO of a client with
+-- node tag `tag`, from `address` by `via`; the hash differs from A's, as a client with other data.
+local function HelloFrom(node, address, via, tag)
+    node:Receive(address, via, ("H %s 0 1 %s"):format(tag, "zzzzzzzz"))
+end
+
+test("a partner who relogs counts once in the activity, under the path that greeted first with the new tag", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "g" })
+    HelloFrom(a.node, "b:7", "bnet", "T1T1") -- a Battle.net friend
+    a.node.peers["b:7"].synced = GetTime() -- exchanged with (the counts, not the session, are tested here)
+    advance(300)
+    -- The friend logs in again (a new tag): heard by the group first, then by Battle.net with the new tag.
+    HelloFrom(a.node, "w:P", "group", "T2T2")
+    HelloFrom(a.node, "b:7", "bnet", "T2T2")
+    local activity = a.node:Activity()
+    eq(activity.heard.group, 1, "under the group, the first with the new tag")
+    eq(activity.heard.bnet, 0, "not again under Battle.net")
+    eq(activity.exchanged, 1, "exchanged with once")
+    eq(a.node:ClientKey("b:7"), "T2T2", "the client's tag")
+    eq(a.node:ClientKey("w:Unknown"), "w:Unknown", "an unknown address is its own key")
+    eq(a.node:SameClient("b:7", "w:P"), true, "one client by two paths")
+    eq(a.node:SameClient("w:Unknown", "w:Unknown"), true, "an address is its own client")
+end)
+
+test("different clients count apart, and a peer without a tag counts on its own", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "g" })
+    HelloFrom(a.node, "b:7", "bnet", "T1T1")
+    HelloFrom(a.node, "w:Q", "group", "Q1Q1")
+    a.node.peers["w:R"] = { heard = GetTime(), via = "guild" } -- known only from a SUM, no HELLO yet
+    -- A stranger of the channel exchanged with: counts per address, as before spec 015.
+    a.node.peers["w:S"] = { heard = GetTime(), synced = GetTime(), via = "channel", node = "Q1Q1" }
+    local activity = a.node:Activity()
+    eq(activity.heard.bnet, 1, "Battle.net")
+    eq(activity.heard.group, 1, "group")
+    eq(activity.heard.guild, 1, "the peer without a tag")
+    eq(activity.heard.channel, 1, "the channel peer, apart from the group client with its tag")
+    eq(activity.exchanged, 1, "the channel peer's exchange")
+    eq(a.node:ClientKey("w:R"), "w:R", "no tag: the address")
+    eq(a.node:SameClient("w:R", "w:Q"), false, "a tag and none")
+    eq(a.node:SameClient("b:7", "w:Q"), false, "two tags")
+end)
+
+-- Review 3 of spec 015: the client's address that was heard first keeps the old tag when the new one comes by the
+-- other path first; it takes the new tag at once, so the partner counts once without waiting for its own HELLO.
+test("a partner who relogs counts once also when the path heard first greets last", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "g" })
+    HelloFrom(a.node, "b:7", "bnet", "T1T1") -- heard first
+    a.node.peers["b:7"].synced = GetTime()
+    HelloFrom(a.node, "w:P", "group", "T1T1") -- the same client by the group: only the tag noted
+    advance(300)
+    HelloFrom(a.node, "w:P", "group", "T2T2") -- relogged: the new tag by the group first
+    eq(a.node:ClientKey("b:7"), "T2T2", "the Battle.net address takes the new tag")
+    local activity = a.node:Activity()
+    eq(activity.heard.group + activity.heard.bnet, 1, "one client heard")
+    eq(activity.heard.group, 1, "under the group, the first with the new tag")
+    eq(activity.exchanged, 1, "exchanged with once")
+end)
+
+-- Review 5 of spec 015: a new tag moves only the client's address of the other kind (as Handlers.H links them); a
+-- name of the same kind that announced the old tag (by chance or on purpose) is not taken along.
+test("a relog does not move another name that announced the client's old tag", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { group = "g" })
+    HelloFrom(a.node, "w:V", "guild", "TvTv")
+    advance(31 * 60) -- V quiet for longer than ALONE_AFTER
+    HelloFrom(a.node, "w:M", "guild", "TvTv") -- another guild name with V's tag
+    advance(120)
+    HelloFrom(a.node, "w:V", "guild", "XxXx") -- V relogs
+    eq(a.node:ClientKey("w:M"), "TvTv", "the other name keeps its own tag")
+    eq(a.node:SameClient("w:V", "w:M"), false, "no longer one client")
+end)

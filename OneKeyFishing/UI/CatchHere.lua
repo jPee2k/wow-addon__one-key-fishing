@@ -1,7 +1,9 @@
 -- CatchHere: the "What can be caught here" page of the statistics window. It lists the items of the player's
 -- current spot from CatchDB.Query (or of the whole map when the spot has few catches), with a skill filter and
 -- a source filter. The filters live in memory only, so every login starts at the defaults: the player's own
--- skill range (followed while the rank grows, until a range is picked by hand) and all sources.
+-- skill range (followed while the rank grows, until a range is picked by hand) and all sources. The items are
+-- grouped under kind headers, and a kind menu hides kinds (specs/014-catch-filters); that choice is saved
+-- (settings.hiddenKinds, through Catalog.SetKindShown) and shared with the catalog tab.
 local _, ns = ...
 local L = ns.L
 
@@ -11,6 +13,10 @@ ns.CatchHere = CatchHere
 local LABEL_X = 20
 local LINE_HEIGHT = 18
 local MAX_ROWS = 16
+-- The Kinds button (spec 014) sits at the top right of both tabs, on the row of the place (here) or of the search
+-- box (the catalog), so the filter row keeps its width in every language.
+local KIND_WIDTH = 120
+CatchHere.KIND_WIDTH = KIND_WIDTH
 local TOP = -32 -- below the window title
 -- The item table: x and width inside a row (a row starts at LABEL_X), and the text alignment.
 local COLUMNS = {
@@ -71,6 +77,24 @@ function CatchHere.SetRange(range)
     CatchHere.Refresh()
 end
 
+-- The kind menu (spec 014), also the catalog's: one checkbox per kind; a click saves the choice, and its
+-- SETTINGS_CHANGED("hiddenKinds") redraws each tab at once (FR-007; the handler at the end of each tab's file).
+function CatchHere.OpenKindMenu(owner)
+    local choices = {}
+    for _, kind in ipairs(ns.Catalog.KINDS) do
+        table.insert(choices, { value = kind, text = ns.Catalog.KindText(kind) })
+    end
+    ns.OpenCheckboxMenu(owner, choices, ns.Catalog.IsKindShown, function(kind)
+        ns.Catalog.SetKindShown(kind, not ns.Catalog.IsKindShown(kind))
+    end)
+end
+
+-- "Kinds: all" or "Kinds: N of 5" (FR-009).
+function CatchHere.KindLabel()
+    local count, total = ns.Catalog.ShownKinds()
+    return count == total and L["Kinds: all"] or (L["Kinds: %d of %d"]):format(count, total)
+end
+
 function CatchHere.SetSource(value)
     source = value
     dirty = true
@@ -106,6 +130,11 @@ local function CreateRow(parent, index)
         text:SetWordWrap(false)
         row[column.key] = text
     end
+    -- A header row (a kind's name over its items) shows only this text.
+    row.header = CreateText(row, "GameFontNormal")
+    row.header:SetPoint("LEFT", 0, 0)
+    row.header:SetWidth(540)
+    row.header:Hide()
     row:EnableMouse(true)
     row:SetScript("OnEnter", function(self)
         local unknown = self.unknown
@@ -138,7 +167,8 @@ function CatchHere.Create(parent)
     page:SetAllPoints()
     page.place = CreateText(page, "GameFontNormal")
     page.place:SetPoint("TOPLEFT", LABEL_X, TOP)
-    page.place:SetWidth(540)
+    page.place:SetWidth(400) -- the Kinds button is to its right
+    page.place:SetWordWrap(false) -- one line: the scope and counts lines below sit at fixed places
     page.scope = CreateText(page, "GameFontDisableSmall")
     page.scope:SetPoint("TOPLEFT", page.place, "BOTTOMLEFT", 0, -4)
     page.scope:SetWidth(540)
@@ -154,6 +184,8 @@ function CatchHere.Create(parent)
         CatchHere.OpenSourceMenu(self, function() return source end, CatchHere.SetSource)
     end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
+    page.kindButton = ns.CreateButton(page, "", KIND_WIDTH, CatchHere.OpenKindMenu)
+    page.kindButton:SetPoint("TOPRIGHT", -LABEL_X, TOP + 3)
     page.waterButton = ns.CreateButton(page, "", 150, function(self)
         CatchHere.OpenWaterMenu(self, function() return water end, CatchHere.SetWater)
     end)
@@ -190,7 +222,24 @@ end
 
 local loadAsked = {} -- item IDs asked from the game this session
 
+-- Shows the row's item columns, or (as a header) only the kind's text.
+local function ShowColumns(row, visible)
+    row.icon:SetShown(visible)
+    for _, column in ipairs(COLUMNS) do
+        row[column.key]:SetShown(visible)
+    end
+    row.header:SetShown(not visible)
+end
+
+-- A header row: Refresh cleared its item, so the row's scripts do nothing on it.
+local function SetHeader(row, kind)
+    ShowColumns(row, false)
+    row.header:SetText(ns.Catalog.KindText(kind))
+    row:Show()
+end
+
 local function FillRow(row, item, littleData)
+    ShowColumns(row, true)
     row.itemID = item.itemID
     -- Read when drawn, not from the cached view: the game may have learned the item since (ITEM_DATA_LOAD_RESULT).
     if C_Item.GetItemInfoInstant(item.itemID) ~= nil then
@@ -234,6 +283,7 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     page.sourceButton:SetText((L["Source: %s"]):format(SourceLabel(source)))
     page.waterButton:SetText((L["Water: %s"]):format(WaterLabel(filter.water)))
     page.waterButton:SetShown(pools)
+    page.kindButton:SetText(CatchHere.KindLabel())
     page.more:SetText("")
     page.message:SetText("")
     for _, row in ipairs(page.rows) do
@@ -251,6 +301,14 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     end
     page.place:SetText(ns.Stats.PlaceName(mapID))
     local view = ns.CatchDB.Query(mapID, cell, filter)
+    -- The view's items the client does not know yet, drawn or not: one hidden as Other may load as another kind
+    -- (spec 014).
+    shown.unknownIDs = {}
+    for _, item in ipairs(view.items) do
+        if C_Item.GetItemInfoInstant(item.itemID) == nil then
+            shown.unknownIDs[item.itemID] = true
+        end
+    end
     page.scope:SetText(view.scope == "map" and L["Numbers for the whole map: few catches at this spot."] or "")
     if view.scope == "none" then
         page.counts:SetText("")
@@ -261,14 +319,32 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         -- The miss rate is weighted (part 3, research R7), and nil under a water filter: a miss has no source.
         page.counts:SetText(view.missRate and (catches .. "    " ..
             (L["Nothing caught: %s"]):format(ns.Percent(view.missRate))) or catches)
-        for i, item in ipairs(view.items) do
-            if i > MAX_ROWS then
-                page.more:SetText((L["and %d more"]):format(#view.items - MAX_ROWS))
+        -- The items under their kind headers (spec 014); headers take rows too, "and N more" counts items only.
+        local list, hidden = ns.Catalog.Group(view.items)
+        local used, drawn = 0, 0
+        for _, element in ipairs(list) do
+            -- A header needs room for one of its items after it.
+            if used == MAX_ROWS or (element.header and used + 1 == MAX_ROWS) then
                 break
             end
-            FillRow(page.rows[i], item, view.littleData)
+            used = used + 1
+            if element.header then
+                SetHeader(page.rows[used], element.header)
+            else
+                drawn = drawn + 1
+                FillRow(page.rows[used], element, view.littleData)
+            end
         end
-        table.insert(hints, L["Click an item to see where else it is caught."])
+        local itemsShown = #view.items - hidden
+        if itemsShown > drawn then
+            page.more:SetText((L["and %d more"]):format(itemsShown - drawn))
+        end
+        if #view.items > 0 and itemsShown == 0 then
+            page.message:SetText(L["The kind filter hides every item."]) -- not "no data" (FR-011)
+        end
+        if itemsShown > 0 then
+            table.insert(hints, L["Click an item to see where else it is caught."])
+        end
         if view.littleData and filter.range ~= "all" then
             table.insert(hints, L["Try \"All skill levels\": little data for your skill."])
         end
@@ -315,14 +391,26 @@ local function MarkDirty()
     dirty = true
 end
 ns.On("PRICES_CHANGED", MarkDirty)
-ns.On("SETTINGS_CHANGED", MarkDirty)
+-- A kind toggled in the menu redraws at once (FR-007); a hidden page redraws when shown again (dirty).
+ns.On("SETTINGS_CHANGED", function(key)
+    MarkDirty()
+    if key == "hiddenKinds" then
+        CatchHere.Refresh()
+    end
+end)
 
+-- An item the game now knows: a drawn row gets its name; an item unknown at the last draw, hidden as Other, may
+-- move to a shown kind (spec 014).
 local function ItemArrived(_, itemID, success)
-    if success and page and page:IsShown() then
-        for _, row in ipairs(page.rows) do
-            if row.itemID == itemID then
-                dirty = true
-            end
+    if not (success and page and page:IsShown()) then
+        return
+    end
+    if shown and shown.unknownIDs and shown.unknownIDs[itemID] then
+        dirty = true
+    end
+    for _, row in ipairs(page.rows) do
+        if row.itemID == itemID then
+            dirty = true
         end
     end
 end

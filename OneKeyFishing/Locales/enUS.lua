@@ -351,3 +351,32 @@ L["Water: %s"] = true
 L["Everywhere"] = true
 L["Open water"] = true
 L["Pools"] = true
+-- Fishing/Sound.lua, UI/Settings.lua, UI/Minimap.lua: the fishing sounds (spec 013)
+L["Sound effects"] = true
+L["Play fishing sounds"] = true
+L["A bell rings when you cast, and a sound plays when you hook."] = true
+L["A notification follows when the loot holds an Uncommon or better item."] = true
+L["Only while fishing mode is on; silent in a fight."] = true
+L["Turn fishing sounds on"] = true
+L["Turn fishing sounds off"] = true
+-- UI/Settings.lua: the volume of the fishing sounds (spec 013)
+L["Volume"] = true
+L["%d%%"] = true
+-- UI/Settings.lua: game sound in the background while fishing (spec 013)
+L["Fishing sound in the background"] = true
+L["All game sound keeps playing while the game window is in the background."] = true
+L["Only while fishing mode is on; your own game setting comes back when the mode ends."] = true
+-- UI/Settings.lua: the splash focus (spec 013)
+L["Splash focus while fishing"] = true
+L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] = true
+L["Lifted in a fight; everything comes back when fishing mode ends."] = true
+-- Catalog.lua, UI/CatchHere.lua, UI/CatalogTab.lua: the item kinds (spec 014)
+L["Fish"] = true
+L["Containers"] = true
+L["Potions & drinks"] = true
+L["Reagents & herbs"] = true
+L["Other"] = true
+L["Kinds: all"] = true
+L["Kinds: %d of %d"] = true
+L["The kind filter hides every item."] = true
+L["The kind filter hides the matches."] = true

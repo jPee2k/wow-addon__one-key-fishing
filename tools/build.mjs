@@ -2,17 +2,20 @@
 //   --dev      files from the working folder, version "<package version>-dev+<commit>"
 //   --release  files from the last commit, version from package.json; refuses uncommitted changes, then
 //              runs tools/check.mjs --release (which also refuses open VERIFY markers) and the tests
-// Only the TOC, the files it lists, Bindings.xml and LICENSE / README.md / CHANGELOG.md are packaged
-// (tools/addon.mjs), so nothing else can slip in.
+//   --force    with --release (`npm run build -- --force`): open VERIFY markers ship, listed as a warning; every
+//              other refusal stays
+// Only the TOC, the files it lists, Bindings.xml, the .ogg files under Media/ and LICENSE / README.md / CHANGELOG.md
+// are packaged (tools/addon.mjs), so nothing else can slip in.
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { zipSync } from "fflate";
-import { ADDON, ROOT, DIST, TOC, packageEntries, fail } from "./addon.mjs";
+import { ADDON, ROOT, DIST, TOC, MEDIA_DIR, mediaFiles, packageEntries, fail } from "./addon.mjs";
 
 const mode = process.argv[2];
-if (mode !== "--dev" && mode !== "--release") {
-  fail("usage: node tools/build.mjs --dev | --release");
+const force = process.argv.slice(3).includes("--force");
+if ((mode !== "--dev" && mode !== "--release") || (force && mode !== "--release")) {
+  fail("usage: node tools/build.mjs --dev | --release [--force]");
 }
 const release = mode === "--release";
 
@@ -39,7 +42,8 @@ if (release) {
   if (gitText("status", "--porcelain") !== "") {
     fail("there are uncommitted changes; commit them first (or use `npm run dev`)");
   }
-  runScript("tools/check.mjs", "--release"); // also refuses open VERIFY markers
+  // Also refuses open VERIFY markers; with --force they ship, listed as a warning.
+  runScript("tools/check.mjs", "--release", ...(force ? ["--force"] : []));
   runScript("tests/run.mjs");
   readFile = (file) => git("show", `HEAD:${file}`);
   version = JSON.parse(readFile("package.json").toString("utf8")).version;
@@ -54,7 +58,13 @@ if (release) {
   version = `${JSON.parse(readFile("package.json").toString("utf8")).version}-dev+${commit}`;
 }
 
-const files = packageEntries(readFile(`${ADDON}/${TOC}`).toString("utf8"));
+// The sound files under Media/: in a release from the last commit, like every other file, so the list and the
+// contents come from the same place; in a dev build from the working folder.
+const media = release
+  ? gitText("ls-tree", "-r", "--name-only", "HEAD", "--", `${ADDON}/${MEDIA_DIR}`).split(/\r?\n/)
+    .filter(Boolean).map((file) => file.slice(ADDON.length + 1))
+  : mediaFiles();
+const files = packageEntries(readFile(`${ADDON}/${TOC}`).toString("utf8"), media);
 const contents = {};
 for (const { from, to } of files) {
   let data;

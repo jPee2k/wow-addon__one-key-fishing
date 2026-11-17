@@ -3,6 +3,7 @@
 --   OneKeyFishing  - keys, feature toggles, actions
 --   Fishing gear   - chosen pole and the list of extra fishing items
 --   Shared database - the exchange of catch data with other players (Share.lua) and its state
+--   Sound effects  - the fishing sounds, their volume, game sound in the background, the splash focus (spec 013)
 local _, ns = ...
 local L = ns.L
 
@@ -37,7 +38,7 @@ end
 
 local COLUMN_OFFSET = 300
 
-local mainCategory, shareCategory
+local mainCategory, shareCategory, soundCategory
 
 ---------------------------------------------------------------------------
 -- Widgets
@@ -62,6 +63,16 @@ local function CreateCheckbox(parent, label, getValue, setValue)
     checkbox:SetScript("OnShow", function(self) self:SetChecked(getValue()) end)
     checkbox:SetScript("OnClick", function(self) setValue(self:GetChecked()) end)
     return checkbox
+end
+
+-- A checkbox for one key of ns.db.settings: writes it and fires SETTINGS_CHANGED (the key), which the modules read.
+local function CreateSettingCheckbox(parent, key, label)
+    return CreateCheckbox(parent, label,
+        function() return ns.db.settings[key] == true end,
+        function(value)
+            ns.db.settings[key] = value == true
+            ns.Fire("SETTINGS_CHANGED", key)
+        end)
 end
 
 local CreateButton = ns.CreateButton -- UI/Widgets.lua
@@ -186,12 +197,7 @@ local function CreateMainPage()
     local perColumn = math.ceil(#toggles / 2)
     local checkboxes = {}
     for i, toggle in ipairs(toggles) do
-        checkboxes[i] = CreateCheckbox(page, toggle.label,
-            function() return ns.db.settings[toggle.key] end,
-            function(value)
-                ns.db.settings[toggle.key] = value
-                ns.Fire("SETTINGS_CHANGED", toggle.key)
-            end)
+        checkboxes[i] = CreateSettingCheckbox(page, toggle.key, toggle.label)
     end
     local note = CreateText(page, "GameFontDisableSmall",
         L["Auto loot, bobber icon and gear changes apply the next time you enter fishing mode."])
@@ -504,6 +510,107 @@ local function CreateSharePage()
 end
 
 ---------------------------------------------------------------------------
+-- Sound effects page (specs/013-fishing-sounds)
+---------------------------------------------------------------------------
+-- An explanation under a checkbox, in the small font of the other pages: under its label, which may wrap to a second
+-- line in a longer translation.
+local function CreateNote(page, box, text)
+    local note = CreateText(page, "GameFontHighlightSmall", text)
+    note:SetPoint("TOPLEFT", box.label, "BOTTOMLEFT", 0, -4)
+    note:SetWidth(530)
+    return note
+end
+
+-- Top to bottom (FR-002): the fishing sounds, their volume, game sound in the background, the splash focus.
+local function CreateSoundPage()
+    local page = CreateFrame("Frame")
+
+    local title = CreateText(page, "GameFontNormalLarge", L["Sound effects"])
+    title:SetPoint("TOPLEFT", PADDING, -PADDING)
+
+    -- The sounds switch only through Sound.SetEnabled (CLAUDE.md, cross-module rules).
+    local soundsBox = CreateCheckbox(page, L["Play fishing sounds"],
+        function() return ns.Sound.IsEnabled() end,
+        function(value) ns.Sound.SetEnabled(value) end)
+    soundsBox:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -2, -14)
+    soundsBox.label:SetWidth(520)
+    local soundsNote = CreateNote(page, soundsBox, table.concat({
+        L["A bell rings when you cast, and a sound plays when you hook."],
+        L["A notification follows when the loot holds an Uncommon or better item."],
+        L["Only while fishing mode is on; silent in a fight."],
+    }, " "))
+
+    -- The volume: Blizzard's own settings slider, 0-100 in steps of 10 (FR-010). A value the player picks is stored
+    -- and played as a sample; setting the stored value on show plays nothing.
+    -- A client without the template keeps the page and the saved volume, only without the slider (Principle IV).
+    local volumeLabel = CreateText(page, "GameFontHighlight", L["Volume"])
+    volumeLabel:SetPoint("TOPLEFT", soundsNote, "BOTTOMLEFT", 0, -14)
+    local slider
+    local mixin = MinimalSliderWithSteppersMixin
+    if mixin and mixin.Event and mixin.Label then
+        slider = CreateFrame("Frame", nil, page, "MinimalSliderWithSteppersTemplate")
+        slider:SetPoint("LEFT", volumeLabel, "RIGHT", 16, 0)
+        slider:SetSize(250, 20)
+        -- Init takes the number of steps, not their size: (max - min) / step.
+        -- Seen in game 2026-11-16 (V50): the template, its label, the callback and the value on .Slider work.
+        local Sound = ns.Sound -- its volume grid (Sound.VOLUME_MIN, _MAX, _STEP)
+        slider:Init(Sound.Volume(), Sound.VOLUME_MIN, Sound.VOLUME_MAX,
+            (Sound.VOLUME_MAX - Sound.VOLUME_MIN) / Sound.VOLUME_STEP, {
+            [mixin.Label.Right] = function(value) return L["%d%%"]:format(math.floor(value + 0.5)) end,
+        })
+        slider:RegisterCallback(mixin.Event.OnValueChanged, function(_, value)
+            local percent = math.floor(value + 0.5)
+            if percent ~= ns.Sound.Volume() then
+                ns.Sound.SetVolume(percent)
+                ns.Sound.Preview()
+            end
+        end, page)
+    end
+
+    -- Game audio settings for the time of fishing mode (Fishing/Mode.lua rows, applied at once while fishing). They
+    -- work with the addon's sounds off too, so they are never greyed.
+    local function CreateGameSetting(below, key, label, notes)
+        local box = CreateSettingCheckbox(page, key, label)
+        box:SetPoint("TOPLEFT", below, "BOTTOMLEFT", -30, -16)
+        box.label:SetWidth(520)
+        return box, CreateNote(page, box, table.concat(notes, " "))
+    end
+    local _, backgroundNote = CreateGameSetting(volumeLabel, "backgroundSound",
+        L["Fishing sound in the background"], {
+            L["All game sound keeps playing while the game window is in the background."],
+            L["Only while fishing mode is on; your own game setting comes back when the mode ends."],
+        })
+
+    local _, focusNote = CreateGameSetting(backgroundNote, "splashFocus", L["Splash focus while fishing"], {
+        L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."],
+        L["Lifted in a fight; everything comes back when fishing mode ends."],
+    })
+
+    -- The sounds switch can change from the minimap menu; the two game settings change only here (their checkboxes
+    -- read the setting on show).
+    local function Sync()
+        local on = ns.Sound.IsEnabled()
+        soundsBox:SetChecked(on)
+        volumeLabel:SetFontObject(on and "GameFontHighlight" or "GameFontDisable")
+        if slider then
+            slider:SetEnabled(on)
+            -- The mixin has no GetValue; the value is on its child Slider (Blizzard_SharedXML MinimalSlider.lua).
+            if slider.Slider:GetValue() ~= ns.Sound.Volume() then
+                slider:SetValue(ns.Sound.Volume())
+            end
+        end
+    end
+    ns.On("SETTINGS_CHANGED", function(key)
+        if key == "fishingSounds" then
+            Sync()
+        end
+    end)
+    page:SetScript("OnShow", Sync)
+    page.below = focusNote
+    return page
+end
+
+---------------------------------------------------------------------------
 -- Registration
 ---------------------------------------------------------------------------
 local function OpenCategory(category)
@@ -526,6 +633,11 @@ function SettingsUI.OpenShare()
     OpenCategory(shareCategory)
 end
 
+-- The "Sound effects" page (/okf sound).
+function SettingsUI.OpenSounds()
+    OpenCategory(soundCategory)
+end
+
 ns.RegisterEvent("PLAYER_LOGIN", function()
     if not (Settings and Settings.RegisterCanvasLayoutCategory) then
         ns.Print(L["Settings panel is not available in this client."])
@@ -533,12 +645,15 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     end
     -- The panel shows a page with SetParent + Show (Blizzard_SettingsPanel.lua DisplayLayout). A frame is created
     -- shown, so that Show would change nothing and send no OnShow, which fills the pages: they start hidden.
-    local mainPage, gearPage, sharePage = CreateMainPage(), CreateGearPage(), CreateSharePage()
+    local mainPage, gearPage, sharePage, soundPage = CreateMainPage(), CreateGearPage(), CreateSharePage(),
+        CreateSoundPage()
     mainPage:Hide()
     gearPage:Hide()
     sharePage:Hide()
+    soundPage:Hide()
     mainCategory = Settings.RegisterCanvasLayoutCategory(mainPage, "OneKeyFishing")
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, gearPage, L["Fishing gear"])
     shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, sharePage, L["Shared database"])
+    soundCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, soundPage, L["Sound effects"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)

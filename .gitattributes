@@ -1,2 +1,5 @@
 # Text files are stored and checked out with LF line endings on every OS.
 * text=auto eol=lf
+
+# Sound files are binary
+*.ogg binary

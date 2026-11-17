@@ -2,9 +2,12 @@
 -- the channel path and the part rules of part 3 (specs/004-public-channel-sync, research R6, contracts/api.md
 -- "ns.Comm additions"). Channel.lua's state is stubbed, so only Comm is under test. The exchange itself (Share.lua) is
 -- not started. The tests run in order and share one login.
+-- The real Channel.lua must stay quiet: its Notify fires CHANNEL_STATE with the stubbed state and its own join count
+-- (0), and Comm resets its refusal counts on a new join. It woke at random times (the login delay's join, 30-60 s
+-- after the login, and the exchange's channel rounds through CheckSlots), so a test failed now and then (found by
+-- spec 016). channel_off sets no login timer; the stand-ins below take CheckSlots and Update.
 
-channel_on = true
-
+channel_off = true
 in_guild = true
 load_addon()
 
@@ -16,11 +19,17 @@ end)
 local flooded = {}
 Comm.OnFlood(function(address) table.insert(flooded, address) end)
 
--- Channel.lua stand-ins: the state, the channel's number and the refusal callback.
-local channelState, channelNumber, refusals = "waiting", nil, 0
+-- Channel.lua stand-ins: the state, the channel's number and the refusal callback (its count, and the reason of each
+-- call: nil for refused sends, "server" for the server's notices, spec 016 contracts C4).
+local channelState, channelNumber, refusals, reasons = "waiting", nil, 0, {}
 ns.Channel.GetState = function() return channelState end
 ns.Channel.GetNumber = function() return channelNumber end
-ns.Channel.OnRefused = function() refusals = refusals + 1 end
+ns.Channel.OnRefused = function(reason)
+    refusals = refusals + 1
+    reasons[refusals] = reason or false
+end
+ns.Channel.CheckSlots = function() end
+ns.Channel.Update = function() end
 
 local sentSince = addon_sent_since
 
@@ -187,6 +196,30 @@ test("the refusals count per join of the channel: a move starts them again, a pa
     Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
     advance(10)
     eq(refusals, before + 1, "the end of a pause is no new join: the second in a row moves on")
+    addon_send_result.CHANNEL = nil
+end)
+
+test("refused sends move to the next channel, the server's notices stop it; the two counts stay apart", function()
+    channelState, channelNumber = "in", 5
+    -- A fresh join: the test before leaves a refusal counted (spec 016 tasks T017).
+    ns.Fire("CHANNEL_STATE", "in", 1, 99)
+    addon_send_result.CHANNEL = 7 -- InvalidChannel
+    local before = refusals
+    Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
+    advance(10)
+    Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
+    advance(10)
+    eq(refusals, before + 1, "two refused sends: one call")
+    eq(reasons[refusals], false, "with no reason: the next fallback (FR-010)")
+    Comm.ChannelRefused(true)
+    eq(refusals, before + 1, "one notice alone: no call")
+    Comm.ChannelRefused(true)
+    eq(refusals, before + 2, "two notices: one call")
+    eq(reasons[refusals], "server", "the server's refusal (FR-008)")
+    Comm.ChannelBroadcast("H abcd 0 1 aaaaaaa")
+    advance(10)
+    Comm.ChannelRefused(true)
+    eq(refusals, before + 2, "one refused send and one notice: no call")
     addon_send_result.CHANNEL = nil
 end)
 

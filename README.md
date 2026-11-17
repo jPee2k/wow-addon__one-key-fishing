@@ -15,12 +15,14 @@ by itself. MIT licensed.
 OneKeyFishing/          the addon: exactly what goes into Interface/AddOns
   OneKeyFishing.toc  Bindings.xml  README.md (the player manual)
   Core/  Locales/  GameData/  Fishing/  Catch/  CatchDB/  Exchange/  Catalog/  UI/   one folder per area
+  Media/                the addon's own sound files (.ogg only, no code)
 tools/                  check, build, install and link scripts (Node.js)
 tests/                  tests of the addon code, run in fengari with WoW API stubs, and Node tests; one folder per area
 seed/                   the contributions behind the bundled catch database (written by npm run harvest)
 docs/                   developer documentation (below)
 specs/                  feature specifications, plans and tasks (Spec Kit)
 .specify/               Spec Kit: the project constitution, templates and scripts
+static/                 git-ignored: the author's temporary files; npm run check and the tests skip it
 ```
 
 ## Tools
@@ -32,6 +34,7 @@ The tools need [Node.js](https://nodejs.org/) 18 or newer and work on Windows, m
 | `npm install` | install the development tools (once) |
 | `npm run check` | Lua syntax, globals, line length, the layers, data-only `GameData/`, private tables, test names, locale keys, TOC, packaging, seed, docs and version checks; lists open `VERIFY` markers |
 | `npm test` | run the tests in `tests/` (`npm test -- lures` runs only the matching files) |
+| `npm run sounds` | render the 10 % volume steps of the sound files in `OneKeyFishing/Media/Sounds/` (needs ffmpeg) |
 | `npm run harvest` | before a release: build the bundled catch database `OneKeyFishing/CatchDB/SeedData.lua` from the saved catch data of your accounts (and saved files given as arguments) |
 | `npm run link` | link the game's `AddOns/OneKeyFishing` to the `OneKeyFishing/` folder, deleting an installed copy there first (`prelink`): restart the game once, then changes show up after a `/reload` (a new file or a TOC change needs a restart) |
 | `npm run unlink` | remove that link |

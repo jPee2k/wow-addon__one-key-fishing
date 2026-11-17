@@ -406,4 +406,40 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Everywhere"] = "En todas partes"
     L["Open water"] = "Aguas abiertas"
     L["Pools"] = "Bancos"
+    -- Fishing/Sound.lua, UI/Settings.lua, UI/Minimap.lua: the fishing sounds (spec 013)
+    L["Sound effects"] = "Efectos de sonido"
+    L["Play fishing sounds"] = "Reproducir sonidos de pesca"
+    L["A bell rings when you cast, and a sound plays when you hook."] =
+        "Suena una campana al lanzar y un sonido cuando enganchas."
+    L["A notification follows when the loot holds an Uncommon or better item."] =
+        "Sigue una notificación cuando el botín tiene un objeto poco común o mejor."
+    L["Only while fishing mode is on; silent in a fight."] = "Solo con el modo de pesca activo; en silencio en combate."
+    L["Turn fishing sounds on"] = "Activar sonidos de pesca"
+    L["Turn fishing sounds off"] = "Desactivar sonidos de pesca"
+    -- UI/Settings.lua: the volume of the fishing sounds (spec 013)
+    L["Volume"] = "Volumen"
+    L["%d%%"] = "%d%%"
+    -- UI/Settings.lua: game sound in the background while fishing (spec 013)
+    L["Fishing sound in the background"] = "Sonido de pesca en segundo plano"
+    L["All game sound keeps playing while the game window is in the background."] =
+        "Todo el sonido del juego sigue sonando con la ventana del juego en segundo plano."
+    L["Only while fishing mode is on; your own game setting comes back when the mode ends."] =
+        "Solo con el modo de pesca activo; tu propio ajuste del juego vuelve al terminar el modo."
+    -- UI/Settings.lua: the splash focus (spec 013)
+    L["Splash focus while fishing"] = "Destacar el chapoteo al pescar"
+    L["Music, ambience and dialog are silenced and sound effects raised, so the bobber's splash stands out."] =
+        "La música, el ambiente y los diálogos se silencian y los efectos suben, para que destaque el chapoteo del " ..
+        "corcho."
+    L["Lifted in a fight; everything comes back when fishing mode ends."] =
+        "Se quita en combate; todo vuelve al terminar el modo de pesca."
+    -- Item kinds (spec 014)
+    L["Fish"] = "Peces"
+    L["Containers"] = "Contenedores"
+    L["Potions & drinks"] = "Pociones y bebidas"
+    L["Reagents & herbs"] = "Componentes y hierbas"
+    L["Other"] = "Otros"
+    L["Kinds: all"] = "Tipos: todos"
+    L["Kinds: %d of %d"] = "Tipos: %d de %d"
+    L["The kind filter hides every item."] = "El filtro de tipos oculta todos los objetos."
+    L["The kind filter hides the matches."] = "El filtro de tipos oculta las coincidencias."
 end)
