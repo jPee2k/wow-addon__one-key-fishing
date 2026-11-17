@@ -1,8 +1,6 @@
 -- Channel.lua: a ban whose YOU_LEFT comes before the PLAYER_BANNED notice (specs/004-public-channel-sync, FR-005a,
 -- contracts/channel.md "Locks, kicks, bans"): a ban, not a leave by hand, so the client moves to the next name.
 
-channel_on = true
-
 local MAIN = "OneKeyFishingShare"
 OneKeyFishingDB = { shareNotice = true, shareNoticeChannel = true }
 load_addon()

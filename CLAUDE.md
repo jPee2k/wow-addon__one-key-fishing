@@ -30,7 +30,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009 and 013 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013 and 016 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -58,7 +58,8 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   [docs/development.md](docs/development.md)).
   Tests run in fengari (Lua 5.3), the game is 5.1: keep the addon free of 5.1/5.3 differences.
 - `npm run dev` (package the working folder), `npm run build` (package the last commit; refuses uncommitted
-  changes and `VERIFY` markers), `npm run link` / `unlink`, `npm run install-addon`, `npm run harvest` (the
+  changes and `VERIFY` markers; `npm run build -- --force`, or a release tag whose message says `--force`, ships
+  open markers with a warning, the author's choice only), `npm run link` / `unlink`, `npm run install-addon`, `npm run harvest` (the
   bundled seed), `npm run sounds` (the volume steps of the sound files, needs ffmpeg). Details:
   [docs/development.md](docs/development.md).
 - A new file or a TOC change needs a game restart, not just `/reload`.
@@ -109,7 +110,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Sound.lua` | the fishing sounds (bell, hook, rare loot) of the "Sound effects" page, their volume (files under `Media/Sounds/`), silent in fights; the page's game audio settings are rows of `Fishing/Mode.lua` | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
-| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (off since spec 010: `Channel.AVAILABLE`); one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
+| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (`Channel.AVAILABLE`, the kill switch; on since spec 016); one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines, the item kinds and the kind choice | [catalog.md](docs/architecture/catalog.md) |
 | `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/StatsFrame.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers (also the radio and checkbox menus, the skill range label and the scan button state), copy window, indicator, toast, the statistics window's tabs (what can be caught here, the catalog) and the window, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
@@ -185,8 +186,10 @@ go there.
   `tonumber(newstate) == 1`, never `== "1"`.
 - Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
   window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).
-- The server refuses addon messages in a custom chat channel (`NOT_ALLOWED_IN_CHANNEL`, though the send returns 0);
-  `PARTY`, `WHISPER` and Battle.net game data (`SendGameData`) arrive. The addon's channel is off.
+- Addon messages in a custom chat channel were refused on 2026-11-06 (`NOT_ALLOWED_IN_CHANNEL`, though the send
+  returns 0) and pass again since 2026-11-16 (between players, from level 4 up, also in `OneKeyFishingShare`);
+  `PARTY`, `WHISPER` and Battle.net game data (`SendGameData`) arrive. The addon's channel uses them (spec 016);
+  two `NOT_ALLOWED_IN_CHANNEL` on one join stop it for the session.
 - Character names are "First Last" with a space. `UnitName` / `UnitFullName` return the first and the last name as
   two values (not a realm); the full name is `GetUnitName(unit, true)`. A whisper goes to "First Last" (no realm);
   `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name. The addon keeps names

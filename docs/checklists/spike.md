@@ -73,17 +73,18 @@ section "Proof steps (V26)" now.
   with `/leave OKFSpikeNNNN` and `/join OKFSpikeNNNN` (the name the report prints), and one with `/join`, `/leave`
   and `/join` of it: the notices in their order (one `YOU_LEFT` per leave, before the next `YOU_JOINED`?). Report: 2026-11-06: `JoinTemporaryChannel` returns `0, empty`; the join notice is `YOU_CHANGED` only; no chat window listed the test channel; the macros: only the first `/join` or `/leave` of a channel in a macro takes effect (one notice), the rest is lost. Closed: not shipped (V19, spec 010).
 - [x] **C3. Sending** (V19, V25): the result of the `OKFSPIKE` message to the channel (expected `0`) and, for its
-  echo, the chat type (expected `CHANNEL`) and the shapes of `target` and `name`. Report: 2026-11-06: `0`, but no echo; the server answers `NOT_ALLOWED_IN_CHANNEL` (also by `/run` to `OneKeyFishingShare`): V19 failed, `docs/tech-debt.md`.
+  echo, the chat type (expected `CHANNEL`) and the shapes of `target` and `name`. Report: 2026-11-06: `0`, but no echo; the server answers `NOT_ALLOWED_IN_CHANNEL` (also by `/run` to `OneKeyFishingShare`): V19 failed, `docs/tech-debt.md`. 2026-11-16: passes again between players (levels 4 to 31), also in `OneKeyFishingShare`; `docs/forever-api.md` "Verified in game".
 - [x] **C4. Ownership** (V24): whether the player owns the new channel; the notices after setting and clearing a
   password on it. Report: 2026-11-06: the joining player owns it (`IsDisplayChannelOwner` true, `CHANNEL_OWNER` with the player's name); setting and clearing a password each bring `PASSWORD_CHANGED` with the player's name, actor empty.
 - [x] **C5. Numbers** (V22): the channel numbers before the join and after the leave are the same: yes / no.
   Report: 2026-11-06: yes (`channel numbers back as before the last join: true`).
 - [x] **C6. Reach** (V20): B (and, if possible, a character of the other faction, and one on another layer) joins
   the test channel name the report prints and runs `/okf spike` too; note which echoes arrive. Closed: not shipped
-  (V19, spec 010).
+  (V19, spec 010). 2026-11-16 (`/run`): two players of one faction reach each other; the other faction is not
+  checked (one faction per account on a PvE realm), nor another layer.
 - [x] **C7. Lock** (V24, V21): B sets a password on the test channel (`/password OKFSpikeNNNN x`); note the notices
   A gets. A leaves and joins it again: the password prompt came and was closed (note any flash). Closed: not shipped
-  (V19, spec 010).
+  (V19, spec 010). 2026-11-16 (`/run`): see `docs/forever-api.md` "Verified in game", "Channel password and owner".
 - [x] **C8. The hash** (V26): `bit` exists, the raw results of `bnot(0)` and `band(-1, 4294967295)`,
   `ns.SHA256("abc")` equals the known digest, and the time of 64 proof steps (expected under 5 ms). Report: 2026-11-06: `bit` true, both 4294967295, the digest known; 64 steps 17-20 ms over seven runs (over 5 ms: `docs/tech-debt.md`).
 - [x] **C9. Unknown items** (V27): how many item IDs of the bundled data the game does not know or says do not
@@ -92,6 +93,10 @@ section "Proof steps (V26)" now.
 **The channel decision**: addon messages in a custom channel do not work (V19 failed), so the channel is off
 (`Channel.AVAILABLE = false`, spec 010); V20-V25 and V41 are closed as "not shipped" in
 `specs/004-public-channel-sync/verification.md`.
+
+**2026-11-16, decision changed**: `/run` tests with a second player show V19 passing (C3, C6, C7 above); the channel
+comes back in 1.3.0 (spec 016), and V20-V25, V41 are open again, checked by
+[public-channel.md](public-channel.md).
 
 ## Part 4: map pins and areas (V30-V37), section "Map pins and areas"
 
@@ -141,6 +146,6 @@ dropped from the error log at login.
 
 - Date, build, client language, second player: 2026-11-06 and 2026-11-07, game 1.60.1 (70790), EU realm, enUS
   client, branch `002-shared-db` linked (version `dev`), level 10-11 with Fishing 150; no second player yet.
-- Problems found: V19 (no addon messages in a custom channel), V11 (names "First Last", `UnitName` two values),
+- Problems found: V19 (no addon messages in a custom channel; passes again since 2026-11-16), V11 (names "First Last", `UnitName` two values),
   V3 (pool loot from the bobber), V26 (a proof step 0.3 ms), V34 (the subzone often not found), V2 (a cave is the
   continent map), V12 (offline whisper returns 0), V31 (no arrow on screen): `docs/tech-debt.md` "Fix batches".

@@ -20,6 +20,10 @@ All notable changes to OneKeyFishing are listed here. The format follows
   Containers, Potions & drinks, Reagents & herbs and Other, and the **Kinds** button hides the kinds you do not want
   to see. The choice is shared by both tabs and kept between sessions; hiding a kind does not change the numbers of
   the others.
+- The public channel is back: addon users who share no guild, group or friends list exchange catch data through a
+  hidden chat channel again, now that WoW Forever carries addon data in chat channels again. **Use the public
+  channel** on the Shared database page turns it off; a popup says so once. If the game stops carrying the data
+  again, the addon stops using the channel until the next login.
 
 ### Changed
 

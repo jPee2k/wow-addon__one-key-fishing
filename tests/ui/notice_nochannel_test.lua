@@ -1,11 +1,12 @@
 -- UI/ShareNotice.lua and Exchange/ShareGame.lua:
--- the one-time popup in a release without the public channel (Channel.AVAILABLE false, FR-026): the
--- part 2 text, and only the part 2 flag is set. One login.
+-- the one-time popup in a release without the public channel (the kill switch, Channel.AVAILABLE false, FR-026):
+-- the part 2 text, and only the part 2 flag is set. One login.
 
 local POPUP = "ONEKEYFISHING_SHARE_NOTICE"
 
 reset_popup()
-load_addon(function() ns.Channel.AVAILABLE = false end)
+channel_off = true
+load_addon()
 local L = ns.L
 
 test("without the channel the notice has the part 2 first sentence, and closing it sets only shareNotice", function()

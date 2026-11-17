@@ -36,7 +36,7 @@ ns.RegisterEvent("LOOT_READY", function()
             -- Assumed (V27, accepted): the loot link of an item the client does not know yet carries its item ID
             local itemID = ns.ItemIDFromLink(link)
             -- The slot knows the quality also for an item the client has not cached (spec 013 research R2).
-            -- VERIFY(V51): GetLootSlotInfo's 5th value is the item quality of fishing loot (green = 2)
+            -- GetLootSlotInfo's 5th value is the item quality of fishing loot (green = 2; V51, accepted 2026-11-17)
             if quality == nil and itemID and C_Item.GetItemQualityByID then
                 quality = C_Item.GetItemQualityByID(itemID)
             end

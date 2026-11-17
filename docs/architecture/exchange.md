@@ -55,9 +55,10 @@ within the buffer limits, parts nobody asked for dropped, a flooding sender repo
   Channel.lua is in its channel, at the broadcast pace; the channel's number is read when the message goes out. A
   `CHANNEL` message counts only from one of `Channel.NAMES` (the `name` argument, else `target`), as
   `via = "channel"`. Two refusals in a row (`InvalidChannel`, `GeneralError`, any result but a success, a
-  throttle or a lockdown) call `Channel.OnRefused()` (the next channel), through `Comm.ChannelRefused()`, which the
-  server's `NOT_ALLOWED_IN_CHANNEL` notice calls too; the channel path never counts toward "every path left out",
-  since it carries `HELLO` only.
+  throttle or a lockdown) call `Channel.OnRefused()` (the next channel), through `Comm.ChannelRefused()`. The
+  server's `NOT_ALLOWED_IN_CHANNEL` notice calls `Comm.ChannelRefused(true)`, counted apart on the current join: two
+  call `Channel.OnRefused("server")`, which stops the channel for the session (spec 016). The channel path never
+  counts toward "every path left out", since it carries `HELLO` only.
 - Parts: never from the channel, and only from an address the part filter takes (`Comm.SetPartFilter`: Share's
   session peer); at most 128 KB of parts over all senders (the buffer that got its last part longest ago goes first).
   More refused parts from one sender in 10 minutes than an honest client's whole hourly budget carries (402) call
@@ -66,13 +67,14 @@ within the buffer limits, parts nobody asked for dropped, a flooding sender repo
 
 ## Exchange/Channel.lua
 
-The hidden public channel; it knows nothing about records. **Off since spec 010** (`Channel.AVAILABLE = false`): the
-server refuses addon messages in a custom chat channel (V19). The code stays behind the switch; while it is off, a
-channel of ours an earlier build left joined is left once at `PLAYER_ENTERING_WORLD`, out of the chat windows and
-with no chat line. Its tests switch it on with the stub flag `channel_on`.
+The hidden public channel; it knows nothing about records. It was off in 1.2.0 (spec 010: the server refused addon
+messages in a custom chat channel, V19) and ships again since spec 016 (`specs/016-public-channel-return`; V19 passes
+since 2026-11-16). `Channel.AVAILABLE = false` is the kill switch: no join, and a channel of ours an earlier build
+left joined is left once at `PLAYER_ENTERING_WORLD`, out of the chat windows and with no chat line. The tests run the
+channel as it ships; the stub flag `channel_off` switches it off for the tests of that case.
 
 - Names: `OneKeyFishingShare`, then `OneKeyFishingShare2`..`6`, walked in this order by every client. The switch
-  `Channel.AVAILABLE` takes the channel out of a release whose spike failed (V19).
+  `Channel.AVAILABLE` takes the channel out of a release if the server refuses it for good.
 - Joined with `JoinTemporaryChannel(name)` 30-60 s after a login (at once after the setting or after slots free
   up), only with both settings on, the notice that names the channel closed, no pause, and two free chat channel
   slots of the 20. After a `/reload` a joined channel is taken as it is.
@@ -87,14 +89,23 @@ with no chat line. Its tests switch it on with the stub flag `channel_on`.
   `OWNER_CHANGED` or the `CHANNEL_OWNER` answer to `DisplayChannelOwner`, asked only after a lock); otherwise, and
   for moderation, which has no undo call, it moves on after a random 10-20 s unless a heard player undoes it. Kicks
   rejoin after 60 s, the third counts as a ban; a ban or a mute moves on. `TRIAL_RESTRICTED`, `INVALID_NAME` or a
-  nil join result: locked, no fallback. Each leave by the addon (`Leave`, a second name of ours once per join, the
+  failed join call: refused by the game (`refused = "game"`), no fallback. A join that returns nothing (the
+  20-channel limit, seen 2026-11-17, also while the active count lags the player's own joins) waits for two free
+  slots like a slot given up (no line), and tries the same name again; the third in a session counts as the game's
+  refusal. Two `NOT_ALLOWED_IN_CHANNEL` on the current
+  join: refused by the server (`refused = "server"`), the channel left and no fallback tried, since the server refuses
+  every custom channel alike (spec 016 research R1). Either refusal lasts until the next real login (the session
+  record keeps it over a `/reload`; a 1.2.0 record's `true` reads as `"game"`). `SET_MODERATOR` (the new owner's
+  first name only) is not read. Each leave by the addon (`Leave`, a second name of ours once per join, the
   clean-up after a `/reload`) owes one `YOU_LEFT` of that name; one that comes within 5 s (15 s while a join of the
   same name waits) uses it up. Any other `YOU_LEFT` of the name joined (also before the join is confirmed) is a leave
-  by hand: out until the next login. After a `/reload` a channel found locked that the client is still in is left,
-  and one the player joined again by hand after a leave is left alone. Ticking the setting counts as reading the notice.
+  by hand: out until the next login. After a `/reload` a channel found locked (or any, while refused) that the client
+  is still in is left, and one the player joined again by hand after a leave is left alone. Ticking the setting counts
+  as reading the notice.
 - `Channel.GetState()` (unavailable, off, notice, paused, left, noslot, locked, waiting, in) fires `CHANNEL_STATE`
   (state, index, joins) on each change; a new `joins` is a new join (Share's first channel round, Comm's refusal
-  count), the same one after a pause is not. `Channel.Describe()` for `/okf debug`.
+  count), the same one after a pause is not. Both refusals show as `locked`. `Channel.Describe()` for `/okf debug`
+  (with `refused false|game|server`).
 
 ## Exchange/Share.lua: the store
 

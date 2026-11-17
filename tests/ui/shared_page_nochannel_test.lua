@@ -1,8 +1,9 @@
--- UI/Settings.lua: the "Shared database" page in a release without the public channel (Channel.AVAILABLE false,
--- FR-026): no channel setting, sentence or state line. One login.
+-- UI/Settings.lua: the "Shared database" page in a release without the public channel (the kill switch,
+-- Channel.AVAILABLE false, FR-026): no channel setting, sentence or state line. One login.
 
 reset_popup()
-load_addon(function() ns.Channel.AVAILABLE = false end)
+channel_off = true
+load_addon()
 local L = ns.L
 local page = settings_pages[L["Shared database"]]
 

@@ -24,10 +24,12 @@ How a release is built and published, and what it is checked against.
 3. `npm run check` and `npm test`, test in game (`npm run install-addon`), commit and push `develop`. No
    `VERIFY` marker may be left (`npm run check` lists them; `npm run build` refuses them): each is an assumption
    that still waits for an in-game check, or one the author accepts without a check (its `verification.md` row
-   says "Accepted"; [release-plan.md](release-plan.md) lists the ones still to confirm).
+   says "Accepted"; [release-plan.md](release-plan.md) lists the ones still to confirm). To release with markers
+   still open, the author forces it: `npm run build -- --force` locally, and an annotated tag whose message says
+   `--force` for the workflow (step 5); the markers ship, listed as a warning.
 4. Open a pull request `develop` -> `main` and merge it once the `check` job is green.
 5. On the updated `main`, tag the merge commit with the bare version (`git tag 1.0.0`, no `v`) and push the
-   tag (`git push origin 1.0.0`). GitHub Actions (`.github/workflows/release.yml`) runs the checks and tests,
+   tag (`git push origin 1.0.0`; with open markers forced: `git tag -a 1.0.0 -m "Release 1.0.0 --force"`). GitHub Actions (`.github/workflows/release.yml`) runs the checks and tests,
    checks that the tag is on `main`, matches `package.json` and the changelog has no `Unreleased` section,
    then BigWigsMods/packager builds the zip with `.pkgmeta`, creates a GitHub release and uploads to
    CurseForge. The packager replaces keywords such as `@project-version@` in every packaged file, not only in
