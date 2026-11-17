@@ -450,4 +450,7 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Kinds: %d of %d"] = "Types : %d sur %d"
     L["The kind filter hides every item."] = "Le filtre de types masque tous les objets."
     L["The kind filter hides the matches."] = "Le filtre de types masque les résultats."
+    L["Sort: %s"] = "Tri : %s"
+    L["Name"] = "Nom"
+    L["No price"] = "Sans prix"
 end)

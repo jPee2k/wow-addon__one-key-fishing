@@ -1,7 +1,8 @@
 # Release plan
 
-What is left after release 1.2.0 (the shared catch database, `specs/002-local-catch-db` to
-`specs/005-catch-catalog`, with the fixes of specs 006 to 012) and what the next patch waits for. The generic release
+What is left to check after releases 1.2.0 (the shared catch database, `specs/002-local-catch-db` to
+`specs/005-catch-catalog`, with the fixes of specs 006 to 012) and 1.3.0 (specs 013 to 016), and what the next patch
+waits for. The generic release
 steps (version, changelog, pull request, tag) are in [publishing.md](publishing.md).
 
 1.2.0 went out before every in-game check had run: the author accepted the assumptions below without one (each
@@ -41,10 +42,22 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.3.0 (next)
+## 1.3.1 (prepared 2026-11-17)
 
-**Status 2026-11-17: no `VERIFY` marker left.** V21, V22, V23, V41 and V53 were confirmed in game; V24, V25 and V51
-were accepted by the author without a check, to be checked after the release:
+- Spec 017 (`specs/017-catalog-sort`): the catalog's Sort button (name, price, chance), merged into `develop`; its
+  checklist `checklists/catalog-sort.md` passed in game (steps 1 to 7 and 9; step 8 skipped: the catalog loads too
+  fast). No `VERIFY` marker.
+- The harvest made seed epoch 4 with 307 places (235 new) from 71 contributions; one outlier reported (`6bujtjq6@1`,
+  the only report of 6351 Dented Crate, a real fished container), not blocked. The 26 new items got their kind in
+  `GameData/ItemKinds.lua` from the new `/okf debug` section "Seed items without a kind" (names and classes read in
+  game): 11 fish, 4 bloated fish as containers, 4 potions, 1 reagent, 6 other.
+- Left: the pull request `develop` -> `main`, the tag `1.3.1`.
+
+## 1.3.0 (released 2026-11-17)
+
+**Released 2026-11-17**: pull request #6 merged into `main`, tag `1.3.0`, GitHub release and CurseForge upload
+(`OneKeyFishing-1.3.0-forever.zip`). No `VERIFY` marker was left: V21, V22, V23, V41 and V53 were confirmed in game;
+V24, V25 and V51 were accepted by the author without a check and are checked after the release:
 
 | ID | To check later | How |
 | --- | --- | --- |
@@ -58,9 +71,10 @@ Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sou
 
 - Prepared on 2026-11-17: `016-public-channel-return` merged into `develop`; the harvest (`checklists/public-channel.md`
   step 11) made seed epoch 3 with 72 places from 6 contributions (outliers reported, none blocked); 21 new items got their kind in `GameData/ItemKinds.lua` (names and classes read in game); version 1.3.0.
-  Left: the pull request `develop` -> `main` and the tag ([publishing.md](publishing.md) steps 4-5). The in-game checks it waited for are done or
-  accepted (status above); V20, the other faction, stays open on a PvE realm.
-- No channel marker is left (status above); `npm run build` passes without `--force`.
+  The in-game checks it waited for were done or accepted (status above); V20, the other faction, stays open on a
+  PvE realm.
+- `npm run build` passed without `--force`; the release package was checked against its TOC (98 files: 63 listed,
+  5 at the root, 30 sounds; nothing else).
 - Already checked for spec 016 (2026-11-16, `/run`, not repeated): addon messages between players in a custom
   channel, in `OneKeyFishingShare`, from level 4, ten in a frame, 255 bytes; the password, wrong password and owner
   notices (`forever-api.md` "Verified in game").
@@ -68,6 +82,6 @@ Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sou
   channel's name in `CHAT_MSG_ADDON`), the exchange through the channel (step 2), hiding and channel numbers (1),
   locks and the owner's self-heal (4), the give-way at the 20-channel limit (5, V23 closed), the notice again (9);
   the kick cannot be done in Forever. A bug found there (a join at the limit stopped the channel for the session) is
-  fixed. Later the same night: V21, V22 and V41 confirmed. Still open, not blocking: steps 6, the rest of 7, 5's
-  way back, the slow join (8), a week (10).
-- Whatever the checks above find.
+  fixed. Later the same night: V21, V22 and V41 confirmed. Still open after the release: steps 6, the rest of 7,
+  5's way back, the slow join (8), a week (10).
+- Whatever these checks find goes into [tech-debt.md](tech-debt.md) and a 1.3.x patch.

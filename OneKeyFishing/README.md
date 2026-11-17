@@ -88,8 +88,8 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 
 ## Statistics
 
-Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has two tabs at the
-bottom, **Statistics** and **What can be caught here**; it opens on the one you used last.
+Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has three tabs at the
+bottom, **Statistics**, **What can be caught here** and **Catch catalog**; it opens on the one you used last.
 
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
   **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
@@ -148,10 +148,15 @@ and, with the shared catch database on, what other players reported.
 - **Search**: type part of an item name, in your game client's language and in any letter case; the list narrows
   with every letter. Grey items only show when you search for them. An item your game client does not know yet
   stays out of the list until the game loads it.
-- **Filters**: **Skill** (all ranges by default), **Source** (**All** or **Only mine**) and **Kinds**, as on the
-  "What can be caught here" tab: the list is grouped under the same kind headers, and a kind you hide there is hidden
-  here too. A search whose matches are all hidden says "The kind filter hides the matches."; an item opened by its
-  link or from the other tab always shows, whatever its kind.
+- **Filters**: **Skill** (all ranges by default), **Source** (**All** or **Only mine**), **Water** (with pool data)
+  and **Kinds** (below them, next to **Sort**), as on the "What can be caught here" tab: the list is grouped under the
+  same kind headers, and a kind you hide there is hidden here too. A search whose matches are all hidden says "The
+  kind filter hides the matches."; an item opened by its link or from the other tab always shows, whatever its kind.
+- **Sort**: **Name** (alphabetical, the default), **Price** (the dearest first) or **Chance** (the highest chance
+  first), inside each kind. The right end of each row shows what the list is sorted by: the number of zones, the
+  price per piece (the same value the statistics use: the vendor price or your last auction scan, whichever is
+  higher; "No price" when there is none, listed last), or the chance in the item's best zone ("Little data" items
+  last). Your choice is kept between sessions, for all your characters.
 - **An item**: click it to see the zones it was caught in, with its chance there, the zone's catches and the span
   of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
   data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is

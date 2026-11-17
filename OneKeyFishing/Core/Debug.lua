@@ -137,6 +137,45 @@ local function BuildReport()
         end
     end)
 
+    -- The items of the bundled seed that GameData/ItemKinds.lua does not list (a harvest brought them), with their
+    -- names and classes, so each gets its kind by ID (spec 014). A release has none (tests/catalog/kinds_test.lua);
+    -- after a harvest, a dev build lists them. An item the client does not know yet is asked for, once per report.
+    Section(lines, "Seed items without a kind", function()
+        local byItem, missing = ns.GameData.ItemKinds.byItem, {}
+        local function check(items)
+            for itemID in pairs(type(items) == "table" and items or {}) do
+                itemID = tonumber(itemID)
+                if itemID and not byItem[itemID] then
+                    missing[itemID] = true
+                end
+            end
+        end
+        for _, cell in pairs(ns.SeedData and ns.SeedData.cells or {}) do
+            if type(cell) == "table" then
+                check(cell.i)
+                if type(cell.p) == "table" then
+                    check(cell.p.i) -- the pool part
+                end
+            end
+        end
+        local ids = {}
+        for itemID in pairs(missing) do
+            table.insert(ids, itemID)
+        end
+        table.sort(ids)
+        if #ids == 0 then
+            add("none")
+        end
+        for _, itemID in ipairs(ids) do
+            local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
+            local name = C_Item.GetItemNameByID(itemID)
+            if not name and C_Item.RequestLoadItemDataByID then
+                C_Item.RequestLoadItemDataByID(itemID)
+            end
+            add("%d %s (%s / %s)", itemID, name or "not loaded yet", tostring(classID), tostring(subClassID))
+        end
+    end)
+
     -- No anonymous ID and no names: the exchange state in numbers only.
     Section(lines, "Shared database", function()
         for _, line in ipairs(ns.Share.Describe()) do

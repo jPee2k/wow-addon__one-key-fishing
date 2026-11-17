@@ -43,6 +43,18 @@ GameData.ItemKinds = {
         [19806] = "fish", -- Dezian Queenfish (15 / 0)
         [19807] = "fish", -- Speckled Tastyfish (15 / 4)
         [21153] = "fish", -- Raw Greater Sagefish (7 / 8)
+        -- Fish of the seed of epoch 4 (names and classes read in game on 2026-11-17 with /okf debug)
+        [6294] = "fish", -- 12 Pound Mud Snapper (15 / 0)
+        [6295] = "fish", -- 15 Pound Mud Snapper (15 / 0)
+        [6299] = "fish", -- Sickly Looking Fish (0 / 5: the class rule would call it a drink)
+        [6311] = "fish", -- 22 Pound Catfish (15 / 0)
+        [12238] = "fish", -- Darkshore Grouper (0 / 5)
+        [13878] = "fish", -- 53 Pound Yellowtail (15 / 0)
+        [16967] = "fish", -- Feralas Ahi (15 / 0)
+        [16968] = "fish", -- Sar'theris Striker (12 / 0)
+        [16969] = "fish", -- Savage Coast Blue Sailfin (12 / 0)
+        [16970] = "fish", -- Misty Reed Mahi Mahi (12 / 0)
+        [251524] = "fish", -- Whimsyfin (7 / 11: a fish of Forever; the class rule would call it a reagent)
         -- Containers: chests, crates, trunks, clams
         [5523] = "containers", -- Small Barnacled Clam (7 / 11)
         [5524] = "containers", -- Thick-shelled Clam
@@ -55,6 +67,11 @@ GameData.ItemKinds = {
         [21113] = "containers", -- Watertight Trunk (15 / 0)
         [21150] = "containers", -- Iron Bound Trunk
         [21228] = "containers", -- Mithril Bound Trunk (15 / 0)
+        -- Bloated fish of the seed of epoch 4: opened like a clam for what is inside (15 / 4)
+        [6643] = "containers", -- Bloated Brilliant Smallfish
+        [8366] = "containers", -- Bloated Mithril Head Trout
+        [13881] = "containers", -- Bloated Redgill
+        [21162] = "containers", -- Bloated Oily Blackmouth
         -- Fished containers of higher waters, not in the seed yet (their class, like the chests above, is no help)
         [6351] = "containers", -- Dented Crate
         [6352] = "containers", -- Waterlogged Crate
@@ -72,12 +89,23 @@ GameData.ItemKinds = {
         [3385] = "potions", -- Lesser Mana Potion (0 / 1)
         [3928] = "potions", -- Superior Healing Potion (0 / 1)
         [21151] = "potions", -- Rumsey Rum Black Label (0 / 5)
+        [118] = "potions", -- Minor Healing Potion (0 / 1)
+        [929] = "potions", -- Healing Potion (0 / 1)
+        [3827] = "potions", -- Mana Potion (0 / 1)
+        [6149] = "potions", -- Greater Mana Potion (0 / 1)
         -- Reagents & herbs
         [3820] = "reagents", -- Stranglekelp (7 / 9)
         [6470] = "reagents", -- Deviate Scale (7 / 6)
+        [4363] = "reagents", -- Copper Modulator (7 / 1: an Engineering part)
         -- Other
         [6457] = "other", -- Rusted Engineering Parts (15 / 0)
         [9754] = "other", -- Nomad Cloak (4 / 1)
+        [2977] = "other", -- Veteran Armor (4 / 3)
+        [3870] = "other", -- Plans: Green Iron Shoulders (9 / 4)
+        [6297] = "other", -- Old Skull (15 / 0)
+        [6301] = "other", -- Old Teamster's Skull (15 / 0)
+        [6307] = "other", -- Message in a Bottle (15 / 0)
+        [6456] = "other", -- Acidic Slime (15 / 0)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {

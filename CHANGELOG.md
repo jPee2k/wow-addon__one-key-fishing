@@ -4,6 +4,21 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-11-17
+
+### Added
+
+- **Sort** in the catch catalog: by name, by price (the dearest first, with the price of each item in its row;
+  "No price" for items without one) or by chance (the chance in the item's best zone). The order applies inside each
+  kind and is kept between sessions. The catalog's buttons are now in three rows: the search; Skill, Source and Water;
+  Sort and Kinds.
+
+### Changed
+
+- The bundled catch database now knows 307 fishing places (235 new) and 29 more items, from the catches players
+  shared.
+- `/okf debug` has a section "Seed items without a kind" (empty in a release; it helps prepare the bundled data).
+
 ## [1.3.0] - 2026-11-17
 
 ### Added

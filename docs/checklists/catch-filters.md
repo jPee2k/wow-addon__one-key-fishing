@@ -21,8 +21,8 @@ or `ukUA`) for step 7.
    kind with items); hovering or clicking a header does nothing; an item row still shows its tooltip and opens the
    catalog. ____
 2. [ ] **The buttons** (FR-007, FR-009): the filter row reads Skill, Source, and Water (only with pool data) as
-   before; the Kinds button sits at the top right (beside the place's name, in the catalog beside the search box),
-   overlaps nothing and reads "Kinds: all". ____
+   before; the Kinds button sits at the top right beside the place's name (in the catalog, since 1.3.1, in the third
+   row after Sort: [catalog-sort.md](catalog-sort.md)), overlaps nothing and reads "Kinds: all". ____
 3. [ ] **The menu stays open** (FR-007, research R6, SC-003): click Kinds and untick Containers, Potions & drinks,
    Reagents & herbs and Other one after another. Expected: the menu stays open between the clicks, the list follows
    each click at once, the button ends at "Kinds: 1 of 5", and only fish are listed; the chance and price of each

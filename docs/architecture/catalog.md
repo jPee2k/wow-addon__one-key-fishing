@@ -4,8 +4,9 @@
 model and contracts are in `specs/005-catch-catalog/` (`data-model.md` "Catalog", `contracts/api.md`); the tab itself is
 in [ui.md](ui.md), the per-map views it is built from in [catch-db.md](catch-db.md); the in-game checklist is
 [catch-catalog.md](../checklists/catch-catalog.md). It owns no frames, so the tooltips use it without the window,
-and it sends no message about its data: the tab polls `Catalog.GetVersion()` on the window's tick. Its one message
-is a setting's, `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (spec 014, "Item kinds" below).
+and it sends no message about its data: the tab polls `Catalog.GetVersion()` on the window's tick. Its two messages
+are settings': `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (spec 014, "Item kinds" below) and
+`SETTINGS_CHANGED("catalogSort")` from `Catalog.SetSort` (spec 017, "List order" below).
 
 ## The index
 
@@ -34,8 +35,10 @@ is a setting's, `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (s
 
 ## Reads
 
-- `Catalog.Items(filter, search)`: `{ itemID, name, zones }` sorted by `ns.CompareText`; known items only, grey ones
-  only with search text, and with search text only the names whose key contains it. Returns the state too.
+- `Catalog.Items(filter, search)`: `{ itemID, name, zones, chance, littleData }` (`chance` and `littleData` of the
+  item's best place, the first of `Places`) in the saved order ("List order" below; by `ns.CompareText` by default);
+  known items only, grey ones only with search text, and with search text only the names whose key contains it.
+  Returns the state too.
 - `Catalog.Places(itemID, filter)`: the zones of an item, `{ mapID, name, chance, catches, itemCatches, players,
   littleData, ranges }`.
 - `Catalog.Spots(itemID, mapID, filter)`: the spots of an item on one map from `CatchDB.QueryCells`, `{ cell, name,
@@ -79,8 +82,27 @@ player may hide kinds.
   click costs no index rebuild (research R2 of spec 014). `Places`, `Spots`, `TooltipLines` and `MinimapLines`
   ignore it; `Describe` ends with `kinds hidden: ...`.
 
+## List order
+
+`specs/017-catalog-sort`: the catalog's item list in one of three orders, chosen with the tab's Sort button.
+
+- `Catalog.SORTS` = `name`, `price`, `chance` (the menu's order); `Catalog.SortText(sort)` is the translated name,
+  looked up when drawn.
+- The choice: `settings.catalogSort` (account-wide, `"name"` by default), read by `Catalog.GetSort()` (a value that is
+  no order, a later version's, reads `"name"` and is not rewritten), written only by `Catalog.SetSort(sort)`, which
+  fires `SETTINGS_CHANGED("catalogSort")` when it changed.
+- `Catalog.Items` sorts the list it returns (`SortRows`), after the search and the grey rule: by name as before; by
+  price `ns.Prices.Get` (the statistics' value: vendor or a trusted auction price, the higher), highest first, no
+  price (0) last; by chance the best place's `chance`, highest first, the rows whose best place has little data
+  after the others. Ties keep the order by name; the rows are the index's tables, not copied.
+- Prices are read on every call, once per row (not in the comparator), never cached: a scan moves them without moving
+  `Catalog.GetVersion()`, and the tab redraws on `PRICES_CHANGED` and `SETTINGS_CHANGED` through its tick (by price
+  also on `GET_ITEM_INFO_RECEIVED` of a listed item: a vendor price may arrive after the draw, as on the other tabs).
+  `Group` keeps the order inside each kind; `Find`, `Places`, `Spots` and the tooltips ignore the choice.
+
 ## Tests
 
+`tests/catalog/sort_test.lua` (the saved order, by price, by chance, ties, a search, a skill filter),
 `tests/catalog/kinds_test.lua` (the kinds, the seed coverage, `Group`, the choice),
 `tests/catalog/index_test.lua` (items, search, order, places, spots, names, tooltips, the name queue),
 `tests/catalog/spot_pin_test.lua` (a spot's pin target and the pin button; the pin itself is tested in

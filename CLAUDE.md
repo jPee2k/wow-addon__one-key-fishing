@@ -42,7 +42,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
 | Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0, and what 1.2.1 waits for), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
 | History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database; `sounds-plan.md`, how addon sound works in WoW Forever) |
 
@@ -111,7 +111,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Fishing/Sound.lua` | the fishing sounds (bell, hook, rare loot) of the "Sound effects" page, their volume (files under `Media/Sounds/`), silent in fights; the page's game audio settings are rows of `Fishing/Mode.lua` | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
 | `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (`Channel.AVAILABLE`, the kill switch; on since spec 016); one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
-| `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines, the item kinds and the kind choice | [catalog.md](docs/architecture/catalog.md) |
+| `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`), tooltip lines, the item kinds and the kind choice, the list's order | [catalog.md](docs/architecture/catalog.md) |
 | `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/StatsFrame.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers (also the radio and checkbox menus, the skill range label and the scan button state), copy window, indicator, toast, the statistics window's tabs (what can be caught here, the catalog) and the window, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
 | `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
@@ -132,7 +132,8 @@ Cross-module rules:
   `SHARED_DATA_CHANGED`, which drops cached views). The public channel likewise by `Channel.SetEnabled`, never by a
   write of `settings.shareChannel` (it joins or leaves at once). The fishing sounds by `Sound.SetEnabled`, never by a
   write of `settings.fishingSounds` (it stops the sounds and fires `SETTINGS_CHANGED`). The kind choice of the catch
-  lists by `Catalog.SetKindShown`, never by a write of `settings.hiddenKinds` (it fires `SETTINGS_CHANGED`).
+  lists by `Catalog.SetKindShown`, never by a write of `settings.hiddenKinds` (it fires `SETTINGS_CHANGED`). The order
+  of the catalog's list by `Catalog.SetSort`, never by a write of `settings.catalogSort` (it fires `SETTINGS_CHANGED`).
 - Fishing mode's CVars restore only while they still hold the addon's value; a row marked `live` follows its setting
   at once while fishing, one marked `combat = "lift"` is restored for a fight ([fishing-mode.md](docs/architecture/fishing-mode.md)).
 - Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data lives
@@ -141,9 +142,9 @@ Cross-module rules:
 - A module split over several files shares its internals through `<Module>.private` (`CatchDB`, `Comm`, `Share`);
   what only the tests need lives there too. No file of another folder reads it (`npm run check`).
 - The catalog follows the data through `CatchDB.MapStamp` (and `GetStampVersion`), not through a message; it sends
-  none about its data, and the tab polls `Catalog.GetVersion()` on the window's tick. Its one message is a setting's:
-  `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown`. Data written past `CatchDB`'s `Settle` needs a
-  `SHARED_DATA_CHANGED` before the views see it.
+  none about its data, and the tab polls `Catalog.GetVersion()` on the window's tick. Its two messages are settings':
+  `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` and `SETTINGS_CHANGED("catalogSort")` from
+  `Catalog.SetSort`. Data written past `CatchDB`'s `Settle` needs a `SHARED_DATA_CHANGED` before the views see it.
 
 Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 

@@ -434,4 +434,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Kinds: %d of %d"] = "Види: %d з %d"
     L["The kind filter hides every item."] = "Фільтр видів приховує всі предмети."
     L["The kind filter hides the matches."] = "Фільтр видів приховує збіги."
+    L["Sort: %s"] = "Сортування: %s"
+    L["Name"] = "Назва"
+    L["No price"] = "Без ціни"
 end)
