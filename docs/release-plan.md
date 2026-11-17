@@ -42,6 +42,17 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
+## 1.3.1 (prepared 2026-11-17)
+
+- Spec 017 (`specs/017-catalog-sort`): the catalog's Sort button (name, price, chance), merged into `develop`; its
+  checklist `checklists/catalog-sort.md` passed in game (steps 1 to 7 and 9; step 8 skipped: the catalog loads too
+  fast). No `VERIFY` marker.
+- The harvest made seed epoch 4 with 307 places (235 new) from 71 contributions; one outlier reported (`6bujtjq6@1`,
+  the only report of 6351 Dented Crate, a real fished container), not blocked. The 26 new items got their kind in
+  `GameData/ItemKinds.lua` from the new `/okf debug` section "Seed items without a kind" (names and classes read in
+  game): 11 fish, 4 bloated fish as containers, 4 potions, 1 reagent, 6 other.
+- Left: the pull request `develop` -> `main`, the tag `1.3.1`.
+
 ## 1.3.0 (released 2026-11-17)
 
 **Released 2026-11-17**: pull request #6 merged into `main`, tag `1.3.0`, GitHub release and CurseForge upload
