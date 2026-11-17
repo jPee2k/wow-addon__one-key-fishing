@@ -28,6 +28,7 @@ local KICK_REJOIN = 60 -- seconds before joining again after a kick
 local REJOIN_MARGIN = 0.5 -- a timer may read GetTime() a hair before rejoinAt: that counts as reached
 local MAX_KICKS = 3 -- the third kick in a session counts as a ban
 local FREE_SLOTS = 2 -- chat channel slots that must be free to join: one always stays the player's (FR-005)
+local NIL_JOINS = 3 -- joins with no result in a session before they count as the game refusing the channel
 local POPUP = "CHAT_CHANNEL_PASSWORD" -- the game's password prompt for a locked channel
 
 local lowerNames = {}
@@ -53,6 +54,7 @@ local gaveWay = false -- the slot was given up for the player: back when two slo
 local wayLinePrinted = false
 local loginReady = false -- the login delay has passed (or a /reload: the channel was there already)
 local kicks, rejoinAt = 0, nil -- rejoinAt: GetTime() before which a kicked client does not join again
+local nilJoins = 0 -- joins this session that returned nothing (Join)
 local owner = false -- this client owns the current channel (OWNER_CHANGED or CHANNEL_OWNER naming it)
 local sawPassword = false -- a password set by a player not heard announcing, on the current channel
 local lockTimer -- the token of the wait before moving on
@@ -242,12 +244,26 @@ end
 local function Join(index)
     current, joining, joins = index, true, joins + 1
     local join = joins
-    -- An addon can join a custom channel this way, without a key press (seen on 2026-11-06 and 2026-11-16: it returns
-    -- 0 and an empty name, then YOU_CHANGED). A nil first value is taken as the game refusing the channel itself (not
-    -- seen; a Trial account cannot send addon data at all, so the exchange's "unavailable" pause keeps it off anyway).
+    -- An addon can join a custom channel this way, without a key press (seen on 2026-11-06, 2026-11-16 and
+    -- 2026-11-17: it returns 0, then YOU_CHANGED).
     local ok, kind = pcall(JoinTemporaryChannel, Channel.NAMES[index])
-    if not ok or kind == nil then
+    if not ok then
         joining, refused = false, "game"
+        Notify()
+        return
+    end
+    if kind == nil then
+        -- At the 20-channel limit the join returns nothing (seen 2026-11-17), also when the count of active channels
+        -- has not caught up with the player's joins still on their way: wait for two free slots, as after giving
+        -- way. A refusal of the channel itself (a Trial account, not seen) may look the same, so the NIL_JOINS-th
+        -- empty result in a session counts as the game's refusal and stops the retries.
+        nilJoins = nilJoins + 1
+        joining = false
+        if nilJoins >= NIL_JOINS then
+            refused = "game"
+        else
+            gaveWay = true
+        end
         Notify()
         return
     end
@@ -479,8 +495,8 @@ end)
 ---------------------------------------------------------------------------
 -- The player's channel limit (FR-005; research R3)
 ---------------------------------------------------------------------------
--- VERIFY(V23): the refused join at the 20-channel limit comes as this text on CHAT_MSG_SYSTEM or UI_ERROR_MESSAGE
--- (the text and the limit seen on 2026-11-06, not the event).
+-- The refused join at the 20-channel limit comes as this text ("You can only be in 20 channels at a time."), read on
+-- CHAT_MSG_SYSTEM and UI_ERROR_MESSAGE; the addon gave way on it in game (2026-11-17, V23).
 local limitText -- built once: every system line and UI error is compared with it
 
 local function OnLimit(text)

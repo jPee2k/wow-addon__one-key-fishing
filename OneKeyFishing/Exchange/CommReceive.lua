@@ -172,7 +172,8 @@ ns.RegisterEvent("CHAT_MSG_ADDON", function(_, prefix, text, channel, sender, ta
     if prefix ~= PREFIX or type(sender) ~= "string" or not VIA[channel] then
         return
     end
-    -- VERIFY(V53): a channel message names its channel in the name argument (or in target), as on Retail
+    -- A channel message names its channel in the name argument ("OkfTest42"), target is "<number>. <name>"
+    -- (seen 2026-11-17, V53)
     if channel == "CHANNEL" and not ns.Channel.IsOurs((type(name) == "string" and name ~= "") and name or target) then
         return
     end

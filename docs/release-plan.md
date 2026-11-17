@@ -50,10 +50,15 @@ Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sou
 - Waits for: V51 (the rare sound, `checklists/sounds.md` step 3); spec 016 built and its in-game checks
   ([checklists/public-channel.md](checklists/public-channel.md); step 2 needs two accounts that are not Battle.net
   friends; V20, the other faction, stays open on a PvE realm).
-- The channel's markers (V21-V25, V41 of `specs/004-public-channel-sync/verification.md`, and V53 of
-  `specs/016-public-channel-return/verification.md`) block `npm run build` until the checklist runs, the author
+- The channel's markers (V21-V25, V41 of `specs/004-public-channel-sync/verification.md`; V53 confirmed on 2026-11-17) block `npm run build` until the checklist runs, the author
   accepts them, or the author releases with `--force`.
 - Already checked for spec 016 (2026-11-16, `/run`, not repeated): addon messages between players in a custom
   channel, in `OneKeyFishingShare`, from level 4, ten in a frame, 255 bytes; the password, wrong password and owner
   notices (`forever-api.md` "Verified in game").
+- Checked on 2026-11-17 with the spec 016 build and a stranger (`checklists/public-channel.md` "Results"): V53 (the
+  channel's name in `CHAT_MSG_ADDON`), the exchange through the channel (step 2), hiding and channel numbers (1),
+  locks and the owner's self-heal (4), the give-way at the 20-channel limit (5, V23 closed), the notice again (9);
+  the kick cannot be done in Forever. A bug found there (a join at the limit stopped the channel for the session) is
+  fixed. Still open: steps 6, 7, 5's way back, the slow join (8), a week (10), the harvest (11), and markers V21,
+  V22, V24, V25, V41.
 - Whatever the checks above find.

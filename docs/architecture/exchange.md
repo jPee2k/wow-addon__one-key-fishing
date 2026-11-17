@@ -89,7 +89,10 @@ channel as it ships; the stub flag `channel_off` switches it off for the tests o
   `OWNER_CHANGED` or the `CHANNEL_OWNER` answer to `DisplayChannelOwner`, asked only after a lock); otherwise, and
   for moderation, which has no undo call, it moves on after a random 10-20 s unless a heard player undoes it. Kicks
   rejoin after 60 s, the third counts as a ban; a ban or a mute moves on. `TRIAL_RESTRICTED`, `INVALID_NAME` or a
-  nil join result: refused by the game (`refused = "game"`), no fallback. Two `NOT_ALLOWED_IN_CHANNEL` on the current
+  failed join call: refused by the game (`refused = "game"`), no fallback. A join that returns nothing (the
+  20-channel limit, seen 2026-11-17, also while the active count lags the player's own joins) waits for two free
+  slots like a slot given up (no line), and tries the same name again; the third in a session counts as the game's
+  refusal. Two `NOT_ALLOWED_IN_CHANNEL` on the current
   join: refused by the server (`refused = "server"`), the channel left and no fallback tried, since the server refuses
   every custom channel alike (spec 016 research R1). Either refusal lasts until the next real login (the session
   record keeps it over a `/reload`; a 1.2.0 record's `true` reads as `"game"`). `SET_MODERATOR` (the new owner's

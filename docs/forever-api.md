@@ -272,7 +272,20 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   addon must be disabled for that test: 1.2.0 leaves a channel of its own names that it did not join
   (`Exchange/Channel.lua`, `OnNotice`), so a `/run` join of `OneKeyFishingShare` gets `YOU_LEFT` within a second.
   That leave also shows that `CHAT_MSG_CHANNEL_NOTICE` names the channel in argument 9 (its base name, matched by
-  `OnNotice` and the chat filters), and argument 4 is "<number>. <name>" (the `/run` listener printed it). A level 4 character
+  `OnNotice` and the chat filters), and argument 4 is "<number>. <name>" (the `/run` listener printed it).
+- Addon messages in a custom channel, argument by argument (`/run` test, 2026-11-17, Green Neerg level 1 and Plague
+  Corvus level 8, not friends in game or on Battle.net): `CHAT_MSG_ADDON` gives prefix, text, `CHANNEL`, the sender
+  "First Last", argument 5 (`target`) "8. OkfTest42" and argument 8 (`name`) "OkfTest42", the base name (V53). A
+  level 1 character sends and receives. A client that has not registered the prefix gets nothing, its own echo
+  included, though its sends arrive (`C_ChatInfo.RegisterAddonMessagePrefix`).
+- Chat channel limit (2026-11-17, dev build): `C_ChatInfo.GetNumActiveChannels()` counts temporary channels too (it
+  equals the entries of `GetChannelList()`). With 20 channels taken, `JoinTemporaryChannel(name)` returns nothing and
+  the chat shows "You can only be in 20 channels at a time." (`ERR_TOO_MANY_CHAT_CHANNELS`); below the limit it
+  returns `0` (V23).
+- Channel moderation by players (2026-11-17, the owner of `OneKeyFishingShare`, no addon): `/ckick <channel> <name>`,
+  `/owner <channel>`, `/run ChannelKick(channel, "First Last")` and `/run DisplayChannelOwner(channel)` print nothing
+  and change nothing; the kicked player stays in the channel. `/password <channel> x` works (V24). `/chatlist` prints
+  nothing either; `GetChannelList()` lists the channels (number, name, disabled). A level 4 character
   (Showtime Holyhell) sends and receives in `OkfTest42` the same way: no limit by level (V19 closed). Both
   players were of one faction (one faction per account on a PvE realm): the other faction is not checked (V20).
 - Channel password and owner (`/run` test, 2026-11-16, two players in `OkfTest42`): the first to join owns it.

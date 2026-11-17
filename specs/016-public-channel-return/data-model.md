@@ -8,7 +8,7 @@ No saved field is added, renamed or reshaped: `DB_SCHEMA` stays. The entities ar
 | Value | Meaning | Set by | Cleared by |
 |---|---|---|---|
 | `false` | the channel may be joined | start of a session | — |
-| `"game"` | the game refuses the channel itself (Trial account, invalid name; `TRIAL_RESTRICTED`, `INVALID_NAME`, or `JoinTemporaryChannel` returning nothing) | `OnNotice`, `Join` | the next real login |
+| `"game"` | the game refuses the channel itself (Trial account, invalid name; `TRIAL_RESTRICTED`, `INVALID_NAME`, a join call that fails, or the third `JoinTemporaryChannel` in a session that returns nothing: one or two such results mean the 20-channel limit and wait for free slots, seen in game 2026-11-17) | `OnNotice`, `Join` | the next real login |
 | `"server"` | the server refuses addon messages in custom channels (two `NOT_ALLOWED_IN_CHANNEL` on the current join, R1) | `Channel.OnRefused("server")` from `Comm.ChannelRefused(true)` | the next real login |
 
 Today the flag is `true` for the first row; the second row is new.
