@@ -171,6 +171,8 @@ Builds the `/okf debug` report (English, not localized): versions and locale, th
 and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database
 (`CatchDB.Describe()`, never the anonymous ID), the shared database (`Share.Describe()`, `Channel.Describe()`, no
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
-and the name queue, never an item name), then "Errors" (the error log, the newest first: count, context, times,
+and the name queue, never an item name), "Seed items without a kind" (the bundled seed's items that
+`GameData/ItemKinds.lua` does not list, by ID with name and class, an unloaded one asked for; "none" in a release, a
+dev build after a harvest lists them), then "Errors" (the error log, the newest first: count, context, times,
 version, message and stack). `Debug.Report()` returns the window title and the text; `/okf debug`
 (`Commands.lua`) shows them in the copy window.
