@@ -42,7 +42,10 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.4.0 (being released, 2026-11-18)
+## 1.4.0 (released 2026-11-18)
+
+**Released 2026-11-18**: pull request #11 (`019-auctionator-prices`) merged into `develop`, pull request #12 merged
+into `main`, tag `1.4.0`, GitHub release and CurseForge upload (`OneKeyFishing-1.4.0-forever.zip`). No `VERIFY` marker.
 
 - Spec 019 (`specs/019-auctionator-prices`): Auctionator as a price source, built on `019-auctionator-prices`. Its
   checklist `checklists/auctionator-prices.md` passed in game on 2026-11-18 (steps 1 to 9); V59 confirmed. No
@@ -54,8 +57,8 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
   Bloated Glossy Mightfish, 3873 Plans: Golden Scale Cuirass. None blocked: they are real items, and gear and
   recipes are fished in Forever. The new items got their kind in `GameData/ItemKinds.lua` (3873 Plans: Golden
   Scale Cuirass and 6718 Electropeller, both other; names read from Wowhead's classic database).
-- Before the tag: the author's scan with the release build (`npm run build`), the Auctionator switch off, since
-  the new seed items join every player's scan list.
+- The author's scan with the release build, the Auctionator switch off (the new seed items join every player's scan
+  list): 107 items (43 own, 64 bundled), 107 requests in 73 s, 78 prices, nothing left unanswered.
 
 ## 1.3.2 (released 2026-11-18)
 
