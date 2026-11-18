@@ -213,5 +213,10 @@ go there.
   item of `GameData.AuctionUnanswered` (empty today); search only items of the catalog, with the guard that
   remembers an unanswered one; test the auction API one request at a time
   ([docs/auction-plan.md](docs/auction-plan.md)).
+- "Interface action failed because of an AddOn" in combat may come with no `ADDON_ACTION_BLOCKED` and nothing in the
+  taint log: Blizzard's Lua refuses addon code itself (`HideUIPanel`, so the addon's windows hide their close
+  button's frame with `frame:Hide()`, `ns.SetupWindow`; a `MenuUtil` title, divider or spacer, so menus build none
+  in combat). Find the cause by the steps of [docs/forever-api.md](docs/forever-api.md), "Finding what the game
+  blocked" (a `hooksecurefunc` on `DisplayInterfaceActionBlockedMessage` printing `debugstack`; `taintLog 2`).
 - The fish lines ("No fish are hooked.", `ERR_FISH_NOT_HOOKED`) come as `UI_INFO_MESSAGE` (type 417), not
   `UI_ERROR_MESSAGE`; a too-early hook press ends the fishing channel (seen 2026-11-16).

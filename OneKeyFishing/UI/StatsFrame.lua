@@ -217,17 +217,9 @@ local function Create()
     if not ok then
         f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     end
-    _G.OneKeyFishingStatsFrame = f
-    table.insert(UISpecialFrames, "OneKeyFishingStatsFrame")
     f:SetSize(WIDTH, HEIGHT)
     f:SetPoint("CENTER")
-    f:SetFrameStrata("DIALOG")
-    f:SetMovable(true)
-    f:SetClampedToScreen(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    ns.SetupWindow(f, "OneKeyFishingStatsFrame")
 
     local title = CreateText(f, "GameFontHighlight", "CENTER")
     title:SetPoint("TOP", 0, -6)
@@ -368,7 +360,10 @@ local function Create()
             StatsFrame.Tick()
         end
     end)
-    f:SetScript("OnShow", function() SelectTab(ns.db.statsTab) end)
+    f:SetScript("OnShow", function()
+        f:Raise() -- above the addon's other window
+        SelectTab(ns.db.statsTab)
+    end)
     -- New frames are shown; start hidden so the first Toggle opens it.
     f:Hide()
     return f
@@ -553,6 +548,7 @@ end
 function StatsFrame.OpenCatalog(arg)
     frame = frame or Create()
     frame:Show()
+    frame:Raise() -- also when the window was already shown
     SelectTab("catalog")
     ns.CatalogTab.Show(arg)
 end

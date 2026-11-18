@@ -15,7 +15,12 @@ local function OpenMenu(owner)
         return
     end
     MenuUtil.CreateContextMenu(owner, function(_, root)
-        root:CreateTitle("OneKeyFishing")
+        -- The game's title element marks its row for gamepad navigation through a secure value, which addon code
+        -- may not set in combat: the menu would still open, with the game's "Interface action failed because of an
+        -- AddOn" line (seen in game 2026-11-18). In a fight the menu has no title.
+        if not InCombatLockdown() then
+            root:CreateTitle("OneKeyFishing")
+        end
         root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
         root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
         root:CreateButton(L["Settings"], ns.SettingsUI.Open)

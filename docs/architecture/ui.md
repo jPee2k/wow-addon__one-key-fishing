@@ -33,6 +33,8 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
 - Three tabs below the window (statistics, "What can be caught here", the catch catalog): the game's
   `PanelTabButtonTemplate` or plain buttons, the last one saved in `OneKeyFishingDB.statsTab`.
   `StatsFrame.OpenCatalog(arg)` shows the window on the catalog.
+- The window is set up by `ns.SetupWindow` (Widgets, below) and raised whenever it is shown or opened on the
+  catalog.
 - The statistics page has rows in `ROWS`, cells keyed by row key.
 - A 1 s tick does a full refresh when `Stats.GetVersion()` changed or the window is marked dirty by
   `PRICES_CHANGED`, `SETTINGS_CHANGED`, a skill change, a level-up, item info of a caught item or game names
@@ -108,7 +110,11 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 - The minimap button's menu has a button "Turn fishing sounds on" / "Turn fishing sounds off" (its text follows
   `Sound.IsEnabled()`, a click calls `Sound.SetEnabled`), like the fishing mode entry; spec 013.
 
-- Widgets: the frame helpers of every window and page: `ns.CreateButton` (the panel button, which grows to its
+- Widgets: the frame helpers of every window and page: `ns.SetupWindow(frame, globalName)` (what the statistics
+  window and the copy window share: the global name, Escape through `UISpecialFrames`, the `HIGH` strata (below the game's popups, which are `DIALOG` and top-level: a click on a window would otherwise cover the question it opened),
+  dragging, top-level so that a click raises the window with its children, and the close button, the template's
+  or a new one, whose click hides the frame directly: the game's own script goes through `HideUIPanel`, which
+  refuses addon code in combat), `ns.CreateButton` (the panel button, which grows to its
   text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`
   (item tooltip with the addon's auction price, `Prices.AddTooltipLine`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
@@ -131,7 +137,8 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 - ShareNotice: the one-time popup about the catch exchange, shown when `Share.NoticeOwed()` says one is owed
   (after entering the world, after combat, retried when the game had no free dialog frame); closing it calls
   `Share.NoticeRead()`, the Settings button opens the "Shared database" page.
-- Minimap: the button and the Addon Compartment entry from the TOC; in fishing mode with
+- Minimap: the button and the Addon Compartment entry from the TOC; the right-click menu leaves its title out in
+  combat (the game refuses its secure value to addon code then, docs/forever-api.md); in fishing mode with
   `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`. The tooltip is
   cleared after `SetOwner`, and every coloured line carries its colour as a code in its text as well as in the
   arguments: the game once reset the line colours (every line white) while text codes survived (spec 012).
@@ -140,4 +147,4 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   `settings.tooltipChances` (V38).
 - CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug`
   report; `ns.ShowDebugReport` shows the debug report (the command, the minimap menu and the
-  settings page).
+  settings page). Set up by `ns.SetupWindow`; every `ns.ShowCopyWindow` raises it.

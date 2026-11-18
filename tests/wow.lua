@@ -132,6 +132,7 @@
 --   missing_atlases[name] = true        C_Texture.GetAtlasInfo returns nil for that atlas (default: every atlas)
 --   game_fold = true                    (before loading) defines CaseAccentInsensitiveParse and strcmputf8i
 --   no_scroll_templates = true          (before loading) CreateFrame with the scroll and search templates fails
+--   no_window_template = true           (before loading) CreateFrame with BasicFrameTemplateWithInset fails
 --   tooltip_post_calls[dataType]        functions given to TooltipDataProcessor.AddTooltipPostCall (read)
 --   itemref_lines                       lines of ItemRefTooltip (read), like tooltip_lines of GameTooltip
 --   profile_ms = n, profile_step = n    debugprofilestop returns profile_ms, then adds profile_step to it (nil:
@@ -476,6 +477,19 @@ function Frame:Hide()
     end
 end
 
+-- A window's stacking: the strata, top-level (a click raises it with its children) and the count of Raise calls.
+function Frame:SetFrameStrata(strata)
+    self.strata = strata
+end
+
+function Frame:SetToplevel(toplevel)
+    self.toplevel = toplevel and true or false
+end
+
+function Frame:Raise()
+    self.raised = (self.raised or 0) + 1
+end
+
 function Frame:SetShown(shown)
     if shown then
         self:Show()
@@ -619,6 +633,10 @@ local frameMeta = {
                 return NewFrame(self)
             end
         end
+        -- The close button exists only where a template made it (CreateFrame below).
+        if key == "CloseButton" then
+            return nil
+        end
         if type(key) == "string" and key:find("^%u") then
             local member = setmetatable({}, memberMeta)
             rawset(frame, key, member)
@@ -638,12 +656,36 @@ end
 -- without them would.
 local SCROLL_TEMPLATES = { WowScrollBoxList = true, MinimalScrollBar = true, SearchBoxTemplate = true }
 
+-- The game's panel manager (UIParentPanelManager.lua): it refuses addon code in combat without an error or an
+-- event, and a frame that is not a registered panel is simply hidden.
+function HideUIPanel(frame)
+    if not frame or not frame:IsShown() or in_combat then
+        return
+    end
+    frame:Hide()
+end
+
+-- The game's close button script (UIPanelCloseButton_OnClick): it hides its parent through the panel manager.
+local function CloseButtonOnClick(self)
+    HideUIPanel(self.parent)
+end
+
 function CreateFrame(_, name, parent, template)
     if SCROLL_TEMPLATES[template] and rawget(_G, "no_scroll_templates") then
         error("unknown template " .. template, 2)
     end
+    if template == "BasicFrameTemplateWithInset" and rawget(_G, "no_window_template") then
+        error("unknown template " .. template, 2)
+    end
     local frame = NewFrame(parent)
     frame.template = template
+    if template == "BasicFrameTemplateWithInset" then
+        frame.CloseButton = NewFrame(frame)
+        frame.CloseButton.template = "UIPanelCloseButton"
+        frame.CloseButton.scripts.OnClick = CloseButtonOnClick
+    elseif template == "UIPanelCloseButton" then
+        frame.scripts.OnClick = CloseButtonOnClick
+    end
     if template == "MinimalSliderWithSteppersTemplate" then
         frame.callbacks = {}
         function frame:Init(value, minValue, maxValue, steps, formatters)
@@ -1361,11 +1403,18 @@ function sounds_played()
     return list
 end
 
--- The context menu of MenuUtil (UI/Minimap.lua): the entries of the last menu built.
+-- The context menu of MenuUtil (UI/Minimap.lua): the entries of the last menu built. The game's title, divider and
+-- spacer set a secure value that addon code may not set in combat (the "Interface action failed" line, 2026-11-18):
+-- menu_blocked counts each one added in combat.
 menu_entries = {}
+menu_blocked = 0
+local IN_COMBAT_REFUSED = { title = true, divider = true, spacer = true }
 local function MenuRoot()
     local root = {}
     local function Add(kind, text, a, b)
+        if IN_COMBAT_REFUSED[kind] and in_combat then
+            menu_blocked = menu_blocked + 1
+        end
         local entry = { kind = kind, text = text }
         if kind == "checkbox" or kind == "radio" then
             entry.isSelected, entry.onClick = a, b
@@ -1380,6 +1429,7 @@ local function MenuRoot()
     function root:CreateCheckbox(text, isSelected, onClick) return Add("checkbox", text, isSelected, onClick) end
     function root:CreateRadio(text, isSelected, onClick) return Add("radio", text, isSelected, onClick) end
     function root:CreateDivider() return Add("divider") end
+    function root:CreateSpacer() return Add("spacer") end
     return root
 end
 
@@ -2339,6 +2389,7 @@ local stubs = {}
 local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishing_rank = true, known_items = true,
     group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
     profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
+    no_window_template = true,
     channel_info = true, channel_off = true, player_full_name = true, map_at_position = true,
     player_map_positions = true, auction_key_info = true }
 setmetatable(_G, {
