@@ -305,6 +305,20 @@ local function WeightFactors(sum, players, amount)
     return factors
 end
 
+-- What counts as a report of an item: a catch of it in an entry of another player's record, of a game version not
+-- older than the map's reset. Adds the entry's contribution ID to ids[itemID] (itemID -> { ID -> true }).
+local function AddReports(ids, entry, reset)
+    local cell = entry.cell
+    if type(cell) == "table" and type(cell.i) == "table" and not (reset and OlderBuild(entry.build, reset)) then
+        for itemID, counts in pairs(cell.i) do
+            if type(counts) == "table" and (tonumber(counts[1]) or 0) > 0 then
+                ids[itemID] = ids[itemID] or {}
+                ids[itemID][entry.id] = true
+            end
+        end
+    end
+end
+
 -- Item ID -> the number of other players' contributions that report it anywhere on the map, in any range
 -- (FR-014: an item neither the seed nor the own catch has is shown from NEW_ITEM_REPORTERS of them on).
 local function Reporters(sources, mapID)
@@ -314,14 +328,7 @@ local function Reporters(sources, mapID)
     end
     for range = 0, MAX_RANGE do
         for entry in pairs(sources.others.byPrefix[MapRange(mapID, range)] or {}) do
-            if type(entry.cell.i) == "table" and not (sources.reset and OlderBuild(entry.build, sources.reset)) then
-                for itemID, counts in pairs(entry.cell.i) do
-                    if type(counts) == "table" and (tonumber(counts[1]) or 0) > 0 then
-                        ids[itemID] = ids[itemID] or {}
-                        ids[itemID][entry.id] = true
-                    end
-                end
-            end
+            AddReports(ids, entry, sources.reset)
         end
     end
     for itemID, set in pairs(ids) do
@@ -569,3 +576,32 @@ function CatchDB.Describe()
     table.insert(lines, "game version key " .. BuildKey())
     return lines
 end
+
+-- The items the auction scan searches beyond the own catches (Catch/Auction.lua, specs/018-auction-scan): the
+-- bundled database's items and, while sharing is on, the items of other players' counted records that the catalog
+-- shows: one the own catch has, or one NEW_ITEM_REPORTERS other contributions report on one map (FR-014), so a
+-- single forged record cannot add an item. A report counts as in Reporters (AddReports). Two sets itemID -> true;
+-- the first is the seed's own table: callers never write.
+function CatchDB.ScanItems()
+    local others = {}
+    if ns.Share.IsEnabled() then
+        local own, byMap = OwnItems(), {} -- byMap: mapID -> itemID -> { record ID -> true }
+        local resets = SeedField("resets")
+        for _, entries in pairs(Others().byRecord) do
+            for _, entry in ipairs(entries) do
+                byMap[entry.mapID] = byMap[entry.mapID] or {}
+                AddReports(byMap[entry.mapID], entry, resets[entry.mapID])
+            end
+        end
+        for _, items in pairs(byMap) do
+            for itemID, ids in pairs(items) do
+                if own[itemID] or CountKeys(ids) >= NEW_ITEM_REPORTERS then
+                    others[itemID] = true
+                end
+            end
+        end
+    end
+    return SeedItems(), others
+end
+
+ns.Auction.SetItemSource(CatchDB.ScanItems)

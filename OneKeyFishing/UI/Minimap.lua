@@ -22,7 +22,9 @@ local function OpenMenu(owner)
         -- A button whose text says what a click does, like the fishing mode entry above.
         root:CreateButton(ns.Sound.IsEnabled() and L["Turn fishing sounds off"] or L["Turn fishing sounds on"],
             function() ns.Sound.SetEnabled(not ns.Sound.IsEnabled()) end)
-        local scan = root:CreateButton(L["Scan auction prices"], ns.Auction.Scan)
+        local scanText = ns.Auction.GetState() == "stalled" and L["Auction house not answering"]
+            or L["Scan auction prices"]
+        local scan = root:CreateButton(scanText, ns.Auction.Scan)
         if not ns.Auction.CanScan() then
             scan:SetEnabled(false)
         end

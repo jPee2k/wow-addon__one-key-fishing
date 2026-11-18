@@ -7,15 +7,15 @@ local _, ns = ...
 local Prices = {}
 ns.Prices = Prices
 
-local FEW_PIECES = 5 -- pieces the price saw
-local FEW_LOTS = 3 -- result rows (price points) on sale
+Prices.FEW_PIECES = 5 -- pieces the price saw
+Prices.FEW_LOTS = 3 -- result rows (price points) on sale; both also decide when the scan stops paging (Auction.lua)
 
 -- The scanned auction price and whether it rests on few lots, or nil. Prices saved by 1.0.0 have neither count.
 function Prices.GetAuction(itemID)
     local auction = ns.db.settings.auctionPrices and ns.db.prices[itemID]
     if auction then
-        local fewLots = (auction.quantity ~= nil and auction.quantity < FEW_PIECES)
-            or (auction.lots ~= nil and auction.lots < FEW_LOTS)
+        local fewLots = (auction.quantity ~= nil and auction.quantity < Prices.FEW_PIECES)
+            or (auction.lots ~= nil and auction.lots < Prices.FEW_LOTS)
         return auction.price, fewLots
     end
 end
@@ -39,11 +39,15 @@ function Prices.FormatValue(itemID, count)
     return text
 end
 
--- For item tooltips: the auction price that is not used because it rests on few lots.
+-- For item tooltips: the addon's auction price under its own name (another addon's line may show the cheapest
+-- auction, which differs from this average), grey with the mark when it is not used because it rests on few lots.
 function Prices.AddTooltipLine(tooltip, itemID)
     local price, fewLots = Prices.GetAuction(itemID)
     if fewLots then
-        tooltip:AddLine((ns.L["Auction price: %s (few lots)"]):format(ns.FormatMoney(price)), 0.6, 0.6, 0.6)
+        local text = (ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format(ns.FormatMoney(price))
+        tooltip:AddLine(text, 0.6, 0.6, 0.6)
+    elseif price then
+        tooltip:AddLine((ns.L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(price)), 1, 1, 1)
     end
 end
 
@@ -53,6 +57,12 @@ function Prices.GetLastScanTime()
     for _, entry in pairs(ns.db.prices) do
         if not latest or entry.time > latest then
             latest = entry.time
+        end
+    end
+    -- An answered search without a price (not on sale) is a scan too (Auction.lua, specs/018-auction-scan).
+    for _, scanned in pairs(ns.db.priceScans or {}) do
+        if not latest or scanned > latest then
+            latest = scanned
         end
     end
     return latest

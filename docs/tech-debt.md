@@ -17,7 +17,23 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
 
 ## Open items
 
-None.
+- **The statistics and debug windows cannot be closed in a fight** (medium, reported by a player 2026-11-18, not
+  reproduced yet). Open the statistics window (`/okf stats`) or the debug window (`/okf debug`), enter combat: the
+  window's close button does nothing until the fight ends, and the chat shows the game's "interface action
+  blocked by an AddOn" error. Likely cause, to confirm: both windows use `BasicFrameTemplateWithInset`
+  (`UI/StatsFrame.lua`, `UI/CopyWindow.lua`), whose close button calls `HideParentPanel`, i.e. `HideUIPanel`, which
+  goes through the game's secure panel manager and is blocked for addon code in combat. Direction: the close
+  button (and Escape) hide the frame with `frame:Hide()` directly; check the other windows built from a template;
+  a test that the close button's script calls no `HideUIPanel`. To note in game before the fix: the exact error
+  line (`/console scriptErrors 1` or the `ADDON_ACTION_BLOCKED` text) and whether Escape closes the window in a
+  fight.
+- **The addon's windows draw through each other** (low, seen in game 2026-11-18). With the statistics window and
+  the debug report window open and overlapping, their contents mix: the catalog's rows, the scroll bar and the
+  section title of the statistics window show over the debug window's title bar and body, and a click does not
+  bring a window to the front. Cause: both are in the `DIALOG` strata (`UI/StatsFrame.lua`, `UI/CopyWindow.lua`)
+  with no `SetToplevel(true)`, so their child frames interleave by frame level. Direction: `SetToplevel(true)` on
+  each window (a click raises it with its children) and `Raise()` on show; check the other frames a window can
+  overlap (the Auctionator window in the same picture is not ours). A test that each window is top-level.
 
 ## History
 

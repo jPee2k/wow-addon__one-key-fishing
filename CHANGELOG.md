@@ -4,6 +4,41 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-11-18
+
+### Changed
+
+- **The auction scan** covers every item of the catch catalog, not only your own catches, so the catalog and "What
+  can be caught here" show auction prices for fish you never caught. Your own catches are scanned first, then the
+  addon's bundled data, then items known from other players. The first scan of a visit takes about a minute.
+- The scan is several times faster right after a login and no longer loses prices: it waits for the game's item
+  data before asking, sends the next request as soon as the auction house takes one, and loads further pages only
+  while the price is still open. Bound items, which cannot be sold, are not searched.
+- A press within 15 minutes of a scan searches only what was not scanned yet (a scan cut short by closing the
+  window goes on where it stopped); when everything is fresh, the press scans everything again.
+- When the auction house stops answering (it then shows nothing until you log out and in), the scan stops within
+  10 seconds, keeps the prices found and says so once in chat; until it answers again the button above the auction
+  window and the minimap menu say "Auction house not answering", the other scan buttons say why on hover. The item
+  it was waiting for is not searched again until the next version of the addon; when it was an item known only
+  from other players, none of those are.
+
+- The item tooltips of the statistics window's lists show the addon's auction price as "Auction price
+  (OneKeyFishing)", so it is told apart from an auction addon's line (which shows the cheapest auction, not the
+  average the addon uses).
+- The bundled catch database now knows 446 fishing places (139 new) and 31 more items, from the catches players
+  shared.
+
+### Removed
+
+- The **Scan auction prices** button of the settings page: opening the settings closes the auction window, so it
+  could never be pressed. Use the button above the auction window, the statistics window's or the minimap menu.
+
+### Fixed
+
+- Auction prices of items that do not stack (the "Pound" fish, for example) were divided by the number of equal
+  auctions, so they came out far too low and the vendor price was used instead. The saved auction prices are
+  forgotten once with this update; the next scan brings them back.
+
 ## [1.3.1] - 2026-11-17
 
 ### Added

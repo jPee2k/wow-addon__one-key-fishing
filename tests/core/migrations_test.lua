@@ -63,6 +63,25 @@ test("upgrade from 1.0.0: statistics and prices stay as they were, new fields ar
     eq(type(OneKeyFishingDB.shared.records), "table", "new field: contribution records")
 end)
 
+test("the auction scan's fields (spec 018): defaults for new and 1.3.1 data, a saved guard kept", function()
+    LoadWith(nil, nil)
+    eq(type(OneKeyFishingDB.priceScans), "table", "scan times")
+    eq(next(OneKeyFishingDB.priceScans), nil, "no scan time yet")
+    eq(OneKeyFishingDB.scanGuard.version, "", "guard version")
+    eq(next(OneKeyFishingDB.scanGuard.items), nil, "nothing remembered")
+    local price = { price = 5, quantity = 20, lots = 4, time = 1 }
+    LoadWith({ schema = 1, settings = {}, prices = { [123] = price } }, { schema = 1 })
+    eq(OneKeyFishingDB.prices[123], price, "the stored price is the same table")
+    eq(OneKeyFishingDB.prices[123].price .. " " .. OneKeyFishingDB.prices[123].quantity, "5 20", "price unchanged")
+    eq(type(OneKeyFishingDB.priceScans), "table", "scan times added")
+    eq(OneKeyFishingDB.scanGuard.version, "", "guard added")
+    eq(OneKeyFishingDB.schema, 1, "schema stays 1")
+    LoadWith({ schema = 1, settings = {}, scanGuard = { version = "1.3.2", items = { [6291] = "own" } } },
+        { schema = 1 })
+    eq(OneKeyFishingDB.scanGuard.version, "1.3.2", "saved guard version kept")
+    eq(OneKeyFishingDB.scanGuard.items[6291], "own", "saved guard item kept")
+end)
+
 test("migrations: data from a newer version is left alone, with a warning", function()
     local printed = LoadWith({ schema = 99, settings = {} }, { schema = 1 })
     eq(OneKeyFishingDB.schema, 99, "schema")

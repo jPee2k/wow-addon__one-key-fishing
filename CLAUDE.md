@@ -30,7 +30,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013 and 016 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016 and 018 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -42,7 +42,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
 | Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet), [docs/auction-plan.md](docs/auction-plan.md) (the auction scan's speed-up, built in spec 018, and Auctionator as a price source, not built: measurements, rules, decisions) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
 | History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database; `sounds-plan.md`, how addon sound works in WoW Forever) |
 
@@ -97,7 +97,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
-| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `FishedContainers`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
+| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names and the own name, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
@@ -141,6 +141,8 @@ Cross-module rules:
   `L` or another module there; [game-data.md](docs/architecture/game-data.md)); addon tuning stays in its module.
 - A module split over several files shares its internals through `<Module>.private` (`CatchDB`, `Comm`, `Share`);
   what only the tests need lives there too. No file of another folder reads it (`npm run check`).
+- The auction scan's items beyond the own catches come from `CatchDB.ScanItems` through `Auction.SetItemSource`
+  (set by `CatchDB/Views.lua`); `Catch/Auction.lua` names no module of layer 2.
 - The catalog follows the data through `CatchDB.MapStamp` (and `GetStampVersion`), not through a message; it sends
   none about its data, and the tab polls `Catalog.GetVersion()` on the window's tick. Its two messages are settings':
   `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` and `SETTINGS_CHANGED("catalogSort")` from
@@ -159,7 +161,8 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 - `SKILL_WARNING` (text, loud: a next-rank notice of `Fishing/Skill.lua`, loud at the cap; the toast shows it even
   with catch notifications off), `MAP_PIN_SET` (placeName, or nil when the game refused the pin: `Core/MapPin.lua`
   answered a click; the toast shows it)
-- `AUCTION_STATE` (scan progress), `PRICES_CHANGED` (a scan finished or stopped)
+- `AUCTION_STATE` (the scan's state or progress changed: `Auction.GetState()`, `GetProgress()`), `PRICES_CHANGED` (a
+  scan finished or stopped, also when the auction house stopped answering)
 - `SHARED_DATA_CHANGED` (keys, and the store when Share changed one: records under `<id>@<epoch>` came or went:
   other players', or the own one a roll kept; or sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)
 - `CHANNEL_STATE` (state, index, joins: the hidden public channel's state changed, Channel.lua; joins counts the
@@ -204,5 +207,11 @@ go there.
 - `PlaySoundFile` has no volume argument (only Blizzard sound kits take `volumeOverride`), so the addon ships each
   sound at every 10 % step; "Sound in Background" (`Sound_EnableSoundWhenGameIsInBG`) is one switch for all game
   sound. The sound CVars can be set in a fight's start (`PLAYER_REGEN_DISABLED`) and take effect at once (V48).
+- An auction request the server never answers jams the client's auction house until the character logs out and in
+  (not `/reload`): `C_AuctionHouse.SearchForItemKeys` always; `SendSearchQuery` was unanswered twice on 2026-11-17
+  for reasons not known (one of the two items was answered the next day). Never call the first; never search an
+  item of `GameData.AuctionUnanswered` (empty today); search only items of the catalog, with the guard that
+  remembers an unanswered one; test the auction API one request at a time
+  ([docs/auction-plan.md](docs/auction-plan.md)).
 - The fish lines ("No fish are hooked.", `ERR_FISH_NOT_HOOKED`) come as `UI_INFO_MESSAGE` (type 417), not
   `UI_ERROR_MESSAGE`; a too-early hook press ends the fishing channel (seen 2026-11-16).

@@ -46,7 +46,7 @@ function ns.ItemDisplay(itemID)
     return link or name or ("item:" .. itemID), icon or C_Item.GetItemIconByID(itemID)
 end
 
--- The item tooltip of a row; withPrice adds the auction price when it is not used for values (Prices.lua).
+-- The item tooltip of a row; withPrice adds the addon's auction price (Prices.AddTooltipLine).
 function ns.ShowItemTooltip(owner, itemID, withPrice)
     if not itemID then
         return -- an empty row: the game's tooltip refuses a nil item
@@ -126,11 +126,43 @@ function ns.RangeLabel(min, max)
     return from .. "-" .. ((max + 1) * step - 1)
 end
 
--- The auction scan button: clickable while a scan can start; the hint (if any) shows while the auction house is
--- closed.
-function ns.UpdateScanButton(button, hint)
-    button:SetEnabled(ns.Auction.CanScan())
-    if hint then
-        hint:SetShown(not ns.Auction.IsOpen())
+local function ShowReason(button)
+    if button.reason then
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(button.reason, 1, 1, 1, true)
+        GameTooltip:Show()
     end
+end
+
+-- Shows button.reason (when set) in the game tooltip on hover, also while the button is disabled. Set up once.
+function ns.ShowReasonOnHover(button)
+    if button.showsReason then
+        return
+    end
+    button.showsReason = true
+    button:SetMotionScriptsWhileDisabled(true)
+    button:HookScript("OnEnter", ShowReason)
+    button:HookScript("OnLeave", function(self)
+        if GameTooltip:GetOwner() == self then
+            GameTooltip:Hide()
+        end
+    end)
+end
+
+-- Sets the reason ShowReasonOnHover shows; a tooltip the button owns follows it at once (the state may change
+-- while the pointer rests on the button).
+function ns.SetReason(button, reason)
+    button.reason = reason
+    if GameTooltip:GetOwner() == button then
+        GameTooltip:Hide()
+        ShowReason(button)
+    end
+end
+
+-- An auction scan button (the statistics window's, the one above the auction window): clickable while a scan can
+-- start, the reason it cannot on hover (Auction.WhyNot).
+function ns.UpdateScanButton(button)
+    ns.ShowReasonOnHover(button)
+    button:SetEnabled(ns.Auction.CanScan())
+    ns.SetReason(button, ns.Auction.WhyNot())
 end

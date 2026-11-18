@@ -44,3 +44,14 @@ test("a table setting is listed by its keys, not as a memory address (spec 014 h
     assert(not text:find("table: ", 1, true), "no address:\n" .. text)
     ns.db.settings.hiddenKinds = {}
 end)
+
+test("the Auction scan section holds the scan's lines; the Catch database section no longer does", function()
+    local text = made()
+    local section = text:match("%-%- Auction scan %-%-\n(.-)\n\n")
+    assert(section, "an Auction scan section:\n" .. text)
+    assert(section:find("auction: closed", 1, true), section)
+    assert(section:find("auction guard", 1, true), section)
+    assert(section:find("last price scan:", 1, true), section)
+    local catchDB = assert(text:match("%-%- Catch database %-%-\n(.-)\n\n"), "the Catch database section")
+    assert(not catchDB:find("last price scan", 1, true), catchDB)
+end)

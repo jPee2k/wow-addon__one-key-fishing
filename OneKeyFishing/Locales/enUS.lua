@@ -53,6 +53,9 @@ L["Open the auction house first."] = true
 L["Nothing to scan yet: catch some fish first."] = true
 L["Scanning auction prices of %d item(s)..."] = true
 L["Auction scan stopped: %d of %d price(s) found."] = true
+L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] = true
+L["The auction house does not answer. Log out and back in to bring it back."] = true
+L["Auction house not answering"] = true
 
 -- Skill.lua
 L["Apprentice"] = true
@@ -163,7 +166,8 @@ L["Price"] = true
 
 -- Prices (the few-lots mark in both tabs)
 L["few lots"] = true
-L["Auction price: %s (few lots)"] = true
+L["Auction price (OneKeyFishing): %s (few lots)"] = true
+L["Auction price (OneKeyFishing): %s"] = true
 
 -- Debug.lua
 L["OneKeyFishing - debug report"] = true
@@ -195,7 +199,6 @@ L["Actions"] = true
 L["Debug report"] = true
 L["Open statistics"] = true
 L["Reset indicator position"] = true
-L["(open the auction house first)"] = true
 L["Fishing action: %s      Toggle fishing mode: %s"] = true
 L["Remove"] = true
 L["Fishing gear"] = true

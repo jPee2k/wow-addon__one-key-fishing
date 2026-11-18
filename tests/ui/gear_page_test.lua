@@ -6,6 +6,7 @@
 local tooltipItems = {}
 GameTooltip = {
     SetOwner = function() end,
+    GetOwner = function() end,
     SetItemByID = function(_, itemID)
         assert(itemID, "Usage: GameTooltip:SetItemByID(itemID)")
         table.insert(tooltipItems, itemID)

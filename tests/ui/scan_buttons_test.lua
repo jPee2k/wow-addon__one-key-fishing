@@ -1,0 +1,110 @@
+-- The scan buttons and the scan command follow one state (specs/018-auction-scan, User Story 3, FR-014): the button
+-- above the auction window, the statistics window's, the minimap menu's entry and /okf scan. The settings page
+-- has none: opening the settings closes the auction house window.
+
+AuctionHouseFrame = CreateFrame("Frame", "AuctionHouseFrame")
+load_addon()
+ns.Auction.SetItemSource(nil)
+ns.db.fishedItems = { [90001] = true }
+
+local L = ns.L
+local WHY_STALLED = L["The auction house does not answer. Log out and back in to bring it back."]
+local NOT_ANSWERING = L["Auction house not answering"]
+
+ns.StatsFrame.Toggle()
+local statsScan = assert(find_frame(L["Scan auction prices"], _G.OneKeyFishingStatsFrame), "the statistics button")
+local page = assert(settings_pages["OneKeyFishing"], "the main settings page")
+page:Hide()
+page:Show()
+
+local function minimapEntry()
+    local button = assert(_G.OneKeyFishingMinimapButton, "the minimap button")
+    button.scripts.OnClick(button, "RightButton")
+    for _, entry in ipairs(menu_entries) do
+        if entry.text == L["Scan auction prices"] or entry.text == NOT_ANSWERING then
+            return entry
+        end
+    end
+end
+
+local function auctionButton()
+    for _, text in ipairs({ L["Scan fish prices"], NOT_ANSWERING, (L["Scanning %d/%d"]):format(0, 1) }) do
+        local button = find_frame(text, AuctionHouseFrame)
+        if button then
+            return button
+        end
+    end
+end
+
+local function hover(button)
+    tooltip_lines = {}
+    assert(button.scripts.OnEnter, "the button shows its reason on hover")
+    button.scripts.OnEnter(button)
+    return table.concat(tooltip_lines, "\n")
+end
+
+local function stall()
+    auction_ready = false
+    fire("AUCTION_HOUSE_THROTTLED_MESSAGE_SENT")
+    advance(10.5)
+    assert(ns.Auction.GetState() == "stalled", "stalled")
+end
+
+test("the settings page has no scan button (the settings close the auction house window)", function()
+    eq(find_frame(L["Scan auction prices"], page), nil, "no button")
+end)
+
+test("closed: the buttons are disabled and say why", function()
+    eq(statsScan:IsEnabled(), false, "statistics")
+    assert(hover(statsScan):find(L["Open the auction house first."], 1, true), "the statistics button's tooltip")
+    eq(minimapEntry().enabled, false, "minimap entry")
+    chat = {}
+    SlashCmdList.ONEKEYFISHING("scan")
+    eq(chat_count(L["Open the auction house first."]), 1, "/okf scan")
+end)
+
+test("open and ready: everything enabled", function()
+    fire("AUCTION_HOUSE_SHOW")
+    eq(statsScan:IsEnabled(), true, "statistics")
+    eq(minimapEntry().enabled, nil, "minimap entry not disabled")
+    local button = assert(auctionButton(), "the button above the auction window")
+    eq(button.text, L["Scan fish prices"], "its text")
+    eq(button:IsEnabled(), true, "enabled")
+end)
+
+test("scanning: everything disabled, the button above the auction window counts", function()
+    ns.Auction.Scan()
+    eq(statsScan:IsEnabled(), false, "statistics")
+    local button = auctionButton()
+    eq(button.text, (L["Scanning %d/%d"]):format(0, 1), "its text")
+    eq(button:IsEnabled(), false, "disabled")
+end)
+
+test("stalled: everything disabled and says why", function()
+    stall()
+    eq(statsScan:IsEnabled(), false, "statistics")
+    assert(hover(statsScan):find(WHY_STALLED, 1, true), "the statistics button's tooltip")
+    local entry = minimapEntry()
+    eq(entry.text, NOT_ANSWERING, "minimap entry text")
+    eq(entry.enabled, false, "minimap entry disabled")
+    local button = auctionButton()
+    eq(button.text, NOT_ANSWERING, "the button above the auction window")
+    eq(button:IsEnabled(), false, "disabled")
+    assert(hover(button):find(WHY_STALLED, 1, true), "its tooltip")
+    chat = {}
+    SlashCmdList.ONEKEYFISHING("scan")
+    eq(chat_count(WHY_STALLED), 1, "/okf scan")
+end)
+
+test("ready again: everything as before, without a reload", function()
+    hover(statsScan)
+    eq(tooltip_shown, true, "the pointer rests on the statistics button")
+    auction_ready = true
+    fire("AUCTION_HOUSE_THROTTLED_SYSTEM_READY")
+    eq(tooltip_shown, false, "its tooltip with the old reason went away")
+    eq(statsScan:IsEnabled(), true, "statistics")
+    eq(minimapEntry().text, L["Scan auction prices"], "minimap entry text")
+    local button = auctionButton()
+    eq(button.text, L["Scan fish prices"], "the button above the auction window")
+    eq(button:IsEnabled(), true, "enabled")
+end)
