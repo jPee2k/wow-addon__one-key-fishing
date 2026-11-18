@@ -124,3 +124,67 @@ test("button rows: the left buttons fit, Scan does not", function()
     eq(width, 580, "window width")
     eq(wraps, true, "two rows")
 end)
+
+-- Auctionator as the price source (specs/019-auctionator-prices, User Stories 1 and 4). The stub is set after
+-- load_addon(): its presence is read at runtime. That its update notice becomes PRICES_CHANGED is proven in
+-- tests/catch/prices_update_test.lua; here the window follows PRICES_CHANGED.
+local OTHER = 6291
+local auctionator = { prices = {} }
+auctionator.API = { v1 = {
+    GetAuctionPriceByItemID = function(_, itemID) return auctionator.prices[itemID] end,
+    RegisterForDBUpdate = function() end,
+} }
+local FROM_AUCTIONATOR = ns.L["Values: higher of vendor and Auctionator price."]
+
+local function redraw()
+    ns.Fire("PRICES_CHANGED")
+    tick(window)
+end
+
+test("with Auctionator its price gives the values, and a change shows without a reload", function()
+    local owned = ns.Stats.GetTotal().items[FISH]
+    Auctionator = auctionator
+    auctionator.prices[FISH] = 80
+    redraw()
+    eq(cell(VALUE, 3), ns.FormatMoney(owned * 80), "the all-time value at Auctionator's price")
+    auctionator.prices[FISH] = 200
+    redraw()
+    eq(cell(VALUE, 3), ns.FormatMoney(owned * 200), "the new price after its notice")
+    eq(ns.db.prices[FISH].price, 50, "the addon's own price is untouched")
+end)
+
+test("the values line names Auctionator; catches without its price are counted with the advice", function()
+    eq(window.prices.text, FROM_AUCTIONATOR, "every own catch has its price: no count")
+    ns.Stats.GetTotal().items[OTHER] = 1
+    chat = {}
+    redraw()
+    eq(window.prices.text, FROM_AUCTIONATOR .. " " ..
+        (ns.L["%d of your catches have no Auctionator price: run its scan."]):format(1), "one catch without it")
+    eq(window.prices.text:find("price. 1 of", 1, true) ~= nil, true, "two sentences, the first with its full stop")
+    eq(window.nextRank:GetMaxLines(), 2, "the values line may take two lines: the next-rank line keeps two")
+    eq(#chat, 0, "nothing in chat")
+    auctionator.prices[OTHER] = 30
+    redraw()
+    eq(window.prices.text, FROM_AUCTIONATOR, "the advice goes once Auctionator priced it")
+    item_quality[OTHER] = 0
+    auctionator.prices[OTHER] = nil
+    redraw()
+    eq(window.prices.text, FROM_AUCTIONATOR, "grey junk without its price gives no advice")
+    item_quality[OTHER] = nil
+    eq(window.nextRank:GetMaxLines(), 3, "one values line: the next-rank line has its three again")
+    ns.Stats.GetTotal().items[OTHER] = nil
+end)
+
+test("with the Auctionator switch off the line is the addon's own again", function()
+    ns.Prices.SetAuctionator(false)
+    tick(window)
+    eq(window.prices.text, (ns.L["Values: higher of vendor and auction price (scanned %s)"]):format(
+        date("%Y-%m-%d %H:%M", ns.Prices.GetLastScanTime())), "the scan's line")
+    ns.Prices.SetAuctionator(true)
+end)
+
+test("the values line wraps inside the window, as wide as the next-rank line (spec 019 review)", function()
+    local width = window.prices:GetWidth()
+    assert(width and width > 0, "a width, so the line wraps instead of running past the window's edge")
+    eq(width, window.nextRank:GetWidth(), "as wide as the next-rank line, clear of the Pin button")
+end)

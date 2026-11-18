@@ -73,3 +73,40 @@ test("the minimap button and the compartment entry show the likely catch in fish
     assert(index(tooltip_lines, L["Likely catch here:"]), "the compartment entry")
     ns.Mode.IsActive = active
 end)
+
+-- The addon's own auction price line of its row tooltips (ns.ShowItemTooltip, UI/Widgets.lua), with Auctionator as
+-- the price source (specs/019-auctionator-prices, FR-014). The stub is set after load_addon().
+local OWN_ONLY, FEW_LOTS = 6303, 6522
+
+local function own_line()
+    for _, line in ipairs(tooltip_lines) do
+        if line:find("OneKeyFishing", 1, true) then
+            return line
+        end
+    end
+end
+
+test("a row tooltip shows the addon's price line without Auctionator", function()
+    ns.db.prices[FISH] = { price = 300, quantity = 20, lots = 5, time = 1 }
+    ns.ShowItemTooltip(UIParent, FISH, true)
+    eq(own_line(), (L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(300)), "the own price")
+end)
+
+test("with Auctionator's price for the item the addon adds no price line; the fallback keeps its line", function()
+    Auctionator = { API = { v1 = {
+        GetAuctionPriceByItemID = function(_, itemID) return itemID == FISH and 500 or nil end,
+        RegisterForDBUpdate = function() end,
+    } } }
+    ns.ShowItemTooltip(UIParent, FISH, true)
+    eq(own_line(), nil, "Auctionator shows its own line")
+    ns.db.prices[OWN_ONLY] = { price = 200, quantity = 20, lots = 5, time = 1 }
+    ns.ShowItemTooltip(UIParent, OWN_ONLY, true)
+    eq(own_line(), (L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(200)), "the fallback price")
+    ns.db.prices[FEW_LOTS] = { price = 900, quantity = 2, lots = 1, time = 1 }
+    ns.ShowItemTooltip(UIParent, FEW_LOTS, true)
+    eq(own_line(), (L["Auction price (OneKeyFishing): %s (few lots)"]):format(ns.FormatMoney(900)), "with its mark")
+    ns.Prices.SetAuctionator(false)
+    ns.ShowItemTooltip(UIParent, FISH, true)
+    eq(own_line(), (L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(300)), "the switch off: as before")
+    ns.Prices.SetAuctionator(true)
+end)

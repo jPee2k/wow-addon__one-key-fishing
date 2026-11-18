@@ -30,7 +30,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
   (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013, 016 and 018 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016, 018 and 019 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -42,7 +42,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
 | Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet), [docs/auction-plan.md](docs/auction-plan.md) (the auction scan's speed-up, built in spec 018, and Auctionator as a price source, not built: measurements, rules, decisions) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet), [docs/auction-plan.md](docs/auction-plan.md) (the auction scan's speed-up, built in spec 018, and Auctionator as a price source, built in spec 019: measurements, rules, decisions) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
 | History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database; `sounds-plan.md`, how addon sound works in WoW Forever) |
 
@@ -105,7 +105,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Fishing/Action.lua` | the single fishing key: secure button, override bindings, `INTERACTTARGET` while channeling | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Fishing/Mode.lua` | enter and exit fishing mode, restore after `/reload`, logout, crash | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Catch.lua` | casts and loot become `FISH_CAUGHT` / `FISH_MISSED` | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
-| `Catch/Prices.lua`, `Catch/Auction.lua` | item values; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
+| `Catch/Prices.lua`, `Catch/Auction.lua` | item values, their auction price from the own scan or from Auctionator; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Sound.lua` | the fishing sounds (bell, hook, rare loot) of the "Sound effects" page, their volume (files under `Media/Sounds/`), silent in fights; the page's game audio settings are rows of `Fishing/Mode.lua` | [fishing-mode.md](docs/architecture/fishing-mode.md) |
@@ -134,6 +134,11 @@ Cross-module rules:
   write of `settings.fishingSounds` (it stops the sounds and fires `SETTINGS_CHANGED`). The kind choice of the catch
   lists by `Catalog.SetKindShown`, never by a write of `settings.hiddenKinds` (it fires `SETTINGS_CHANGED`). The order
   of the catalog's list by `Catalog.SetSort`, never by a write of `settings.catalogSort` (it fires `SETTINGS_CHANGED`).
+  The auction prices by `Prices.SetAuctionPrices` and `Prices.SetAuctionator`, never by a write of
+  `settings.auctionPrices` / `settings.auctionatorPrices` (they fire `SETTINGS_CHANGED`).
+- Auctionator is optional and used only through its public `Auctionator.API.v1`, every call in `pcall`, its presence
+  read at runtime (`Prices.HasAuctionator`); nothing of its data is kept, none of its code is copied. Who needs to
+  know whether its prices are in use asks `Prices.UsesAuctionator()`; the addon then sends no auction request.
 - Fishing mode's CVars restore only while they still hold the addon's value; a row marked `live` follows its setting
   at once while fishing, one marked `combat = "lift"` is restored for a fight ([fishing-mode.md](docs/architecture/fishing-mode.md)).
 - Game data is read by ID; tooltip parsing derives its needle from the client's own localized data. Game data lives
@@ -162,7 +167,8 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
   with catch notifications off), `MAP_PIN_SET` (placeName, or nil when the game refused the pin: `Core/MapPin.lua`
   answered a click; the toast shows it)
 - `AUCTION_STATE` (the scan's state or progress changed: `Auction.GetState()`, `GetProgress()`), `PRICES_CHANGED` (a
-  scan finished or stopped, also when the auction house stopped answering)
+  scan finished or stopped, also when the auction house stopped answering; Auctionator's prices changed, at most
+  once per 0.5 s, or its first failing call turned it off for the session)
 - `SHARED_DATA_CHANGED` (keys, and the store when Share changed one: records under `<id>@<epoch>` came or went:
   other players', or the own one a roll kept; or sharing was switched), `SHARE_PAUSE` (Comm's pause reason or nil)
 - `CHANNEL_STATE` (state, index, joins: the hidden public channel's state changed, Channel.lua; joins counts the

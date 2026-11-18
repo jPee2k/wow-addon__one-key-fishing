@@ -422,4 +422,20 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Sort: %s"] = "정렬: %s"
     L["Name"] = "이름"
     L["No price"] = "가격 없음"
+
+    -- Auctionator as a price source (specs/019-auctionator-prices): Auction.lua, Settings.lua, StatsFrame.lua
+    L["Prices come from Auctionator."] = "가격은 Auctionator에서 가져옵니다."
+    L["Auction prices"] = "경매장 가격"
+    L["Take prices from Auctionator"] = "Auctionator의 가격 사용"
+    L["Auctionator is not installed."] = "Auctionator가 설치되어 있지 않습니다."
+    L["Auctionator failed this session: the addon's own scan is in use."] =
+        "이번 접속에서 Auctionator에 오류가 발생했습니다. 애드온 자체 검색을 사용합니다."
+    L["Prices come from the addon's own scan (last scan %s)."] = "가격은 애드온 자체 검색에서 가져옵니다 (마지막 검색: %s)."
+    L["Prices come from the addon's own scan (no scan yet)."] = "가격은 애드온 자체 검색에서 가져옵니다 (아직 검색 없음)."
+    L["Auction prices are off: catch values use vendor prices."] = "경매장 가격이 꺼져 있습니다. 어획 가치는 상점 판매가를 사용합니다."
+    L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."] =
+        "내 어획물: Auctionator 가격 %d개, 애드온 검색 가격 %d개, 상점 판매가만 %d개, 가격 없음 %d개."
+    L["Values: higher of vendor and Auctionator price."] = "가치: 상점 판매가와 Auctionator 가격 중 높은 값."
+    L["%d of your catches have no Auctionator price: run its scan."] =
+        "어획물 %d개에 Auctionator 가격이 없습니다. Auctionator에서 검색을 실행하세요."
 end)

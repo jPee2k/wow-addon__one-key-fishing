@@ -60,6 +60,8 @@ One fishing round:
   friends list, and through a hidden chat channel to every other addon user, in the background. Two settings turn it
   off.
 - **Auction scan**: prices of every fish in the catch catalog, used for the catch value.
+- **Auctionator prices**: with the Auctionator addon installed, the catch value uses its prices and no second scan
+  is needed.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked with "Leave fishing mode when attacked" on, the weapons come back at once
   (unless you are casting: then with the rest of the gear after the fight) and fishing mode ends after the fight; in
@@ -100,7 +102,8 @@ bottom, **Statistics**, **What can be caught here** and **Catch catalog**; it op
 - **Refresh** recomputes everything now. Otherwise the numbers change only when something happens (a cast, a
   catch, a miss, a zone change, an auction scan); only the time rows tick while you fish. The session shows
   `H:MM:SS`, the zone and all-time columns `1h 23m`.
-- The line under the skill shows when auction prices were last scanned; the next line says what the next Fishing
+- The line under the skill shows when auction prices were last scanned, or that the values use Auctionator's prices
+  and how many of your catches it has no price for; the next line says what the next Fishing
   rank waits for and where it is learned, with a **Pin** button for the book seller and the quest giver.
 - **Reset session** and **Reset all** ask for confirmation first.
 
@@ -267,7 +270,35 @@ The tooltip of an item in the statistics window's lists shows this price as **Au
 auction addon's own line in the same tooltip may differ: it usually shows the single cheapest auction.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
-scanned auction prices for catch value**.
+scanned auction prices for catch value** on the **Auction prices** settings page.
+
+### Prices from Auctionator
+
+When the [Auctionator](https://www.curseforge.com/wow/addons/auctionator) addon is installed and enabled for the
+character, OneKeyFishing takes the auction prices from it. Scan the auction house with Auctionator as you do anyway;
+the statistics window, the catalog and the catch values follow at once, without a reload.
+
+- **Which price**: Auctionator's price when it has one for the item (at any age); otherwise the price of the
+  addon's own earlier scan, with its **(few lots)** rule; otherwise the vendor price. A catch is never valued below
+  its vendor price.
+- Auctionator's price is the single cheapest auction it saw, not the addon's average of the cheapest fifth, so the
+  values can differ from the ones of the addon's own scan; they match the price in Auctionator's tooltips.
+- **No second scan**: while Auctionator's prices are in use, the **Scan fish prices** button above the auction
+  window, the statistics window's scan button and the minimap menu's scan entry are hidden, and `/okf scan` answers
+  that the prices come from Auctionator. OneKeyFishing sends nothing to the auction house then.
+- **Tooltips**: for an item Auctionator has a price for, the item tooltip shows Auctionator's own line and no
+  **Auction price (OneKeyFishing)** line; that line stays for an item priced only by the addon's own scan.
+- **The statistics window** says under the skill line that the values use Auctionator's prices and, when it has no
+  price for some of your catches, how many; run Auctionator's scan to fill them in. Grey junk is not counted there:
+  nobody lists it, so no scan would find a price for it.
+- **To go back to the addon's own scan**, turn off **Take prices from Auctionator** on the **Auction prices**
+  settings page. The prices of your earlier scans are kept and used again, and the scan buttons return.
+
+The **Auction prices** settings page (**Options → AddOns → OneKeyFishing → Auction prices**) holds both switches,
+says which source is in use and counts your catches by where their price comes from: Auctionator, the addon's
+scan, a vendor only, or no price at all (bound items, which cannot be sold at auction, are not counted). The
+second switch is grey while auction prices are off or Auctionator is not installed. Should Auctionator fail, the
+page says so and the addon's own scan is used until you log in again.
 
 ## Sound effects
 
@@ -323,7 +354,6 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Show session fishing time under the indicator
   - Pause the fishing timer while AFK
   - Remind me about the next Fishing rank
-  - Use scanned auction prices for catch value
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button
   - Show catch chances in tooltips (the zones in item tooltips, the likely catches in the minimap tooltip)
@@ -340,6 +370,8 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   while the first is off) with the channel's state, what is shared and the current state; see [Shared catch
   database](#shared-catch-database).
 - **Sound effects**: a page of its own, see [Sound effects](#sound-effects).
+- **Auction prices**: a page of its own: **Use scanned auction prices for catch value**, **Take prices from
+  Auctionator**, the price source in use and the counts of your catches; see [Auction prices](#auction-prices).
 
 ## Commands
 
@@ -353,7 +385,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
 | `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
-| `/okf scan` | scan auction prices of the catch catalog's items (the auction house must be open) |
+| `/okf scan` | scan auction prices of the catch catalog's items (the auction house must be open; not while the prices come from Auctionator) |
 | `/okf share` | show the state of the shared catch database |
 | `/okf sound` | open the Sound effects settings |
 | `/okf debug` | show a report to copy into a bug report |

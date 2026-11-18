@@ -456,4 +456,24 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Sort: %s"] = "Sortierung: %s"
     L["Name"] = "Name"
     L["No price"] = "Kein Preis"
+
+    -- Auctionator as a price source (specs/019-auctionator-prices): Auction.lua, Settings.lua, StatsFrame.lua
+    L["Prices come from Auctionator."] = "Die Preise kommen von Auctionator."
+    L["Auction prices"] = "Auktionspreise"
+    L["Take prices from Auctionator"] = "Preise von Auctionator übernehmen"
+    L["Auctionator is not installed."] = "Auctionator ist nicht installiert."
+    L["Auctionator failed this session: the addon's own scan is in use."] =
+        "Auctionator ist in dieser Sitzung ausgefallen: Der eigene Scan des Addons wird verwendet."
+    L["Prices come from the addon's own scan (last scan %s)."] =
+        "Die Preise kommen vom eigenen Scan des Addons (letzter Scan %s)."
+    L["Prices come from the addon's own scan (no scan yet)."] =
+        "Die Preise kommen vom eigenen Scan des Addons (noch kein Scan)."
+    L["Auction prices are off: catch values use vendor prices."] =
+        "Auktionspreise sind aus: Fangwerte nutzen Händlerpreise."
+    L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."] =
+        "Deine Fänge: %d mit Auctionator-Preis, %d mit Preis aus dem Addon-Scan, %d nur mit Händlerpreis, %d " ..
+        "ohne Preis."
+    L["Values: higher of vendor and Auctionator price."] = "Werte: der höhere aus Händler- und Auctionator-Preis."
+    L["%d of your catches have no Auctionator price: run its scan."] =
+        "%d deiner Fänge haben keinen Auctionator-Preis: Starte dessen Scan."
 end)

@@ -55,3 +55,57 @@ test("the Auction scan section holds the scan's lines; the Catch database sectio
     local catchDB = assert(text:match("%-%- Catch database %-%-\n(.-)\n\n"), "the Catch database section")
     assert(not catchDB:find("last price scan", 1, true), catchDB)
 end)
+
+-- The "Auction prices" section (specs/019-auctionator-prices, FR-022). The stub is set after load_addon().
+local function prices_section()
+    local text = made()
+    assert(text:find("%-%- Auction prices %-%-\n.-%-%- Auction scan %-%-"), "right before Auction scan:\n" .. text)
+    return assert(text:match("%-%- Auction prices %-%-\n(.-)\n\n"), "an Auction prices section:\n" .. text)
+end
+
+test("the Auction prices section without Auctionator: the own scan, both functions missing", function()
+    local section = prices_section()
+    assert(section:find("source own scan", 1, true), section)
+    assert(section:find("auctionPrices on, auctionatorPrices on", 1, true), section)
+    assert(section:find("GetAuctionPriceByItemID missing", 1, true), section)
+    assert(section:find("RegisterForDBUpdate missing", 1, true), section)
+    assert(section:find("oldest Auctionator price: unknown", 1, true), section)
+end)
+
+local stub = { prices = { [6291] = 500, [6303] = 40 }, ages = { [6291] = 3, [6303] = 12 } }
+stub.API = { v1 = {
+    GetAuctionPriceByItemID = function(_, itemID) return stub.prices[itemID] end,
+    GetAuctionAgeByItemID = function(_, itemID) return stub.ages[itemID] end,
+    RegisterForDBUpdate = function() end,
+} }
+
+test("the Auction prices section with Auctionator: the source, the functions, the counts, the oldest age", function()
+    Auctionator = stub
+    local items = ns.Stats.GetTotal().items
+    items[6291], items[6303], items[7974] = 1, 1, 1
+    local section = prices_section()
+    assert(section:find("source auctionator", 1, true), section)
+    assert(section:find("GetAuctionPriceByItemID present", 1, true), section)
+    assert(section:find("RegisterForDBUpdate present", 1, true), section)
+    assert(section:find("own catches: 2 Auctionator, 0 own, 0 vendor, 1 none", 1, true), section)
+    assert(section:find("oldest Auctionator price: 12 days", 1, true), section)
+    stub.ages = {}
+    assert(prices_section():find("oldest Auctionator price: unknown", 1, true), "past its history limit")
+end)
+
+test("the Auction prices section names a missing function and a failed call", function()
+    local register = stub.API.v1.RegisterForDBUpdate
+    stub.API.v1.RegisterForDBUpdate = nil
+    local section = prices_section()
+    assert(section:find("RegisterForDBUpdate missing", 1, true), section)
+    assert(section:find("source own scan", 1, true), section)
+    stub.API.v1.RegisterForDBUpdate = register
+    stub.API.v1.GetAuctionPriceByItemID = function() error("broken") end
+    ns.Prices.Get(6291)
+    eq(#take_errors(), 1, "the failure, handed on once")
+    section = prices_section()
+    assert(section:find("failed: ", 1, true), section)
+    assert(section:find("broken", 1, true), section)
+    assert(section:find("source own scan", 1, true), section)
+    advance(0.1)
+end)

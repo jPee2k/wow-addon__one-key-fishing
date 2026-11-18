@@ -387,3 +387,16 @@ L["The kind filter hides the matches."] = true
 L["Sort: %s"] = true
 L["Name"] = true
 L["No price"] = true
+
+-- Auctionator as a price source (specs/019-auctionator-prices): Auction.lua, Settings.lua, StatsFrame.lua
+L["Prices come from Auctionator."] = true
+L["Auction prices"] = true
+L["Take prices from Auctionator"] = true
+L["Auctionator is not installed."] = true
+L["Auctionator failed this session: the addon's own scan is in use."] = true
+L["Prices come from the addon's own scan (last scan %s)."] = true
+L["Prices come from the addon's own scan (no scan yet)."] = true
+L["Auction prices are off: catch values use vendor prices."] = true
+L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."] = true
+L["Values: higher of vendor and Auctionator price."] = true
+L["%d of your catches have no Auctionator price: run its scan."] = true

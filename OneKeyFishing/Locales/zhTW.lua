@@ -415,4 +415,18 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Sort: %s"] = "排序：%s"
     L["Name"] = "名稱"
     L["No price"] = "無價格"
+
+    -- Auctionator as a price source (specs/019-auctionator-prices): Auction.lua, Settings.lua, StatsFrame.lua
+    L["Prices come from Auctionator."] = "價格來自 Auctionator。"
+    L["Auction prices"] = "拍賣價格"
+    L["Take prices from Auctionator"] = "使用 Auctionator 的價格"
+    L["Auctionator is not installed."] = "未安裝 Auctionator。"
+    L["Auctionator failed this session: the addon's own scan is in use."] = "Auctionator 在本次連線中發生錯誤：改用插件自己的掃描。"
+    L["Prices come from the addon's own scan (last scan %s)."] = "價格來自插件自己的掃描（上次掃描：%s）。"
+    L["Prices come from the addon's own scan (no scan yet)."] = "價格來自插件自己的掃描（尚未掃描）。"
+    L["Auction prices are off: catch values use vendor prices."] = "拍賣價格已關閉：漁獲價值使用商人價。"
+    L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."] =
+        "你的漁獲：%d 項採用 Auctionator 價格，%d 項採用插件掃描價格，%d 項僅有商人價，%d 項無價格。"
+    L["Values: higher of vendor and Auctionator price."] = "價值：取商人價與 Auctionator 價格較高者。"
+    L["%d of your catches have no Auctionator price: run its scan."] = "你的漁獲中有 %d 項沒有 Auctionator 價格：請執行它的掃描。"
 end)
