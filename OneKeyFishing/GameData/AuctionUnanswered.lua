@@ -6,6 +6,6 @@ local _, ns = ...
 local GameData = ns.GameData or {}
 ns.GameData = GameData
 
--- Plated Armorfish (13890), measured unanswered on 2026-11-17 like Winter Squid, is searched too (V58, accepted
--- without a check): if the auction house jams on it, the scan's guard remembers it and its line goes in here.
+-- Plated Armorfish (13890), measured unanswered on 2026-11-17 like Winter Squid, was answered too (V58, 2026-11-18,
+-- the release build's scan with the bundled data of epoch 5). An item the auction house jams on goes in here.
 GameData.AuctionUnanswered = {}

@@ -15,7 +15,6 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 | ID | What was assumed | How to check | Row |
 | --- | --- | --- | --- |
 | V54 | A bound item (bind on pickup, quest) cannot be listed at auction, so the scan leaves it out | `C_AuctionHouse.IsSellItemValid` on a bound item in the bags with the auction house open (the line of `docs/checklists/auction-scan.md`, step 8, with the item's slot) | `specs/018-auction-scan/verification.md` |
-| V58 | A search for Plated Armorfish (13890) is answered | A scan whose list holds it (an own catch or other players' records): it finishes, `/okf debug` "auction guard" stays `none` | `specs/018-auction-scan/verification.md` |
 | V10 | `RAID` sends as `PARTY` does; the game throttles as on Retail | `/okf debug` in a raid with an addon user: heard by the group, send results 0, no refusals | `specs/003-guild-group-sync/verification.md` |
 | V11 | A character friend is named as their messages name them | Exchange with a player who is only a character friend (no guild, group or Battle.net): `/okf share` "friends 1" | `specs/003-guild-group-sync/verification.md` |
 | V12 | The "No player named" line of an exchange whisper is hidden | That character friend logs out during an exchange: no line in chat | `specs/003-guild-group-sync/verification.md` |
@@ -49,8 +48,8 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 marker. Left: the pull request `develop` -> `main` and the tag `1.3.2`.
 
 - Spec 018 (`specs/018-auction-scan`): the rebuilt auction scan. Its checklist `checklists/auction-scan.md` passed in
-  game on 2026-11-18 (steps 1 to 9); V55 to V57 confirmed, V54 (bound items) and V58 (Plated Armorfish) accepted
-  (the table above). Found on the way and fixed: the unit price of non-commodity items (V5 of spec 002 was wrong);
+  game on 2026-11-18 (steps 1 to 9); V55 to V58 confirmed (V58, Plated Armorfish, with the release build), V54
+  (bound items) accepted (the table above). Found on the way and fixed: the unit price of non-commodity items (V5 of spec 002 was wrong);
   grey items can be listed.
 - The harvest made seed epoch 5 with 446 places (139 new) and 31 new items from 109 contributions. Five records
   reported as outliers (one item nobody else reports): 21243 Bloated Glossy Mightfish, 4377 Heavy Blasting Powder,
@@ -58,8 +57,8 @@ marker. Left: the pull request `develop` -> `main` and the tag `1.3.2`.
   and trade goods are fished in Forever (other players report the same kinds). The new items got their kind in
   `GameData/ItemKinds.lua` (names and classes read in game: 7 fish, 4 bloated fish as containers, 12 reagents,
   8 other).
-- Plated Armorfish (13890) is in the seed now, so every player's scan searches it: V58 is checked by the first
-  scans after the release (`/okf debug` "auction guard").
+- Plated Armorfish (13890) is in the seed now, so every player's scan searches it: the author's scan with the
+  release build (`npm run build`) answered it, only the start and finish lines in chat (V58 confirmed).
 
 ## 1.3.1 (released 2026-11-17)
 

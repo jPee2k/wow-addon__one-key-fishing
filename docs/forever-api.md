@@ -253,7 +253,7 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
     sort): it jams the auction house too. An item that exists and has no listing is answered (8 of the scan's 40).
     Not a rule of the item: on 2026-11-18 the rebuilt scan (spec 018) searched Winter Squid among 68 items and got
     its price (68 items in 41 s, 54 prices, no jam). What made the two searches of 2026-11-17 unanswered is not
-    known; Plated Armorfish was not searched again (V58, accepted without a check).
+    known; Plated Armorfish was answered too, later the same day (V58).
   - The rebuilt scan (spec 018, 2026-11-18): `GetItemKeyInfo` for a whole list of 68 to 72 items at its start, then
     one `SendSearchQuery` every 0.6 s: every request answered, none without its item key info, 41 to 47 s a scan,
     also right after another scan (V56, V57). Commodity results come cheapest first over the whole list (Raw

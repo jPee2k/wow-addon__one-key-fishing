@@ -54,7 +54,8 @@ line other than the one written below.
     Expected: "Auction scan stopped: the auction house does not answer ..." once; the button reads "Auction house
     not answering"; after the relog the guard names the item that was being searched. ____
 
-11. [ ] **Plated Armorfish** (V58, accepted without this check, to confirm in play; Winter Squid passed on 2026-11-18: 68 items in 41 s, 54 prices, no jam): a scan
+11. [x] **Plated Armorfish** (V58; passed 2026-11-18 with the release build, whose bundled data holds it: the scan
+    printed only its start and finish lines; Winter Squid passed on 2026-11-18: 68 items in 41 s, 54 prices, no jam): a scan
     whose list holds Plated Armorfish (13890; not in the bundled database, so an own catch or other players'
     records). Expected: the scan finishes, no "does not answer" line. If it stops instead: the item named by
     `/okf debug` "Auction scan" (after a relog) goes back into `GameData/AuctionUnanswered.lua`. ____
