@@ -233,7 +233,42 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 - The auction house (Orgrimmar, 2026-11-06): a commodity search (Raw Brilliant Smallfish, 6291) gives 31 results
   with `unitPrice` and `quantity` in ascending price order, `GetCommoditySearchResultsQuantity` 1592 (later 1662, as the auction house list shows) and
   `HasFullCommoditySearchResults` true (V4); an item search (Spiked Club of Power, 4564) gives results with
-  `buyoutAmount` and `quantity` 1 (V5 in part). An item with no listing gives 0 results.
+  `buyoutAmount` and `quantity` 1 (V5 in part). An item with no listing gives 0 results. An item result row is a
+  group of equal auctions of one piece each: `buyoutAmount` is the price of one piece, `quantity` the number of
+  them (V5, 2026-11-18: 53 Pound Yellowtail 13878, rows of 1, 7, 1, 3 and 2 pieces at 56s 80c to 61s; the row of 7
+  had `buyoutAmount` 5685). Never divide it by the quantity.
+  A poor quality (grey) item can be listed: `C_AuctionHouse.IsSellItemValid` is true for one in the bags
+  (Snapped Spider Limb, 2026-11-18).
+- The auction house's request system (Thunder Bluff, 2026-11-17, `/run` with an event listener):
+  - A healthy request is `AUCTION_HOUSE_THROTTLED_MESSAGE_SENT`, `..._RESPONSE_RECEIVED` about 0.2 s later, the
+    result event, then `AUCTION_HOUSE_THROTTLED_SYSTEM_READY` about 0.5 s after the send. The addon's scan of 40
+    items with every item key cached took 28 s: 40 requests, 0.7 s each, no extra page; that is the server's pace.
+  - A request the server never answers jams the client's auction house: `IsThrottledMessageSystemReady()` stays
+    false, every later request is `..._QUEUED` and drops the one queued before it (`..._DROPPED`), the window shows
+    nothing. Closing the window, reopening it and `/reload` do not help; logging the character out and in does.
+  - The server never answers `C_AuctionHouse.SearchForItemKeys` (one listed item key, a price sort, the system
+    ready): it jams the auction house. Do not call it.
+  - The server never answers `SendSearchQuery` for an item the client knows but the game does not have yet (Winter
+    Squid 13755, Plated Armorfish 13890: `C_Item.DoesItemExistByID` true, the item key info cached, a price
+    sort): it jams the auction house too. An item that exists and has no listing is answered (8 of the scan's 40).
+    Not a rule of the item: on 2026-11-18 the rebuilt scan (spec 018) searched Winter Squid among 68 items and got
+    its price (68 items in 41 s, 54 prices, no jam). What made the two searches of 2026-11-17 unanswered is not
+    known; Plated Armorfish was not searched again (V58, accepted without a check).
+  - The rebuilt scan (spec 018, 2026-11-18): `GetItemKeyInfo` for a whole list of 68 to 72 items at its start, then
+    one `SendSearchQuery` every 0.6 s: every request answered, none without its item key info, 41 to 47 s a scan,
+    also right after another scan (V56, V57). Commodity results come cheapest first over the whole list (Raw
+    Spotted Yellowtail: 4750 pieces in 48 rows from 40c to 3s 12c), so the price of the first pages equals the
+    price of all (V55).
+  - `C_AuctionHouse.GetItemKeyInfo` is nil for an item key the client has not cached;
+    `ITEM_KEY_ITEM_INFO_RECEIVED` (itemID) follows within 0.01 s, and the cache survives a relog. A scan that
+    sends its searches without waiting for the key info is slow and loses prices: the same 40 items with 25 keys
+    not cached took 162 s (53 requests, 13 of them extra pages) and found 31 prices, then 28 s and 32 prices.
+  - Auctionator 347 works: its summary scan (`SendBrowseQuery` with an empty search, then
+    `RequestMoreBrowseResults`) read the whole house, 6765 items, in 32 s. `Auctionator.API.v1` is there:
+    `GetAuctionPriceByItemID` gives the cheapest unit price in copper (87 for item 6291, as the house shows),
+    `GetAuctionAgeByItemID` the days since (0), `RegisterForDBUpdate` calls back after one of its searches and
+    once at the end of a scan (also during the addon's own scan). It keeps its prices per game mode
+    (`Auctionator.State.CurrentRealm` is `PvP`).
 - Inside the Wailing Caverns instance (2026-11-06): `C_Map.GetBestMapForUnit("player")` is nil, no position,
   `C_RestrictedActions.GetAddOnRestrictionState(Enum.AddOnRestrictionType.Map)` is 2 and the `Map` restriction is
   active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).

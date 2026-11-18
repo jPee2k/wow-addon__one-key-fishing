@@ -110,6 +110,9 @@ new field only needs a default.
 | `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `auctionPrices`, `camera`, `minimapButton`, `tooltipChances`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`), the "Sound effects" page (spec 013): `fishingSounds` (only through `Sound.SetEnabled`), `soundVolume` (0-100, step 10), `backgroundSound`, `splashFocus` (Mode.lua CVar rows), `hiddenKinds` (spec 014: the item kinds hidden in the catch lists, only through `Catalog.SetKindShown`), `catalogSort` (spec 017: the order of the catalog's list, `"name"`, `"price"` or `"chance"`, only through `Catalog.SetSort`) | UI/Settings.lua; also Core.lua (`languageHintShown`), Fishing/Camera.lua (`cameraDistance`), Exchange/ShareGame.lua (`shareDB`), Exchange/Channel.lua (`shareChannel`), Fishing/Sound.lua (`fishingSounds`, `soundVolume`), Catalog/Catalog.lua (`hiddenKinds`, the kind menu of UI/CatchHere.lua; `catalogSort`, the Sort menu of UI/CatalogTab.lua) |
 | `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Exchange/ShareGame.lua |
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
+| `priceScans` | itemID -> `time()` of the last answered auction search, with a price or not on sale (spec 018: fresh prices) | Auction.lua |
+| `priceRule` | the rule the saved `prices` were computed by (2 since 1.3.2: an item row's `buyoutAmount` is one piece's price); a lower or missing value drops `prices` and `priceScans` once at login | Auction.lua |
+| `scanGuard` | `{ version, items }`: the items the auction house did not answer for, itemID -> `"own"`, `"bundled"` or `"shared"`; emptied when the addon runs as another version (spec 018) | Auction.lua |
 | `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
 | `errors` | the error log: `{ context, message, stack, version, first, last, count }`, at most 30, ordered by last occurrence | Core.lua |
@@ -169,7 +172,8 @@ Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-d
 
 Builds the `/okf debug` report (English, not localized): versions and locale, the language setting, the mode state
 and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database
-(`CatchDB.Describe()`, never the anonymous ID), the shared database (`Share.Describe()`, `Channel.Describe()`, no
+(`CatchDB.Describe()`, never the anonymous ID), the auction scan (`Auction.Describe()`: the state, the last scan's
+counts, the list's groups, the remembered items, the coverage of the last result), the shared database (`Share.Describe()`, `Channel.Describe()`, no
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
 and the name queue, never an item name), "Seed items without a kind" (the bundled seed's items that
 `GameData/ItemKinds.lua` does not list, by ID with name and class, an unloaded one asked for; "none" in a release, a

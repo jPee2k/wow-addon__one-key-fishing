@@ -223,6 +223,11 @@ local DB_DEFAULTS = {
     shareNotice = false, -- true once the one-time popup about the exchange was closed (Exchange/ShareGame.lua)
     shareNoticeChannel = false, -- true once the notice that names the public channel was closed (ShareGame.lua)
     prices = {}, -- itemID -> { price = copper, quantity = pieces, lots = auctions, time = time() } from scans
+    -- itemID -> time() of the last answered auction search, with a price or not on sale (spec 018)
+    priceScans = {},
+    -- The items the auction house did not answer for: itemID -> "own", "bundled" or "shared"; emptied by another
+    -- addon version (Catch/Auction.lua, spec 018).
+    scanGuard = { version = "", items = {} },
     minimapAngle = 220,
     indicatorPos = nil, -- { point, relativePoint, x, y }
     fishedItems = {}, -- itemID -> true for everything ever looted from fishing

@@ -74,6 +74,13 @@ test("fished containers are a set of item IDs", function()
     end
 end)
 
+test("the items the auction house does not answer are a set of item IDs", function()
+    for itemID, flag in pairs(GameData.AuctionUnanswered) do
+        assert(type(itemID) == "number" and itemID > 0 and math.floor(itemID) == itemID, tostring(itemID))
+        eq(flag, true, "flag of " .. itemID)
+    end
+end)
+
 test("fishing poles: bonus and skill, and the pole's item class", function()
     for itemID, pole in pairs(GameData.FishingPoles) do
         assert(IsID(itemID), "item ID")

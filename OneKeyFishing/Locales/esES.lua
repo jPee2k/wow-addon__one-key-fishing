@@ -58,6 +58,12 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Scanning auction prices of %d item(s)..."] = "Escaneando los precios de subasta de %d objeto(s)..."
     L["Auction scan stopped: %d of %d price(s) found."] =
         "Escaneo de subastas detenido: %d de %d precio(s) encontrados."
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "Escaneo de subastas detenido: la casa de subastas no responde (%d de %d precio(s) encontrados). " ..
+        "Cierra sesión y vuelve a entrar."
+    L["The auction house does not answer. Log out and back in to bring it back."] =
+        "La casa de subastas no responde. Cierra sesión y vuelve a entrar para recuperarla."
+    L["Auction house not answering"] = "La casa de subastas no responde"
 
     -- Skill.lua
     L["Apprentice"] = "Aprendiz"
@@ -181,7 +187,8 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "pocos lotes"
-    L["Auction price: %s (few lots)"] = "Precio de subasta: %s (pocos lotes)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "Precio de subasta (OneKeyFishing): %s (pocos lotes)"
+    L["Auction price (OneKeyFishing): %s"] = "Precio de subasta (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - informe de depuración"
@@ -219,7 +226,6 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
     L["Debug report"] = "Informe de depuración"
     L["Open statistics"] = "Abrir estadísticas"
     L["Reset indicator position"] = "Restablecer posición del indicador"
-    L["(open the auction house first)"] = "(abre primero la casa de subastas)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "Acción de pesca: %s      Activar/desactivar modo pesca: %s"
     L["Remove"] = "Quitar"
     L["Fishing gear"] = "Equipo de pesca"

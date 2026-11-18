@@ -54,6 +54,11 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Nothing to scan yet: catch some fish first."] = "아직 검색할 것이 없습니다. 먼저 물고기를 낚으세요."
     L["Scanning auction prices of %d item(s)..."] = "아이템 %d개의 경매장 가격 검색 중..."
     L["Auction scan stopped: %d of %d price(s) found."] = "경매장 검색 중지: %d/%d개 가격 확인."
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "경매장 검색 중지: 경매장이 응답하지 않습니다 (%d/%d개 가격 확인). 로그아웃 후 다시 접속하세요."
+    L["The auction house does not answer. Log out and back in to bring it back."] =
+        "경매장이 응답하지 않습니다. 로그아웃 후 다시 접속하면 복구됩니다."
+    L["Auction house not answering"] = "경매장 응답 없음"
 
     -- Skill.lua
     L["Apprentice"] = "수습"
@@ -171,7 +176,8 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "매물 적음"
-    L["Auction price: %s (few lots)"] = "경매장 가격: %s (매물 적음)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "경매장 가격 (OneKeyFishing): %s (매물 적음)"
+    L["Auction price (OneKeyFishing): %s"] = "경매장 가격 (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 디버그 보고서"
@@ -206,7 +212,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Debug report"] = "디버그 보고서"
     L["Open statistics"] = "통계 열기"
     L["Reset indicator position"] = "표시기 위치 초기화"
-    L["(open the auction house first)"] = "(먼저 경매장을 여세요)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "낚시 동작: %s      낚시 모드 전환: %s"
     L["Remove"] = "제거"
     L["Fishing gear"] = "낚시 장비"

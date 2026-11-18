@@ -58,6 +58,12 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Scanning auction prices of %d item(s)..."] = "Verificando preços de leilão de %d item(ns)..."
     L["Auction scan stopped: %d of %d price(s) found."] =
         "Verificação de leilões interrompida: %d de %d preço(s) encontrado(s)."
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "Verificação do leilão interrompida: a casa de leilões não responde (%d de %d preço(s) encontrado(s)). " ..
+        "Saia e entre novamente."
+    L["The auction house does not answer. Log out and back in to bring it back."] =
+        "A casa de leilões não responde. Saia e entre novamente para recuperá-la."
+    L["Auction house not answering"] = "A casa de leilões não responde"
 
     -- Skill.lua
     L["Apprentice"] = "Aprendiz"
@@ -180,7 +186,8 @@ ns.AddTranslation("ptBR", "Português", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "poucos lotes"
-    L["Auction price: %s (few lots)"] = "Preço no leilão: %s (poucos lotes)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "Preço no leilão (OneKeyFishing): %s (poucos lotes)"
+    L["Auction price (OneKeyFishing): %s"] = "Preço no leilão (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - relatório de depuração"
@@ -216,7 +223,6 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Debug report"] = "Relatório de depuração"
     L["Open statistics"] = "Abrir estatísticas"
     L["Reset indicator position"] = "Redefinir posição do indicador"
-    L["(open the auction house first)"] = "(abra a casa de leilões primeiro)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "Ação de pesca: %s      Ativar/desativar modo de pesca: %s"
     L["Remove"] = "Remover"
     L["Fishing gear"] = "Equipamento de pesca"

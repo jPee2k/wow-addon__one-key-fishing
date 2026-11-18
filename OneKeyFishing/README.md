@@ -59,7 +59,7 @@ One fishing round:
 - **Shared catch database**: catch counts travel under a random ID between addon users in your guild, group and
   friends list, and through a hidden chat channel to every other addon user, in the background. Two settings turn it
   off.
-- **Auction scan**: prices of everything you have ever caught, used for the catch value.
+- **Auction scan**: prices of every fish in the catch catalog, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked with "Leave fishing mode when attacked" on, the weapons come back at once
   (unless you are casting: then with the rest of the gear after the fight) and fishing mode ends after the fight; in
@@ -244,13 +244,27 @@ Players who fish together see each other's catches right away, without waiting f
 ## Auction prices
 
 1. Open the auction house.
-2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
-3. The addon looks up every item you have ever caught, one at a time.
+2. Press **Scan fish prices** above the auction window (or use the statistics window's button, the minimap menu or `/okf scan`).
+3. The addon looks up every item of the catch catalog, one at a time: first what you have caught, then the
+   addon's bundled data, then items known from other players. Bound items cannot be sold and are skipped.
+
+A scan never starts by itself. A price found less than 15 minutes ago is not looked up again, so a second press
+right after a scan, or after closing the window halfway, only looks up what is left; when every price is that
+fresh, the press looks up everything again. The first scan of a visit takes about a minute.
+
+Sometimes the auction house stops answering (it then shows nothing until you log out and back in). The scan notices
+it within 10 seconds, stops, keeps the prices it found and says so in chat; until it answers again the button above
+the auction window and the minimap menu read **Auction house not answering**, and the other scan buttons say why
+they cannot be pressed. Log out and back in to bring it back. The item the scan was waiting for is not looked up
+again until the next version of the addon; when it was an item known only from other players, none of those are.
 
 The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far
 below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 different offers are on
 sale (the auction house shows sellers at the same price as one offer; one seller's stack is not a market), the price
 is shown with **(few lots)** and the catch value uses the vendor price instead.
+
+The tooltip of an item in the statistics window's lists shows this price as **Auction price (OneKeyFishing)**. An
+auction addon's own line in the same tooltip may differ: it usually shows the single cheapest auction.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
 scanned auction prices for catch value**.
@@ -313,8 +327,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button
   - Show catch chances in tooltips (the zones in item tooltips, the likely catches in the minimap tooltip)
-- **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position, Scan auction prices
-  (with the auction house open).
+- **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position.
 - **Language** (top right): **Game client language** follows your client and uses English when there is no
   translation for it (a Russian client gets English, and the addon says once in the chat where to change it). Pick
   a language from the menu to use it instead; Українська is only available this way, because the game has no
@@ -340,7 +353,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
 | `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
-| `/okf scan` | scan auction prices (the auction house must be open) |
+| `/okf scan` | scan auction prices of the catch catalog's items (the auction house must be open) |
 | `/okf share` | show the state of the shared catch database |
 | `/okf sound` | open the Sound effects settings |
 | `/okf debug` | show a report to copy into a bug report |

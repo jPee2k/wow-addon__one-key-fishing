@@ -25,7 +25,18 @@
 --   soft_target_guid = guid             UnitGUID("softinteract") (default nil: no soft target)
 --   build_version = "1.60.2"            the version string of GetBuildInfo (default "1.60.1")
 --   commodity_results[itemID] = { { unitPrice, quantity } }, commodity_total[itemID] = n,
---   item_results[itemID] = { { buyoutAmount, quantity } }   auction search results (fire the result event)
+--   item_results[itemID] = { { buyoutAmount, quantity } }   auction search results (fire the result event);
+--                                                            buyoutAmount is one piece's price, quantity the pieces
+-- The auction house's request line (specs/018-auction-scan):
+--   auction_ready = false               C_AuctionHouse.IsThrottledMessageSystemReady (default true); a search or a
+--                                       page request sets it false, auction_answer() sets it true again
+--   auction_requests                    { kind = "search" | "more", itemID, at, notReady, answered } per request
+--   auction_key_info = { [id] = {} }    GetItemKeyInfo answers only these IDs (the table merged into the info);
+--                                       nil: every ID; the asked IDs are appended to auction_key_requests
+--   item_quality[itemID], item_bind[itemID]   the 3rd and 14th value of C_Item.GetItemInfo (default 1 and 0)
+--   item_info_missing[itemID] = true    C_Item.GetItemInfo returns nothing (the client has not loaded the item)
+-- Helpers: auction_answer(itemID, kind), auction_run(limit), auction_key_arrives(itemID, info),
+-- auction_searched().
 --   panel_tabs                          calls of PanelTemplates_SetNumTabs / SetTab / TabResize, as
 --                                       { name, frame or tab, value }; set PanelTemplates_SetTab = nil to test
 --                                       the fallback without the game's tab functions
@@ -90,6 +101,7 @@
 --   popups_hidden                       keys passed to StaticPopup_Hide (read)
 --   secret_values[value] = true         issecretvalue(value) is true; strsplit raises on such a text, as the game does
 --   tooltip_cleared                     GameTooltip:ClearLines was called since the last SetOwner (read)
+--   tooltip_owner                       the frame of the last GameTooltip:SetOwner, GetOwner's answer (read)
 --   unknown_items[itemID] = true        an item the client does not know (GetItemInfoInstant nil)
 --   item_load_requests                  IDs passed to C_Item.RequestLoadItemDataByID (read)
 --   bit_unsigned = true                 the bit stub returns unsigned results
@@ -509,6 +521,10 @@ function Frame:IsEnabled()
     return self.enabled ~= false
 end
 
+function Frame:SetMotionScriptsWhileDisabled(on)
+    self.motionWhileDisabled = on and true or false
+end
+
 function Frame:SetChecked(checked)
     self.checked = checked and true or false
 end
@@ -814,9 +830,12 @@ end
 local function DoubleLine(left, right)
     return tostring(left) .. " | " .. tostring(right)
 end
-tooltip_lines, tooltip_item, tooltip_shown, tooltip_cleared = {}, nil, false, false
+tooltip_lines, tooltip_item, tooltip_shown, tooltip_cleared, tooltip_owner = {}, nil, false, false, nil
 GameTooltip = setmetatable({
-    SetOwner = function() tooltip_lines, tooltip_item, tooltip_cleared = {}, nil, false end,
+    SetOwner = function(_, owner)
+        tooltip_lines, tooltip_item, tooltip_cleared, tooltip_owner = {}, nil, false, owner
+    end,
+    GetOwner = function() return tooltip_owner end,
     ClearLines = function() tooltip_lines, tooltip_cleared = {}, true end,
     AddLine = function(_, text) table.insert(tooltip_lines, text) end,
     AddDoubleLine = function(_, left, right) table.insert(tooltip_lines, DoubleLine(left, right)) end,
@@ -1149,9 +1168,13 @@ C_Item = {
         return true
     end,
     -- name, link, quality, level, minLevel, type, subType, stackCount, equipLoc, icon, sellPrice
+    -- ..., sellPrice, classID, subclassID, bindType (item_quality, item_bind; nothing for item_info_missing)
     GetItemInfo = function(itemID)
-        return "Item " .. itemID, "[Item " .. itemID .. "]", 1, 1, 1, "Trade Goods", "Fish", 20, "", 134400,
-            item_prices[itemID] or 0
+        if item_info_missing[itemID] then
+            return nil
+        end
+        return "Item " .. itemID, "[Item " .. itemID .. "]", item_quality[itemID] or 1, 1, 1, "Trade Goods", "Fish",
+            20, "", 134400, item_prices[itemID] or 0, 0, 0, item_bind[itemID] or 0
     end,
     GetItemIconByID = function()
         return 134400
@@ -1404,15 +1427,40 @@ commodity_total = {} -- itemID -> the total listed (GetCommoditySearchResultsQua
 item_results = {} -- itemID -> { { buyoutAmount, quantity }, ... } for items that are not commodities
 commodity_full = {} -- itemID -> false while more commodity results are on their way (HasFullCommoditySearchResults)
 commodity_more_requests = {} -- item IDs asked for with RequestMoreCommoditySearchResults
+auction_ready = true
+auction_requests = {}
+auction_key_requests = {}
+item_quality, item_bind, item_info_missing = {}, {}, {}
+
+local function AuctionRequest(kind, itemID)
+    table.insert(auction_requests, { kind = kind, itemID = itemID, at = GetTime(), notReady = not auction_ready })
+    auction_ready = false
+end
+
 C_AuctionHouse = {
     IsThrottledMessageSystemReady = function()
-        return true
+        return auction_ready
     end,
     MakeItemKey = function(itemID)
         return { itemID = itemID }
     end,
+    GetItemKeyInfo = function(itemKey)
+        local itemID = itemKey.itemID
+        local known = rawget(_G, "auction_key_info")
+        if known and not known[itemID] then
+            table.insert(auction_key_requests, itemID)
+            return nil
+        end
+        local info = { itemID = itemID, itemName = "Item " .. itemID, quality = 1, isCommodity = true,
+            iconFileID = 134400 }
+        for key, value in pairs(known and known[itemID] or {}) do
+            info[key] = value
+        end
+        return info
+    end,
     SendSearchQuery = function(itemKey)
         table.insert(auction_queries, itemKey)
+        AuctionRequest("search", itemKey.itemID)
     end,
     GetNumCommoditySearchResults = function(itemID)
         return #(commodity_results[itemID] or {})
@@ -1438,6 +1486,7 @@ C_AuctionHouse = {
     end,
     RequestMoreCommoditySearchResults = function(itemID)
         table.insert(commodity_more_requests, itemID)
+        AuctionRequest("more", itemID)
     end,
     GetNumItemSearchResults = function(itemKey)
         return #(item_results[itemKey.itemID] or {})
@@ -1449,6 +1498,58 @@ C_AuctionHouse = {
         end
     end,
 }
+
+-- The newest request, answered by the server: the response, the result event (kind "item": an item search;
+-- a page request: COMMODITY_SEARCH_RESULTS_ADDED; else COMMODITY_SEARCH_RESULTS_UPDATED), then the line is ready.
+function auction_answer(itemID, kind)
+    local request = assert(auction_requests[#auction_requests], "no auction request to answer")
+    assert(not request.answered, "the newest auction request is already answered")
+    request.answered = true
+    itemID = itemID or request.itemID
+    fire("AUCTION_HOUSE_THROTTLED_MESSAGE_RESPONSE_RECEIVED")
+    if kind == "item" then
+        fire("ITEM_SEARCH_RESULTS_UPDATED", { itemID = itemID })
+    elseif request.kind == "more" then
+        fire("COMMODITY_SEARCH_RESULTS_ADDED", itemID)
+    else
+        fire("COMMODITY_SEARCH_RESULTS_UPDATED", itemID)
+    end
+    auction_ready = true
+    fire("AUCTION_HOUSE_THROTTLED_SYSTEM_READY")
+end
+
+-- Moves the clock a second at a time and answers each new request, until a second passes without one.
+function auction_run(limit)
+    local answered = 0
+    for _ = 1, limit or 500 do
+        advance(1)
+        local request = auction_requests[#auction_requests]
+        if not request or request.answered then
+            break
+        end
+        auction_answer()
+        answered = answered + 1
+    end
+    return answered
+end
+
+-- The item key info of itemID arrives from the server.
+function auction_key_arrives(itemID, info)
+    auction_key_info = auction_key_info or {}
+    auction_key_info[itemID] = info or {}
+    fire("ITEM_KEY_ITEM_INFO_RECEIVED", itemID)
+end
+
+-- The item IDs of the search requests, in the order they were sent.
+function auction_searched()
+    local list = {}
+    for _, request in ipairs(auction_requests) do
+        if request.kind == "search" then
+            table.insert(list, request.itemID)
+        end
+    end
+    return list
+end
 
 ---------------------------------------------------------------------------
 -- The catch exchange: addon messages, Battle.net, friends, guild and group, restrictions, encoding
@@ -2239,7 +2340,7 @@ local NIL_GAME_DATA = { player_map_id = true, player_map_position = true, fishin
     group_type = true, group_members = true, bn_send_result = true, user_waypoint = true, waypoint_result = true,
     profile_ms = true, profile_step = true, game_fold = true, no_scroll_templates = true,
     channel_info = true, channel_off = true, player_full_name = true, map_at_position = true,
-    player_map_positions = true }
+    player_map_positions = true, auction_key_info = true }
 setmetatable(_G, {
     __index = function(_, key)
         if key == "utf8" or NIL_GAME_DATA[key] or (type(key) == "string" and key:find("^OneKeyFishing")) then

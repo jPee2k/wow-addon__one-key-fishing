@@ -76,6 +76,11 @@ or before a 501st place:
   (`reporters` and `inSeed` per item). Items the client does not know yet are kept and shown as "Unknown item"
   ([ui.md](ui.md)), which the tab reads when it draws the row.
 
+- `CatchDB.ScanItems()` (spec 018): the auction scan's items beyond the own catches, two sets: the seed's items
+  and, while sharing is on, the items of other players' counted records that the catalog shows (in the own catch,
+  or reported by 3 other contributions on one map), so one forged record cannot add an item. `Views.lua` hands it to
+  `Auction.SetItemSource` when it loads.
+
 ## Views across maps
 
 For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):

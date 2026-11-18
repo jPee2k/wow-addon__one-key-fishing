@@ -53,6 +53,10 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Nothing to scan yet: catch some fish first."] = "還沒有可掃描的物品：請先釣些魚。"
     L["Scanning auction prices of %d item(s)..."] = "正在掃描 %d 件物品的拍賣價格……"
     L["Auction scan stopped: %d of %d price(s) found."] = "拍賣掃描已停止：找到 %d / %d 個價格。"
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "拍賣掃描已停止：拍賣場沒有回應（找到 %d / %d 個價格）。請登出後重新登入。"
+    L["The auction house does not answer. Log out and back in to bring it back."] = "拍賣場沒有回應。請登出後重新登入以恢復。"
+    L["Auction house not answering"] = "拍賣場沒有回應"
 
     -- Skill.lua
     L["Apprentice"] = "學徒"
@@ -167,7 +171,8 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "掛單少"
-    L["Auction price: %s (few lots)"] = "拍賣價格：%s（掛單少）"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "拍賣價格（OneKeyFishing）：%s（掛單少）"
+    L["Auction price (OneKeyFishing): %s"] = "拍賣價格（OneKeyFishing）：%s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 除錯報告"
@@ -202,7 +207,6 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Debug report"] = "除錯報告"
     L["Open statistics"] = "開啟統計"
     L["Reset indicator position"] = "重置提示位置"
-    L["(open the auction house first)"] = "（請先開啟拍賣場）"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "釣魚動作：%s      切換釣魚模式：%s"
     L["Remove"] = "移除"
     L["Fishing gear"] = "釣魚裝備"

@@ -49,6 +49,7 @@ GameData\NpcNames.lua
 GameData\Bobber.lua
 GameData\Lures.lua
 GameData\FishedContainers.lua
+GameData\AuctionUnanswered.lua
 GameData\ItemKinds.lua
 GameData\FishingPoles.lua
 GameData\EquipSlots.lua

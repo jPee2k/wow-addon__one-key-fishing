@@ -5,19 +5,18 @@ item_prices[FISH] = 100 -- vendor price
 item_prices[PEARL] = 100
 
 load_addon()
+ns.Auction.SetItemSource(nil) -- the own catches only
 
 local Prices = ns.Prices
 
--- One scan of one item, answered with the stub results set before it.
+-- One scan of one item, answered with the stub results set before it (every price is fresh after a scan, and a
+-- scan of fresh prices searches them all again).
 local function scan(itemID, kind)
     ns.db.fishedItems = { [itemID] = true }
     fire("AUCTION_HOUSE_SHOW")
+    advance(1) -- past the 0.6 s after the last request of an earlier test
     ns.Auction.Scan()
-    if kind == "item" then
-        fire("ITEM_SEARCH_RESULTS_UPDATED", { itemID = itemID })
-    else
-        fire("COMMODITY_SEARCH_RESULTS_UPDATED", itemID)
-    end
+    auction_answer(itemID, kind)
     return ns.db.prices[itemID]
 end
 
@@ -30,10 +29,9 @@ test("the scan's progress is told through AUCTION_STATE for the scan button", fu
     end)
     fire("AUCTION_HOUSE_SHOW")
     ns.Auction.Scan()
-    fire("COMMODITY_SEARCH_RESULTS_UPDATED", FISH)
-    fire("COMMODITY_SEARCH_RESULTS_UPDATED", PEARL)
+    auction_run()
     local states = table.concat(seen, ", ")
-    assert(states:find("scanning 1/2, scanning 2/2, idle 2/2", 1, true), "progress while scanning: " .. states)
+    assert(states:find("scanning 0/2, scanning 1/2, scanning 2/2, idle 2/2", 1, true), "progress: " .. states)
     local scanning = ns.Auction.GetProgress()
     eq(scanning, false, "idle after the scan")
 end)
@@ -101,11 +99,27 @@ test("a price saved by 1.0.0 (no quantity) is used as before", function()
     eq(Prices.Get(FISH), 500, "value")
 end)
 
-test("items that are not commodities: buyout per piece, bid-only auctions skipped", function()
-    item_results[PEARL] = { { 50000, 5 }, { 9000, 1 }, { nil, 1 }, { 60000, 4 } }
+test("prices saved under the old item rule are dropped once at login, later ones kept", function()
+    ns.db.priceRule = nil
+    ns.db.prices[PEARL] = { price = 812, quantity = 14, lots = 5, time = 1 }
+    ns.db.priceScans[PEARL] = 1
+    fire("PLAYER_LOGIN")
+    eq(ns.db.prices[PEARL], nil, "the old price dropped")
+    eq(ns.db.priceScans[PEARL], nil, "its scan time dropped: the next scan searches it first")
+    eq(ns.db.priceRule, 2, "the rule saved")
+    ns.db.prices[PEARL] = { price = 5683, quantity = 14, lots = 5, time = 2 }
+    fire("PLAYER_LOGIN")
+    eq(ns.db.prices[PEARL].price, 5683, "a price of the new rule kept")
+    ns.db.prices[PEARL] = nil
+end)
+
+test("items that are not commodities: a row's buyout is one piece's price, bid-only auctions skipped", function()
+    -- The auction house's rows for 53 Pound Yellowtail on 2026-11-18 (V5): the price of a piece, the pieces at it.
+    item_results[PEARL] = { { 5680, 1 }, { 5685, 7 }, { 5686, 1 }, { nil, 1 }, { 5687, 3 }, { 6100, 2 } }
     local entry = scan(PEARL, "item")
-    eq(entry.quantity, 10, "pieces with a buyout")
-    eq(entry.price, 9500, "the cheapest 2 of 10 pieces: 9000 and 10000")
+    eq(entry.quantity, 14, "pieces with a buyout")
+    eq(entry.lots, 5, "rows with a buyout")
+    eq(entry.price, 5683, "the cheapest 3 of 14 pieces: 5680 and two at 5685")
 end)
 
 test("item rows mark a value whose auction price rests on few lots", function()
@@ -116,10 +130,16 @@ test("item rows mark a value whose auction price rests on few lots", function()
     assert(text:find(ns.L["few lots"], 1, true), "the mark: " .. text)
     local lines = {}
     Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH)
-    eq(lines[1], (ns.L["Auction price: %s (few lots)"]):format("20000c"), "tooltip line")
+    eq(lines[1], (ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format("20000c"), "tooltip line")
     commodity_results[FISH] = { { 20000, 20 }, { 20000, 20 }, { 20100, 10 } }
     scan(FISH)
     eq(Prices.FormatValue(FISH, 1), "20000c", "no mark with enough lots")
+    lines = {}
+    Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH)
+    eq(lines[1], (ns.L["Auction price (OneKeyFishing): %s"]):format("20000c"), "the price under the addon's name")
+    lines = {}
+    Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH + 1)
+    eq(#lines, 0, "no line without an auction price")
 end)
 
 test("one seller's stack is few lots, however many pieces it has", function()
@@ -133,42 +153,47 @@ test("one seller's stack is few lots, however many pieces it has", function()
     eq(select(2, Prices.GetAuction(FISH)), false, "three auctions and six pieces are enough")
 end)
 
-test("more commodity results on their way: the next page is asked for and used", function()
+test("more commodity results on their way: the next page is asked for after the answer and used", function()
     commodity_results[FISH] = { { 30000, 10 } }
     commodity_full[FISH] = false
     commodity_more_requests = {}
     local before = ns.db.prices[FISH]
     scan(FISH)
-    eq(#commodity_more_requests, 1, "the next page asked for")
+    eq(#commodity_more_requests, 0, "not inside the result event")
+    advance(1)
+    eq(#commodity_more_requests, 1, "the next page asked for at the scan's turn")
     eq(ns.db.prices[FISH], before, "no price from the first page alone")
     commodity_results[FISH] = { { 30000, 10 }, { 20000, 30 }, { 25000, 10 } }
     commodity_full[FISH] = nil
-    fire("COMMODITY_SEARCH_RESULTS_UPDATED", FISH)
+    auction_answer()
     eq(ns.db.prices[FISH].price, 20000, "price from all pages")
 end)
 
-test("when more results never come, the pages that came decide at the timeout", function()
-    commodity_results[FISH] = { { 40000, 10 }, { 41000, 10 }, { 42000, 10 } }
+test("after the page limit the loaded pages decide", function()
+    commodity_results[FISH] = { { 40000, 1 }, { 41000, 1 } }
     commodity_full[FISH] = false
+    commodity_total[FISH] = 1000
+    commodity_more_requests = {}
     scan(FISH)
-    advance(5) -- past the query timeout
-    eq(ns.db.prices[FISH].price, 40000, "the loaded pages")
-    commodity_full[FISH] = nil
+    auction_run()
+    eq(#commodity_more_requests, 5, "five pages")
+    eq(ns.db.prices[FISH].price, 40500, "the loaded pages")
+    commodity_full[FISH], commodity_total[FISH] = nil, nil
 end)
 
-test("later pages arrive as COMMODITY_SEARCH_RESULTS_ADDED, each page with its own wait", function()
+test("later pages arrive as COMMODITY_SEARCH_RESULTS_ADDED", function()
     commodity_results[FISH] = { { 50000, 10 } }
     commodity_full[FISH] = false
     commodity_more_requests = {}
     scan(FISH)
-    advance(3)
+    advance(1)
     commodity_results[FISH] = { { 50000, 10 }, { 51000, 10 } }
-    fire("COMMODITY_SEARCH_RESULTS_ADDED", FISH) -- still more to come
+    auction_answer() -- still more to come
+    advance(1)
     eq(#commodity_more_requests, 2, "a second page asked for")
-    advance(3) -- 6 s after the query: past one timeout, but the second page has its own wait
     commodity_results[FISH] = { { 50000, 10 }, { 51000, 10 }, { 30000, 20 } }
     commodity_full[FISH] = nil
-    fire("COMMODITY_SEARCH_RESULTS_ADDED", FISH)
+    auction_answer()
     eq(ns.db.prices[FISH].price, 30000, "the price from all three pages")
     eq(ns.db.prices[FISH].lots, 3, "three price points")
 end)

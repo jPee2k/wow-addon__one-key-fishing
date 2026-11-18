@@ -245,20 +245,11 @@ local function CreateMainPage()
         ns.Indicator.ResetPosition()
     end)
     resetButton:SetPoint("TOPLEFT", toggleButton, "BOTTOMLEFT", 0, -6)
-    local scanButton = CreateButton(page, L["Scan auction prices"], 160, function() ns.Auction.Scan() end)
-    scanButton:SetPoint("LEFT", resetButton, "RIGHT", 8, 0)
-    -- Under the buttons, not beside them: translated buttons leave no room on their right.
-    local scanHint = CreateText(page, "GameFontDisableSmall", L["(open the auction house first)"])
-    scanHint:SetPoint("TOPLEFT", resetButton, "BOTTOMLEFT", 2, -4)
-    scanHint:SetWidth(560)
-    local function UpdateScanButton()
-        ns.UpdateScanButton(scanButton, scanHint) -- UI/Widgets.lua
-    end
-    ns.On("AUCTION_STATE", UpdateScanButton)
+    -- No auction scan button here: opening the settings closes the auction house window, so it could never be
+    -- pressed (seen in game 2026-11-18).
 
     page:SetScript("OnShow", function()
         LayoutToggles()
-        UpdateScanButton()
         UpdateLanguage()
         cameraValue:SetText(ns.db.settings.cameraDistance)
         keys:SetText((L["Fishing action: %s      Toggle fishing mode: %s"]):format(

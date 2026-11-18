@@ -57,6 +57,12 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Nothing to scan yet: catch some fish first."] = "Поки нічого сканувати: спершу щось упіймайте."
     L["Scanning auction prices of %d item(s)..."] = "Сканую ціни на аукціоні, предметів: %d..."
     L["Auction scan stopped: %d of %d price(s) found."] = "Сканування аукціону зупинено: знайдено цін %d із %d."
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "Сканування аукціону зупинено: аукціон не відповідає (знайдено цін %d із %d). " ..
+        "Вийдіть із гри персонажем і зайдіть знову."
+    L["The auction house does not answer. Log out and back in to bring it back."] =
+        "Аукціон не відповідає. Вийдіть із гри персонажем і зайдіть знову, щоб його повернути."
+    L["Auction house not answering"] = "Аукціон не відповідає"
 
     -- Skill.lua
     L["Apprentice"] = "Учень"
@@ -178,7 +184,8 @@ ns.AddTranslation("ukUA", "Українська", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "мало лотів"
-    L["Auction price: %s (few lots)"] = "Ціна аукціону: %s (мало лотів)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "Ціна аукціону (OneKeyFishing): %s (мало лотів)"
+    L["Auction price (OneKeyFishing): %s"] = "Ціна аукціону (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - звіт для налагодження"
@@ -214,7 +221,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Debug report"] = "Звіт для налагодження"
     L["Open statistics"] = "Відкрити статистику"
     L["Reset indicator position"] = "Скинути позицію індикатора"
-    L["(open the auction house first)"] = "(спершу відкрийте аукціон)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "Дія риболовлі: %s      Режим риболовлі: %s"
     L["Remove"] = "Прибрати"
     L["Fishing gear"] = "Рибальське спорядження"
