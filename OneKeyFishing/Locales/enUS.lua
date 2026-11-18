@@ -53,6 +53,9 @@ L["Open the auction house first."] = true
 L["Nothing to scan yet: catch some fish first."] = true
 L["Scanning auction prices of %d item(s)..."] = true
 L["Auction scan stopped: %d of %d price(s) found."] = true
+L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] = true
+L["The auction house does not answer. Log out and back in to bring it back."] = true
+L["Auction house not answering"] = true
 
 -- Skill.lua
 L["Apprentice"] = true

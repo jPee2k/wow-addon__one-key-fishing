@@ -125,9 +125,13 @@ local function BuildReport()
         for _, line in ipairs(ns.CatchDB.Describe()) do
             add("%s", line)
         end
-        local coverage = ns.Auction.GetCoverage()
-        add("last price scan: %s of %s listed pieces loaded", tostring(coverage and coverage.loaded),
-            tostring(coverage and coverage.total))
+    end)
+
+    -- The auction scan (specs/018-auction-scan): its state, the last scan, the list and the remembered items.
+    Section(lines, "Auction scan", function()
+        for _, line in ipairs(ns.Auction.Describe()) do
+            add("%s", line)
+        end
     end)
 
     -- Counts and times only, never an item name (specs/005-catch-catalog, V39).

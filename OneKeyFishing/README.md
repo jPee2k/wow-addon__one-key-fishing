@@ -59,7 +59,7 @@ One fishing round:
 - **Shared catch database**: catch counts travel under a random ID between addon users in your guild, group and
   friends list, and through a hidden chat channel to every other addon user, in the background. Two settings turn it
   off.
-- **Auction scan**: prices of everything you have ever caught, used for the catch value.
+- **Auction scan**: prices of every fish in the catch catalog, used for the catch value.
 - **Next rank reminder**: when the next Fishing rank can be learned, where, and a map pin to the place.
 - **Safe in combat**: when attacked with "Leave fishing mode when attacked" on, the weapons come back at once
   (unless you are casting: then with the rest of the gear after the fight) and fishing mode ends after the fight; in
@@ -245,7 +245,18 @@ Players who fish together see each other's catches right away, without waiting f
 
 1. Open the auction house.
 2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
-3. The addon looks up every item you have ever caught, one at a time.
+3. The addon looks up every item of the catch catalog, one at a time: first what you have caught, then the
+   addon's bundled data, then items known from other players. Grey and bound items cannot be sold and are skipped.
+
+A scan never starts by itself. A price found less than 15 minutes ago is not looked up again, so a second press
+right after a scan, or after closing the window halfway, only looks up what is left; when every price is that
+fresh, the press looks up everything again. The first scan of a visit takes about a minute.
+
+Sometimes the auction house stops answering (it then shows nothing until you log out and back in). The scan notices
+it within 10 seconds, stops, keeps the prices it found and says so in chat; until it answers again the button above
+the auction window and the minimap menu read **Auction house not answering**, and the other scan buttons say why
+they cannot be pressed. Log out and back in to bring it back. The item the scan was waiting for is not looked up
+again until the next version of the addon; when it was an item known only from other players, none of those are.
 
 The auction price of an item is the average price of the cheapest fifth of all pieces on sale, so a single lot far
 below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 different offers are on
@@ -340,7 +351,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
 | `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
-| `/okf scan` | scan auction prices (the auction house must be open) |
+| `/okf scan` | scan auction prices of the catch catalog's items (the auction house must be open) |
 | `/okf share` | show the state of the shared catch database |
 | `/okf sound` | open the Sound effects settings |
 | `/okf debug` | show a report to copy into a bug report |

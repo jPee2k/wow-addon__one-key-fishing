@@ -53,6 +53,10 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Nothing to scan yet: catch some fish first."] = "还没有可扫描的物品：先去钓点鱼吧。"
     L["Scanning auction prices of %d item(s)..."] = "正在扫描%d件物品的拍卖价格……"
     L["Auction scan stopped: %d of %d price(s) found."] = "拍卖扫描已停止：找到 %d/%d 个价格。"
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "拍卖扫描已停止：拍卖行没有响应（找到 %d/%d 个价格）。请登出后重新登录。"
+    L["The auction house does not answer. Log out and back in to bring it back."] = "拍卖行没有响应。请登出后重新登录以恢复。"
+    L["Auction house not answering"] = "拍卖行没有响应"
 
     -- Skill.lua
     L["Apprentice"] = "初级"

@@ -7,15 +7,15 @@ local _, ns = ...
 local Prices = {}
 ns.Prices = Prices
 
-local FEW_PIECES = 5 -- pieces the price saw
-local FEW_LOTS = 3 -- result rows (price points) on sale
+Prices.FEW_PIECES = 5 -- pieces the price saw
+Prices.FEW_LOTS = 3 -- result rows (price points) on sale; both also decide when the scan stops paging (Auction.lua)
 
 -- The scanned auction price and whether it rests on few lots, or nil. Prices saved by 1.0.0 have neither count.
 function Prices.GetAuction(itemID)
     local auction = ns.db.settings.auctionPrices and ns.db.prices[itemID]
     if auction then
-        local fewLots = (auction.quantity ~= nil and auction.quantity < FEW_PIECES)
-            or (auction.lots ~= nil and auction.lots < FEW_LOTS)
+        local fewLots = (auction.quantity ~= nil and auction.quantity < Prices.FEW_PIECES)
+            or (auction.lots ~= nil and auction.lots < Prices.FEW_LOTS)
         return auction.price, fewLots
     end
 end
@@ -53,6 +53,12 @@ function Prices.GetLastScanTime()
     for _, entry in pairs(ns.db.prices) do
         if not latest or entry.time > latest then
             latest = entry.time
+        end
+    end
+    -- An answered search without a price (not on sale) is a scan too (Auction.lua, specs/018-auction-scan).
+    for _, scanned in pairs(ns.db.priceScans or {}) do
+        if not latest or scanned > latest then
+            latest = scanned
         end
     end
     return latest

@@ -57,6 +57,12 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Nothing to scan yet: catch some fish first."] = "Поки нічого сканувати: спершу щось упіймайте."
     L["Scanning auction prices of %d item(s)..."] = "Сканую ціни на аукціоні, предметів: %d..."
     L["Auction scan stopped: %d of %d price(s) found."] = "Сканування аукціону зупинено: знайдено цін %d із %d."
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "Сканування аукціону зупинено: аукціон не відповідає (знайдено цін %d із %d). " ..
+        "Вийдіть із гри персонажем і зайдіть знову."
+    L["The auction house does not answer. Log out and back in to bring it back."] =
+        "Аукціон не відповідає. Вийдіть із гри персонажем і зайдіть знову, щоб його повернути."
+    L["Auction house not answering"] = "Аукціон не відповідає"
 
     -- Skill.lua
     L["Apprentice"] = "Учень"

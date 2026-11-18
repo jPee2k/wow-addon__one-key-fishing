@@ -9,14 +9,16 @@ local function Update()
     if not button then
         return
     end
-    local scanning, done, total = ns.Auction.GetProgress()
-    if scanning then
+    local state = ns.Auction.GetState()
+    local _, done, total = ns.Auction.GetProgress()
+    if state == "scanning" then
         button:SetText((L["Scanning %d/%d"]):format(done, total))
-        button:Disable()
+    elseif state == "stalled" then
+        button:SetText(L["Auction house not answering"])
     else
         button:SetText(L["Scan fish prices"])
-        button:Enable()
     end
+    ns.UpdateScanButton(button) -- UI/Widgets.lua: enabled by Auction.CanScan, the reason on hover
 end
 
 -- Made when the auction house first opens.
@@ -26,7 +28,8 @@ local function Ensure()
     end
     button = ns.CreateButton(AuctionHouseFrame, "", 150, ns.Auction.Scan)
     -- Wide enough for the longest text it shows, so it keeps its size while the count goes up.
-    for _, text in ipairs({ L["Scan fish prices"], (L["Scanning %d/%d"]):format(999, 999) }) do
+    for _, text in ipairs({ L["Scan fish prices"], (L["Scanning %d/%d"]):format(999, 999),
+        L["Auction house not answering"] }) do
         button:SetText(text)
         button.minWidth = button:GetWidth() or button.minWidth
     end

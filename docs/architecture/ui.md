@@ -113,15 +113,20 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   (item tooltip with the few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
   a red "not bound"; the minimap tooltip, the settings key line and the indicator use it), `ns.RangeLabel(min, max)`
-  (the skill range label of both catch pages: "0-74", "75-224", "300+") and `ns.UpdateScanButton(button, hint)`
-  (the auction scan button of the statistics window and the settings). The skill, source and water menus of the two
+  (the skill range label of both catch pages: "0-74", "75-224", "300+"), `ns.UpdateScanButton(button, hint)`
+  (the auction scan button of the statistics window and the settings: enabled by `Auction.CanScan()`, the reason
+  `Auction.WhyNot()` on hover, the hint while the auction house is closed or not answering) and
+  `ns.ShowReasonOnHover(button)` (a button's `reason` in the tooltip, also while disabled; `ns.SetReason(button,
+  reason)` sets it and updates a tooltip the button shows). The skill, source and water menus of the two
   catch pages are `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`) and the map pin answers (`MAP_PIN_SET`).
   `ns.Toast(text, r, g, b, always)`: `always` shows it with catch notifications off, for an answer to the player's
   click and the rank reminders, which have their own setting.
 - AuctionButton: the "Scan fish prices" button above the auction house window, made when it first opens; it
-  follows `AUCTION_STATE` through `Auction.GetProgress()` and clicks run `Auction.Scan`.
+  follows `AUCTION_STATE` through `Auction.GetState()` and `GetProgress()`: "Scanning n/m" while a scan runs,
+  "Auction house not answering" (disabled, the reason on hover) while stalled; clicks run `Auction.Scan`. The
+  minimap menu's scan entry reads the same while stalled.
 - ShareNotice: the one-time popup about the catch exchange, shown when `Share.NoticeOwed()` says one is owed
   (after entering the world, after combat, retried when the game had no free dialog frame); closing it calls
   `Share.NoticeRead()`, the Settings button opens the "Shared database" page.

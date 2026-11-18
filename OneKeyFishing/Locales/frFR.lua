@@ -61,6 +61,12 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Scanning auction prices of %d item(s)..."] = "Analyse des prix de %d objet(s) à l'hôtel des ventes..."
     L["Auction scan stopped: %d of %d price(s) found."] =
         "Analyse de l'hôtel des ventes interrompue : %d prix trouvé(s) sur %d."
+    L["Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in."] =
+        "Analyse de l'hôtel des ventes interrompue : il ne répond pas (%d prix trouvé(s) sur %d). " ..
+        "Déconnectez-vous puis reconnectez-vous."
+    L["The auction house does not answer. Log out and back in to bring it back."] =
+        "L'hôtel des ventes ne répond pas. Déconnectez-vous puis reconnectez-vous pour le rétablir."
+    L["Auction house not answering"] = "L'hôtel des ventes ne répond pas"
 
     -- Skill.lua
     L["Apprentice"] = "Apprenti"
