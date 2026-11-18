@@ -4,11 +4,11 @@
 
 **Created**: 2026-11-18
 
-**Status**: Implemented (in-game checklist `docs/checklists/auctionator-prices.md` open)
+**Status**: Implemented; the in-game checklist `docs/checklists/auctionator-prices.md` passed on 2026-11-18 (V59 confirmed)
 
 **Input**: User description: "auction integration". A player who also runs the Auctionator addon gets the auction
 prices of the catch from Auctionator, and the addon's own scan buttons go away. The research and the author's
-decisions of 2026-11-17 and 2026-11-18 (decisions 9 to 23) are in [docs/auction-plan.md](../../docs/auction-plan.md),
+decisions of 2026-11-17 and 2026-11-18 (decisions 9 to 23) are in [docs/auction-plan.md](../../docs/history/auction-plan.md),
 "Feature 2: Auctionator as a price source" and "Decisions". The addon's own scan is spec 018 and is not changed here.
 
 ## Clarifications

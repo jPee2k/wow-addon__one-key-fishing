@@ -186,8 +186,8 @@ end
 function Prices.AddTooltipLine(tooltip, itemID)
     local price, fewLots, source = Prices.GetAuction(itemID)
     if source == "auctionator" then
-        -- VERIFY(V59): Auctionator's own line shows on the addon's row tooltips (GameTooltip:SetItemByID, its
-        -- Source/Tooltips/Hooks.lua); if not, add the line with "(Auctionator)"
+        -- Auctionator's own lines show on the addon's row tooltips (GameTooltip:SetItemByID; V59, seen in game
+        -- 2026-11-18)
         return
     end
     if fewLots then

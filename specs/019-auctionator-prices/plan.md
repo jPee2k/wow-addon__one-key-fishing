@@ -3,7 +3,7 @@
 **Branch**: `019-auctionator-prices` | **Date**: 2026-11-18 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/019-auctionator-prices/spec.md`; the author's decisions 9 to 23 and the
-clarify session of 2026-11-18 in its clarifications; the API facts in [docs/auction-plan.md](../../docs/auction-plan.md)
+clarify session of 2026-11-18 in its clarifications; the API facts in [docs/auction-plan.md](../../docs/history/auction-plan.md)
 ("Feature 2") and [docs/forever-api.md](../../docs/forever-api.md).
 
 ## Summary

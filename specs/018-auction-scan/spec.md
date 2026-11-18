@@ -10,7 +10,7 @@
 architecture, use Auctionator's best practices while developing, and must use our own research in the game. We
 optimise where we can." (translated). The addon's price scan is slow on a fresh login, loses prices, covers only the
 player's own catches and does not notice an auction house that stopped answering. The research, the measurements in
-the game and the author's decisions of 2026-11-17 are in [docs/auction-plan.md](../../docs/auction-plan.md); the
+the game and the author's decisions of 2026-11-17 are in [docs/auction-plan.md](../../docs/history/auction-plan.md); the
 measured facts are in [docs/forever-api.md](../../docs/forever-api.md), "The auction house's request system".
 
 ## Clarifications

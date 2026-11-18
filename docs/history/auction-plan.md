@@ -9,14 +9,14 @@ Two features around auction prices, researched on 2026-11-17; both are built (sp
 Status: the research and the in-game checks are done and the author's decisions are taken (2026-11-17, "Decisions"
 below; decisions 15 to 23 for Auctionator on 2026-11-18). The scan is spec 018 (`specs/018-auction-scan`, built; its in-game checks were closed on 2026-11-18) and release
 1.3.2; Auctionator is spec 019 (`specs/019-auctionator-prices`, built on 2026-11-18; its in-game checklist
-`docs/checklists/auctionator-prices.md` and V59 are open) and release 1.4.0; each on its own branch. The spec is the
-source of truth for a built feature: where this file and the spec differ, the spec holds. The file goes to
-`docs/history/` once V59 is closed.
+`docs/checklists/auctionator-prices.md` passed and V59 confirmed on 2026-11-18) and release 1.4.0; each on its own
+branch. Both are built, so this file is kept in `docs/history/` as a record; the specs are the source of truth, and
+where this file and a spec differ, the spec holds.
 
 ## Where the facts come from
 
 - **The game** (Thunder Bluff, 2026-11-17, `/run` with an event listener): every measured fact below is recorded in
-  [forever-api.md](forever-api.md), "Verified in game", the entry "The auction house's request system".
+  [forever-api.md](../forever-api.md), "Verified in game", the entry "The auction house's request system".
 - **The client export** (`Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua`, build 1.60.1): the
   functions and events named here exist; `SendSearchQuery` is documented as limited to 100 calls a minute.
 - **Auctionator 347** (a copy in `static/examples/`, not in the repository): read to learn how the game's auction
@@ -54,7 +54,7 @@ These hold for every change to the scan:
 
 ## Feature 1: the scan
 
-Built in spec 018: the spec, plan and research in [specs/018-auction-scan](../specs/018-auction-scan/) hold what
+Built in spec 018: the spec, plan and research in [specs/018-auction-scan](../../specs/018-auction-scan/) hold what
 was decided; the table below is the plan it started from.
 
 What to change, in the order of what it gains:
@@ -84,7 +84,7 @@ their times.
 
 ## Feature 2: Auctionator as a price source
 
-Built in spec 019 ([specs/019-auctionator-prices](../specs/019-auctionator-prices/)). What follows is the research it
+Built in spec 019 ([specs/019-auctionator-prices](../../specs/019-auctionator-prices/)). What follows is the research it
 started from; the spec's clarifications refine decisions 16 and 22 (the tooltip line of the fallback price, bound
 catches left out of the counts, a fourth count "no price", the settings page's text after a failing call).
 
@@ -99,7 +99,7 @@ warning, its `Source/API/v1/README.md` says):
 
 Also there, not used in 1.4.0: `IsAuctionDataExactByItemID` (for an item ID only "a price is there"),
 `GetVendorPriceByItemID` (its cache; the addon has its own vendor price), `GetDisenchantPriceByItemID`, and the
-search calls `MultiSearch`, `MultiSearchExact`, `CreateShoppingList` (the idea in [ROADMAP.md](ROADMAP.md)).
+search calls `MultiSearch`, `MultiSearchExact`, `CreateShoppingList` (the idea in [ROADMAP.md](../ROADMAP.md)).
 
 The limits:
 
@@ -121,7 +121,7 @@ The limits:
   (`RegionalUniqueNamesEnabled()`, which the "First Last" names of Forever suggest) one per ruleset of
   `C_GameRules` (`PvP`, `PvE`, `RP`, `RPPvP`, `HC`), else one per group of connected realms. Its API so always
   answers for the character's own mode; the addon's `db.prices` is one table for the account. See the open question
-  about the auction houses in [forever-api.md](forever-api.md).
+  about the auction houses in [forever-api.md](../forever-api.md).
 
 Where:
 
@@ -238,7 +238,7 @@ Taken by the author on 2026-11-18 (Auctionator, 019):
 2. Does a jammed auction house ever recover without a relog (a long wait)? Seen only up to a few minutes.
 3. On a cold cache, is a search answered late or with an empty result? It decides nothing once fix 1 is in; only
    the reason for the 162 s.
-4. The open question of [forever-api.md](forever-api.md): one auction house per game mode, per faction or shared.
+4. The open question of [forever-api.md](../forever-api.md): one auction house per game mode, per faction or shared.
 
 Every further check of the auction API is one request at a time with the listener on, and none with an item that
 did not come from a catch.

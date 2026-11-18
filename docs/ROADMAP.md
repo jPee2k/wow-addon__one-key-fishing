@@ -46,10 +46,10 @@ Nothing is planned right now; the ideas below are not decided.
   (its API `CreateShoppingList` or `MultiSearchExact`, auction house open), so their prices fill without its full
   scan. Left out of 1.4.0: its searches take item names, not IDs (the names would come from the client's own item
   data, in the client's language), and the requests are then Auctionator's, outside the addon's guard against an
-  unanswered request ([auction-plan.md](auction-plan.md), "Rules that follow").
+  unanswered request ([auction-plan.md](history/auction-plan.md), "Rules that follow").
 - **Auction prices per game mode**: `db.prices` is one table for the account, so a character of another game mode
   sees the prices of an auction house that is not its own (Auctionator keeps its prices per mode). Waits for the
-  same in-game answer ([auction-plan.md](auction-plan.md), decision 8).
+  same in-game answer ([auction-plan.md](history/auction-plan.md), decision 8).
 - **A map pin on the nearest fishing trainer** for Journeyman (spec 001 research R16): needs the trainers' Forever
   map IDs and points, checked in game; until then the minimap's trainer tracking finds them.
 - **Fishing pools**: notice and point out nearby pools. The catch database already tells pool catches apart when

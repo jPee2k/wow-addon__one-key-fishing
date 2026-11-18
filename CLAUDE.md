@@ -42,9 +42,9 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
 | Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
-| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet), [docs/auction-plan.md](docs/auction-plan.md) (the auction scan's speed-up, built in spec 018, and Auctionator as a price source, built in spec 019: measurements, rules, decisions) |
+| Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
-| History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database; `sounds-plan.md`, how addon sound works in WoW Forever) |
+| History | `docs/history/` (finished plans: `mvp-plan.md` with the API spike results, `publishing-plan.md` for 1.0.0, `shared-db-plan.md`, the design of the shared catch database; `sounds-plan.md`, how addon sound works in WoW Forever; `auction-plan.md`, the auction scan and Auctionator prices of specs 018 and 019: measurements, rules, decisions) |
 
 ## Workflow
 
@@ -218,7 +218,7 @@ go there.
   for reasons not known (one of the two items was answered the next day). Never call the first; never search an
   item of `GameData.AuctionUnanswered` (empty today); search only items of the catalog, with the guard that
   remembers an unanswered one; test the auction API one request at a time
-  ([docs/auction-plan.md](docs/auction-plan.md)).
+  ([docs/history/auction-plan.md](docs/history/auction-plan.md)).
 - "Interface action failed because of an AddOn" in combat may come with no `ADDON_ACTION_BLOCKED` and nothing in the
   taint log: Blizzard's Lua refuses addon code itself (`HideUIPanel`, so the addon's windows hide their close
   button's frame with `frame:Hide()`, `ns.SetupWindow`; a `MenuUtil` title, divider or spacer, so menus build none
