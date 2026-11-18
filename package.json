@@ -1,6 +1,6 @@
 {
   "name": "onekeyfishing",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "private": true,
   "description": "Development tools for the OneKeyFishing World of Warcraft addon (checks, tests and packaging).",
   "license": "MIT",
