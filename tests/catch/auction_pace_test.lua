@@ -301,18 +301,18 @@ test("a ready reading at the scan's own send does not count as an answer", funct
     eq(stored(A), 100, "A settled with its price")
 end)
 
-test("items that cannot be sold are not searched", function()
-    local G, Q, P, U, K = 90011, 90012, 90013, 90014, 90015
-    fresh({ G, Q, P, U, K })
-    item_quality[G] = 0 -- poor
+test("bound items are not searched; poor quality ones are (V54: a grey item can be listed)", function()
+    local G, Q, P, U = 90011, 90012, 90013, 90014
+    fresh({ G, Q, P, U })
+    item_quality[G] = 0 -- poor: sellable
     item_bind[Q] = 4 -- quest
     item_bind[P] = 1 -- bind on pickup
     item_info_missing[U] = true -- not loaded: searched
-    auction_key_info = { [U] = {}, [K] = { quality = 0 } } -- K: poor by its item key info
+    auction_key_info = { [G] = { quality = 0 }, [U] = {} } -- G poor by its item key info too
     ns.Auction.Scan()
     assert(chat_contains(L["Scanning auction prices of %d item(s)..."]:format(2)), table.concat(chat, "\n"))
     auction_run()
-    eq(list(auction_searched()), tostring(U), "only U searched")
+    eq(list(auction_searched()), G .. "," .. U, "the bound ones left out")
 end)
 
 test("the progress goes item by item", function()

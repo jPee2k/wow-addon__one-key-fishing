@@ -15,7 +15,8 @@ ns.Auction = Auction
 
 local CHEAPEST_SHARE = 0.2 -- of all listed pieces
 local MAX_MORE_REQUESTS = 5 -- result pages asked for per item, before the price uses what came
--- VERIFY(V57): a request every 0.6 s, the documented 100 a minute, is answered like the measured one every 0.7 s
+-- A request every 0.6 s, the documented 100 a minute, is answered (V57, measured 2026-11-18: scans of 68 and 72
+-- items in a row, every request answered, no stall).
 local MIN_INTERVAL = 0.6 -- seconds between two requests of the scan (search or page)
 local INFO_WAIT = 3 -- seconds the scan waits for missing item key infos once nothing else is left
 local RESULT_WAIT = 3 -- seconds an answered request may take for its result before its item is skipped
@@ -109,14 +110,16 @@ local function IsItemID(value)
     return type(value) == "number" and value > 0 and math.floor(value) == value
 end
 
--- VERIFY(V54): poor quality and bound items (bind on pickup, quest) cannot be listed at auction. An item whose data
--- the client has not loaded yet is searched: the filter saves requests, it protects nothing.
+-- Bound items (bind on pickup, quest) cannot be listed at auction (V54, accepted without a check: the game's own
+-- rule). A poor quality item can (measured 2026-11-18: IsSellItemValid is true for a grey item), so it is
+-- searched. An item whose data the client has not loaded yet is searched too: the filter saves requests, it
+-- protects nothing.
 local function Unsellable(itemID)
-    local name, _, quality, _, _, _, _, _, _, _, _, _, _, bindType = C_Item.GetItemInfo(itemID)
+    local name, _, _, _, _, _, _, _, _, _, _, _, _, bindType = C_Item.GetItemInfo(itemID)
     if not name then
         return false
     end
-    return quality == 0 or bindType == 1 or bindType == 4
+    return bindType == 1 or bindType == 4
 end
 
 -- The groups of the scan's list, in their order (FR-006): the own catches, the bundled catch database, the items
@@ -267,7 +270,8 @@ end
 -- True when the loaded listings decide the price and its few-lots mark as every page would (research R4): they
 -- cover the cheapest share of the listed pieces, and hold enough pieces and rows not to be few lots. With every page
 -- loaded both counts can only grow, so a price that would be marked is never decided early.
--- VERIFY(V55): with the price sort a later page holds no cheaper row than the loaded ones
+-- With the price sort a later page holds no cheaper row than the loaded ones (V55, measured 2026-11-18: 4750
+-- pieces in 48 rows, ascending to the end; the price equal to the one of the whole list).
 local function PriceDecided(listings, listed)
     local loaded = Loaded(listings)
     local wanted = math.max(1, math.ceil(math.max(listed or 0, loaded) * CHEAPEST_SHARE))
@@ -363,17 +367,13 @@ local function SendMore(itemID)
     C_AuctionHouse.RequestMoreCommoditySearchResults(itemID)
 end
 
--- The first queued item with its item key info, removed from the queue; items poor by their info are dropped.
+-- The first queued item with its item key info, removed from the queue.
 local function TakeReady()
     local index = 1
     while queue[index] do
         local itemID = queue[index]
         local keyInfo = info[itemID]
-        if keyInfo and keyInfo.quality == 0 then
-            table.remove(queue, index)
-            done = done + 1
-            listCounts.unsellable = listCounts.unsellable + 1 -- poor by its item key info (the debug report)
-        elseif keyInfo then
+        if keyInfo then
             table.remove(queue, index)
             return itemID
         else
@@ -382,7 +382,7 @@ local function TakeReady()
     end
 end
 
--- True when a queued item has its item key info (TakeReady would take or drop it); removes nothing.
+-- True when a queued item has its item key info (TakeReady would take it); removes nothing.
 local function HasReady()
     for _, itemID in ipairs(queue) do
         if info[itemID] then
@@ -470,7 +470,8 @@ function Auction.Scan()
     current, unanswered, wantsMore, partial, moreRequests = nil, false, false, nil, 0
     stats.searched, stats.requests, stats.noInfo, stats.started = 0, 0, 0, GetTime()
     wipe(info)
-    -- VERIFY(V56): the item key info of the whole list is asked at once and arrives without a throttled message.
+    -- The item key info of the whole list is asked at once and arrives without a throttled message (V56, measured
+    -- 2026-11-18: 68 and 72 items, one request per item, none without its info).
     -- A call for a missing key asks the server again, so it is made once per item here and again only on the
     -- item's ITEM_KEY_ITEM_INFO_RECEIVED.
     for _, itemID in ipairs(queue) do
@@ -601,6 +602,18 @@ ns.RegisterEvent("AUCTION_HOUSE_SHOW", function()
     NotifyState()
 end)
 
+-- Prices saved before rule 2 divided a non-commodity's price by the pieces of its row (V5, found wrong 2026-11-18);
+-- a saved price does not say which kind of item it was, so every one is dropped once and the next scan brings
+-- them back. An item not on sale at that scan would otherwise keep its wrong price for good.
+local PRICE_RULE = 2
+ns.RegisterEvent("PLAYER_LOGIN", function()
+    if ns.db.priceRule ~= PRICE_RULE then
+        wipe(ns.db.prices)
+        wipe(ns.db.priceScans)
+        ns.db.priceRule = PRICE_RULE
+    end
+end)
+
 ns.RegisterEvent("AUCTION_HOUSE_CLOSED", function()
     isOpen = false
     busySince, busyToken = nil, nil -- stalled stays until a ready reading at the next opening
@@ -696,7 +709,9 @@ end
 ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED", OnCommodityResults)
 ns.RegisterEvent("COMMODITY_SEARCH_RESULTS_ADDED", OnCommodityResults)
 
--- Assumed (V5, accepted): buyoutAmount is the price of the whole auction (all its pieces); bid-only auctions have none
+-- A result row is a group of equal auctions of one piece each: buyoutAmount is the price of one piece and quantity
+-- the number of them (V5, measured 2026-11-18: 53 Pound Yellowtail, 7 at 56s 85c in one row). Bid-only auctions
+-- have no buyoutAmount.
 ns.RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED", function(_, itemKey)
     if not scanning or not itemKey or itemKey.itemID ~= current then
         return
@@ -707,7 +722,7 @@ ns.RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED", function(_, itemKey)
         local result = C_AuctionHouse.GetItemSearchResultInfo(itemKey, index)
         local quantity = result and result.quantity or 0
         if result and result.buyoutAmount and result.buyoutAmount > 0 and quantity > 0 then
-            table.insert(listings, { result.buyoutAmount / quantity, quantity })
+            table.insert(listings, { result.buyoutAmount, quantity })
         end
     end
     Settle(itemKey.itemID, listings)

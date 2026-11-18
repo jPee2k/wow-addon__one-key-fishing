@@ -50,7 +50,7 @@ only):
 6. Wait 15 minutes without a scan, then scan: the start line names the whole list again.
 7. An item with many auctions: its scanned price against the cheapest rows of the auction window (V55).
 8. A grey item in the bags: the `/run` line of `verification.md` (V54).
-9. The buttons: the statistics window, the settings page and the minimap menu follow the same state as the button
-   above the auction window; with the window closed the reason is "open the auction house first".
+9. The buttons: the statistics window and the minimap menu follow the same state as the button above the auction
+   window; with the window closed the reason is "Open the auction house first."
 10. Only if the auction house stops answering by itself: note the chat line, the buttons' text, and after the relog
     the "auction guard" line of `/okf debug`.

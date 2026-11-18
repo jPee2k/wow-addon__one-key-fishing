@@ -176,7 +176,8 @@ ns.AddTranslation("koKR", "한국어", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "매물 적음"
-    L["Auction price: %s (few lots)"] = "경매장 가격: %s (매물 적음)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "경매장 가격 (OneKeyFishing): %s (매물 적음)"
+    L["Auction price (OneKeyFishing): %s"] = "경매장 가격 (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 디버그 보고서"
@@ -211,7 +212,6 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Debug report"] = "디버그 보고서"
     L["Open statistics"] = "통계 열기"
     L["Reset indicator position"] = "표시기 위치 초기화"
-    L["(open the auction house first)"] = "(먼저 경매장을 여세요)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "낚시 동작: %s      낚시 모드 전환: %s"
     L["Remove"] = "제거"
     L["Fishing gear"] = "낚시 장비"

@@ -46,7 +46,7 @@ function ns.ItemDisplay(itemID)
     return link or name or ("item:" .. itemID), icon or C_Item.GetItemIconByID(itemID)
 end
 
--- The item tooltip of a row; withPrice adds the auction price when it is not used for values (Prices.lua).
+-- The item tooltip of a row; withPrice adds the addon's auction price (Prices.AddTooltipLine).
 function ns.ShowItemTooltip(owner, itemID, withPrice)
     if not itemID then
         return -- an empty row: the game's tooltip refuses a nil item
@@ -159,19 +159,10 @@ function ns.SetReason(button, reason)
     end
 end
 
--- The auction scan button (statistics window, settings page): clickable while a scan can start, the reason it
--- cannot on hover (Auction.WhyNot); the hint (if any) says why while the auction house is closed or not answering.
-function ns.UpdateScanButton(button, hint)
+-- An auction scan button (the statistics window's, the one above the auction window): clickable while a scan can
+-- start, the reason it cannot on hover (Auction.WhyNot).
+function ns.UpdateScanButton(button)
     ns.ShowReasonOnHover(button)
     button:SetEnabled(ns.Auction.CanScan())
     ns.SetReason(button, ns.Auction.WhyNot())
-    if hint then
-        local state = ns.Auction.GetState()
-        if state == "closed" then
-            hint:SetText(ns.L["(open the auction house first)"])
-        elseif state == "stalled" then
-            hint:SetText(ns.L["The auction house does not answer. Log out and back in to bring it back."])
-        end
-        hint:SetShown(state == "closed" or state == "stalled")
-    end
 end

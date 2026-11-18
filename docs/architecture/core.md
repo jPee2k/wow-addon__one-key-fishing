@@ -111,6 +111,7 @@ new field only needs a default.
 | `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Exchange/ShareGame.lua |
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
 | `priceScans` | itemID -> `time()` of the last answered auction search, with a price or not on sale (spec 018: fresh prices) | Auction.lua |
+| `priceRule` | the rule the saved `prices` were computed by (2 since 1.3.2: an item row's `buyoutAmount` is one piece's price); a lower or missing value drops `prices` and `priceScans` once at login | Auction.lua |
 | `scanGuard` | `{ version, items }`: the items the auction house did not answer for, itemID -> `"own"`, `"bundled"` or `"shared"`; emptied when the addon runs as another version (spec 018) | Auction.lua |
 | `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |

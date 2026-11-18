@@ -122,6 +122,8 @@ No `NEEDS CLARIFICATION` is left. Four assumptions wait for the game (V54 to V57
   was answered). The item key info's `quality` is checked once more before the send.
 - **Rationale**: the author's own list of 40 holds grey and quest items; each costs 0.6 s for no price.
 - **Open**: that such items cannot be listed in WoW Forever: `VERIFY(V54)` (open check 1 of the plan document).
+- **Measured 2026-11-18**: `C_AuctionHouse.IsSellItemValid` is true for a grey item (Snapped Spider Limb), so poor
+  quality left the rule: only `bindType` 1 and 4 are left out, and the item key info's `quality` is not checked.
 - **Alternatives**: `C_AuctionHouse.IsSellItemValid` (needs the item in the bags); the catalog's kinds (layer 2).
 
 ## R6. The scan's list without breaking the layers (FR-006 to FR-008)
@@ -178,8 +180,8 @@ No `NEEDS CLARIFICATION` is left. Four assumptions wait for the game (V54 to V57
 - **Decision**: `Auction.GetState()` returns `"closed"`, `"ready"`, `"scanning"` or `"stalled"`; `Auction.CanScan()`
   is `"ready"`; `Auction.WhyNot()` returns the localized reason a scan cannot start (`nil` when it can or one is
   running). Every entry uses them: the button above the auction window shows "Auction house not answering" while
-  stalled; `ns.UpdateScanButton` (statistics window, settings page) disables the button, shows the reason on hover
-  (also while disabled) and in the settings page's hint line; the minimap menu's entry is disabled and reads
+  stalled; `ns.UpdateScanButton` (statistics window) disables the button and shows the reason on hover
+  (also while disabled; the settings page's button and hint were removed on 2026-11-18); the minimap menu's entry is disabled and reads
   "Auction house not answering"; `/okf scan` prints the reason. No new message: `AUCTION_STATE` fires on every change
   of the state.
 - **Rationale**: one "can scan now" rule for all entries (spec, edge cases); the statistics window's button keeps its

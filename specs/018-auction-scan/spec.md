@@ -80,7 +80,7 @@ prices is the same.
 3. **Given** an item with many auctions, **When** the scan has loaded enough of them to know the price, **Then** it
    goes to the next item without loading the rest, and the price and its "few lots" mark are the same as with every
    auction loaded.
-4. **Given** an item that cannot be sold at auction (a grey item, an item bound to the player), **When** a scan
+4. **Given** an item that cannot be sold at auction (an item bound to the player), **When** a scan
    runs, **Then** the item is not searched.
 5. **Given** a running scan, **When** the player looks at the scan button, **Then** it shows the progress as today
    (items done and items in all).
@@ -210,8 +210,9 @@ does not ask about it, nor about any item known only from other players' records
   is tried again in the next scan).
 - Auction prices turned off in the settings: the scan can still be run, as today; the prices are not used.
 - An item caught for the first time during the visit joins the next scan as an own catch.
-- The scan command and the scan buttons of the statistics window, the settings page and the minimap menu follow the
-  same rules as the button above the auction window: one "can scan now" rule for all.
+- The scan command and the scan buttons of the statistics window and the minimap menu follow the same rules as the
+  button above the auction window: one "can scan now" rule for all. (The settings page's scan button was removed
+  on 2026-11-18: opening the settings closes the auction house window, so it could never be pressed.)
 - An item whose only auctions have no buyout price still has no auction price, as today.
 - A price found by an earlier version stays valid; it has an age and is scanned by the freshness rule.
 - The auction house's own search by the player during a scan uses the same request line; the scan waits its turn and
@@ -231,8 +232,8 @@ Speed and completeness:
   (constitution, Principle I).
 - **FR-003**: The scan MUST stop loading further auctions of an item once the loaded ones decide its price; the price
   and the "few lots" mark MUST equal the ones every auction of the item would give.
-- **FR-004**: The scan MUST NOT search an item that cannot be sold at auction: an item of poor quality or one bound to
-  the player.
+- **FR-004**: The scan MUST NOT search an item that cannot be sold at auction: an item bound to the player. (A poor quality
+  item was first left out too; the game lists it, measured 2026-11-18, so it is searched.)
 - **FR-005**: The price rule MUST NOT change: the average unit price of the cheapest fifth of the pieces on sale, the
   "few lots" mark, the higher of the vendor and the auction price for values.
 
@@ -334,12 +335,12 @@ Texts and documents:
 
 - A full scan of the whole catalog is about a minute at the auction house's pace (0.7 seconds per item, 80 items in
   the bundled database of 1.3.1 plus the player's own); that is accepted because the next presses are short.
-- Poor quality and bound items cannot be sold at auction in WoW Forever. Not yet seen in the game; an item wrongly
-  left out would only lack an auction price. To be checked in the game (`docs/auction-plan.md`, open check 1).
-- An item of the bundled catch database is answered by the auction house, except the items measured not to be:
-  Winter Squid (13755) is in the bundled database, and a search for it jams the auction house (docs/forever-api.md).
-  Such items are listed in the game data and never searched (found in the code review); every other item is
-  protected by FR-017.
+- Bound items cannot be sold at auction in WoW Forever (accepted without a check, V54); an item wrongly left out
+  would only lack an auction price. Poor quality items can be sold (measured 2026-11-18) and are searched.
+- An item of the bundled catch database is answered by the auction house. Winter Squid (13755), in the bundled
+  database, was measured unanswered on 2026-11-17 and answered with a price by this scan on 2026-11-18
+  (docs/forever-api.md). An item measured never to be answered is listed in the game data
+  (`GameData.AuctionUnanswered`, empty today) and never searched; every other item is protected by FR-017.
 - The auction house stops answering only until the character logs out and in; whether it ever recovers by itself is
   not known, so the state is read from the game each time and never stored.
 - The 15 minutes, the 10 seconds and the three groups are fixed values, not settings.

@@ -7,7 +7,7 @@ Two features around auction prices, researched on 2026-11-17; the first is built
    button goes away.
 
 Status: the research and the in-game checks are done and the author's decisions are taken (2026-11-17, "Decisions"
-below). The scan is spec 018 (`specs/018-auction-scan`, built; its in-game checks V54 to V57 are open) and release
+below). The scan is spec 018 (`specs/018-auction-scan`, built; its in-game checks were closed on 2026-11-18) and release
 1.3.2; Auctionator is spec 019 and release 1.4.0, not specified yet; each on its own branch. When a feature is built, its part of this file moves to the spec, and the file goes to
 `docs/history/` once both are done.
 
@@ -32,8 +32,9 @@ below). The scan is spec 018 (`specs/018-auction-scan`, built; its in-game check
 | A request the server never answers | the auction house is jammed until the character logs out and in |
 
 Two requests are known to get no answer: `C_AuctionHouse.SearchForItemKeys` (any call), and `SendSearchQuery` for
-an item the client knows but the game does not have yet (13755, 13890). An item that exists and is not listed is
-answered.
+an item the client knows but the game does not have yet (13755, 13890, on 2026-11-17). An item that exists and is
+not listed is answered. On 2026-11-18 the rebuilt scan searched 13755 and got its price, so the item itself is not
+the cause; 13890 is open (V58 of spec 018).
 
 ## Rules that follow
 
@@ -63,7 +64,7 @@ What to change, in the order of what it gains:
 | 3 | Skip fresh prices: an item scanned less than N minutes ago is not searched again; the oldest prices go first; a scan stopped by closing the window goes on from there the next time | a repeated scan takes seconds | design (`db.prices[itemID].time` exists) |
 | 4 | Stop paging early: the price needs the cheapest 20% of the listed pieces and the results come in rising price order, so no further page once the loaded pieces cover that share | fewer requests for items with many listings | design, the order was seen (V4) |
 | 5 | Send the next request on `AUCTION_HOUSE_THROTTLED_SYSTEM_READY`, not on a 0.5 s retry timer | no idle time between requests | the event was seen |
-| 6 | Leave out items that cannot be listed (poor quality, bound) | fewer requests | open check 1; a `VERIFY` marker until then |
+| 6 | Leave out items that cannot be listed (bound; poor quality ones can be listed, check 1 of 2026-11-18) | fewer requests | built for bound items (V54, accepted) |
 | 7 | Scan every item of the catalog, not only the player's own catches (80 items in the bundled database of 1.3.1, 40 in the author's own list): the own catches first, then the bundled database, then items known only from other players' records | the catalog shows auction prices; today it shows the vendor price for what the player never caught | decision 6 |
 | 8 | Remember an item the server did not answer (saved, never searched again); after that on an item of other players' records, such items are not scanned until the next version of the addon | a forged record costs one relog at most | decision 7 |
 
@@ -183,8 +184,8 @@ Auctionator (019):
 
 ## Open checks in game
 
-1. Can a poor-quality item be listed? `C_AuctionHouse.IsSellItemValid` on one in the bags, with the auction house
-   open (fix 6). The line is in the conversation of 2026-11-17; it sends nothing to the server.
+1. Can a poor-quality item be listed? Yes (2026-11-18): `C_AuctionHouse.IsSellItemValid` is true for a grey item
+   in the bags with the auction house open, so the scan searches such items.
 2. Does a jammed auction house ever recover without a relog (a long wait)? Seen only up to a few minutes.
 3. On a cold cache, is a search answered late or with an empty result? It decides nothing once fix 1 is in; only
    the reason for the 162 s.

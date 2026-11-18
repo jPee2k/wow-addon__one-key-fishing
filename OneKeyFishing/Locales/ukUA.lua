@@ -184,7 +184,8 @@ ns.AddTranslation("ukUA", "Українська", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "мало лотів"
-    L["Auction price: %s (few lots)"] = "Ціна аукціону: %s (мало лотів)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "Ціна аукціону (OneKeyFishing): %s (мало лотів)"
+    L["Auction price (OneKeyFishing): %s"] = "Ціна аукціону (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - звіт для налагодження"
@@ -220,7 +221,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Debug report"] = "Звіт для налагодження"
     L["Open statistics"] = "Відкрити статистику"
     L["Reset indicator position"] = "Скинути позицію індикатора"
-    L["(open the auction house first)"] = "(спершу відкрийте аукціон)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "Дія риболовлі: %s      Режим риболовлі: %s"
     L["Remove"] = "Прибрати"
     L["Fishing gear"] = "Рибальське спорядження"

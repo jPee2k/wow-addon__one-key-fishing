@@ -39,11 +39,15 @@ function Prices.FormatValue(itemID, count)
     return text
 end
 
--- For item tooltips: the auction price that is not used because it rests on few lots.
+-- For item tooltips: the addon's auction price under its own name (another addon's line may show the cheapest
+-- auction, which differs from this average), grey with the mark when it is not used because it rests on few lots.
 function Prices.AddTooltipLine(tooltip, itemID)
     local price, fewLots = Prices.GetAuction(itemID)
     if fewLots then
-        tooltip:AddLine((ns.L["Auction price: %s (few lots)"]):format(ns.FormatMoney(price)), 0.6, 0.6, 0.6)
+        local text = (ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format(ns.FormatMoney(price))
+        tooltip:AddLine(text, 0.6, 0.6, 0.6)
+    elseif price then
+        tooltip:AddLine((ns.L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(price)), 1, 1, 1)
     end
 end
 

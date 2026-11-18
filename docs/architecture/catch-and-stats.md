@@ -33,7 +33,9 @@ How casts become catch messages, how they are counted, and how items are valued.
 The value of an item is the higher of the vendor and the scanned auction price. An auction price based on fewer
 than 5 pieces or fewer than 3 result rows (price points; several sellers at one price share a row) is shown with a
 "few lots" mark and not used for values. The two limits are `Prices.FEW_PIECES` (5) and `Prices.FEW_LOTS` (3);
-the scan's paging rule reads them too.
+the scan's paging rule reads them too. `Prices.AddTooltipLine` adds the auction price to a row's item tooltip
+under the addon's name ("Auction price (OneKeyFishing)"; grey with the mark when it rests on few lots), so it is
+told apart from another addon's cheapest-auction line.
 
 ## Catch/Auction.lua
 
@@ -46,22 +48,22 @@ Rebuilt in spec 018 ([specs/018-auction-scan](../../specs/018-auction-scan/), th
   bundled database's items, then the items known only from other players' records; each item once, in its first
   group. The last two come from an item source that `CatchDB/Views.lua` sets with `Auction.SetItemSource`
   (`CatchDB.ScanItems`), so the module names no layer 2 module. Left out: the items of `GameData.AuctionUnanswered` (a search for them
-  jams the auction house), IDs the client does not know, poor
-  quality and bound items (`VERIFY(V54)`), the remembered items and, after a remembered item of other players'
+  jams the auction house), IDs the client does not know, bound
+  items (V54, accepted; poor quality items can be listed and are searched), the remembered items and, after a remembered item of other players'
   records, that whole group. Inside a group: never scanned first, then the oldest scan time, then the ID.
 - **Fresh prices**: an item answered less than 15 minutes ago (`priceScans[itemID]`, or the price's own time) is
   left out; when every item is fresh the press scans them all again. A scan stopped by a closed window therefore
   resumes with the items it did not reach.
 - **The item key info first**: at the start the scan calls `C_AuctionHouse.GetItemKeyInfo` once per item
-  (`VERIFY(V56)`) and searches an item only when it has the info; a missing one is read again only on its
+  (V56, measured) and searches an item only when it has the info; a missing one is read again only on its
   `ITEM_KEY_ITEM_INFO_RECEIVED` (a call asks the server again). Items whose info never comes end the scan after
   3 s without a scan time.
 - **The turn** (`Pump`): one request at a time, only on a ready line (`IsThrottledMessageSystemReady`) and not
-  sooner than 0.6 s after the scan's previous request (`VERIFY(V57)`, the documented 100 a minute). It runs on the
+  sooner than 0.6 s after the scan's previous request (V57, measured; the documented 100 a minute). It runs on the
   line's events, the results, an item key info and its own timer; while the line reads busy it reads it again once
   a second (a READY event was missed once per measured scan).
 - **Paging**: a further commodity page only while the price is open: the loaded pieces below the cheapest fifth of
-  the listed ones, below 5 pieces or below 3 rows (`VERIFY(V55)`: later pages are never cheaper), up to 5 pages;
+  the listed ones, below 5 pieces or below 3 rows (V55, measured: later pages are never cheaper), up to 5 pages;
   the page request takes its turn like a search. An answered request without a result for 3 s: the loaded pages
   decide, else the item is skipped without a scan time.
 - **The line and the stall**: the module follows the line while the window is open, scan or no scan. A ready

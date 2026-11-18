@@ -25,7 +25,8 @@
 --   soft_target_guid = guid             UnitGUID("softinteract") (default nil: no soft target)
 --   build_version = "1.60.2"            the version string of GetBuildInfo (default "1.60.1")
 --   commodity_results[itemID] = { { unitPrice, quantity } }, commodity_total[itemID] = n,
---   item_results[itemID] = { { buyoutAmount, quantity } }   auction search results (fire the result event)
+--   item_results[itemID] = { { buyoutAmount, quantity } }   auction search results (fire the result event);
+--                                                            buyoutAmount is one piece's price, quantity the pieces
 -- The auction house's request line (specs/018-auction-scan):
 --   auction_ready = false               C_AuctionHouse.IsThrottledMessageSystemReady (default true); a search or a
 --                                       page request sets it false, auction_answer() sets it true again

@@ -110,12 +110,13 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 
 - Widgets: the frame helpers of every window and page: `ns.CreateButton` (the panel button, which grows to its
   text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`
-  (item tooltip with the few-lots auction price), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
+  (item tooltip with the addon's auction price, `Prices.AddTooltipLine`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
   a red "not bound"; the minimap tooltip, the settings key line and the indicator use it), `ns.RangeLabel(min, max)`
-  (the skill range label of both catch pages: "0-74", "75-224", "300+"), `ns.UpdateScanButton(button, hint)`
-  (the auction scan button of the statistics window and the settings: enabled by `Auction.CanScan()`, the reason
-  `Auction.WhyNot()` on hover, the hint while the auction house is closed or not answering) and
+  (the skill range label of both catch pages: "0-74", "75-224", "300+"), `ns.UpdateScanButton(button)`
+  (the auction scan button of the statistics window and above the auction window; the settings page has none,
+  since opening the settings closes the auction house window: enabled by `Auction.CanScan()`, the reason
+  `Auction.WhyNot()` on hover, also while disabled) and
   `ns.ShowReasonOnHover(button)` (a button's `reason` in the tooltip, also while disabled; `ns.SetReason(button,
   reason)` sets it and updates a tooltip the button shows). The skill, source and water menus of the two
   catch pages are `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.

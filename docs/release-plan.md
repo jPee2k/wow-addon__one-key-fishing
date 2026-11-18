@@ -14,7 +14,8 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 
 | ID | What was assumed | How to check | Row |
 | --- | --- | --- | --- |
-| V5 | An auction's `buyoutAmount` is for all its pieces | Scan prices, then compare a stacked non-commodity auction with the addon's unit price | `specs/002-local-catch-db/verification.md` |
+| V54 | A bound item (bind on pickup, quest) cannot be listed at auction, so the scan leaves it out | `C_AuctionHouse.IsSellItemValid` on a bound item in the bags with the auction house open (the line of `docs/checklists/auction-scan.md`, step 8, with the item's slot) | `specs/018-auction-scan/verification.md` |
+| V58 | A search for Plated Armorfish (13890) is answered | A scan whose list holds it (an own catch or other players' records): it finishes, `/okf debug` "auction guard" stays `none` | `specs/018-auction-scan/verification.md` |
 | V10 | `RAID` sends as `PARTY` does; the game throttles as on Retail | `/okf debug` in a raid with an addon user: heard by the group, send results 0, no refusals | `specs/003-guild-group-sync/verification.md` |
 | V11 | A character friend is named as their messages name them | Exchange with a player who is only a character friend (no guild, group or Battle.net): `/okf share` "friends 1" | `specs/003-guild-group-sync/verification.md` |
 | V12 | The "No player named" line of an exchange whisper is hidden | That character friend logs out during an exchange: no line in chat | `specs/003-guild-group-sync/verification.md` |

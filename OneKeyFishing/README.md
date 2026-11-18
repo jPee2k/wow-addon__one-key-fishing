@@ -244,9 +244,9 @@ Players who fish together see each other's catches right away, without waiting f
 ## Auction prices
 
 1. Open the auction house.
-2. Press **Scan fish prices** above the auction window (or use the minimap menu, the settings page or `/okf scan`).
+2. Press **Scan fish prices** above the auction window (or use the statistics window's button, the minimap menu or `/okf scan`).
 3. The addon looks up every item of the catch catalog, one at a time: first what you have caught, then the
-   addon's bundled data, then items known from other players. Grey and bound items cannot be sold and are skipped.
+   addon's bundled data, then items known from other players. Bound items cannot be sold and are skipped.
 
 A scan never starts by itself. A price found less than 15 minutes ago is not looked up again, so a second press
 right after a scan, or after closing the window halfway, only looks up what is left; when every price is that
@@ -262,6 +262,9 @@ The auction price of an item is the average price of the cheapest fifth of all p
 below or far above the market does not decide it. When fewer than 5 pieces or fewer than 3 different offers are on
 sale (the auction house shows sellers at the same price as one offer; one seller's stack is not a market), the price
 is shown with **(few lots)** and the catch value uses the vendor price instead.
+
+The tooltip of an item in the statistics window's lists shows this price as **Auction price (OneKeyFishing)**. An
+auction addon's own line in the same tooltip may differ: it usually shows the single cheapest auction.
 
 The catch value uses the higher of the vendor and the auction price. To use vendor prices only, turn off **Use
 scanned auction prices for catch value**.
@@ -324,8 +327,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button
   - Show catch chances in tooltips (the zones in item tooltips, the likely catches in the minimap tooltip)
-- **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position, Scan auction prices
-  (with the auction house open).
+- **Actions**: Toggle fishing mode, Debug report, Open statistics, Reset indicator position.
 - **Language** (top right): **Game client language** follows your client and uses English when there is no
   translation for it (a Russian client gets English, and the addon says once in the chat where to change it). Pick
   a language from the menu to use it instead; Українська is only available this way, because the game has no

@@ -188,7 +188,8 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "pocos lotes"
-    L["Auction price: %s (few lots)"] = "Precio de subasta: %s (pocos lotes)"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "Precio de subasta (OneKeyFishing): %s (pocos lotes)"
+    L["Auction price (OneKeyFishing): %s"] = "Precio de subasta (OneKeyFishing): %s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - informe de depuración"
@@ -226,7 +227,6 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["Debug report"] = "Informe de depuración"
     L["Open statistics"] = "Abrir estadísticas"
     L["Reset indicator position"] = "Restablecer posición del indicador"
-    L["(open the auction house first)"] = "(primero abre la casa de subastas)"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "Acción de pesca: %s      Activar/desactivar modo pesca: %s"
     L["Remove"] = "Quitar"
     L["Fishing gear"] = "Equipo de pesca"

@@ -99,11 +99,27 @@ test("a price saved by 1.0.0 (no quantity) is used as before", function()
     eq(Prices.Get(FISH), 500, "value")
 end)
 
-test("items that are not commodities: buyout per piece, bid-only auctions skipped", function()
-    item_results[PEARL] = { { 50000, 5 }, { 9000, 1 }, { nil, 1 }, { 60000, 4 } }
+test("prices saved under the old item rule are dropped once at login, later ones kept", function()
+    ns.db.priceRule = nil
+    ns.db.prices[PEARL] = { price = 812, quantity = 14, lots = 5, time = 1 }
+    ns.db.priceScans[PEARL] = 1
+    fire("PLAYER_LOGIN")
+    eq(ns.db.prices[PEARL], nil, "the old price dropped")
+    eq(ns.db.priceScans[PEARL], nil, "its scan time dropped: the next scan searches it first")
+    eq(ns.db.priceRule, 2, "the rule saved")
+    ns.db.prices[PEARL] = { price = 5683, quantity = 14, lots = 5, time = 2 }
+    fire("PLAYER_LOGIN")
+    eq(ns.db.prices[PEARL].price, 5683, "a price of the new rule kept")
+    ns.db.prices[PEARL] = nil
+end)
+
+test("items that are not commodities: a row's buyout is one piece's price, bid-only auctions skipped", function()
+    -- The auction house's rows for 53 Pound Yellowtail on 2026-11-18 (V5): the price of a piece, the pieces at it.
+    item_results[PEARL] = { { 5680, 1 }, { 5685, 7 }, { 5686, 1 }, { nil, 1 }, { 5687, 3 }, { 6100, 2 } }
     local entry = scan(PEARL, "item")
-    eq(entry.quantity, 10, "pieces with a buyout")
-    eq(entry.price, 9500, "the cheapest 2 of 10 pieces: 9000 and 10000")
+    eq(entry.quantity, 14, "pieces with a buyout")
+    eq(entry.lots, 5, "rows with a buyout")
+    eq(entry.price, 5683, "the cheapest 3 of 14 pieces: 5680 and two at 5685")
 end)
 
 test("item rows mark a value whose auction price rests on few lots", function()
@@ -114,10 +130,16 @@ test("item rows mark a value whose auction price rests on few lots", function()
     assert(text:find(ns.L["few lots"], 1, true), "the mark: " .. text)
     local lines = {}
     Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH)
-    eq(lines[1], (ns.L["Auction price: %s (few lots)"]):format("20000c"), "tooltip line")
+    eq(lines[1], (ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format("20000c"), "tooltip line")
     commodity_results[FISH] = { { 20000, 20 }, { 20000, 20 }, { 20100, 10 } }
     scan(FISH)
     eq(Prices.FormatValue(FISH, 1), "20000c", "no mark with enough lots")
+    lines = {}
+    Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH)
+    eq(lines[1], (ns.L["Auction price (OneKeyFishing): %s"]):format("20000c"), "the price under the addon's name")
+    lines = {}
+    Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH + 1)
+    eq(#lines, 0, "no line without an auction price")
 end)
 
 test("one seller's stack is few lots, however many pieces it has", function()

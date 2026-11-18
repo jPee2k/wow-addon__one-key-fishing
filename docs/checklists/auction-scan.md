@@ -20,43 +20,44 @@ line other than the one written below.
 
 ## Steps
 
-1. [ ] **Before the auction house**: `/okf debug`, section "Auction scan". Expected: `auction: closed`; the
+1. [x] **Before the auction house**: `/okf debug`, section "Auction scan". Expected: `auction: closed`; the
    `auction guard` line says `none` and `left out: no`. Open the auction house: the button above it reads
-   "Scan fish prices". ____
-2. [ ] **The first scan after the login** (SC-001, V56): press "Scan fish prices"; note the time of the start line
+   "Scan fish prices". Passed 2026-11-18.
+2. [x] **The first scan after the login** (SC-001, V56): press "Scan fish prices"; note the time of the start line
    and of the finished line, the items and the prices. Expected: at most 1 second per item on average (before:
-   4 s); `/okf debug` "Auction scan": `0 without item info`. Start ____ end ____ items ____ prices ____
-3. [ ] **At once a second scan** (SC-002, V57): when step 2 answered every item, every price is fresh, so the press
+   4 s); `/okf debug` "Auction scan": `0 without item info`. Start 09:23:30, end 09:24:11, 68 items, 54 prices, 0 without item info (2026-11-18).
+3. [x] **At once a second scan** (SC-002, V57): when step 2 answered every item, every price is fresh, so the press
    scans every item again. Expected: the same number of prices as step 2, the time close to step 2's, no "does not
    answer" line. (If step 2 left items without item info, this press scans only those: note the number.)
-   Time ____ prices ____
-4. [ ] **The catalog by price** (SC-003): on the character with few catches, scan, open the statistics window,
+   68 items, 41 s, 54 prices; later 72 items in 47 s (2026-11-18).
+4. [x] **The catalog by price** (SC-003): on the character with few catches, scan, open the statistics window,
    "Catch catalog", Sort: Price. Expected: items this character never caught, which are on sale, show an auction
-   price (compare one with the auction house's list). ____
-5. [ ] **A stopped scan resumes** (SC-004): wait 15 minutes (or use another character's first visit), press the
+   price (compare one with the auction house's list). Passed 2026-11-18 on a level 1 character without Fishing.
+5. [x] **A stopped scan resumes** (SC-004): wait 15 minutes (or use another character's first visit), press the
    button and close the auction window halfway (the chat says "stopped"); open it and press again. Expected: the
-   start line names only the items the first run did not reach. Numbers ____ / ____
-6. [ ] **Fresh prices**: right after step 5 press once more: every price is fresh, so the whole list is scanned
-   again (the start line names all items). ____
-7. [ ] **An item with many auctions** (V55): pick a fish with many price points in the auction window. Expected:
+   start line names only the items the first run did not reach. Numbers 72 / 35 (2026-11-18).
+6. [x] **Fresh prices**: right after step 5 press once more: every price is fresh, so the whole list is scanned
+   again (the start line names all items). 72 again (2026-11-18).
+7. [x] **An item with many auctions** (V55): pick a fish with many price points in the auction window. Expected:
    the price the addon shows in its tooltip or the catalog is the average of the cheapest fifth of the pieces in the
-   auction window's list (a few copper of rounding at most). Item ____ addon ____ window ____
-8. [ ] **A grey item** (V54): with the auction house open and a grey item in the bags, paste (without a leading
+   auction window's list (a few copper of rounding at most). Raw Spotted Yellowtail: addon 40c, window 857 at 40c and 93 at 42c of 4750 pieces: 40c (2026-11-18).
+8. [x] **A grey item** (V54): with the auction house open and a grey item in the bags, paste (without a leading
    slash in Claude Code; in game it starts with `/run`):
    `/run for b=0,4 do for s=1,C_Container.GetContainerNumSlots(b)do local i=C_Container.GetContainerItemInfo(b,s)if i and i.quality==0 then print(i.hyperlink,C_AuctionHouse.IsSellItemValid(ItemLocation:CreateFromBagAndSlot(b,s),false))return end end end`
-   It sends nothing to the server. Expected: the item and `false`. Output ____
-9. [ ] **The buttons agree** (FR-014): with the auction house closed, the statistics window's and the settings
-   page's scan buttons are disabled, the settings page says "(open the auction house first)", the minimap menu's
-   entry is disabled; open the auction house: all enabled; during a scan: disabled. ____
+   It sends nothing to the server. Expected: the item and `false`. Output: `[Snapped Spider Limb] true`
+   (2026-11-18): a grey item can be listed, the scan searches poor quality items since.
+9. [x] **The buttons agree** (FR-014): with the auction house closed, the statistics window's scan button and the
+   minimap menu's entry are disabled; open the auction house: all enabled; during a scan: disabled. Passed
+   2026-11-18; the settings page's button was removed after it (the settings close the auction house window).
 10. [ ] **Only if the auction house stops answering by itself**: note the chat line, the text of the button above
     the auction window and its tooltip, then log out and in and note the `auction guard` line of `/okf debug`.
     Expected: "Auction scan stopped: the auction house does not answer ..." once; the button reads "Auction house
     not answering"; after the relog the guard names the item that was being searched. ____
 
-11. [ ] **The two unanswered fish** (V58): after the build with both lines of `GameData/AuctionUnanswered.lua`
-    commented out, step 2's scan includes Winter Squid (13755) and Plated Armorfish (13890) when the list holds them.
-    Expected: the scan finishes, no "does not answer" line; note whether each got a price. If it stops instead: the
-    item named by `/okf debug` "Auction scan" (after a relog) goes back into the file. ____
+11. [ ] **Plated Armorfish** (V58, accepted without this check, to confirm in play; Winter Squid passed on 2026-11-18: 68 items in 41 s, 54 prices, no jam): a scan
+    whose list holds Plated Armorfish (13890; not in the bundled database, so an own catch or other players'
+    records). Expected: the scan finishes, no "does not answer" line. If it stops instead: the item named by
+    `/okf debug` "Auction scan" (after a relog) goes back into `GameData/AuctionUnanswered.lua`. ____
 
 ## Results
 

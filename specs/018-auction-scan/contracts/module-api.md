@@ -82,9 +82,9 @@ At file load: `ns.Auction.SetItemSource(CatchDB.ScanItems)` (`Catch/Auction.lua`
 
 | File | Contract |
 |---|---|
-| `UI/Widgets.lua` `ns.UpdateScanButton(button, hint)` | enabled = `Auction.CanScan()`; the reason `Auction.WhyNot()` is shown as the button's tooltip on hover, also while disabled; the hint (settings page) shows `(open the auction house first)` while closed, text 2 while stalled, and is hidden otherwise |
+| `UI/Widgets.lua` `ns.UpdateScanButton(button)` | enabled = `Auction.CanScan()`; the reason `Auction.WhyNot()` is shown as the button's tooltip on hover, also while disabled. (The settings page's button and its hint were removed on 2026-11-18: the settings close the auction house window.) |
 | `UI/AuctionButton.lua` | text by state: `Scan fish prices` (ready, enabled), `Scanning %d/%d` (disabled), text 3 (stalled, disabled, tooltip text 2); wide enough for the longest of the three |
-| `UI/StatsFrame.lua`, `UI/Settings.lua` | call `ns.UpdateScanButton` on `AUCTION_STATE` as today; their buttons keep the text `Scan auction prices` |
+| `UI/StatsFrame.lua` | calls `ns.UpdateScanButton` on `AUCTION_STATE` as today; its button keeps the text `Scan auction prices` (the settings page's button was removed on 2026-11-18) |
 | `UI/Minimap.lua` | the menu entry: `Scan auction prices`, disabled unless `CanScan()`; while stalled it reads text 3 |
 
 No frame is named by a lower layer; the UI reads `GetState`, `CanScan`, `WhyNot`, `GetProgress` and follows
@@ -102,8 +102,7 @@ No frame is named by a lower layer; the UI reads `GetState`, `CanScan`, `WhyNot`
 | # | Key | Where |
 |---|---|---|
 | 1 | `Auction scan stopped: the auction house does not answer (%d of %d price(s) found). Log out and back in.` | chat, once, when a scan stops on a stall |
-| 2 | `The auction house does not answer. Log out and back in to bring it back.` | `/okf scan`, the buttons' tooltip, the settings hint |
+| 2 | `The auction house does not answer. Log out and back in to bring it back.` | `/okf scan`, the buttons' tooltip |
 | 3 | `Auction house not answering` | the button above the auction window, the minimap entry |
 
-Kept: the five present scan lines, `Scan fish prices`, `Scanning %d/%d`, `Scan auction prices`,
-`(open the auction house first)`.
+Kept: the five present scan lines, `Scan fish prices`, `Scanning %d/%d`, `Scan auction prices`. Removed with the settings page's button: `(open the auction house first)`.

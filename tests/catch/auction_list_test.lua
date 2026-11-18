@@ -98,7 +98,7 @@ end)
 test("a list that is empty after the checks: the present message, no request", function()
     fresh({ 90030, 90031 })
     unknown_items[90030] = true
-    item_quality[90031] = 0
+    item_bind[90031] = 1
     ns.Auction.Scan()
     advance(5)
     eq(#auction_requests, 0, "no request")

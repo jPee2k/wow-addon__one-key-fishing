@@ -166,7 +166,8 @@ L["Price"] = true
 
 -- Prices (the few-lots mark in both tabs)
 L["few lots"] = true
-L["Auction price: %s (few lots)"] = true
+L["Auction price (OneKeyFishing): %s (few lots)"] = true
+L["Auction price (OneKeyFishing): %s"] = true
 
 -- Debug.lua
 L["OneKeyFishing - debug report"] = true
@@ -198,7 +199,6 @@ L["Actions"] = true
 L["Debug report"] = true
 L["Open statistics"] = true
 L["Reset indicator position"] = true
-L["(open the auction house first)"] = true
 L["Fishing action: %s      Toggle fishing mode: %s"] = true
 L["Remove"] = true
 L["Fishing gear"] = true

@@ -171,7 +171,8 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
 
     -- Prices (the few-lots mark in both tabs)
     L["few lots"] = "挂单少"
-    L["Auction price: %s (few lots)"] = "拍卖价格：%s（挂单少）"
+    L["Auction price (OneKeyFishing): %s (few lots)"] = "拍卖价格（OneKeyFishing）：%s（挂单少）"
+    L["Auction price (OneKeyFishing): %s"] = "拍卖价格（OneKeyFishing）：%s"
 
     -- Debug.lua
     L["OneKeyFishing - debug report"] = "OneKeyFishing - 调试报告"
@@ -206,7 +207,6 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["Debug report"] = "调试报告"
     L["Open statistics"] = "打开统计"
     L["Reset indicator position"] = "重置指示器位置"
-    L["(open the auction house first)"] = "（请先打开拍卖行）"
     L["Fishing action: %s      Toggle fishing mode: %s"] = "钓鱼动作：%s      切换钓鱼模式：%s"
     L["Remove"] = "移除"
     L["Fishing gear"] = "钓鱼装备"

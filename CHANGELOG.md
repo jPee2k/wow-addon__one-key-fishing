@@ -13,7 +13,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
   addon's bundled data, then items known from other players. The first scan of a visit takes about a minute.
 - The scan is several times faster right after a login and no longer loses prices: it waits for the game's item
   data before asking, sends the next request as soon as the auction house takes one, and loads further pages only
-  while the price is still open. Grey and bound items, which cannot be sold, are not searched.
+  while the price is still open. Bound items, which cannot be sold, are not searched.
 - A press within 15 minutes of a scan searches only what was not scanned yet (a scan cut short by closing the
   window goes on where it stopped); when everything is fresh, the press scans everything again.
 - When the auction house stops answering (it then shows nothing until you log out and in), the scan stops within
@@ -21,6 +21,21 @@ All notable changes to OneKeyFishing are listed here. The format follows
   window and the minimap menu say "Auction house not answering", the other scan buttons say why on hover. The item
   it was waiting for is not searched again until the next version of the addon; when it was an item known only
   from other players, none of those are.
+
+- The item tooltips of the statistics window's lists show the addon's auction price as "Auction price
+  (OneKeyFishing)", so it is told apart from an auction addon's line (which shows the cheapest auction, not the
+  average the addon uses).
+
+### Removed
+
+- The **Scan auction prices** button of the settings page: opening the settings closes the auction window, so it
+  could never be pressed. Use the button above the auction window, the statistics window's or the minimap menu.
+
+### Fixed
+
+- Auction prices of items that do not stack (the "Pound" fish, for example) were divided by the number of equal
+  auctions, so they came out far too low and the vendor price was used instead. The saved auction prices are
+  forgotten once with this update; the next scan brings them back.
 
 ## [1.3.1] - 2026-11-17
 

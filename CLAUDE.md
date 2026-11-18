@@ -208,9 +208,10 @@ go there.
   sound at every 10 % step; "Sound in Background" (`Sound_EnableSoundWhenGameIsInBG`) is one switch for all game
   sound. The sound CVars can be set in a fight's start (`PLAYER_REGEN_DISABLED`) and take effect at once (V48).
 - An auction request the server never answers jams the client's auction house until the character logs out and in
-  (not `/reload`): `C_AuctionHouse.SearchForItemKeys` always, `SendSearchQuery` for an item the game does not have
-  yet. Never call the first; never search an item of `GameData.AuctionUnanswered` (Winter Squid, in the bundled
-  data, is one); search only items of the catalog, with the guard that remembers an unanswered one; test the auction
-  API one request at a time ([docs/auction-plan.md](docs/auction-plan.md)).
+  (not `/reload`): `C_AuctionHouse.SearchForItemKeys` always; `SendSearchQuery` was unanswered twice on 2026-11-17
+  for reasons not known (one of the two items was answered the next day). Never call the first; never search an
+  item of `GameData.AuctionUnanswered` (empty today); search only items of the catalog, with the guard that
+  remembers an unanswered one; test the auction API one request at a time
+  ([docs/auction-plan.md](docs/auction-plan.md)).
 - The fish lines ("No fish are hooked.", `ERR_FISH_NOT_HOOKED`) come as `UI_INFO_MESSAGE` (type 417), not
   `UI_ERROR_MESSAGE`; a too-early hook press ends the fishing channel (seen 2026-11-16).
