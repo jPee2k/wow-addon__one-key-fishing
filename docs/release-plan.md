@@ -42,10 +42,10 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.3.2 (prepared 2026-11-18)
+## 1.3.2 (released 2026-11-18)
 
-**Prepared**: pull request #8 (`018-auction-scan`) merged into `develop`; version 1.3.2, changelog entry; no `VERIFY`
-marker. Left: the pull request `develop` -> `main` and the tag `1.3.2`.
+**Released 2026-11-18**: pull request #8 (`018-auction-scan`) merged into `develop`, pull request #9 merged into
+`main`, tag `1.3.2`, GitHub release and CurseForge upload (`OneKeyFishing-1.3.2-forever.zip`). No `VERIFY` marker.
 
 - Spec 018 (`specs/018-auction-scan`): the rebuilt auction scan. Its checklist `checklists/auction-scan.md` passed in
   game on 2026-11-18 (steps 1 to 9); V55 to V58 confirmed (V58, Plated Armorfish, with the release build), V54
