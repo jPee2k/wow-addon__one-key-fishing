@@ -4,7 +4,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.2] - 2026-11-18
 
 ### Changed
 
@@ -25,6 +25,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - The item tooltips of the statistics window's lists show the addon's auction price as "Auction price
   (OneKeyFishing)", so it is told apart from an auction addon's line (which shows the cheapest auction, not the
   average the addon uses).
+- The bundled catch database now knows 446 fishing places (139 new) and 31 more items, from the catches players
+  shared.
 
 ### Removed
 

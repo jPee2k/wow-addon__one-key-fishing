@@ -55,6 +55,14 @@ GameData.ItemKinds = {
         [16969] = "fish", -- Savage Coast Blue Sailfin (12 / 0)
         [16970] = "fish", -- Misty Reed Mahi Mahi (12 / 0)
         [251524] = "fish", -- Whimsyfin (7 / 11: a fish of Forever; the class rule would call it a reagent)
+        -- Fish of the seed of epoch 5 (names and classes read in game on 2026-11-18 with /okf debug)
+        [6317] = "fish", -- Raw Loch Frenzy (7 / 8)
+        [6363] = "fish", -- 26 Pound Catfish (15 / 0)
+        [13879] = "fish", -- 59 Pound Yellowtail (15 / 0)
+        [13889] = "fish", -- Raw Whitescale Salmon (7 / 8)
+        [13890] = "fish", -- Raw Plated Armorfish (12 / 0)
+        [13901] = "fish", -- 15 Pound Salmon (15 / 0)
+        [19805] = "fish", -- Keefer's Angelfish (15 / 0)
         -- Containers: chests, crates, trunks, clams
         [5523] = "containers", -- Small Barnacled Clam (7 / 11)
         [5524] = "containers", -- Thick-shelled Clam
@@ -72,6 +80,11 @@ GameData.ItemKinds = {
         [8366] = "containers", -- Bloated Mithril Head Trout
         [13881] = "containers", -- Bloated Redgill
         [21162] = "containers", -- Bloated Oily Blackmouth
+        -- Bloated fish of the seed of epoch 5 (15 / 4)
+        [6645] = "containers", -- Bloated Mud Snapper
+        [21163] = "containers", -- Bloated Firefin Snapper
+        [21164] = "containers", -- Bloated Rockscale Cod
+        [21243] = "containers", -- Bloated Glossy Mightfish (one player's report, not in the seed yet)
         -- Fished containers of higher waters, not in the seed yet (their class, like the chests above, is no help)
         [6351] = "containers", -- Dented Crate
         [6352] = "containers", -- Waterlogged Crate
@@ -97,6 +110,19 @@ GameData.ItemKinds = {
         [3820] = "reagents", -- Stranglekelp (7 / 9)
         [6470] = "reagents", -- Deviate Scale (7 / 6)
         [4363] = "reagents", -- Copper Modulator (7 / 1: an Engineering part)
+        -- Reagents of the seed of epoch 5 (2026-11-18)
+        [3858] = "reagents", -- Mithril Ore (7 / 7)
+        [4234] = "reagents", -- Heavy Leather (7 / 6)
+        [4235] = "reagents", -- Heavy Hide (7 / 6)
+        [4304] = "reagents", -- Thick Leather (7 / 6)
+        [4377] = "reagents", -- Heavy Blasting Powder (7 / 1)
+        [6371] = "reagents", -- Fire Oil (7 / 11)
+        [8839] = "reagents", -- Blindweed (7 / 9)
+        [8925] = "reagents", -- Crystal Vial (7 / 11)
+        [10285] = "reagents", -- Shadow Silk (7 / 5)
+        [10286] = "reagents", -- Heart of the Wild (7 / 10)
+        [13466] = "reagents", -- Plaguebloom (7 / 9)
+        [14047] = "reagents", -- Runecloth (7 / 5)
         -- Other
         [6457] = "other", -- Rusted Engineering Parts (15 / 0)
         [9754] = "other", -- Nomad Cloak (4 / 1)
@@ -106,6 +132,15 @@ GameData.ItemKinds = {
         [6301] = "other", -- Old Teamster's Skull (15 / 0)
         [6307] = "other", -- Message in a Bottle (15 / 0)
         [6456] = "other", -- Acidic Slime (15 / 0)
+        -- Other of the seed of epoch 5 (2026-11-18)
+        [766] = "other", -- Flanged Mace (2 / 4)
+        [768] = "other", -- Lumberjack Axe (2 / 0)
+        [2963] = "other", -- Burnt Leather Boots (4 / 2)
+        [4666] = "other", -- Burnt Leather Belt (4 / 2)
+        [6539] = "other", -- Willow Belt (4 / 1)
+        [6541] = "other", -- Willow Gloves (4 / 1)
+        [6717] = "other", -- Gaffer Jack (12 / 0)
+        [8350] = "other", -- The 1 Ring (4 / 0)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {

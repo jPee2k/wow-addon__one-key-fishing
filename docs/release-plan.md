@@ -43,6 +43,24 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
+## 1.3.2 (prepared 2026-11-18)
+
+**Prepared**: pull request #8 (`018-auction-scan`) merged into `develop`; version 1.3.2, changelog entry; no `VERIFY`
+marker. Left: the pull request `develop` -> `main` and the tag `1.3.2`.
+
+- Spec 018 (`specs/018-auction-scan`): the rebuilt auction scan. Its checklist `checklists/auction-scan.md` passed in
+  game on 2026-11-18 (steps 1 to 9); V55 to V57 confirmed, V54 (bound items) and V58 (Plated Armorfish) accepted
+  (the table above). Found on the way and fixed: the unit price of non-commodity items (V5 of spec 002 was wrong);
+  grey items can be listed.
+- The harvest made seed epoch 5 with 446 places (139 new) and 31 new items from 109 contributions. Five records
+  reported as outliers (one item nobody else reports): 21243 Bloated Glossy Mightfish, 4377 Heavy Blasting Powder,
+  6539 Willow Belt, 6363 26 Pound Catfish, 19805 Keefer's Angelfish. None blocked: they are real items, and gear
+  and trade goods are fished in Forever (other players report the same kinds). The new items got their kind in
+  `GameData/ItemKinds.lua` (names and classes read in game: 7 fish, 4 bloated fish as containers, 12 reagents,
+  8 other).
+- Plated Armorfish (13890) is in the seed now, so every player's scan searches it: V58 is checked by the first
+  scans after the release (`/okf debug` "auction guard").
+
 ## 1.3.1 (released 2026-11-17)
 
 **Released 2026-11-17**: pull request #7 merged into `main`, tag `1.3.1`, GitHub release and CurseForge upload
