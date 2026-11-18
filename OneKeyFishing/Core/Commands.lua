@@ -9,7 +9,8 @@ ns.COMMANDS = {
     { name = "config", description = "open the settings", run = function() ns.SettingsUI.Open() end },
     { name = "debug", description = "show a report to copy into a bug report",
         run = function() ns.ShowDebugReport() end },
-    { name = "scan", description = "scan auction prices of the catch catalog's items (auction house must be open)",
+    { name = "scan", description = "scan auction prices of the catch catalog's items (auction house must be open; " ..
+        "not while prices come from Auctionator)",
         run = function() ns.Auction.Scan() end },
     { name = "share", description = "show the state of the shared catch database",
         run = function() ns.Share.PrintStatus() end },

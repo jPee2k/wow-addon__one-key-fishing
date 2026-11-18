@@ -42,10 +42,25 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.3.2 (prepared 2026-11-18)
+## 1.4.0 (being released, 2026-11-18)
 
-**Prepared**: pull request #8 (`018-auction-scan`) merged into `develop`; version 1.3.2, changelog entry; no `VERIFY`
-marker. Left: the pull request `develop` -> `main` and the tag `1.3.2`.
+- Spec 019 (`specs/019-auctionator-prices`): Auctionator as a price source, built on `019-auctionator-prices`. Its
+  checklist `checklists/auctionator-prices.md` passed in game on 2026-11-18 (steps 1 to 9); V59 confirmed. No
+  `VERIFY` marker. Three review rounds and a tester run before; the low items left are in `tech-debt.md`.
+- The window fixes merged into `develop` before (pull request #10): the debug window's close button and the
+  minimap menu in a fight, the two windows' order.
+- The harvest made seed epoch 6 with 525 places (79 new) and 2 new items from 82 contributions. Four records
+  reported as outliers (one item nobody else reports): 2977 Veteran Armor, 3870 Plans: Green Iron Shoulders, 21243
+  Bloated Glossy Mightfish, 3873 Plans: Golden Scale Cuirass. None blocked: they are real items, and gear and
+  recipes are fished in Forever. The new items got their kind in `GameData/ItemKinds.lua` (3873 Plans: Golden
+  Scale Cuirass and 6718 Electropeller, both other; names read from Wowhead's classic database).
+- Before the tag: the author's scan with the release build (`npm run build`), the Auctionator switch off, since
+  the new seed items join every player's scan list.
+
+## 1.3.2 (released 2026-11-18)
+
+**Released 2026-11-18**: pull request #8 (`018-auction-scan`) merged into `develop`, pull request #9 merged into
+`main`, tag `1.3.2`, GitHub release and CurseForge upload (`OneKeyFishing-1.3.2-forever.zip`). No `VERIFY` marker.
 
 - Spec 018 (`specs/018-auction-scan`): the rebuilt auction scan. Its checklist `checklists/auction-scan.md` passed in
   game on 2026-11-18 (steps 1 to 9); V55 to V58 confirmed (V58, Plated Armorfish, with the release build), V54

@@ -30,17 +30,51 @@ How casts become catch messages, how they are counted, and how items are valued.
 
 ## Catch/Prices.lua
 
-The value of an item is the higher of the vendor and the scanned auction price. An auction price based on fewer
-than 5 pieces or fewer than 3 result rows (price points; several sellers at one price share a row) is shown with a
-"few lots" mark and not used for values. The two limits are `Prices.FEW_PIECES` (5) and `Prices.FEW_LOTS` (3);
-the scan's paging rule reads them too. `Prices.AddTooltipLine` adds the auction price to a row's item tooltip
-under the addon's name ("Auction price (OneKeyFishing)"; grey with the mark when it rests on few lots), so it is
-told apart from another addon's cheapest-auction line.
+The value of an item is the higher of the vendor and the auction price. The auction price has two sources
+(spec 019, [specs/019-auctionator-prices](../../specs/019-auctionator-prices/)): Auctionator's price when that addon
+is in use, else the addon's own scanned price; an item Auctionator has no price for falls back to the own one.
+
+- **The own price**: one based on fewer than 5 pieces or fewer than 3 result rows (price points; several sellers
+  at one price share a row) is shown with a "few lots" mark and not used for values. The two limits are
+  `Prices.FEW_PIECES` (5) and `Prices.FEW_LOTS` (3); the scan's paging rule reads them too.
+- **Auctionator** (optional; `## OptionalDeps: Auctionator` in the TOC loads it first): only its public
+  `Auctionator.API.v1`, every call in `pcall` with the caller name `"OneKeyFishing"`, nothing of its data kept (its
+  database object can be replaced in a session). `Prices.HasAuctionator()`: both `GetAuctionPriceByItemID` and
+  `RegisterForDBUpdate` are functions (read at each call, never at load) and no call failed this session.
+  `Prices.UsesAuctionator()`: that, with `settings.auctionPrices` and `settings.auctionatorPrices` on.
+  `Prices.GetSource()`: `"off"`, `"auctionator"` or `"own"`. Its price is the cheapest unit price of its last scan
+  or search, used at any age and without the few-lots rule; a result that is not a number above 0 is no price.
+- **The switches** are written only by `Prices.SetAuctionPrices(on)` and `Prices.SetAuctionator(on)`, which fire
+  `SETTINGS_CHANGED` with the key when the value changed.
+- **A failing call**: the first one in a session is logged once (`ns.Safe`), its message kept
+  (`Prices.GetAuctionatorFailure()`), and Auctionator counts as not installed until the next login: the own scan
+  and prices are back. One `PRICES_CHANGED` follows on the next frame (a price is often read in the middle of a
+  redraw); no `SETTINGS_CHANGED`, since no setting changed.
+- **The update notice**: one `RegisterForDBUpdate` at `PLAYER_LOGIN` (it cannot be removed). Its notices come after
+  each of Auctionator's searches and at the end of its scan; while Auctionator is in use a burst of them gives one
+  `PRICES_CHANGED` after 0.5 s, otherwise nothing. One more `PRICES_CHANGED` 1 s after the login covers what read
+  a price before Auctionator's database was ready.
+- `Prices.GetAuction(itemID)` returns the price, whether it rests on few lots, and its source (`"auctionator"` or
+  `"own"`); `Prices.Get` and `Prices.FormatValue` keep their rule.
+- `Prices.AddTooltipLine` adds the own price to a row's item tooltip under the addon's name ("Auction price
+  (OneKeyFishing)"; grey with the mark when it rests on few lots), so it is told apart from another addon's
+  cheapest-auction line. For an item priced by Auctionator it adds nothing: Auctionator's own line is on the
+  tooltip (V59).
+- `Prices.CanAuction(itemID)`: false for a loaded bound item (bind on pickup, quest); the scan's list and the
+  counts share it. `Prices.CountSources()`: the character's own catches (`Stats.GetTotal().items`) that can be sold,
+  counted by the source of their auction price: `auctionator`, `own` (also on few lots), `vendor` (no auction
+  price, a vendor price), `none`; the settings page, the statistics line and the debug report show them.
+- `Prices.Describe()`: the debug report's "Auction prices" section (the source, both switches, the two functions
+  present or missing, a failure, the four counts, the oldest age among the catches Auctionator prices).
 
 ## Catch/Auction.lua
 
 Rebuilt in spec 018 ([specs/018-auction-scan](../../specs/018-auction-scan/), the facts it rests on in
 [forever-api.md](../forever-api.md), "The auction house's request system").
+
+- **Not while the prices come from Auctionator** (spec 019): `Auction.WhyNot()` then answers "Prices come from
+  Auctionator." first, `Auction.CanScan()` is false, and `Auction.Scan()` prints that line and sends nothing, so
+  the addon sends no auction request at all.
 
 - **The price** is unchanged: the average unit price of the cheapest 20% of all listed pieces (results sorted
   locally), stored in `prices[itemID] = { price, quantity, lots, time }`.
@@ -49,7 +83,7 @@ Rebuilt in spec 018 ([specs/018-auction-scan](../../specs/018-auction-scan/), th
   group. The last two come from an item source that `CatchDB/Views.lua` sets with `Auction.SetItemSource`
   (`CatchDB.ScanItems`), so the module names no layer 2 module. Left out: the items of `GameData.AuctionUnanswered` (a search for them
   jams the auction house), IDs the client does not know, bound
-  items (V54, accepted; poor quality items can be listed and are searched), the remembered items and, after a remembered item of other players'
+  items (`Prices.CanAuction`; V54, accepted; poor quality items can be listed and are searched), the remembered items and, after a remembered item of other players'
   records, that whole group. Inside a group: never scanned first, then the oldest scan time, then the ID.
 - **Fresh prices**: an item answered less than 15 minutes ago (`priceScans[itemID]`, or the price's own time) is
   left out; when every item is fresh the press scans them all again. A scan stopped by a closed window therefore

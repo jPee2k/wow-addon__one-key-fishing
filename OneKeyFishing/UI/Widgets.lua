@@ -1,7 +1,35 @@
 -- Widgets: the frame helpers shared by the windows and pages of UI/: the panel button that grows to its text,
 -- font strings, an item's link and icon, the item tooltip with the auction price, radio and checkbox menus, the
--- skill range label and the auction scan button's state.
+-- skill range label and the auction scan button's state, and what the addon's windows share.
 local _, ns = ...
+
+-- What every window of the addon shares (the statistics window, the copy window): its global name, Escape, the
+-- strata, dragging, the close button and how it stacks with the other windows.
+function ns.SetupWindow(frame, globalName)
+    _G[globalName] = frame
+    table.insert(UISpecialFrames, globalName) -- close on Escape
+    -- Below the game's popups (StaticPopup: DIALOG, top-level), which the windows open (the reset questions, the
+    -- map pin) and which a click on a top-level window of their strata would cover; HIGH is the Settings panel's.
+    frame:SetFrameStrata("HIGH")
+    -- A click raises the window with its children: without it two windows of one strata draw through each other.
+    frame:SetToplevel(true)
+    frame:SetMovable(true)
+    frame:SetClampedToScreen(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    -- The window template brings a close button; a frame built without the template gets one.
+    local close = frame.CloseButton
+    if not close then
+        close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+        close:SetPoint("TOPRIGHT", -4, -4)
+    end
+    -- The game's own script hides through HideUIPanel, which refuses addon code in combat without an error (the
+    -- button then does nothing; seen in game 2026-11-18). Hiding the frame directly is allowed in a fight.
+    close:SetScript("OnClick", function() frame:Hide() end)
+end
 
 -- Widens a button to its text when the text is wider than the button's own width (translations are often
 -- longer than English). Buttons of ns.CreateButton do it on every SetText.
@@ -160,8 +188,10 @@ function ns.SetReason(button, reason)
 end
 
 -- An auction scan button (the statistics window's, the one above the auction window): clickable while a scan can
--- start, the reason it cannot on hover (Auction.WhyNot).
+-- start, the reason it cannot on hover (Auction.WhyNot); hidden while the prices come from Auctionator
+-- (specs/019-auctionator-prices).
 function ns.UpdateScanButton(button)
+    button:SetShown(not ns.Prices.UsesAuctionator())
     ns.ShowReasonOnHover(button)
     button:SetEnabled(ns.Auction.CanScan())
     ns.SetReason(button, ns.Auction.WhyNot())

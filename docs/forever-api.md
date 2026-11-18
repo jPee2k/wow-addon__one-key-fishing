@@ -38,6 +38,38 @@ Signatures (not behaviour) can be checked without the game, in this order:
   (`specs/002-local-catch-db/research.md` R11, `specs/003-guild-group-sync/research.md`), including
   `C_EncodingUtil`, `Enum.SendAddonMessageResult`, `Enum.AddOnRestrictionType` and `PanelTabButtonTemplate`.
 
+## Finding what the game blocked
+
+The game's yellow chat line "Interface action failed because of an AddOn" (`INTERFACE_ACTION_BLOCKED`) names no
+addon and no function, shows once per session, and has two kinds of cause, which the usual tools tell apart only
+in part (found 2026-11-18, fixes of the statistics, debug and minimap windows):
+
+- **A protected call refused.** The game fires `ADDON_ACTION_BLOCKED` or `ADDON_ACTION_FORBIDDEN` with the addon
+  and the function, and the taint log records it.
+- **A check in Blizzard's Lua** that refuses addon code in combat (`InCombatLockdown() and not issecure()`) and calls
+  `DisplayInterfaceActionBlockedMessage` itself: `HideUIPanel` / `ShowUIPanel`
+  (`UIParentPanelManager.lua`), and in build 70959 the secure value that the menu's title, divider and spacer set
+  for gamepad navigation. No event fires, and the taint log (even at level 2) records nothing.
+
+Steps, one at a time, each handed to the author as an in-game check:
+
+1. **Reproduce and note the step.** Out of combat `/reload` (the line shows again only in a new session), then the
+   action in combat; note which press or click brings the line.
+2. **The events.** Before the action:
+   `/run local f=CreateFrame("Frame") f:RegisterEvent("ADDON_ACTION_BLOCKED") f:RegisterEvent("ADDON_ACTION_FORBIDDEN") f:SetScript("OnEvent",function(_,e,a,fn) print(e,a,fn) end)`.
+   A line `ADDON_ACTION_BLOCKED <addon> <function>` names the protected call; no line means the second kind.
+3. **The stack (the decisive step for the second kind).** Before the action:
+   `/run hooksecurefunc("DisplayInterfaceActionBlockedMessage",function() print("OKF-TRACE", debugstack(2,10,0)) end)`.
+   The hook runs on every refusal, also after the chat line stopped showing, and prints the Blizzard file and
+   function that refused and the addon call that led there; a screenshot of the chat is enough.
+4. **The taint log, for taint.** `/console taintLog 2` (1 records blocked protected calls, 2 also every global
+   read that addon code tainted), `/reload`, the action, `/reload` again so the file is written; the log is
+   `<WoW folder>/_forever_/Logs/taint.log` and Claude can read it directly. Lines "Execution tainted by
+   OneKeyFishing while reading global BINDING_NAME_ONEKEYFISHING_*" come from the key bindings page and are
+   harmless. Turn it off after (`/console taintLog 0`): at level 2 the file grows by megabytes.
+5. **The code.** Read the function the stack names in the client export; when the file is missing there, the
+   export is older than the client (compare `.build.info`) and the author re-exports.
+
 ## From the client export
 
 Facts read from the export of build 1.60.1.70685 for the public channel (`specs/004-public-channel-sync`, research
@@ -87,6 +119,25 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
 
 ## Verified in game
 
+- Closing a window in combat (2026-11-18): `HideUIPanel` returns at once for addon code in combat
+  (`UIParentPanelManager.lua`, `CheckProtectedFunctionsAllowed`: `InCombatLockdown() and not issecure()`), with
+  no error and no `ADDON_ACTION_BLOCKED` event; the chat line "Interface action failed because of an AddOn" shows
+  once per session. The close button of `BasicFrameTemplateWithInset` (`UIPanelCloseButton_OnClick`) hides its
+  parent that way, so it did nothing on the debug report window in a fight; on the statistics window, built from
+  the same template, it did close the window, for a reason not found. Escape through `UISpecialFrames` closes
+  an addon window in combat and leaves the game menu closed. The addon's windows give the close button their own
+  script (`frame:Hide()`, `ns.SetupWindow`).
+- Stacking (from the export, 2026-11-18): the game's popups (`StaticPopupBaseTemplate`) are `DIALOG` and top-level,
+  and `StaticPopup_Show` raises them; menus open in `FULLSCREEN_DIALOG`; the Settings panel is `HIGH` and
+  top-level. A top-level addon window in `DIALOG` would rise over a popup when clicked, so the addon's windows are
+  `HIGH`.
+- Menus in combat (2026-11-18, build 70959): a `MenuUtil` menu built by addon code opens in combat, but its
+  title, divider and spacer elements call `SmartNavigation_MarkFrameIgnored`, which in this build sets a secure
+  value (`Blizzard_GamepadSmartNavigation/SecureHelper.lua`, `SetSecureValue`; not in the 70685 export) and is
+  refused in combat with the "Interface action failed because of an AddOn" line and no `ADDON_ACTION_BLOCKED`
+  event (found by a `hooksecurefunc` on `DisplayInterfaceActionBlockedMessage` printing `debugstack`; the taint
+  log at level 2 recorded nothing). Buttons, checkboxes and radios do not. The minimap menu leaves its title out
+  in combat; the addon's other menus have none of the three.
 - The fishing sounds' settings page (spec 013, 2026-11-16, enUS): `MinimalSliderWithSteppersTemplate` in a canvas
   settings page works as in the export (`Init(value, min, max, steps, formatters)`, the `Label.Right` formatter,
   `RegisterCallback(Event.OnValueChanged)`, the value on the child `.Slider`) (V50). An addon `.ogg` played with
@@ -268,7 +319,9 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
     `GetAuctionPriceByItemID` gives the cheapest unit price in copper (87 for item 6291, as the house shows),
     `GetAuctionAgeByItemID` the days since (0), `RegisterForDBUpdate` calls back after one of its searches and
     once at the end of a scan (also during the addon's own scan). It keeps its prices per game mode
-    (`Auctionator.State.CurrentRealm` is `PvP`).
+    (`Auctionator.State.CurrentRealm` is `PvP`). Its tooltip lines ("Vendor", "Auction") show on the addon's own
+    row tooltips (`GameTooltip:SetItemByID`), so the addon leaves out its own price line for an item Auctionator
+    prices (V59, 2026-11-18). A character with Auctionator disabled has neither API function.
 - Inside the Wailing Caverns instance (2026-11-06): `C_Map.GetBestMapForUnit("player")` is nil, no position,
   `C_RestrictedActions.GetAddOnRestrictionState(Enum.AddOnRestrictionType.Map)` is 2 and the `Map` restriction is
   active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).

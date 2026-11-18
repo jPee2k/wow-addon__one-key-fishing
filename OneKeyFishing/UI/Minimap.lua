@@ -15,18 +15,26 @@ local function OpenMenu(owner)
         return
     end
     MenuUtil.CreateContextMenu(owner, function(_, root)
-        root:CreateTitle("OneKeyFishing")
+        -- The game's title element marks its row for gamepad navigation through a secure value, which addon code
+        -- may not set in combat: the menu would still open, with the game's "Interface action failed because of an
+        -- AddOn" line (seen in game 2026-11-18). In a fight the menu has no title.
+        if not InCombatLockdown() then
+            root:CreateTitle("OneKeyFishing")
+        end
         root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
         root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
         root:CreateButton(L["Settings"], ns.SettingsUI.Open)
         -- A button whose text says what a click does, like the fishing mode entry above.
         root:CreateButton(ns.Sound.IsEnabled() and L["Turn fishing sounds off"] or L["Turn fishing sounds on"],
             function() ns.Sound.SetEnabled(not ns.Sound.IsEnabled()) end)
-        local scanText = ns.Auction.GetState() == "stalled" and L["Auction house not answering"]
-            or L["Scan auction prices"]
-        local scan = root:CreateButton(scanText, ns.Auction.Scan)
-        if not ns.Auction.CanScan() then
-            scan:SetEnabled(false)
+        -- No scan entry while the prices come from Auctionator (specs/019-auctionator-prices).
+        if not ns.Prices.UsesAuctionator() then
+            local scanText = ns.Auction.GetState() == "stalled" and L["Auction house not answering"]
+                or L["Scan auction prices"]
+            local scan = root:CreateButton(scanText, ns.Auction.Scan)
+            if not ns.Auction.CanScan() then
+                scan:SetEnabled(false)
+            end
         end
         local advice = ns.Skill.GetNextRank()
         if advice and advice.pin then

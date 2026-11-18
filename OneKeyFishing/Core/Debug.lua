@@ -127,6 +127,14 @@ local function BuildReport()
         end
     end)
 
+    -- Where the auction prices come from (specs/019-auctionator-prices): the source, Auctionator's two functions,
+    -- the own catches by the source of their price, the oldest Auctionator price.
+    Section(lines, "Auction prices", function()
+        for _, line in ipairs(ns.Prices.Describe()) do
+            add("%s", line)
+        end
+    end)
+
     -- The auction scan (specs/018-auction-scan): its state, the last scan, the list and the remembered items.
     Section(lines, "Auction scan", function()
         for _, line in ipairs(ns.Auction.Describe()) do

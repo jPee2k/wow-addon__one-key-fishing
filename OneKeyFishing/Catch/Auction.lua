@@ -62,13 +62,17 @@ function Auction.GetState()
     return scanning and "scanning" or "ready"
 end
 
--- The one "can scan now" rule of every scan button and the scan command.
+-- The one "can scan now" rule of every scan button and the scan command. Never while the prices come from
+-- Auctionator (specs/019-auctionator-prices): the addon then sends no auction request at all.
 function Auction.CanScan()
-    return Auction.GetState() == "ready"
+    return Auction.GetState() == "ready" and not ns.Prices.UsesAuctionator()
 end
 
 -- The reason a scan cannot start, in the addon's language; nil when it can or one is running.
 function Auction.WhyNot()
+    if ns.Prices.UsesAuctionator() then
+        return L["Prices come from Auctionator."]
+    end
     local state = Auction.GetState()
     if state == "closed" then
         return L["Open the auction house first."]
@@ -108,18 +112,6 @@ end
 
 local function IsItemID(value)
     return type(value) == "number" and value > 0 and math.floor(value) == value
-end
-
--- Bound items (bind on pickup, quest) cannot be listed at auction (V54, accepted without a check: the game's own
--- rule). A poor quality item can (measured 2026-11-18: IsSellItemValid is true for a grey item), so it is
--- searched. An item whose data the client has not loaded yet is searched too: the filter saves requests, it
--- protects nothing.
-local function Unsellable(itemID)
-    local name, _, _, _, _, _, _, _, _, _, _, _, _, bindType = C_Item.GetItemInfo(itemID)
-    if not name then
-        return false
-    end
-    return bindType == 1 or bindType == 4
 end
 
 -- The groups of the scan's list, in their order (FR-006): the own catches, the bundled catch database, the items
@@ -199,7 +191,9 @@ local function BuildList()
         elseif guard.items[itemID] or (group == "shared" and skipShared) then
             groupOf[itemID] = nil -- left out (FR-017, FR-018)
         elseif C_Item.GetItemInfoInstant(itemID) ~= nil then
-            if Unsellable(itemID) then
+            -- Bound items cannot be listed (V54, accepted); a poor quality item and one not loaded yet are searched:
+            -- the rule is Prices.CanAuction, shared with the counts of the own catches.
+            if not ns.Prices.CanAuction(itemID) then
                 listCounts.unsellable = listCounts.unsellable + 1
             else
                 table.insert(list, itemID)

@@ -3,7 +3,7 @@
 **Feature**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md)
 
 Where the facts come from: the author's measurements in the game on 2026-11-17 ([docs/forever-api.md](../../docs/forever-api.md),
-"The auction house's request system"; summary in [docs/auction-plan.md](../../docs/auction-plan.md)), the client export
+"The auction house's request system"; summary in [docs/auction-plan.md](../../docs/history/auction-plan.md)), the client export
 (`Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua`, build 1.60.1) and a reading of Auctionator 347
 (`Source_ModernAH/AH/Mixins/Throttling.lua`, `ItemKeyLoader.lua`, `SearchScan.lua`). Auctionator's licence is "All
 Rights Reserved": what is taken from it is knowledge about the game's API, named per decision below; none of its code.

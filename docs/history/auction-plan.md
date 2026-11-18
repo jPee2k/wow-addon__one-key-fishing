@@ -1,20 +1,22 @@
 # Auction plan
 
-Two features around auction prices, researched on 2026-11-17; the first is built (spec 018), the second is not:
+Two features around auction prices, researched on 2026-11-17; both are built (specs 018 and 019):
 
 1. **A faster and safer price scan** (`Catch/Auction.lua`).
 2. **Auctionator as a price source**: a player who also runs Auctionator gets its prices, and the addon's own scan
    button goes away.
 
 Status: the research and the in-game checks are done and the author's decisions are taken (2026-11-17, "Decisions"
-below). The scan is spec 018 (`specs/018-auction-scan`, built; its in-game checks were closed on 2026-11-18) and release
-1.3.2; Auctionator is spec 019 and release 1.4.0, not specified yet; each on its own branch. When a feature is built, its part of this file moves to the spec, and the file goes to
-`docs/history/` once both are done.
+below; decisions 15 to 23 for Auctionator on 2026-11-18). The scan is spec 018 (`specs/018-auction-scan`, built; its in-game checks were closed on 2026-11-18) and release
+1.3.2; Auctionator is spec 019 (`specs/019-auctionator-prices`, built on 2026-11-18; its in-game checklist
+`docs/checklists/auctionator-prices.md` passed and V59 confirmed on 2026-11-18) and release 1.4.0; each on its own
+branch. Both are built, so this file is kept in `docs/history/` as a record; the specs are the source of truth, and
+where this file and a spec differ, the spec holds.
 
 ## Where the facts come from
 
 - **The game** (Thunder Bluff, 2026-11-17, `/run` with an event listener): every measured fact below is recorded in
-  [forever-api.md](forever-api.md), "Verified in game", the entry "The auction house's request system".
+  [forever-api.md](../forever-api.md), "Verified in game", the entry "The auction house's request system".
 - **The client export** (`Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua`, build 1.60.1): the
   functions and events named here exist; `SendSearchQuery` is documented as limited to 100 calls a minute.
 - **Auctionator 347** (a copy in `static/examples/`, not in the repository): read to learn how the game's auction
@@ -52,7 +54,7 @@ These hold for every change to the scan:
 
 ## Feature 1: the scan
 
-Built in spec 018: the spec, plan and research in [specs/018-auction-scan](../specs/018-auction-scan/) hold what
+Built in spec 018: the spec, plan and research in [specs/018-auction-scan](../../specs/018-auction-scan/) hold what
 was decided; the table below is the plan it started from.
 
 What to change, in the order of what it gains:
@@ -82,13 +84,22 @@ their times.
 
 ## Feature 2: Auctionator as a price source
 
-What its public API gives (seen working in WoW Forever):
+Built in spec 019 ([specs/019-auctionator-prices](../../specs/019-auctionator-prices/)). What follows is the research it
+started from; the spec's clarifications refine decisions 16 and 22 (the tooltip line of the fallback price, bound
+catches left out of the counts, a fourth count "no price", the settings page's text after a failing call).
+
+What its public API gives (seen working in WoW Forever; the rest of Auctionator is internal and may change without
+warning, its `Source/API/v1/README.md` says):
 
 | Call | Result |
 |---|---|
-| `Auctionator.API.v1.GetAuctionPriceByItemID(callerID, itemID)` | the cheapest unit price in copper at its last scan or search, or nil |
-| `Auctionator.API.v1.GetAuctionAgeByItemID(callerID, itemID)` | the days since the item was last seen, nil after 21 days or when never seen |
-| `Auctionator.API.v1.RegisterForDBUpdate(callerID, callback)` | a callback after each of its searches and at the end of a scan; it cannot be removed |
+| `Auctionator.API.v1.GetAuctionPriceByItemID(callerID, itemID)` | the cheapest unit price in copper at its last scan or search, or nil; kept forever once seen (its database never removes it) |
+| `Auctionator.API.v1.GetAuctionAgeByItemID(callerID, itemID)` | the days since the item was last seen, nil when never seen or after Auctionator's price history setting (`PRICE_HISTORY_DAYS`, 21 days by default, the player can change it), while the price itself stays |
+| `Auctionator.API.v1.RegisterForDBUpdate(callerID, callback)` | a callback after each of its searches and at the end of a scan; it cannot be removed; only in its `ModernAH` and `LegacyAH` sources |
+
+Also there, not used in 1.4.0: `IsAuctionDataExactByItemID` (for an item ID only "a price is there"),
+`GetVendorPriceByItemID` (its cache; the addon has its own vendor price), `GetDisenchantPriceByItemID`, and the
+search calls `MultiSearch`, `MultiSearchExact`, `CreateShoppingList` (the idea in [ROADMAP.md](../ROADMAP.md)).
 
 The limits:
 
@@ -97,28 +108,38 @@ The limits:
 - **No count of pieces or lots**, so the "few lots" rule cannot be applied to its prices.
 - **Only what it has seen.** Its full scan is the player's choice; an item it never met has no price, so every item
   needs a fallback (the addon's own price, then the vendor price).
-- **Ready after `PLAYER_LOGIN`**; before that the calls return nil. A wrong argument raises an error: the calls go
-  through `ns.Safe`.
+- **Ready after `PLAYER_LOGIN`**; before that the calls return nil. A wrong argument raises an error (`callerID`
+  must be a non-empty string, the addon's name): the calls go through `ns.Safe`.
+- **Its database can be replaced** in a session (its reset in debug mode; `/auctionator nopricedb` swaps in an empty
+  one, every price then nil). The calls read the current one each time, so the addon asks per item, when needed,
+  and keeps nothing of Auctionator's.
 - **The callback is frequent**: it also comes during the addon's own scan (Auctionator hears the game's search
   events). `PRICES_CHANGED` must be sent at most once per moment, not per callback.
 - **Presence is checked per function** (`Auctionator.API.v1.RegisterForDBUpdate ~= nil`), at run time, never while
   the files load.
-- Auctionator keeps its prices per game mode (`PvP`); the addon's `db.prices` is one table for the account. See
-  the open question about the auction houses in [forever-api.md](forever-api.md).
+- Auctionator keeps one price database per auction house as it sees them: with regionally unique names
+  (`RegionalUniqueNamesEnabled()`, which the "First Last" names of Forever suggest) one per ruleset of
+  `C_GameRules` (`PvP`, `PvE`, `RP`, `RPPvP`, `HC`), else one per group of connected realms. Its API so always
+  answers for the character's own mode; the addon's `db.prices` is one table for the account. See the open question
+  about the auction houses in [forever-api.md](../forever-api.md).
 
 Where:
 
 - `Catch/Prices.lua` (layer 1) learns the price source: its own scan or Auctionator. `Prices.GetAuction` asks the
   source; the callback of `RegisterForDBUpdate` becomes `PRICES_CHANGED`, which the windows already follow.
-- `UI/AuctionButton.lua` asks `Prices` whether the own scan is in use and hides the button otherwise; the lower
-  layer names no frame.
+- `UI/AuctionButton.lua`, the statistics window and the minimap menu ask `Prices` whether the own scan is in use
+  and hide their scan entry otherwise; the lower layer names no frame.
 - A setting for the source, changed through a module function that fires `SETTINGS_CHANGED` (the rule of
   `CLAUDE.md` for settings with an effect).
-- `## OptionalDeps: Auctionator` in the TOC, `Auctionator` in `.luacheckrc`, a line in `/okf debug` (the source,
-  whether the API is there), the manual and the changelog.
+- A new settings page "Auction prices" (`UI/Settings.lua`, decisions 17 and 18).
+- `Prices` counts the player's own catches by the source of their price (decision 22), for the page, the
+  statistics hint and `/okf debug`.
+- `## OptionalDeps: Auctionator` in the TOC, `Auctionator` in `.luacheckrc`, a section in `/okf debug`
+  (decision 21), the manual and the changelog.
 
-Tests: `Prices` with a stub of `Auctionator.API.v1` (a price, no price, an old price, an error, no Auctionator).
-In game: a checklist with and without Auctionator.
+Tests: `Prices` with a stub of `Auctionator.API.v1` (a price, no price, an old price, a price below the vendor
+price, an error, one of the two functions missing, no Auctionator, the switches off), the counts, and the fallback
+price with the "few lots" rule. In game: a checklist with and without Auctionator.
 
 ## Rejected
 
@@ -162,11 +183,36 @@ Auctionator (019):
 11. **No age limit**: Auctionator's price is taken at any age, as the addon's own prices are.
 12. **No "few lots" rule** for Auctionator's prices: they go into the sums as they are, the same price its tooltips
     show. Accepted risk: one overpriced lone lot of a rare item raises the catch value.
-13. **The scan's entries**, with Auctionator's prices in use: the four buttons (above the auction house, the
-    statistics window, the settings page, the minimap menu) are hidden; the slash command answers that the prices
-    come from Auctionator.
+13. **The scan's entries**, with Auctionator's prices in use: the three buttons (above the auction house, the
+    statistics window, the minimap menu; the settings page has had none since 2026-11-18, opening the settings
+    closes the auction house) are hidden; the slash command answers that the prices come from Auctionator.
 14. **The hint**: the statistics window's line about the values says the prices come from Auctionator and, when
     some of the player's items have no price there, how many, with the advice to run its scan. Nothing in chat.
+
+Taken by the author on 2026-11-18 (Auctionator, 019):
+
+15. **The vendor floor stays**: the value is the higher of the auction price and the vendor price, whatever the
+    source; only where the auction price comes from changes (Auctionator's cheapest lot is often below the vendor
+    price, and a catch can always be sold to a vendor).
+16. **The item tooltip**: with Auctionator's prices in use the addon's line "Auction price (OneKeyFishing)" is not
+    shown; Auctionator's own line is there.
+17. **A settings page "Auction prices"**: the checkbox "Use scanned auction prices for catch value" moves there from
+    the main page's features; below it the checkbox of decision 10, nested: inactive while the first one is off
+    (then values are vendor prices only) or Auctionator is not installed.
+18. **The page also shows** a status line (the source in use: the own scan with the date of the last scan,
+    Auctionator, or Auctionator not installed) and the counts of decision 22. No scan button (decision 13) and no
+    reset buttons.
+19. **Auctionator counts as installed** when both `GetAuctionPriceByItemID` and `RegisterForDBUpdate` are there;
+    without either, the own scan is in use.
+20. **The age of Auctionator's prices** is shown only in `/okf debug`.
+21. **`/okf debug`**: the source in use, whether each of the two API functions is there, both checkboxes, the
+    counts of decision 22 and the oldest age of decision 20.
+22. **The counts** cover the player's own catches only (the items whose value goes into the statistics): how many
+    have Auctionator's price, the addon's own price, the vendor price only. The page, the statistics hint (decision
+    14) and `/okf debug` show the same counts.
+23. **The fallback keeps its rules**: when Auctionator has no price and the addon's own stored price is used
+    (decision 9), the "few lots" rule applies to it as today (the mark; the vendor price in sums). Auctionator's
+    prices stay outside that rule (decision 12).
 
 ## Follows from the decisions
 
@@ -179,7 +225,10 @@ Auctionator (019):
   catch database hands them to the scan through a callback (`Auction.SetItemSource`, plan of spec 018, research R6).
 - The pace: the next request on the ready signal, but not above the documented 100 a minute (0.6 s between
   requests; plan of spec 018, research R2).
-- Feature 2's part "Where" names one button; decision 13 hides four and changes the slash command's answer.
+- Decision 13 hides three scan entries and changes the slash command's answer (feature 2's part "Where").
+- The moved checkbox keeps its saved key `settings.auctionPrices`; the new switch is a new key filled by
+  `ApplyDefaults` (on), no `DB_SCHEMA` bump; both listed in `docs/architecture/core.md`. The new page's texts need
+  their nine translations.
 - 1.3.2 is a patch by the author's choice, though the buttons' behaviour changes; the changelog says so.
 
 ## Open checks in game
@@ -189,7 +238,7 @@ Auctionator (019):
 2. Does a jammed auction house ever recover without a relog (a long wait)? Seen only up to a few minutes.
 3. On a cold cache, is a search answered late or with an empty result? It decides nothing once fix 1 is in; only
    the reason for the 162 s.
-4. The open question of [forever-api.md](forever-api.md): one auction house per game mode, per faction or shared.
+4. The open question of [forever-api.md](../forever-api.md): one auction house per game mode, per faction or shared.
 
 Every further check of the auction API is one request at a time with the listener on, and none with an item that
 did not come from a catch.

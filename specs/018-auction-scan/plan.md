@@ -3,7 +3,7 @@
 **Branch**: `018-auction-scan` | **Date**: 2026-11-17 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/018-auction-scan/spec.md`; the author's decisions of 2026-11-17 in its
-clarifications; the measurements and rules in [docs/auction-plan.md](../../docs/auction-plan.md) and
+clarifications; the measurements and rules in [docs/auction-plan.md](../../docs/history/auction-plan.md) and
 [docs/forever-api.md](../../docs/forever-api.md).
 
 ## Summary

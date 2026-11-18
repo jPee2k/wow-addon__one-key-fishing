@@ -128,3 +128,13 @@ test("a popup runs onCancel on its second button and onHide after either button"
     ns.ShowPopup("OKF_TEST2", "text", function() end)
     eq(StaticPopupDialogs.OKF_TEST2.noCancelOnEscape, false, "a plain No keeps the game's Escape")
 end)
+
+test("spec 019: the Auctionator switch is on by default; a saved off and the auction price switch stay", function()
+    LoadWith(nil, nil)
+    eq(OneKeyFishingDB.settings.auctionatorPrices, true, "on by default")
+    eq(OneKeyFishingDB.settings.auctionPrices, true, "the auction price switch's default")
+    LoadWith({ schema = 1, settings = { auctionatorPrices = false, auctionPrices = false } }, { schema = 1 })
+    eq(OneKeyFishingDB.settings.auctionatorPrices, false, "the player's off kept")
+    eq(OneKeyFishingDB.settings.auctionPrices, false, "the auction price switch kept")
+    eq(OneKeyFishingDB.schema, 1, "schema stays 1")
+end)

@@ -19,9 +19,7 @@ to the bobber by itself.
 
 ## Planned
 
-- **Auctionator as a price source**: researched and measured in game on 2026-11-17, the decisions are taken: spec
-  019 (1.4.0). The plan is [auction-plan.md](auction-plan.md), "Feature 2". (The faster scan of the same plan is
-  built in spec 018.)
+Nothing is planned right now; the ideas below are not decided.
 
 ## Ideas to discuss
 
@@ -44,9 +42,14 @@ to the bobber by itself.
   than 3 days are not shared). Left out of the shared catch database: it waits for the in-game answer to which
   auction house a player uses in WoW Forever (game modes split by faction, no realms), since a peer from another
   house would bring wrong prices.
+- **Auctionator searches the catches**: with Auctionator in use, a button that has it search the player's catches
+  (its API `CreateShoppingList` or `MultiSearchExact`, auction house open), so their prices fill without its full
+  scan. Left out of 1.4.0: its searches take item names, not IDs (the names would come from the client's own item
+  data, in the client's language), and the requests are then Auctionator's, outside the addon's guard against an
+  unanswered request ([auction-plan.md](history/auction-plan.md), "Rules that follow").
 - **Auction prices per game mode**: `db.prices` is one table for the account, so a character of another game mode
   sees the prices of an auction house that is not its own (Auctionator keeps its prices per mode). Waits for the
-  same in-game answer ([auction-plan.md](auction-plan.md), decision 8).
+  same in-game answer ([auction-plan.md](history/auction-plan.md), decision 8).
 - **A map pin on the nearest fishing trainer** for Journeyman (spec 001 research R16): needs the trainers' Forever
   map IDs and points, checked in game; until then the minimap's trainer tracking finds them.
 - **Fishing pools**: notice and point out nearby pools. The catch database already tells pool catches apart when

@@ -217,17 +217,9 @@ local function Create()
     if not ok then
         f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     end
-    _G.OneKeyFishingStatsFrame = f
-    table.insert(UISpecialFrames, "OneKeyFishingStatsFrame")
     f:SetSize(WIDTH, HEIGHT)
     f:SetPoint("CENTER")
-    f:SetFrameStrata("DIALOG")
-    f:SetMovable(true)
-    f:SetClampedToScreen(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    ns.SetupWindow(f, "OneKeyFishingStatsFrame")
 
     local title = CreateText(f, "GameFontHighlight", "CENTER")
     title:SetPoint("TOP", 0, -6)
@@ -251,13 +243,17 @@ local function Create()
 
     f.skill = CreateText(page, "GameFontNormal")
     f.skill:SetPoint("TOPLEFT", LABEL_X, -32)
+    -- The values line: two lines at most, as wide as the next-rank line, so it stays inside the window and clear of
+    -- the Pin button (with Auctionator it also counts the catches without its price, spec 019).
     f.prices = CreateText(page, "GameFontDisableSmall")
     f.prices:SetPoint("TOPLEFT", f.skill, "BOTTOMLEFT", 0, -4)
+    f.prices:SetWidth(WIDTH - 2 * LABEL_X - 90)
+    f.prices:SetMaxLines(2)
     -- The next Fishing rank (three lines at most) and the map pin for its place
     f.nextRank = CreateText(page, "GameFontHighlightSmall")
     f.nextRank:SetPoint("TOPLEFT", f.prices, "BOTTOMLEFT", 0, -4)
     f.nextRank:SetWidth(WIDTH - 2 * LABEL_X - 90)
-    f.nextRank:SetMaxLines(3) -- the table header below leaves room for three
+    f.nextRank:SetMaxLines(3) -- the table header leaves room for five lines under the skill: values and next rank
     f.pin = CreateButton(page, L["Pin"], 60, function() ns.Skill.PinNextRank() end)
     f.pin:SetPoint("TOPLEFT", f.nextRank, "TOPRIGHT", 10, 4) -- beside its line, clear of the prices line
 
@@ -368,7 +364,10 @@ local function Create()
             StatsFrame.Tick()
         end
     end)
-    f:SetScript("OnShow", function() SelectTab(ns.db.statsTab) end)
+    f:SetScript("OnShow", function()
+        f:Raise() -- above the addon's other window
+        SelectTab(ns.db.statsTab)
+    end)
     -- New frames are shown; start hidden so the first Toggle opens it.
     f:Hide()
     return f
@@ -388,7 +387,7 @@ local function IsShown()
 end
 
 local function UpdateScanButton()
-    ns.UpdateScanButton(frame.scan) -- UI/Widgets.lua
+    ns.UpdateScanButton(frame.scan) -- UI/Widgets.lua (also hidden while the prices come from Auctionator)
 end
 
 -- The column contexts for ROWS; values come from the last full refresh.
@@ -471,10 +470,24 @@ function StatsFrame.Refresh()
     RefreshNextRank()
 
     local lastScan = ns.Prices.GetLastScanTime()
-    if ns.db.settings.auctionPrices and lastScan then
+    if ns.Prices.UsesAuctionator() then
+        -- The prices are Auctionator's (specs/019-auctionator-prices); the own catches it has no price for (grey junk
+        -- left out: nobody lists it) are counted, with the advice to run its scan.
+        local counts = ns.Prices.CountSources()
+        local missing = counts.missing
+        local text = L["Values: higher of vendor and Auctionator price."]
+        if missing > 0 then
+            text = text .. " " .. (L["%d of your catches have no Auctionator price: run its scan."]):format(missing)
+        end
+        frame.prices:SetText(text)
+        -- The advice may take a second line: the next-rank line then keeps two, so both stay above the table.
+        frame.nextRank:SetMaxLines(missing > 0 and 2 or 3)
+    elseif ns.db.settings.auctionPrices and lastScan then
+        frame.nextRank:SetMaxLines(3)
         frame.prices:SetText((L["Values: higher of vendor and auction price (scanned %s)"]):format(
             date("%Y-%m-%d %H:%M", lastScan)))
     else
+        frame.nextRank:SetMaxLines(3)
         frame.prices:SetText(L["Values: vendor price (scan the auction house for market prices)"])
     end
     UpdateScanButton()
@@ -553,6 +566,7 @@ end
 function StatsFrame.OpenCatalog(arg)
     frame = frame or Create()
     frame:Show()
+    frame:Raise() -- also when the window was already shown
     SelectTab("catalog")
     ns.CatalogTab.Show(arg)
 end

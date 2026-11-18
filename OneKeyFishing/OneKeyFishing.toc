@@ -18,6 +18,7 @@
 ## Category-ptBR: Profissões
 ## Category-zhTW: 專業技能
 ## Category-zhCN: 专业技能
+## OptionalDeps: Auctionator
 ## Author: AveForged
 ## Version: @project-version@
 ## X-License: MIT
