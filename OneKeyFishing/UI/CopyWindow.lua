@@ -7,7 +7,8 @@ local WINDOW_NAME = "OneKeyFishingCopyWindow"
 local window
 
 local function CreateWindow()
-    -- BasicFrameTemplateWithInset gives a title bar and close button; fall back to a plain backdrop.
+    -- BasicFrameTemplateWithInset gives a title bar and close button; fall back to a plain backdrop (ns.SetupWindow
+    -- adds the close button it lacks).
     local ok, frame = pcall(CreateFrame, "Frame", nil, UIParent, "BasicFrameTemplateWithInset")
     if not ok then
         frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
@@ -17,21 +18,10 @@ local function CreateWindow()
             tile = true, tileSize = 32, edgeSize = 32,
             insets = { left = 8, right = 8, top = 8, bottom = 8 },
         })
-        local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-        close:SetPoint("TOPRIGHT", -4, -4)
     end
-    _G[WINDOW_NAME] = frame
-    table.insert(UISpecialFrames, WINDOW_NAME) -- close on Escape
-
     frame:SetSize(680, 500)
     frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
-    frame:SetMovable(true)
-    frame:SetClampedToScreen(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    ns.SetupWindow(frame, WINDOW_NAME)
 
     frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     frame.title:SetPoint("TOP", 0, -6)
@@ -71,6 +61,7 @@ function ns.ShowCopyWindow(title, text)
     window.edit:SetText(text)
     window.edit:SetCursorPosition(0)
     window:Show()
+    window:Raise() -- above the addon's other window, also when it was already shown
 end
 
 -- The debug report (Core/Debug.lua) in the copy window: the /okf debug command, the minimap menu and the settings

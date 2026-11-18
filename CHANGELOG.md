@@ -4,6 +4,17 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- The debug report window closes by its close button in a fight; before, the button did nothing until the fight
+  ended.
+- Opening the minimap button's menu in a fight no longer shows the game's "Interface action failed because of an
+  AddOn" line; in a fight the menu has no title.
+- The statistics window and the debug report window no longer show through each other when they overlap, and a
+  click on one brings it to the front.
+
 ## [1.3.2] - 2026-11-18
 
 ### Changed

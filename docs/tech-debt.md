@@ -17,23 +17,19 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
 
 ## Open items
 
-- **The statistics and debug windows cannot be closed in a fight** (medium, reported by a player 2026-11-18, not
-  reproduced yet). Open the statistics window (`/okf stats`) or the debug window (`/okf debug`), enter combat: the
-  window's close button does nothing until the fight ends, and the chat shows the game's "interface action
-  blocked by an AddOn" error. Likely cause, to confirm: both windows use `BasicFrameTemplateWithInset`
-  (`UI/StatsFrame.lua`, `UI/CopyWindow.lua`), whose close button calls `HideParentPanel`, i.e. `HideUIPanel`, which
-  goes through the game's secure panel manager and is blocked for addon code in combat. Direction: the close
-  button (and Escape) hide the frame with `frame:Hide()` directly; check the other windows built from a template;
-  a test that the close button's script calls no `HideUIPanel`. To note in game before the fix: the exact error
-  line (`/console scriptErrors 1` or the `ADDON_ACTION_BLOCKED` text) and whether Escape closes the window in a
-  fight.
-- **The addon's windows draw through each other** (low, seen in game 2026-11-18). With the statistics window and
-  the debug report window open and overlapping, their contents mix: the catalog's rows, the scroll bar and the
-  section title of the statistics window show over the debug window's title bar and body, and a click does not
-  bring a window to the front. Cause: both are in the `DIALOG` strata (`UI/StatsFrame.lua`, `UI/CopyWindow.lua`)
-  with no `SetToplevel(true)`, so their child frames interleave by frame level. Direction: `SetToplevel(true)` on
-  each window (a click raises it with its children) and `Raise()` on show; check the other frames a window can
-  overlap (the Auctionator window in the same picture is not ours). A test that each window is top-level.
+Review of the window fixes (`/code-review high`, 2026-11-18): the low items left.
+
+- **The statistics window's fallback has no background** (low, found by review, not seen in game). Without
+  `BasicFrameTemplateWithInset` (`UI/StatsFrame.lua`, `Create`) the window is a `BackdropTemplate` frame that never
+  calls `SetBackdrop`, so its text, tabs and close button float over the world; the copy window's fallback sets
+  one. Forever has the template (both windows use it in game), so no player sees this today. Direction: the same
+  backdrop as the copy window, shared through `ns.SetupWindow` or a helper next to it; extend
+  `windows_fallback_test.lua`.
+- **The in-combat menu rule lives in one menu** (low, found by review). A `MenuUtil` title, divider or spacer is
+  refused to addon code in combat (`docs/forever-api.md`); only the minimap menu (`UI/Minimap.lua`) skips its title
+  then. The catalog's kind and sort menus (`ns.OpenRadioMenu`, `ns.OpenCheckboxMenu`) have none of the three
+  today, and no test opens them in combat. Direction: a helper in `UI/Widgets.lua` for these elements that skips
+  them in combat, used by every menu; a test that opens each menu in combat with `menu_blocked` at 0.
 
 ## History
 
@@ -98,3 +94,11 @@ commit history of `002-shared-db` (commits "Fix ..." between 2026-10-29 and 2026
   before that write, so no record of a crash reaches the disk on any character (an account-wide record was built and
   reverted). The export's CVar table shows none of the rows is per character (auto loot and soft target per
   account, the sound rows per installation).
+- 2026-11-18, the addon's windows (checked in game the same day, before the fix and after it). Fixed with tests:
+  the debug report window's close button did nothing in a fight (the template's script goes through
+  `HideUIPanel`, which refuses addon code in combat; both windows now hide by their own script,
+  `ns.SetupWindow`); the statistics window and the debug window drew through each other (both are top-level and
+  raised when shown); the minimap button's menu showed "Interface action failed because of an AddOn" in a fight
+  (its title element sets a secure value; in combat the menu has no title), found by the stack of
+  `DisplayInterfaceActionBlockedMessage` (the steps are in `docs/forever-api.md`, "Finding what the game
+  blocked"). Not explained: before the fix the statistics window's close button did close it in a fight.
