@@ -27,11 +27,14 @@ local function OpenMenu(owner)
         -- A button whose text says what a click does, like the fishing mode entry above.
         root:CreateButton(ns.Sound.IsEnabled() and L["Turn fishing sounds off"] or L["Turn fishing sounds on"],
             function() ns.Sound.SetEnabled(not ns.Sound.IsEnabled()) end)
-        local scanText = ns.Auction.GetState() == "stalled" and L["Auction house not answering"]
-            or L["Scan auction prices"]
-        local scan = root:CreateButton(scanText, ns.Auction.Scan)
-        if not ns.Auction.CanScan() then
-            scan:SetEnabled(false)
+        -- No scan entry while the prices come from Auctionator (specs/019-auctionator-prices).
+        if not ns.Prices.UsesAuctionator() then
+            local scanText = ns.Auction.GetState() == "stalled" and L["Auction house not answering"]
+                or L["Scan auction prices"]
+            local scan = root:CreateButton(scanText, ns.Auction.Scan)
+            if not ns.Auction.CanScan() then
+                scan:SetEnabled(false)
+            end
         end
         local advice = ns.Skill.GetNextRank()
         if advice and advice.pin then

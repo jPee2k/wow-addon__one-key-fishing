@@ -443,4 +443,23 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Sort: %s"] = "Сортування: %s"
     L["Name"] = "Назва"
     L["No price"] = "Без ціни"
+
+    -- Auctionator as a price source (specs/019-auctionator-prices): Auction.lua, Settings.lua, StatsFrame.lua
+    L["Prices come from Auctionator."] = "Ціни беруться з Auctionator."
+    L["Auction prices"] = "Ціни аукціону"
+    L["Take prices from Auctionator"] = "Брати ціни з Auctionator"
+    L["Auctionator is not installed."] = "Auctionator не встановлено."
+    L["Auctionator failed this session: the addon's own scan is in use."] =
+        "Auctionator дав збій у цій сесії: використовується власне сканування аддона."
+    L["Prices come from the addon's own scan (last scan %s)."] =
+        "Ціни беруться з власного сканування аддона (останнє сканування: %s)."
+    L["Prices come from the addon's own scan (no scan yet)."] =
+        "Ціни беруться з власного сканування аддона (сканування ще не було)."
+    L["Auction prices are off: catch values use vendor prices."] =
+        "Ціни аукціону вимкнено: вартість улову рахується за цінами торговця."
+    L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."] =
+        "Ваш улов: %d з ціною Auctionator, %d з ціною сканування аддона, %d лише з ціною торговця, %d без ціни."
+    L["Values: higher of vendor and Auctionator price."] = "Вартість: більша з ціни торговця та Auctionator."
+    L["%d of your catches have no Auctionator price: run its scan."] =
+        "Для %d предметів вашого улову немає ціни в Auctionator: запустіть його сканування."
 end)

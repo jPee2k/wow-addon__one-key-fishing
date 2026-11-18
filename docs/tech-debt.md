@@ -31,6 +31,43 @@ Review of the window fixes (`/code-review high`, 2026-11-18): the low items left
   today, and no test opens them in combat. Direction: a helper in `UI/Widgets.lua` for these elements that skips
   them in combat, used by every menu; a test that opens each menu in combat with `menu_blocked` at 0.
 
+Review of the Auctionator prices (spec 019, `/code-review high`, three rounds and an independent tester,
+2026-11-18): the low items left.
+
+- **Repeated price lookups while Auctionator is in use** (low, found by review). `Prices.FormatValue` calls
+  `Prices.Get` and then `GetAuction` again (two `pcall`s into Auctionator per row); `StatsFrame.Refresh` runs
+  `Prices.CountSources` after `Stats.GetValue` has read the same items; `Prices.Describe` walks the catches a second
+  time for the oldest age. Each lookup is a table read in Auctionator, and a few hundred catches redraw once a
+  second at most, so nothing is slow today. Direction: a `Prices.Get` that also returns `fewLots`, and one pass that
+  gives the counts with the oldest age.
+- **Items not loaded yet count as "without a price"** (low, found by review). Right after a login an item the
+  client has not loaded counts as sellable with no vendor price, so the settings page's counts and the statistics
+  line's number can be a little high until the item arrives (the statistics window redraws on a caught item's info,
+  the settings page only when shown again or on `PRICES_CHANGED`). Direction: count such items apart, or redraw the
+  page on `GET_ITEM_INFO_RECEIVED` of a catch.
+- **"Auctionator is not installed" for an Auctionator without the update notice** (low, found by review). An
+  Auctionator build whose `API.v1` lacks `RegisterForDBUpdate` counts as absent (decision 19), and the settings page
+  then says it is not installed; only `/okf debug` names the missing function. The Auctionator of WoW Forever has
+  both. Direction: a third note, "This version of Auctionator is not supported."
+- **The "Auction prices" page does not follow new catches while it is shown** (low, found by review). Its counts
+  redraw on showing, on `PRICES_CHANGED` and on the two switches, not on `Stats` changes; a catch or a statistics
+  reset while the page stays open leaves the numbers one step behind until it is shown again. Direction: redraw on
+  the window tick, or on the `Stats` version.
+- **An empty strip under the statistics window's buttons** (low, found by review). The window works out whether the
+  scan button wraps to a row of its own once, at creation; with a translation where it wraps, the window keeps that
+  row while the button is hidden for Auctionator. Direction: lay the bottom row out again when the button is shown
+  or hidden.
+- **"Use scanned auction prices for catch value" also switches Auctionator's prices off** (low, found by review).
+  The label predates spec 019; turned off, every value is the vendor price, whichever the source. Direction: a
+  label such as "Use auction prices for catch value", with its translations.
+- **The next-rank line keeps two lines whenever the advice is shown** (low, found by review). The statistics window
+  gives the values line room for two lines while it counts the catches without an Auctionator price, so the
+  next-rank line is cut to two lines even when the values line fits on one (a short translation). Direction: follow
+  `FontString:GetNumLines()` of the values line, once the game shows it is right after `SetText`.
+- **Small repetitions in the scan entries and the scan time** (low, found by review). "No scan while Auctionator is
+  in use" is asked in `Auction.CanScan` / `WhyNot`, `ns.UpdateScanButton` and the minimap menu; the last scan's
+  date format is written in `UI/Settings.lua` and `UI/StatsFrame.lua`. Direction: one helper for each.
+
 ## History
 
 Every review of the shared catch database was closed with tests the same or the next day; the details are in the

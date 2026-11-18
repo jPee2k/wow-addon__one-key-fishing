@@ -27,6 +27,15 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
   background" and "Splash focus while fishing" (they write `settings.backgroundSound` / `splashFocus` and fire
   `SETTINGS_CHANGED`, which Mode.lua applies at once while fishing; never greyed). Each has its explanation under
   it; `SETTINGS_CHANGED("fishingSounds")` from the minimap menu updates the shown page.
+- The "Auction prices" subcategory (spec 019), top to bottom: "Use scanned auction prices for catch value" (moved
+  here from the main page's features), nested under it "Take prices from Auctionator" (inactive and grey while the
+  first is off or `Prices.HasAuctionator()` is false; a grey note then says "Auctionator is not installed.", or
+  after a failing call "Auctionator failed this session: the addon's own scan is in use."), a line with the source
+  in use (`Prices.GetSource()`: Auctionator; the own scan with the time of its last scan or "no scan yet"; auction
+  prices off) and a line with the counts of `Prices.CountSources()`. The two checkboxes write through
+  `Prices.SetAuctionPrices` / `Prices.SetAuctionator`. The page redraws on `OnShow`, on `SETTINGS_CHANGED` of the
+  two keys and on `PRICES_CHANGED`, while shown. No scan button (opening the settings closes the auction house)
+  and no reset button.
 
 ## StatsFrame
 
@@ -40,6 +49,10 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
   `PRICES_CHANGED`, `SETTINGS_CHANGED`, a skill change, a level-up, item info of a caught item or game names
   arriving for the "Next rank" line, and otherwise only redraws the time rows, so nothing moves outside fishing
   mode.
+- The line about the values: with `Prices.UsesAuctionator()` it reads "Values: higher of vendor and Auctionator
+  price." and, when some of the own catches have no Auctionator price (`missing` of `Prices.CountSources()`: without
+  grey junk), their number with the advice to run its scan (the next-rank line then keeps two lines); otherwise the scan's line as before. The
+  scan button is hidden while Auctionator is in use.
 
 ## CatchHere
 
@@ -133,7 +146,9 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
 - AuctionButton: the "Scan fish prices" button above the auction house window, made when it first opens; it
   follows `AUCTION_STATE` through `Auction.GetState()` and `GetProgress()`: "Scanning n/m" while a scan runs,
   "Auction house not answering" (disabled, the reason on hover) while stalled; clicks run `Auction.Scan`. The
-  minimap menu's scan entry reads the same while stalled.
+  minimap menu's scan entry reads the same while stalled. While the prices come from Auctionator
+  (`Prices.UsesAuctionator()`, spec 019) the button is hidden (it also follows `SETTINGS_CHANGED` and
+  `PRICES_CHANGED`) and the minimap menu has no scan entry.
 - ShareNotice: the one-time popup about the catch exchange, shown when `Share.NoticeOwed()` says one is owed
   (after entering the world, after combat, retried when the game had no free dialog frame); closing it calls
   `Share.NoticeRead()`, the Settings button opens the "Shared database" page.

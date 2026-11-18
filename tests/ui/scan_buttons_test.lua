@@ -108,3 +108,49 @@ test("ready again: everything as before, without a reload", function()
     eq(button.text, L["Scan fish prices"], "the button above the auction window")
     eq(button:IsEnabled(), true, "enabled")
 end)
+
+-- Auctionator as the price source (specs/019-auctionator-prices, User Story 2). The stub is set after load_addon():
+-- its presence is checked at runtime, and these tests need no update notice.
+local window = assert(_G.OneKeyFishingStatsFrame, "the statistics window")
+
+test("with Auctionator's prices in use: no scan entry, and /okf scan sends nothing", function()
+    local button = assert(auctionButton(), "the button above the auction window")
+    Auctionator = { API = { v1 = {
+        GetAuctionPriceByItemID = function() return nil end,
+        RegisterForDBUpdate = function() end,
+    } } }
+    ns.Prices.SetAuctionator(false)
+    ns.Prices.SetAuctionator(true) -- the windows follow SETTINGS_CHANGED
+    tick(window)
+    eq(ns.Prices.UsesAuctionator(), true, "in use")
+    eq(button:IsShown(), false, "the button above the auction window is hidden")
+    eq(statsScan:IsShown(), false, "the statistics button is hidden")
+    eq(minimapEntry(), nil, "no minimap entry")
+    eq(ns.Auction.CanScan(), false, "no scan can start")
+    local requests = #auction_requests
+    chat = {}
+    SlashCmdList.ONEKEYFISHING("scan")
+    eq(chat_count(L["Prices come from Auctionator."]), 1, "/okf scan answers with one line")
+    eq(#chat, 1, "and nothing else")
+    advance(2)
+    eq(#auction_requests, requests, "no auction request")
+    eq(ns.db.settings.auctionPrices, true, "the command changes no switch")
+    eq(ns.db.settings.auctionatorPrices, true, "nor the other")
+end)
+
+test("the Auctionator switch off: the scan entries and the scan are back, without a reload", function()
+    ns.Prices.SetAuctionator(false)
+    tick(window)
+    eq(ns.Prices.UsesAuctionator(), false, "not in use")
+    -- In the game the settings page closed the auction house by now, so the button's return is seen at its next
+    -- opening; here its shown state is read directly.
+    eq(assert(auctionButton(), "the button above the auction window"):IsShown(), true, "shown again")
+    eq(statsScan:IsShown(), true, "the statistics button is back")
+    eq(assert(minimapEntry(), "the minimap entry is back").text, L["Scan auction prices"], "its text")
+    ns.db.fishedItems = { [90002] = true } -- the stalled test's item is remembered as unanswered
+    chat = {}
+    SlashCmdList.ONEKEYFISHING("scan")
+    eq(chat_count(L["Prices come from Auctionator."]), 0, "/okf scan no longer refuses")
+    eq(ns.Auction.GetState(), "scanning", "a scan started")
+    ns.Prices.SetAuctionator(true)
+end)

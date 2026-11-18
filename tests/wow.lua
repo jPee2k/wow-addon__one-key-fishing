@@ -564,6 +564,15 @@ function Frame:GetWidth()
     return self.width or 100
 end
 
+-- A font string's line limit (SetMaxLines), remembered for the tests.
+function Frame:SetMaxLines(lines)
+    self.maxLines = lines
+end
+
+function Frame:GetMaxLines()
+    return self.maxLines or 0
+end
+
 function Frame:SetHeight(height)
     self.height = height
 end

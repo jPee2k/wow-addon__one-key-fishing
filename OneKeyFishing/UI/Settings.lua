@@ -29,7 +29,6 @@ local function Toggles()
         { key = "sessionTimer", label = L["Show session fishing time under the indicator"] },
         { key = "pauseOnAFK", label = L["Pause the fishing timer while AFK"] },
         { key = "skillCapWarning", label = L["Remind me about the next Fishing rank"] },
-        { key = "auctionPrices", label = L["Use scanned auction prices for catch value"] },
         { key = "camera", label = L["Zoom the camera while fishing"] },
         { key = "minimapButton", label = L["Show the minimap button"] },
         { key = "tooltipChances", label = L["Show catch chances in tooltips"] },
@@ -602,6 +601,91 @@ local function CreateSoundPage()
 end
 
 ---------------------------------------------------------------------------
+-- Auction prices page (specs/019-auctionator-prices)
+---------------------------------------------------------------------------
+-- The counts of the character's own catches by the source of their auction price (Prices.CountSources).
+local function CatchCountsText(counts)
+    return string.format(
+        L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."],
+        counts.auctionator, counts.own, counts.vendor, counts.none)
+end
+
+-- The source of the auction prices in use, as one line.
+local function PriceSourceText()
+    local source = ns.Prices.GetSource()
+    if source == "auctionator" then
+        return L["Prices come from Auctionator."]
+    elseif source == "off" then
+        return L["Auction prices are off: catch values use vendor prices."]
+    end
+    local lastScan = ns.Prices.GetLastScanTime()
+    if lastScan then
+        return (L["Prices come from the addon's own scan (last scan %s)."]):format(date("%Y-%m-%d %H:%M", lastScan))
+    end
+    return L["Prices come from the addon's own scan (no scan yet)."]
+end
+
+-- Top to bottom: the auction price switch (moved here from the main page), the Auctionator switch nested under it,
+-- the source in use and the counts. No scan button: opening the settings closes the auction house window.
+local function CreateAuctionPage()
+    local page = CreateFrame("Frame")
+
+    local title = CreateText(page, "GameFontNormalLarge", L["Auction prices"])
+    title:SetPoint("TOPLEFT", PADDING, -PADDING)
+
+    -- Both switch only through Prices' setters (CLAUDE.md, cross-module rules).
+    local pricesBox = CreateCheckbox(page, L["Use scanned auction prices for catch value"],
+        function() return ns.db.settings.auctionPrices == true end,
+        function(value) ns.Prices.SetAuctionPrices(value) end)
+    pricesBox:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -2, -14)
+    pricesBox.label:SetWidth(520)
+
+    local auctionatorBox = CreateCheckbox(page, L["Take prices from Auctionator"],
+        function() return ns.db.settings.auctionatorPrices == true end,
+        function(value) ns.Prices.SetAuctionator(value) end)
+    auctionatorBox:SetPoint("TOPLEFT", pricesBox, "BOTTOMLEFT", 24, -6)
+    auctionatorBox.label:SetWidth(496)
+    -- Why the switch is inactive although auction prices are on: Auctionator is missing, or it failed.
+    local note = CreateText(page, "GameFontDisableSmall")
+    note:SetPoint("TOPLEFT", auctionatorBox.label, "BOTTOMLEFT", 0, -4)
+    note:SetWidth(496)
+
+    local status = CreateText(page, "GameFontHighlight")
+    status:SetPoint("TOPLEFT", pricesBox, "BOTTOMLEFT", 2, -78)
+    status:SetWidth(540)
+    local counts = CreateText(page, "GameFontHighlight")
+    counts:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 0, -8)
+    counts:SetWidth(540)
+
+    local function Sync()
+        if not page:IsShown() then
+            return
+        end
+        local on = ns.db.settings.auctionPrices == true
+        local installed = ns.Prices.HasAuctionator()
+        pricesBox:SetChecked(on)
+        auctionatorBox:SetChecked(ns.db.settings.auctionatorPrices == true)
+        auctionatorBox:SetEnabled(on and installed)
+        auctionatorBox.label:SetFontObject(on and installed and "GameFontHighlight" or "GameFontDisable")
+        note:SetText(ns.Prices.GetAuctionatorFailure()
+            and L["Auctionator failed this session: the addon's own scan is in use."]
+            or L["Auctionator is not installed."])
+        note:SetShown(not installed)
+        status:SetText(PriceSourceText())
+        counts:SetText(CatchCountsText(ns.Prices.CountSources()))
+    end
+    -- A switch changed; prices changed (the counts), or Auctionator failed (Prices.lua sends PRICES_CHANGED).
+    ns.On("SETTINGS_CHANGED", function(key)
+        if key == "auctionPrices" or key == "auctionatorPrices" then
+            Sync()
+        end
+    end)
+    ns.On("PRICES_CHANGED", Sync)
+    page:SetScript("OnShow", Sync)
+    return page
+end
+
+---------------------------------------------------------------------------
 -- Registration
 ---------------------------------------------------------------------------
 local function OpenCategory(category)
@@ -638,13 +722,16 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     -- shown, so that Show would change nothing and send no OnShow, which fills the pages: they start hidden.
     local mainPage, gearPage, sharePage, soundPage = CreateMainPage(), CreateGearPage(), CreateSharePage(),
         CreateSoundPage()
+    local auctionPage = CreateAuctionPage()
     mainPage:Hide()
     gearPage:Hide()
     sharePage:Hide()
     soundPage:Hide()
+    auctionPage:Hide()
     mainCategory = Settings.RegisterCanvasLayoutCategory(mainPage, "OneKeyFishing")
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, gearPage, L["Fishing gear"])
     shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, sharePage, L["Shared database"])
     soundCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, soundPage, L["Sound effects"])
+    Settings.RegisterCanvasLayoutSubcategory(mainCategory, auctionPage, L["Auction prices"])
     Settings.RegisterAddOnCategory(mainCategory)
 end)

@@ -200,6 +200,9 @@ local DB_DEFAULTS = {
         pauseOnAFK = true,
         skillCapWarning = true,
         auctionPrices = true,
+        -- Take auction prices from Auctionator when it is installed (Catch/Prices.lua); written only by
+        -- Prices.SetAuctionator. auctionPrices above is written only by Prices.SetAuctionPrices.
+        auctionatorPrices = true,
         camera = true,
         cameraDistance = 10,
         minimapButton = true,

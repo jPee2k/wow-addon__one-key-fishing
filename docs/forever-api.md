@@ -319,7 +319,9 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
     `GetAuctionPriceByItemID` gives the cheapest unit price in copper (87 for item 6291, as the house shows),
     `GetAuctionAgeByItemID` the days since (0), `RegisterForDBUpdate` calls back after one of its searches and
     once at the end of a scan (also during the addon's own scan). It keeps its prices per game mode
-    (`Auctionator.State.CurrentRealm` is `PvP`).
+    (`Auctionator.State.CurrentRealm` is `PvP`). Its tooltip lines ("Vendor", "Auction") show on the addon's own
+    row tooltips (`GameTooltip:SetItemByID`), so the addon leaves out its own price line for an item Auctionator
+    prices (V59, 2026-11-18). A character with Auctionator disabled has neither API function.
 - Inside the Wailing Caverns instance (2026-11-06): `C_Map.GetBestMapForUnit("player")` is nil, no position,
   `C_RestrictedActions.GetAddOnRestrictionState(Enum.AddOnRestrictionType.Map)` is 2 and the `Map` restriction is
   active (the others are not); `C_Map.CanSetUserWaypointOnMap(nil)` raises a usage error (V1, V14, V30).

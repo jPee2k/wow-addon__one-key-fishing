@@ -43,6 +43,9 @@ read_globals = {
     "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_EncodingUtil",
     "C_Texture",
 
+    -- Other addons (optional; only their public API is read: Catch/Prices.lua)
+    "Auctionator",
+
     -- Global API
     "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",
     "GetProfessions", "GetProfessionInfo", "GetTime", "GetMoneyString",

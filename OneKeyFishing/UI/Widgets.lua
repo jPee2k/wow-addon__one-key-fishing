@@ -188,8 +188,10 @@ function ns.SetReason(button, reason)
 end
 
 -- An auction scan button (the statistics window's, the one above the auction window): clickable while a scan can
--- start, the reason it cannot on hover (Auction.WhyNot).
+-- start, the reason it cannot on hover (Auction.WhyNot); hidden while the prices come from Auctionator
+-- (specs/019-auctionator-prices).
 function ns.UpdateScanButton(button)
+    button:SetShown(not ns.Prices.UsesAuctionator())
     ns.ShowReasonOnHover(button)
     button:SetEnabled(ns.Auction.CanScan())
     ns.SetReason(button, ns.Auction.WhyNot())

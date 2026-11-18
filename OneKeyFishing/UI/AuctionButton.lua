@@ -1,5 +1,6 @@
 -- AuctionButton: the "Scan fish prices" button above the top right corner of the auction house window. The scan
--- itself is Catch/Auction.lua's; the button follows its progress through AUCTION_STATE.
+-- itself is Catch/Auction.lua's; the button follows its progress through AUCTION_STATE. It is hidden while the
+-- prices come from Auctionator (specs/019-auctionator-prices): there is nothing to scan then.
 local _, ns = ...
 local L = ns.L
 
@@ -18,7 +19,7 @@ local function Update()
     else
         button:SetText(L["Scan fish prices"])
     end
-    ns.UpdateScanButton(button) -- UI/Widgets.lua: enabled by Auction.CanScan, the reason on hover
+    ns.UpdateScanButton(button) -- UI/Widgets.lua: shown, enabled by Auction.CanScan, the reason on hover
 end
 
 -- Made when the auction house first opens.
@@ -39,3 +40,6 @@ end
 
 ns.RegisterEvent("AUCTION_HOUSE_SHOW", Ensure)
 ns.On("AUCTION_STATE", Update)
+-- The price source changed: a switch of the "Auction prices" page, or Auctionator failed (Prices.lua).
+ns.On("SETTINGS_CHANGED", Update)
+ns.On("PRICES_CHANGED", Update)

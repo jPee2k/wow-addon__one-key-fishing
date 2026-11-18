@@ -4,7 +4,21 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.4.0] - 2026-11-18
+
+### Added
+
+- With the Auctionator addon installed, the catch values use its auction prices: scan with Auctionator as you do
+  anyway, and the statistics, the catalog and the catch values follow, without a second scan. Your own stored prices
+  fill in for items Auctionator has not seen, and a catch is never valued below its vendor price. The addon's own
+  scan buttons are hidden while Auctionator's prices are in use, and `/okf scan` says so.
+- A settings page "Auction prices": the switch "Use scanned auction prices for catch value" moved there from the
+  main page; under it "Take prices from Auctionator" (on by default; turn it off to go back to the addon's own
+  scan); which source is in use, and how many of your catches have a price from Auctionator, from the addon's scan,
+  from a vendor only, or none.
+- The statistics window's line about the values names Auctionator as the source and says how many of your catches
+  it has no price for.
+- `/okf debug` has a section "Auction prices".
 
 ### Fixed
 
