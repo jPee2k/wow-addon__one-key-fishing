@@ -27,6 +27,13 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
   a test that the close button's script calls no `HideUIPanel`. To note in game before the fix: the exact error
   line (`/console scriptErrors 1` or the `ADDON_ACTION_BLOCKED` text) and whether Escape closes the window in a
   fight.
+- **The addon's windows draw through each other** (low, seen in game 2026-11-18). With the statistics window and
+  the debug report window open and overlapping, their contents mix: the catalog's rows, the scroll bar and the
+  section title of the statistics window show over the debug window's title bar and body, and a click does not
+  bring a window to the front. Cause: both are in the `DIALOG` strata (`UI/StatsFrame.lua`, `UI/CopyWindow.lua`)
+  with no `SetToplevel(true)`, so their child frames interleave by frame level. Direction: `SetToplevel(true)` on
+  each window (a click raises it with its children) and `Raise()` on show; check the other frames a window can
+  overlap (the Auctionator window in the same picture is not ours). A test that each window is top-level.
 
 ## History
 
