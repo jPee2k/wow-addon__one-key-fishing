@@ -40,7 +40,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 |---|---|
 | Players | `OneKeyFishing/README.md` (the player manual, shipped in the package), `CHANGELOG.md` |
 | Repository | `README.md` (layout, tools, docs map), [docs/README.md](docs/README.md) (the index of `docs/`) |
-| Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
+| Development | `README.md` (the repository: layout, tools, docs map), [docs/development.md](docs/development.md) (tools, tests, packaging, definition of done), [docs/forever-api.md](docs/forever-api.md) (API facts, how to check a call, open questions), [docs/fishing-investigation.md](docs/fishing-investigation.md) (how fishing works in Forever beyond the API: the camp features and their fishing auras, what changes a catch, items, profit, the in-game checks still open), `docs/architecture/` (modules in detail, below), [docs/languages.md](docs/languages.md), [docs/tech-debt.md](docs/tech-debt.md) (known issues grouped into fix batches; remove an item once it is fixed with a test) |
 | Rules | `.specify/memory/constitution.md` (principles; this file must stay consistent with it) |
 | Releases and plans | [docs/publishing.md](docs/publishing.md) (branches, release steps, policy checklist), [docs/release-plan.md](docs/release-plan.md) (the accepted assumptions and checklist steps left after 1.2.0 and 1.3.0, to check after the release), [docs/ROADMAP.md](docs/ROADMAP.md) (not built yet) |
 | Features | `specs/<nnn>-<name>/` (spec, plan, research, data model, contracts, tasks, `verification.md`, `quickstart.md` for what the tests prove), `docs/checklists/` (in-game checklists: `fishing-mode.md`, `interface-language.md`, `spike.md`, one per part of the catch database; `README.md` there has the template and the order) |
@@ -224,5 +224,9 @@ go there.
   button's frame with `frame:Hide()`, `ns.SetupWindow`; a `MenuUtil` title, divider or spacer, so menus build none
   in combat). Find the cause by the steps of [docs/forever-api.md](docs/forever-api.md), "Finding what the game
   blocked" (a `hooksecurefunc` on `DisplayInterfaceActionBlockedMessage` printing `debugstack`; `taintLog 2`).
+- Player auras read by ID (`C_UnitAuras.GetPlayerAuraBySpellID`) out of combat only: in a fight the call returns
+  nothing for an aura that is up, and the `UNIT_AURA` payload is secret tables (`ipairs` over one raises an error;
+  check `issecretvalue`). Keep the state read before the fight (seen 2026-11-19;
+  [docs/fishing-investigation.md](docs/fishing-investigation.md)).
 - The fish lines ("No fish are hooked.", `ERR_FISH_NOT_HOOKED`) come as `UI_INFO_MESSAGE` (type 417), not
   `UI_ERROR_MESSAGE`; a too-early hook press ends the fishing channel (seen 2026-11-16).
