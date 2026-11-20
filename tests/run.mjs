@@ -10,7 +10,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { ADDON_DIR, TOC, parseToc } from "../tools/addon.mjs";
-import { getGlobalNumber, newState, run, setGlobalList, setGlobalNumber, setGlobalString } from "./lua.mjs";
+import {
+  getGlobalNumber, newState, run, setGlobalList, setGlobalNumber, setGlobalString, setGlobalStringFunction,
+} from "./lua.mjs";
 
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 // The filter is matched against the path relative to tests/, with forward slashes.
@@ -51,6 +53,11 @@ for (const name of testFiles) {
   const L = newState();
   setGlobalString(L, "ADDON_DIR", ADDON_DIR.replace(/\\/g, "/"));
   setGlobalList(L, "TOC_FILES", tocFiles);
+  // read_addon_file("Fishing/Camp.lua"): the text of an addon file, or nil (a test that checks a file's source).
+  setGlobalStringFunction(L, "read_addon_file", (file) => {
+    const full = path.join(ADDON_DIR, file);
+    return fs.existsSync(full) ? fs.readFileSync(full, "utf8") : undefined;
+  });
   if (simNodes) {
     setGlobalNumber(L, "SIM_NODES", simNodes);
   }

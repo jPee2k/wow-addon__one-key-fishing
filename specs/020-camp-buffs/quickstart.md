@@ -28,7 +28,10 @@ What the tests prove (each fails without its change):
 | `tests/catalog/bonus_test.lua` | a zone place, a spot and a row take the bonus's chance, catches and players; a missing chance is "Little data"; the order by chance uses it; `ChanceText` with the bonus; the icon; the tooltip lines and their bonus key (FR-019, FR-020) |
 | `tests/catch/stats_bonus_test.lua` | bonus casts and bonus catches in the three buckets; a saved bucket without the fields reads 0 (FR-034) |
 | `tests/core/percent_test.lua` | `37%`, `3.4%`, `0.47%`, `<0.01%`, the rounding edges, `0%` for 0 (FR-029, FR-030) |
-| `tests/ui/here_bonus_test.lua`, `tests/ui/catalog_bonus_test.lua` | the button hidden without data, its values, the Hut only with Hut data, the fallback to "All catches", Water hidden while the bonus button shows; the tag's icon on a row and its words in the row's tooltip (FR-019, FR-023, FR-024, FR-027, FR-028) |
+| `tests/core/count_format_test.lua` | `ns.FormatCount`: `1`, `1` for 1.04, `1.3` for 1.25, `1.5`, `13` for 12.96, `1,5` with a comma separator (FR-046) |
+| `tests/ui/here_bonus_test.lua`, `tests/ui/catalog_bonus_test.lua` | the button hidden without data, its values, the Hut only with Hut data, the fallback to "All catches", Water hidden while the bonus button shows; the tag's icon on a row and its words in the row's tooltip (FR-019, FR-023, FR-024, FR-027, FR-028); the button's text per value ("Camp bonus: All" ...) and the menu with "Bonus catches only" (FR-042, FR-043); under "Bonus catches only" only the tagged rows, the counts line of "All catches" and the chance with the bonus, the empty texts, all zones on the catalog's item page and no index of its own (FR-043 to FR-045); the layout of "What can be caught here": the hints and the exchange line above the counts, row A above row B, Kinds after the Camp bonus button, no "and N more" (FR-041, FR-047) |
+| `tests/ui/here_page_test.lua`, `here_kinds_test.lua`, `here_seed_test.lua`, `catalog_kinds_saved_test.lua` (extended) | the rows of "What can be caught here" read through the scroll list (`list_rows`, `tests/wow.lua`); every item listed, no "and N more"; "Per catch" reads "1" for one piece (FR-046, FR-047) |
+| `tests/ui/catalog_sort_test.lua`, `catalog_kinds_test.lua` (extended) | the catalog's layout: the search box, the status line under it, row A Skill and Source, row B the slot, Kinds and Sort, the list below row B; the Kinds button of "What can be caught here" in row B (FR-041, FR-048) |
 | `tests/ui/tooltips_test.lua`, `stats_window_test.lua` (extended) | the tag's line in an item tooltip; the two rows and their hiding (FR-019, FR-035) |
 | `tests/ui/toast_bonus_test.lua` | the notice's text is shown with catch notifications off (FR-032) |
 | `tests/fishing/camp_state_test.lua` (extended) | the source of `Fishing/Camp.lua` holds no cast, item-use, secure or frame call (FR-008) |
@@ -42,8 +45,11 @@ The checklist `docs/checklists/camp-buffs.md` (made with the tasks), in short:
    of mask 1 grows with every cast.
 2. Catch a Bloated fish: its row in "What can be caught here" and in the catalog carries the Fishing Rack's icon
    (V66); the row's tooltip says "Fishing Rack bonus", the explanation and the chance with the bonus.
-3. The "Camp bonus" button: there once a cast under the buff is recorded; its three values; the texts fit the
-   button in French and German. `/okf debug`: the encoded size of the own record with parts (V67).
+3. The "Camp bonus" button: there once a cast under the buff is recorded; its values and its text "Camp bonus:
+   <value>"; "Bonus catches only" lists only the Bloated fish; the two rows of buttons fit both tabs in French and
+   German; the list of "What can be caught here" scrolls, its hints and exchange line at the top; "Per catch" reads
+   "1", not "1.0"; the catalog's status line under the search box. `/okf debug`: the encoded size of the own record
+   with parts (V67).
 4. A rare item reads with a fraction, never "0%".
 5. With six minutes of the buff left, in fishing mode: the five-minute notice and the end notice (V64, V65); die with
   the buff out of a fight: the end notice; with "Leave fishing mode when attacked" off, die in a fight: the end notice

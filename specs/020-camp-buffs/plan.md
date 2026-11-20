@@ -3,8 +3,8 @@
 **Branch**: `020-camp-buffs` | **Date**: 2026-11-19 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/020-camp-buffs/spec.md`; the author's decisions 1 to 20 in its
-clarifications; the research and the in-game session of 2026-11-19 in
-[docs/fishing-investigation.md](../../docs/fishing-investigation.md) and
+clarifications, and 21 to 31 of the follow-up after the first try in game (2026-11-20); the research and the
+in-game session of 2026-11-19 in [docs/fishing-investigation.md](../../docs/fishing-investigation.md) and
 [docs/forever-api.md](../../docs/forever-api.md).
 
 ## Summary
@@ -25,8 +25,12 @@ harvest follow. Percentages get a fraction for small values, and Camper's Lure j
 - **The sums (R6, R7)**: `filter.bonus` (`all`, `none`, a key); a tagged item carries `item.bonus` with the chance,
   the catches and the players under its bonus, computed in the pass that sums its scope (no view fetches
   another).
-- **The UI (R8, R19)**: one button for the Water and the bonus filter; the tag is the camp feature's icon on a row,
-  its words are in the row's tooltip and in the item tooltip.
+- **The UI (R8, R19, R20)**: one button for the Water and the bonus filter, named "Camp bonus: <value>", in the
+  second of two rows of buttons in both tabs; the value "Bonus catches only" is a filter of the list over "All
+  catches"; the tag is the camp feature's icon on a row, its words are in the row's tooltip and in the item tooltip.
+- **The layout (R21)**: the hints and the exchange line of "What can be caught here" at the top, its list a scroll
+  list shared with the catalog (`ns.CreateList`); the catalog's status line under the search box; "Per catch"
+  through `ns.FormatCount`.
 - **Percentages (R9)**: one formatter, `ns.Percent`.
 - **Notices, setting, statistics (R10 to R12)**: `CAMP_BONUS_WARNING`, `campBonusWarning`, two bucket fields.
 - **Camper's Lure (R13)**: one row of game data.
@@ -112,7 +116,7 @@ grows by one optional field that 1.4.0 ignores. One message is new. Pass.
 ```text
 specs/020-camp-buffs/
 ├── plan.md              # This file
-├── research.md          # Phase 0: R1 to R19
+├── research.md          # Phase 0: R1 to R21
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1
 ├── verification.md      # Phase 1: V60 to V67
@@ -190,6 +194,33 @@ Stories 1 and 8 are the data and can be tried in game without any visible change
 of the last step too); 2 and 3 are the views over them; 4 (the
 percentages) and 7 (the lure) are independent of everything else.
 
+## Follow-up after the first try in game (2026-11-20)
+
+Decisions 21 to 31 of the spec, requirements FR-041 to FR-048, tasks T041 onwards (Phase 12). No data changes:
+`CatchDB` and the saved data stay as they are, and no `VERIFY` marker is added (the fit of the buttons is a
+checklist step).
+
+- **Two rows of buttons (R8)**: in both tabs row A holds Skill and Source, row B the one slot (Water or Camp
+  bonus) and Kinds (and Sort in the catalog). `CatchHere.CreateWaterButton` and `CreateBonusButton` make the slot's
+  buttons for both tabs; `CatchHere.UpdateFilterSlot` sets them and places the next button of row B after the one
+  shown. The Kinds button leaves the top right corner of "What can be caught here".
+- **The button's text (R8)**: `Catalog.BonusButtonText(value)`, five whole texts ("Camp bonus: All" ...);
+  `CatchHere.BonusButtonText` is gone.
+- **"Bonus catches only" (R20)**: the value `"bonusOnly"`, UI and catalog only. "What can be caught here" queries
+  `"all"` (`CatchHere.QueryBonus`) and keeps the tagged items (`CatchHere.BonusItems`); the catalog maps it to the
+  index of `"all"` (`IndexFilter`) and `Catalog.Items` drops the untagged rows. Two empty texts.
+- **The layout (R21)**: `ns.CreateList` moves from `UI/CatalogTab.lua` to `UI/Widgets.lua` and serves the list of
+  "What can be caught here" too, in place of its 16 fixed rows; the hints (up to three lines) and the exchange line
+  move above the counts; the catalog's status line moves under the search box.
+- **Per catch**: `ns.FormatCount(value)` in `Core/Data.lua`, beside `ns.Percent`.
+- **Texts**: eight new keys (`Bonus catches only`, the five button texts, the two empty texts), nine translations
+  each.
+- **Files**: `Catalog/Catalog.lua`, `Core/Data.lua`, `UI/CatchHere.lua`, `UI/CatalogTab.lua`, `UI/Widgets.lua`,
+  `Locales/*.lua`; tests `tests/wow.lua` (`list_rows(list)`), `tests/core/count_format_test.lua` (new),
+  `tests/ui/here_bonus_test.lua`, `catalog_bonus_test.lua` (new cases), and the tests that read the rows of "What
+  can be caught here" or the catalog's layout (`here_page_test`, `here_kinds_test`, `here_seed_test`,
+  `catalog_kinds_test`, `catalog_kinds_saved_test`, `catalog_sort_test`).
+
 ## Risks
 
 - **A record grows** by its bonus parts (R16): the test stubs cannot measure the encoded size, so it is read in
@@ -199,8 +230,9 @@ percentages) and 7 (the lure) are independent of everything else.
 - **The Hut is built blind** (V60): if its aura cannot be read like the Rack's, the Hut's part is never written and
   nothing else breaks.
 - **A known item caught without a buff** (V61) shows a wrong tag until it leaves the list.
-- **Button width** (R8): the longest value in French and German must fit 150 pixels; a checklist step, with the
-  fallback of a shorter translation. The tag is an icon and its words are in the tooltip (R19), so the rows'
+- **Button width** (R8): the buttons grow to their text, and row B's buttons follow one another, so the risk is a
+  row wider than the tab in French or German ("Bonus de camp : bonus seul", then Kinds and Sort); a checklist step,
+  with the fallback of a shorter translation. The tag is an icon and its words are in the tooltip (R19), so the rows'
   columns keep their widths.
 - **A table with keys 1, 2, 3** would be at the mercy of the game's array encoding (CBOR, the saved file), so the
   parts are keyed by the mask as a string (R4).

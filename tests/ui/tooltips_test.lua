@@ -110,3 +110,29 @@ test("with Auctionator's price for the item the addon adds no price line; the fa
     eq(own_line(), (L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(300)), "the switch off: as before")
     ns.Prices.SetAuctionator(true)
 end)
+
+-- The camp bonus tag's explanation under "Caught in:" (specs/020-camp-buffs FR-019): a tagged item's tooltip outside
+-- the addon's rows gets one more line; an untagged item none; with the chances in tooltips off neither.
+test("a tagged item's tooltip has the tag's explanation under Caught in:", function()
+    local BLOATED = 6643
+    local tagged = catch_cell(20, 0, { [FISH] = { 18, 18 }, [BLOATED] = { 2, 2 } })
+    tagged.k = 2
+    local seed = { epoch = 1, absorbed = {}, resets = {}, cells = {} }
+    for key, value in pairs(ns.SeedData.cells) do
+        seed.cells[key] = value
+    end
+    seed.cells["1416:3:x"] = tagged
+    ns.SeedData = seed
+    ns.Fire("SHARED_DATA_CHANGED")
+    local tip = ns.Catalog.BonusTip("rack")
+    show_item_tooltip(GameTooltip, BLOATED)
+    local header = index(tooltip_lines, L["Caught in:"])
+    local line = index(tooltip_lines, tip)
+    assert(header and line and line > header, "the explanation after Caught in:")
+    show_item_tooltip(GameTooltip, FISH)
+    eq(index(tooltip_lines, tip), nil, "an untagged item")
+    ns.db.settings.tooltipChances = false
+    show_item_tooltip(GameTooltip, BLOATED)
+    eq(index(tooltip_lines, tip), nil, "setting off")
+    ns.db.settings.tooltipChances = true
+end)

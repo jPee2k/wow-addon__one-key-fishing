@@ -127,6 +127,14 @@ channel as it ships; the stub flag `channel_off` switches it off for the tests o
   blocked record still counts locally. Eviction goes by class (half the places saturated in the seed, stale over 60
   days, the rest, mostly rare places), then by `seen`. The seed's chain proofs of units it holds in part are checked
   in the background after login, with the same chunks and budget (`Store.CheckSeedStep`).
+- `CleanCell` rebuilds each kept cell from a fixed field list; since spec 020 it also copies the camp bonus parts
+  `q` (per key a fresh `{ c, m, i }`, [catch-db.md](catch-db.md) "Camp bonus parts"). A 1.4.0 client reads only the
+  fields it knows, so such a record passes its checks (the parts are inclusive: `seq <= casts` over `c + m` is
+  untouched), and its `CleanCell` drops `q` and relays the totals under the same `seq`: the totals stay right, the
+  split is lost on that path, nobody is ignored (FR-011). Nothing else of the exchange changes (no message, version
+  or limit). A cell fished under a bonus lists its items twice, so whether the own record stays under the 32 KB a
+  peer takes is read in game (`VERIFY(V67)`, research R16 of spec 020: if it grows too much, the roll counts a place
+  with a part as two).
 
 ## Exchange/ShareNode.lua and ShareProtocol.lua: the protocol
 

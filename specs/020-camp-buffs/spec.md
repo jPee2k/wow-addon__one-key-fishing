@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-19
 
-**Status**: Draft
+**Status**: Implemented (in-game checklist `docs/checklists/camp-buffs.md` open)
 
 **Input**: User description: "Fishing Camp Buffs". Catches made under the camp fishing buffs (the Fishing Rack's
 "Uncommon Fishing" and the Fishing Hut's "Rare Fishing") are told apart from ordinary catches: in the player's own
@@ -52,6 +52,39 @@ The design interview after the in-game session; the numbers are referred to belo
     player places (Fishing Rack, Fishing Hut), the buff's own name only in explanations. The texts are the table
     in the investigation document; the Ukrainian ones were agreed with the author (Fishing Rack, Fishing Hut and
     "Uncommon Fishing" in his wording).
+
+### Decisions of the author, 2026-11-20
+
+The design interview after the first try of the feature in game: with the filter on "Fishing Rack" the list showed
+every fish, which is by design (a part holds every catch of the casts under the buff) but not what the author wanted
+to see; the filter row was hard to read, and the two tabs were laid out differently. The numbers go on from the
+decisions above.
+
+21. **The follow-up stays in this spec**: new requirements (FR-041 to FR-048) and tasks (T041 onwards), no new
+    spec. The "Fishing Rack" value keeps its meaning (every catch of the casts under the buff).
+22. **Two rows of filter buttons in both tabs.** "What can be caught here": row A Skill, Source; row B the one slot
+    (Water or Camp bonus), then Kinds. Kinds leaves its top right corner, so the place's line has the full width.
+    The catalog: the search box, the status line under it, row A Skill, Source, row B the slot, Kinds, Sort, then
+    the list.
+23. **The button shows its value**: "Camp bonus: <short value>", each a whole text of its own ("Camp bonus: All",
+    "Camp bonus: No bonus", "Camp bonus: Bonus only", "Camp bonus: Rack", "Camp bonus: Hut"), so each language
+    words it its own way; the menu keeps the full labels.
+24. **A new filter value "Bonus catches only"**, after "No camp bonus": a list filter over "All catches" that keeps
+    only the tagged items (the known Bloated fish always, and the items tagged from the data), like the kind filter.
+25. **One value for every bonus**: "Bonus catches only" holds the tagged items of the Rack and of the Hut alike; the
+    bonus values ("Fishing Rack", "Fishing Hut") are there for the full picture of one bonus.
+26. **The numbers of "All catches"**: under "Bonus catches only" the counts line and the miss rate are those of "All
+    catches", and each row shows its chance with the bonus, as it does under "All catches". An empty list says "No
+    bonus catch has been recorded here yet." ("What can be caught here") or "No bonus catch has been recorded yet."
+    (the catalog).
+27. **"Per catch" without ".0"**: one decimal, written whole when the rounded value is whole, with the client's
+    decimal separator: 1 reads "1", 1.04 "1", 1.25 "1.3", 1.5 "1.5" ("1,5" on a German client).
+28. **The hints and the exchange line at the top** of "What can be caught here": under the place and the scope line,
+    above the counts, in a room of up to three lines that is always kept, so nothing below moves.
+29. **The list of "What can be caught here" scrolls**, with the catalog's scroll list (shared by both tabs); "and N
+    more" stays only in the fallback list of a client without the scroll templates.
+30. **The catalog's status line under the search box**; on an item's page it sits where the zones begin.
+31. **An item's page under "Bonus catches only"** shows all the item's zones, as under "All catches".
 
 ### Facts from the game, 2026-11-19
 
@@ -141,8 +174,9 @@ Bloated fish carries the tag and a chance computed from the catches under the bu
 ### User Story 3 - A filter by camp bonus (Priority: P2)
 
 A player who wants to plan a fishing trip chooses "Fishing Rack" in the "Camp bonus" filter and sees what is
-caught at a place with that bonus, with chances among those catches; "No camp bonus" shows the place without it.
-The filter is there only when there is something to filter.
+caught at a place with that bonus, with chances among those catches; "No camp bonus" shows the place without it;
+"Bonus catches only" shows just the bonus catches, with the numbers of all catches. The button names the chosen
+value ("Camp bonus: Rack"). The filter is there only when there is something to filter.
 
 **Why this priority**: the tag already answers "what is this fish"; the filter adds the full picture per bonus and
 is the only way to see misses and chances of everything under one bonus. It needs the data of story 1 first.
@@ -155,7 +189,7 @@ compare the lists and numbers with the counts of the place.
 1. **Given** no catch under any camp buff in the data, **When** the player opens either tab, **Then** there is no
    "Camp bonus" filter.
 2. **Given** data under the Rack's buff only, **When** the player opens the filter, **Then** it offers "All
-   catches", "No camp bonus" and "Fishing Rack", and no "Fishing Hut".
+   catches", "No camp bonus", "Bonus catches only" and "Fishing Rack", and no "Fishing Hut".
 3. **Given** the filter on "Fishing Rack", **When** the list is shown, **Then** it holds only what was caught under
    that buff, the chances and the miss rate are computed among the casts under it, and the 50-catch threshold
    applies to those catches.
@@ -165,6 +199,19 @@ compare the lists and numbers with the counts of the place.
    the same as before this feature.
 6. **Given** a player who gets or loses a camp buff, **When** they look at the tabs, **Then** the filter's value
    has not changed by itself.
+7. **Given** any value of the filter, **When** the button is shown, **Then** it reads "Camp bonus: " with the
+   value in short ("Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only", "Camp bonus: Rack",
+   "Camp bonus: Hut"), and the menu names the values in full.
+8. **Given** the filter on "Bonus catches only" at a place where a Bloated fish was caught, **When** the list is
+   shown, **Then** it holds only the tagged items, the counts line and the miss rate are those of "All catches", and
+   each row shows the same chance as under "All catches".
+9. **Given** the filter on "Bonus catches only" at a place with catches but no tagged item, **When** the list is
+   shown, **Then** "What can be caught here" says "No bonus catch has been recorded here yet." and the catalog,
+   with no tagged item anywhere, "No bonus catch has been recorded yet.".
+10. **Given** the catalog on "Bonus catches only", **When** the player opens a listed item, **Then** its page shows
+    all its zones, as under "All catches".
+11. **Given** either tab with the filter shown, **When** the player looks at the buttons, **Then** they stand in two
+    rows: Skill and Source, then the Camp bonus button and Kinds (and Sort in the catalog).
 
 ---
 
@@ -320,7 +367,10 @@ buff, and compare the other's lists; build the bundled database from records wit
 - Old data and the bundled database from before this feature hold no split: the filter does not show until the
   first catch under a buff is in the data.
 - The filter and the existing filters (skill range, source, kinds, search, sort) combine: each narrows the same
-  list. Under the source "Only mine" no item is tagged from the data (one player), only the known items.
+  list. Under the source "Only mine" no item is tagged from the data (one player), only the known items, so "Bonus
+  catches only" then lists the known items alone.
+- "Bonus catches only" at a place where only ordinary fish were caught under a buff: there is bonus data, so the
+  filter shows, but nothing is tagged; the list is empty and says so (FR-045).
 - An item tagged on one map and caught without a buff on another: the catalog's list and the item tooltip follow
   the item's best place; each zone and spot row shows its own tag.
 - Pool data and camp bonus data both exist (a record from before spec 011 still carries a pool part): the one
@@ -410,11 +460,12 @@ buff, and compare the other's lists; build the bundled database from records wit
 
 **Filter**
 
-- **FR-023**: Both tabs MUST offer a filter "Camp bonus" with the values "All catches", "No camp bonus", "Fishing
-  Rack" and "Fishing Hut", in the place of the hidden "Water" button.
+- **FR-023**: Both tabs MUST offer a filter "Camp bonus" with the values "All catches", "No camp bonus", "Bonus
+  catches only" (FR-043), "Fishing Rack" and "Fishing Hut", in the place of the hidden "Water" button.
 - **FR-024**: The filter MUST be shown only when the addon's data (the bundled database, the own counts or a held
   record of another player, at any place) hold at least one cast under a condition; a condition's value MUST be
-  offered only when those data hold casts under that condition.
+  offered only when those data hold casts under that condition. "All catches", "No camp bonus" and "Bonus catches
+  only" are offered whenever the filter is shown.
 - **FR-025**: With a condition chosen, the list, the chances, the miss rate, the counts and the 50-catch threshold
   MUST be computed from that condition's part only.
 - **FR-026**: With "No camp bonus" chosen, they MUST be computed from the totals minus every cast that counted for
@@ -478,6 +529,38 @@ buff, and compare the other's lists; build the bundled database from records wit
   hook), the aura's clock, the aura events out of a fight, the camp features' icons, and the size of a record with
   parts.
 
+**After the first try in game (decisions 21 to 31)**
+
+- **FR-041**: Both tabs MUST lay their filter buttons out in two rows. "What can be caught here": row A Skill and
+  Source; row B the one slot (the Water or the Camp bonus button, FR-023), then Kinds; the Kinds button no longer
+  sits at the top right, so the place's line has the tab's full width. The catalog, top to bottom: the search box,
+  its status line (FR-048), row A Skill and Source, row B the slot, Kinds and Sort, then the list. In row B each
+  button follows the one before it, so a longer text pushes the next one along; without pool or bonus data Kinds
+  starts the row.
+- **FR-042**: The Camp bonus button MUST read "Camp bonus: " with the chosen value in short, one whole text per value
+  so that each language words it its own way: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only",
+  "Camp bonus: Rack", "Camp bonus: Hut". The menu MUST name the values in full (FR-023); the button's tooltip keeps
+  "Camp bonus" as its title.
+- **FR-043**: The value "Bonus catches only" MUST come after "No camp bonus" in the menu. It is a filter of the list
+  over "All catches", like the kind filter: it keeps the items that carry a tag (FR-016 to FR-018: the known Bloated
+  fish always, and the items tagged from the data), one value for every condition. It needs no sums of its own: the
+  catch database never sees it, and the catalog reads the index of "All catches" for it.
+- **FR-044**: Under "Bonus catches only" every number MUST be the one of "All catches": the counts line and the miss
+  rate are unchanged, and each row shows its chance with the bonus (or "Little data") as under "All catches". In the
+  catalog, a listed item's page MUST show all the item's zones, as under "All catches".
+- **FR-045**: Under "Bonus catches only" an empty list MUST say so: "No bonus catch has been recorded here yet." in
+  "What can be caught here" (where the place has catches but no tagged item), "No bonus catch has been recorded
+  yet." in the catalog's status line. The kind filter's messages stay as they are when it hides the tagged items.
+- **FR-046**: The "Per catch" column MUST be rounded to one decimal and written whole when the rounded value is
+  whole, with the client's decimal separator: 1 reads "1", 1.04 "1", 1.25 "1.3", 1.5 "1.5" ("1,5" on a German
+  client).
+- **FR-047**: "What can be caught here" MUST show, from the top: the place, the scope line, the hints (up to three
+  lines, their room always kept, so nothing below moves), the exchange line, the counts, the two rows of buttons,
+  the column headers and the list. The list MUST scroll (the catalog's scroll list, shared by both tabs); the line
+  "and N more" MUST appear only in the fallback list of a client without the scroll templates.
+- **FR-048**: The catalog's status line (the index being counted, the empty states) MUST sit under the search box on
+  the list, and where the zones begin on an item's page.
+
 ### Key Entities
 
 - **Condition**: a camp fishing buff a cast can be made under (the plan, the code and the interface call it a
@@ -493,7 +576,7 @@ buff, and compare the other's lists; build the bundled database from records wit
 - **Tag**: the mark "Fishing Rack bonus" or "Fishing Hut bonus" on an item in a list or a tooltip, from the known
   list or derived from the data.
 - **Camp bonus filter**: the player's choice of which casts a tab counts: all, those under no condition, or those
-  under one condition.
+  under one condition; or, as a filter of the list over all casts, only the tagged items ("Bonus catches only").
 - **Camp bonus counts**: the statistics' two numbers per period: casts with a camp bonus, bonus catches.
 
 ## Success Criteria *(mandatory)*

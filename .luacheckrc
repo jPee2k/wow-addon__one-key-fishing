@@ -42,6 +42,7 @@ read_globals = {
     "C_RestrictedActions",
     "C_ChatInfo", "C_BattleNet", "C_FriendList", "C_EncodingUtil",
     "C_Texture",
+    "C_UnitAuras", "C_Secrets",
 
     -- Other addons (optional; only their public API is read: Catch/Prices.lua)
     "Auctionator",

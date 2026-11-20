@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import luaparse from "luaparse";
-import { harvest, parseArgs, parseSeed, proofStep, seedProblems } from "../../tools/harvest.mjs";
+import { checkCell, harvest, parseArgs, parseSeed, proofStep, seedProblems } from "../../tools/harvest.mjs";
 
 // A JS value as Lua source, the way the game writes saved variables (string and number keys in brackets).
 function toLua(value) {
@@ -23,7 +23,7 @@ function toLua(value) {
     return `{ ${value.map(toLua).join(", ")} }`;
   }
   const fields = Object.entries(value).map(([key, field]) =>
-    `[${/^\d+$/.test(key) ? key : JSON.stringify(key)}] = ${toLua(field)}`);
+    `[${/^(0|[1-9]\d*)$/.test(key) ? key : JSON.stringify(key)}] = ${toLua(field)}`);
   return `{\n${fields.join(",\n")}\n}`;
 }
 
@@ -885,6 +885,103 @@ export const tests = [
       assert.equal(c.a["31"], undefined, "one cast scaled to nothing");
       const total = Object.values(c.a).reduce((sum, n) => sum + n, 0);
       assert.ok(total <= c.c + c.m, "within the cell's casts");
+    },
+  },
+  {
+    name: "camp bonus parts: kept by the cleaned cell; a part above the totals or under a bad key skips its cell",
+    fn() {
+      const env = setup();
+      const P = "pppppppp";
+      const part = (c, m, items = {}) => ({ c, m, i: items });
+      fs.writeFileSync(env.friend, savedFile({
+        [P]: record(P, 0, 2, { "1.60.1": {
+          "1415:3:47": cell(10, 4, { 6291: [8, 8], 6643: [2, 2] },
+            { q: { 1: part(3, 1, { 6643: [2, 2], 6291: [1, 1] }) } }),
+          "1415:3:11": cell(3, 0, { 6291: [3, 3] }, { q: { 1: part(4, 0) } }),
+          "1415:3:12": cell(3, 0, { 6291: [3, 3] }, { q: { 0: part(1, 0) } }),
+          "1415:3:13": cell(3, 0, { 6291: [3, 3] }, { q: { "01": part(1, 0) } }),
+          "1415:3:14": cell(3, 0, { 6291: [3, 3] }, { q: { x: part(1, 0) } }),
+          "1415:3:15": cell(3, 0, { 6291: [3, 3] }, { q: { 1: part(1, 0, { 6291: [2, 2] }) } }),
+        } }),
+      }));
+      const report = run(env).report.join("\n");
+      for (const key of ["11", "12", "13", "14", "15"]) {
+        assert.match(report, new RegExp(`skipped {3}pppppppp cell 1415:3:${key}`), `cell ${key} skipped`);
+      }
+      const stored = readSeed(env.outDir).store.contributions[`${P}@0`].builds["1.60.1"];
+      assert.deepEqual(stored["1415:3:47"].q, { 1: { c: 3, m: 1, i: { 6291: { 1: 1, 2: 1 }, 6643: { 1: 2, 2: 2 } } } },
+        "the part kept");
+      assert.equal(stored["1415:3:11"], undefined, "a part above the totals");
+    },
+  },
+  {
+    name: "camp bonus parts of one mask are summed per place, with their own players",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-bonus-sum-"));
+      const file = path.join(root, "author.lua");
+      const records = {
+        caaaaaa2: oneCell("caaaaaa2", 0, 1, "1415:3:47", cell(5, 1, { 6291: [5, 5] },
+          { q: { 1: { c: 2, m: 1, i: { 6291: [2, 2] } } } })),
+        daaaaaa2: oneCell("daaaaaa2", 0, 1, "1415:3:47", cell(4, 0, { 6291: [3, 3], 6643: [1, 1] },
+          { q: { 1: { c: 1, m: 0, i: { 6643: [1, 1] } }, 3: { c: 1, m: 0, i: { 6291: [1, 1] } } } })),
+        eaaaaaa2: oneCell("eaaaaaa2", 0, 1, "1415:3:47", cell(6, 0, { 6291: [6, 6] })),
+      };
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(file, savedFile(records));
+      harvest({ files: [file], outDir, now: NOW });
+      const text = readSeed(outDir).text;
+      const c = parseSeed(text).cells["1415:3:47"];
+      assert.equal(c.c, 15, "the totals");
+      assert.equal(c.k, 3, "three players");
+      assert.equal(c.q["1"].c, 3, "the Rack's catches summed");
+      assert.equal(c.q["1"].m, 1, "its misses");
+      assert.equal(c.q["1"].k, 2, "two players under the Rack");
+      assert.deepEqual(c.q["1"].i, { 6291: { 1: 2, 2: 2 }, 6643: { 1: 1, 2: 1 } }, "its items");
+      assert.equal(c.q["1"].r, undefined, "nothing weighted: no raw catches");
+      assert.equal(c.q["1"].x, undefined, "nor catches weighted by casts");
+      assert.equal(c.q["3"].k, 1, "one player under both");
+      assert.match(text, /q = \{\n {8}\["1"\] = \{ c = 3, m = 1, k = 2, i = \{/, "written with string keys");
+      checkCell(c, "1415:3:47");
+    },
+  },
+  {
+    name: "a weighted contributor's bonus parts and the rest are scaled apart; p beside q is dropped",
+    fn() {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "okf-harvest-bonus-scale-"));
+      const file = path.join(root, "author.lua");
+      const records = {};
+      for (const id of ["caaaaaa2", "daaaaaa2", "eaaaaaa2", "faaaaaa2"]) {
+        records[id] = oneCell(id, 0, 3, "1415:3:47", cell(10, 10, { 6291: [10, 10] }));
+      }
+      // One of the four with a pool part (from before spec 011): beside the big one's q it is dropped.
+      records.caaaaaa2.builds["1.60.1"]["1415:3:47"].p = { c: 2, i: { 6291: [2, 2] } };
+      // 27 catches and 6 misses: capped by catches at 10 (10 / 27), by casts at 20 (20 / 33); a pool part beside q.
+      records.gaaaaaa2 = oneCell("gaaaaaa2", 0, 3, "1415:3:47", cell(27, 6, { 6291: [20, 22], 6643: [5, 5],
+        6303: [2, 2] }, {
+        p: { c: 2, i: { 6303: [2, 2] } },
+        q: { 1: { c: 9, m: 3, i: { 6643: [5, 5], 6291: [4, 4] } }, 3: { c: 7, m: 2, i: { 6291: [7, 9] } } },
+      }));
+      const outDir = path.join(root, "out");
+      fs.writeFileSync(file, savedFile(records));
+      harvest({ files: [file], outDir, now: NOW });
+      const text = readSeed(outDir).text;
+      const c = parseSeed(text).cells["1415:3:47"];
+      const f = 10 / 27;
+      const mf = 20 / 33;
+      checkCell(c, "1415:3:47");
+      assert.equal(c.p, undefined, "no pool part beside the bonus parts");
+      assert.equal(c.q["1"].c, Math.round(9 * f), "part 1 catches");
+      assert.equal(c.q["3"].c, Math.round(7 * f), "part 3 catches");
+      assert.equal(c.c, 40 + Math.round(9 * f) + Math.round(7 * f) + Math.round(11 * f), "the parts plus the rest");
+      assert.equal(c.q["1"].m, Math.round(3 * mf), "part 1 misses by the cast factor");
+      assert.equal(c.q["3"].m, Math.round(2 * mf), "part 3 misses by the cast factor");
+      const inParts = (c.q["1"].i["6643"] ? c.q["1"].i["6643"]["1"] : 0)
+        + (c.q["3"].i["6643"] ? c.q["3"].i["6643"]["1"] : 0);
+      assert.equal(c.i["6643"]["1"], inParts, "the Bloated fish's catches all in parts");
+      assert.equal(c.q["1"].k, 1, "one player under the Rack");
+      assert.equal(c.q["1"].r, 9, "its raw catches");
+      assert.equal(c.q["1"].x, Math.round(9 * mf), "its catches weighted by casts");
+      assert.match(text, /q = \{/, "written");
     },
   },
   {

@@ -66,11 +66,10 @@ A mask with bits this version does not know (4 and above) is valid and kept.
 
 | Name | Meaning |
 |---|---|
-| `state[key] = { known, expires, first }` | `known`: read at least once this session; `expires`: the game clock time the buff ends, nil when not active; `first`: the seconds left when this `expires` was first seen |
+| `state[key] = { known, expires }` | `known`: read at least once this session; `expires`: the game clock time the buff ends, nil when not active |
 | `castMasks[castID]` | the mask at that cast's start, or `false` when it was unknown; dropped when a later cast settles, or when more than eight casts old |
-| `warned[key]` | the `expires` whose five-minute crossing was passed (noticed or not) |
-| `ended[key]` | the `expires` whose end was passed (noticed or not) |
-| `seen[key]` | the seconds left at the last check, for the crossings |
+| `tracked[key]` | the `expires` of the buff the last check saw active; cleared at its end, so the end passes once |
+| `seen[key]` | the seconds left at the last check of that buff (when first seen: its seconds left then), for the crossings; once at or below 300 the five-minute crossing cannot pass again for that buff |
 | `lastMask` | the mask `CastMask` last answered (the debug report) |
 
 ### State of a bonus
@@ -106,6 +105,18 @@ after its cast stopped, when the next cast may have started, and two modules ask
 | `"none"` | the cell's `c`, `m`, `i` minus all its parts |
 
 With `bonus ~= "all"` the water filter is read as `"all"`. The filter's cache key: `range|source|water|bonus`.
+
+### The value "bonusOnly" (UI and catalog only)
+
+"Bonus catches only" (research R20) is a filter of the list, not of the sums: no cell is counted differently and it
+never reaches `CatchDB`, so `FilterKey` and the views know only `"all"`, `"none"` and the bonus keys.
+
+| Where | What `"bonusOnly"` becomes |
+|---|---|
+| "What can be caught here" (`UI/CatchHere.lua`) | the tab's value; the query gets `bonus = "all"` (`CatchHere.QueryBonus`), and the view's items are narrowed to those whose `item.bonus` is not `plain` (`CatchHere.BonusItems`) |
+| the catalog (`Catalog/Catalog.lua`) | `IndexFilter` turns it into the filter of `"all"` before `FilterKey`, so the index of "All catches" serves it (no index of its own); `Catalog.Items` keeps the rows whose `bonus` is not `plain`; `Places` and `Spots` read that index unchanged |
+
+It lives in memory per tab like the other values, and is offered whenever the filter shows.
 
 ### A view item's bonus
 

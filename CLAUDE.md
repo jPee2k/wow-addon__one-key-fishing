@@ -28,9 +28,11 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   help, the addon name, language names. Details: [docs/architecture/core.md](docs/architecture/core.md),
   [docs/languages.md](docs/languages.md).
 - **Claude cannot run the game.** In-game testing is always handed to the user with a checklist
-  (`docs/checklists/`, template and order in its `README.md`). Code built on an assumption only the game can
+  (`docs/checklists/`, template and order in its `README.md`). A chat command given to the author (`/run`,
+  `/dump`) is at most 255 characters, the chat line's limit (a longer one is cut and fails): count it with a tool
+  before giving it, and split a longer one into several. Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013, 016, 018 and 019 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016, 018, 019 and 020 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -97,7 +99,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
-| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
+| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `CampBonuses`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names and the own name, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
@@ -107,6 +109,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Catch/Catch.lua` | casts and loot become `FISH_CAUGHT` / `FISH_MISSED` | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Catch/Prices.lua`, `Catch/Auction.lua` | item values, their auction price from the own scan or from Auctionator; auction scans | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Skill.lua` | the Fishing rank, rank names, the next-rank advice and its notices | [fishing-mode.md](docs/architecture/fishing-mode.md) |
+| `Fishing/Camp.lua` | the camp bonuses (the fishing buffs of a Fishing Rack or a Fishing Hut): the aura state kept through a fight, the bonus mask of each cast, the notices before and at a bonus's end | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Sound.lua` | the fishing sounds (bell, hook, rare loot) of the "Sound effects" page, their volume (files under `Media/Sounds/`), silent in fights; the page's game audio settings are rows of `Fishing/Mode.lua` | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
@@ -146,6 +149,11 @@ Cross-module rules:
   `L` or another module there; [game-data.md](docs/architecture/game-data.md)); addon tuning stays in its module.
 - A module split over several files shares its internals through `<Module>.private` (`CatchDB`, `Comm`, `Share`);
   what only the tests need lives there too. No file of another folder reads it (`npm run check`).
+- A cast's camp bonus mask is asked from `ns.Camp.CastMask(castID)` (both `Catch/Stats.lua` and `CatchDB/Events.lua`
+  ask for the cast they settle), never sent in a message: `FISH_CAUGHT` and `FISH_MISSED` keep their arguments. A
+  cell's bonus parts `q` are inclusive (already in its `c`, `m`, `i`), disjoint (a cast is in one part) and keyed by
+  the mask as a string (`q["1"]`, never `q[1]`); no total changes because of them. A view never fetches another view:
+  an item's camp bonus tag and its numbers are summed in the pass over the view's own scope (spec 020).
 - The auction scan's items beyond the own catches come from `CatchDB.ScanItems` through `Auction.SetItemSource`
   (set by `CatchDB/Views.lua`); `Catch/Auction.lua` names no module of layer 2.
 - The catalog follows the data through `CatchDB.MapStamp` (and `GetStampVersion`), not through a message; it sends
@@ -163,6 +171,8 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
   once per cast; the answer of a hook press without a catch, for the hook sound; the cast still settles by
   `FISH_MISSED`)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
+- `CAMP_BONUS_WARNING` (text: a camp bonus ends in 5 minutes or has ended, `Fishing/Camp.lua`; the toast shows it even
+  with catch notifications off)
 - `SKILL_WARNING` (text, loud: a next-rank notice of `Fishing/Skill.lua`, loud at the cap; the toast shows it even
   with catch notifications off), `MAP_PIN_SET` (placeName, or nil when the game refused the pin: `Core/MapPin.lua`
   answered a click; the toast shows it)

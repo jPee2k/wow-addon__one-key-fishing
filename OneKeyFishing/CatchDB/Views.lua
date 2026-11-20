@@ -30,7 +30,7 @@ local NEW_ITEM_REPORTERS = 3 -- other contributions that must report an item nei
 -- { min, max }, the skill ranges the item was caught in. These three are never weighted.
 local function NewSum()
     return { c = 0, m = 0, x = 0, i = {}, a = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {}, px = 0,
-        py = 0, n = 0, ranges = {} }
+        py = 0, n = 0, ranges = {}, water = "all", bonus = "all" }
 end
 
 local function AddRanges(sum, cell, range)
@@ -49,22 +49,8 @@ local function AddRanges(sum, cell, range)
     end
 end
 
--- factor: the weight of the cell's counts (research.md R7 of part 3), 1 when nil.
-local function AddCounts(target, cell, factor)
-    factor = factor or 1
-    target.c = target.c + (tonumber(cell.c) or 0) * factor
-    target.m = target.m + (tonumber(cell.m) or 0) * factor
-    if type(cell.i) == "table" then
-        for itemID, entry in pairs(cell.i) do
-            if type(entry) == "table" then
-                local total = target.i[itemID] or { 0, 0 }
-                total[1] = total[1] + (tonumber(entry[1]) or 0) * factor
-                total[2] = total[2] + (tonumber(entry[2]) or 0) * factor
-                target.i[itemID] = total
-            end
-        end
-    end
-end
+-- AddCounts(target, cell, factor): CatchDB.lua; factor is the weight of the cell's counts (research.md R7 of part 3).
+local AddCounts, PartMask = P.AddCounts, P.PartMask
 
 -- A cell read through the water filter (specs/005-catch-catalog, research R5): "pool" its pool part, "open" the
 -- rest; both without misses, which have no loot source. A cell without a pool part is all open water. The
@@ -90,16 +76,171 @@ local function ThroughWater(cell, water)
     return { c = (tonumber(cell.c) or 0) - poolCatches, m = 0, i = items, k = cell.k, a = cell.a }
 end
 
+-- The camp bonuses (specs/020-camp-buffs), in rank order: a later one is the higher bonus. What a bonus is (its bit,
+-- its known items) is Camp's (Fishing/Camp.lua); a part's key is CatchDB.lua's (PartMask).
+local BONUSES = ns.GameData.CampBonuses
+local Camp = ns.Camp
+
+-- The cell's bonus parts as a table, or nil.
+local function Parts(cell)
+    return type(cell.q) == "table" and cell.q or nil
+end
+
+-- a with the known bonus bits of b added: the union of two masks, without bits this version does not know.
+local function OrMasks(a, b)
+    for _, bonus in ipairs(BONUSES) do
+        if Camp.HasBit(b, bonus.key) and not Camp.HasBit(a, bonus.key) then
+            a = a + bonus.bit
+        end
+    end
+    return a
+end
+
+-- The union of the masks of a cell's parts: the bonuses the cell holds data for.
+local function PartsUnion(parts)
+    local union = 0
+    for key in pairs(parts) do
+        local mask = PartMask(key)
+        if mask then
+            union = OrMasks(union, mask)
+        end
+    end
+    return union
+end
+
+-- A cell read through the camp bonus filter (specs/020-camp-buffs, research R6, R15): a bonus key sums the parts
+-- whose mask has its bit (a cast under both bonuses counts for both); "none" is the cell minus all its parts, each
+-- cast once, a part of a mask this version does not know included. A key takes a seed cell's players (the largest k
+-- of its parts), raw catches (r) and catches weighted by casts (x) from those parts; "none" keeps the cell's k and
+-- drops r and x of a cell it reduces, as the water filter does. A cell without parts is all "none": it is read whole,
+-- r and x included, so a place without bonus data shows the same numbers under "none" as under "all".
+local function ThroughBonus(cell, bonus)
+    local parts = Parts(cell)
+    if bonus == "none" then
+        if not parts then
+            return cell -- read only
+        end
+        local out = { c = 0, m = 0, i = {}, k = cell.k, a = cell.a }
+        AddCounts(out, cell)
+        for _, part in pairs(parts) do
+            if type(part) == "table" then
+                AddCounts(out, part, -1)
+            end
+        end
+        return out
+    end
+    local out = { c = 0, m = 0, i = {}, a = cell.a, r = 0, x = 0 }
+    local k
+    for key, part in pairs(parts or {}) do
+        local mask = PartMask(key)
+        if mask and type(part) == "table" and Camp.HasBit(mask, bonus) then
+            AddCounts(out, part)
+            local c = tonumber(part.c) or 0
+            out.r, out.x = out.r + (tonumber(part.r) or c), out.x + (tonumber(part.x) or c)
+            if tonumber(part.k) then
+                k = math.max(k or 0, tonumber(part.k))
+            end
+        end
+    end
+    out.k = k or cell.k
+    return out
+end
+
+-- Marks who holds an item: the seed (a flag), the own catch, or another record's ID.
+local function MarkHolder(byItem, itemID, source)
+    local holder = byItem[itemID] or {}
+    byItem[itemID] = holder
+    if source.seed then
+        holder.seed = true
+    elseif source.other then
+        holder.ids = holder.ids or {}
+        holder.ids[source.id] = true
+    else
+        holder.own = true
+    end
+end
+
+-- Who holds each item under each bonus the sum asks about (research R7 of spec 020): holders[key][itemID], from the
+-- raw cell's parts.
+local function AddHolders(sum, parts, source)
+    for partKey, part in pairs(parts) do
+        local mask = PartMask(partKey)
+        if mask and type(part) == "table" and type(part.i) == "table" then
+            for key, byItem in pairs(sum.holders) do
+                if Camp.HasBit(mask, key) then
+                    for itemID, entry in pairs(part.i) do
+                        if type(entry) == "table" and (tonumber(entry[1]) or 0) > 0 then
+                            MarkHolder(byItem, itemID, source)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- A scope's sum also gathers what its items' camp bonus tags need (BuildView, Tag), only what its filter reads: the
+-- holders of the bonuses it may tag from the data (none under "none" or the source "mine"); under "all" one sub-sum
+-- per bonus, under a key the unfiltered catches of each item.
+local function StartTagSums(sum, mine)
+    sum.tagged = true
+    if sum.bonus ~= "none" and not mine then
+        sum.holders = {}
+        for _, bonus in ipairs(BONUSES) do
+            if sum.bonus == "all" or sum.bonus == bonus.key then
+                sum.holders[bonus.key] = {}
+            end
+        end
+    end
+    if sum.bonus == "all" then
+        sum.subs = {}
+    elseif sum.holders then
+        sum.rawAll = {}
+    end
+end
+
 -- range: the skill range of the cell's place key.
 local function AddCell(sum, cell, source, range)
     if type(cell) ~= "table" then
         return
     end
+    -- The camp bonus tag's sums, from the raw cell in the same pass (research R7 of spec 020).
+    local parts = sum.tagged and Parts(cell)
+    if parts then
+        if sum.holders then
+            AddHolders(sum, parts, source)
+        end
+        if sum.subs then
+            local union = PartsUnion(parts)
+            for _, bonus in ipairs(BONUSES) do
+                if Camp.HasBit(union, bonus.key) then
+                    local sub = sum.subs[bonus.key]
+                    if not sub then
+                        sub = NewSum()
+                        sub.bonus = bonus.key
+                        sum.subs[bonus.key] = sub
+                    end
+                    AddCell(sub, cell, source, range)
+                end
+            end
+        end
+    end
+    if sum.rawAll and type(cell.i) == "table" then
+        for itemID, entry in pairs(cell.i) do
+            if type(entry) == "table" then
+                sum.rawAll[itemID] = (sum.rawAll[itemID] or 0) + (tonumber(entry[1]) or 0)
+            end
+        end
+    end
     if tonumber(cell.px) and tonumber(cell.py) then
         sum.px, sum.py = sum.px + cell.px, sum.py + cell.py
         sum.n = sum.n + (tonumber(cell.c) or 0) + (tonumber(cell.m) or 0)
     end
-    cell = ThroughWater(cell, sum.water)
+    if sum.bonus ~= "all" then
+        cell = ThroughBonus(cell, sum.bonus) -- the water filter does not combine with it (research R6)
+    else
+        cell = ThroughWater(cell, sum.water)
+    end
     AddRanges(sum, cell, range)
     -- Who caught something here: a cell of misses only adds no player.
     if (tonumber(cell.c) or 0) > 0 then
@@ -133,15 +274,18 @@ end
 
 -- What a source sums for a map. "all": the seed, the own record and, with sharing on, the other players'
 -- records, each without its cells of game versions older than a reset of the map (after a patch that changed its
--- catch); "mine": the lifetime counts. A record's cells count for its ID in the player count.
-local function Sources(source, mapID, water)
+-- catch); "mine": the lifetime counts. A record's cells count for its ID in the player count. The filter's water
+-- and camp bonus go along; a bonus filter other than "all" reads the water as "all" (research R6 of spec 020).
+local function Sources(filter, mapID)
+    local source, bonus = filter.source, filter.bonus or "all"
+    local water = bonus == "all" and filter.water or "all"
     if source == "mine" then
-        return { tables = { { cells = ns.db.shared.mine } }, water = water }
+        return { tables = { { cells = ns.db.shared.mine } }, water = water, bonus = bonus, mine = true }
     end
     local reset = SeedField("resets")[mapID]
     local own = OwnRecord()
     local sources = { seed = { cells = Seed().cells, seed = true }, tables = {}, reset = reset,
-        others = ns.Share.IsEnabled() and Others() or nil, water = water }
+        others = ns.Share.IsEnabled() and Others() or nil, water = water, bonus = bonus }
     local records = { own }
     for _, record in ipairs(Frozen()) do
         table.insert(records, record)
@@ -167,7 +311,8 @@ end
 -- One cell of a map over the given skill ranges.
 local function SumSpot(sources, mapID, ranges, cell)
     local sum = NewSum()
-    sum.water = sources.water
+    sum.water, sum.bonus = sources.water, sources.bonus
+    StartTagSums(sum, sources.mine)
     for _, range in ipairs(ranges) do
         local key = CatchDB.PlaceKey(mapID, range, cell)
         if sources.seed then
@@ -200,7 +345,8 @@ end
 
 local function SumMap(sources, mapID, ranges)
     local sum, own = NewSum(), OwnIndex()
-    sum.water = sources.water
+    sum.water, sum.bonus = sources.water, sources.bonus
+    StartTagSums(sum, sources.mine)
     for _, range in ipairs(ranges) do
         local prefix = MapRange(mapID, range)
         if sources.seed then
@@ -337,8 +483,88 @@ local function Reporters(sources, mapID)
     return reporters
 end
 
+local BuildView -- defined below; Tag builds the bonuses' views of the same scope with it
+
+-- Whether the seed, or at least NEW_ITEM_REPORTERS players (the own catch one of them), hold the item under the bonus.
+-- Never under the source "mine" or "none": the sum gathered no holders there.
+local function Holds(sum, key, itemID)
+    local byItem = sum.holders and sum.holders[key]
+    local holder = byItem and byItem[itemID]
+    if not holder then
+        return false
+    end
+    return holder.seed == true or (holder.own and 1 or 0) + CountKeys(holder.ids or {}) >= NEW_ITEM_REPORTERS
+end
+
+-- An item's bonus with the numbers of a view under that bonus (entry: the item in it), or, without an entry, a known
+-- item that has no data under its bonus.
+local function BonusNumbers(key, entry, view)
+    if not entry then
+        return { key = key, littleData = true, catches = 0, players = 0 }
+    end
+    return { key = key, chance = entry.chance, littleData = view.littleData, catches = view.catches,
+        players = view.players }
+end
+
+local function ItemsByID(view)
+    local byID = {}
+    for _, item in ipairs(view and view.items or {}) do
+        byID[item.itemID] = item
+    end
+    return byID
+end
+
+-- The camp bonus tag of a view's items (data-model.md "A view item's bonus", research R7 of spec 020), from the sums
+-- gathered in the same pass over the same scope: no other view is fetched. A known item carries its key in every
+-- view; an item is tagged from the data when every raw catch of it in the scope lies under the bonus and the seed or
+-- three players hold it so; the higher-ranked bonus wins in an "all" view. Untagged items keep their numbers.
+local function Tag(view, sum, rules, scope)
+    local bonus = sum.bonus
+    if bonus == "all" then
+        -- A bonus's view of the same scope, built only when an item asks for it.
+        local subViews, subItems = {}, {}
+        local function Sub(key)
+            if subItems[key] == nil then
+                subViews[key] = sum.subs[key] and BuildView(scope, sum.subs[key], rules)
+                subItems[key] = ItemsByID(subViews[key])
+            end
+            return subViews[key], subItems[key]
+        end
+        for _, item in ipairs(view.items) do
+            local known = Camp.KnownBonus(item.itemID)
+            if known then
+                local subView, items = Sub(known)
+                item.bonus = BonusNumbers(known, items[item.itemID], subView)
+            else
+                for i = #BONUSES, 1, -1 do
+                    local key = BONUSES[i].key
+                    if Holds(sum, key, item.itemID) then
+                        local subView, items = Sub(key)
+                        local entry = items[item.itemID]
+                        if entry and entry.catches == item.catches then
+                            item.bonus = BonusNumbers(key, entry, subView)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        return
+    end
+    for _, item in ipairs(view.items) do
+        local known = Camp.KnownBonus(item.itemID)
+        if known == bonus then
+            item.bonus = BonusNumbers(bonus, item, view)
+        elseif known then
+            item.bonus = { key = known, plain = true }
+        elseif sum.rawAll and item.catches == (sum.rawAll[item.itemID] or 0) and Holds(sum, bonus, item.itemID) then
+            item.bonus = BonusNumbers(bonus, item, view)
+        end
+    end
+end
+
 -- rules: { mine = source "mine" (every item shown), reporters = Reporters(...) }.
-local function BuildView(scope, sum, rules)
+function BuildView(scope, sum, rules)
     local players = Players(sum)
     local factors, castFactors = WeightFactors(sum, players, Catches), WeightFactors(sum, players, Casts)
     local weighted, raw = { c = 0, m = 0, i = {} }, { c = 0, m = 0, i = {} }
@@ -389,20 +615,37 @@ local function BuildView(scope, sum, rules)
         others = others or sum.parts[id] ~= nil
     end
     local catches = RawCatches(sum)
-    return { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches, misses = raw.m,
-        -- No miss rate under a water filter: a miss has no loot source (FR-022).
+    local view = { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches,
+        misses = raw.m,
+        -- No miss rate under a water filter: a miss has no loot source (FR-022). A camp bonus part has its misses,
+        -- so the miss rate stays under a bonus filter (spec 020).
         missRate = (sum.water or "all") == "all" and (casts > 0 and misses / casts or 0) or nil, items = items,
         players = players, others = others,
         point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
+    if sum.tagged then
+        Tag(view, sum, rules, scope)
+    end
+    return view
 end
 
 local function Ranges(filter)
     return filter.range == "all" and CatchDB.RANGES or { filter.range }
 end
 
--- "<range>|<source>|<water>": a filter as the view caches (and the catalog, Catalog.lua) key it.
+-- "<range>|<source>|<water>|<bonus>": a filter as the view caches (and the catalog, Catalog.lua) key it; a missing
+-- water or bonus reads as "all".
 function CatchDB.FilterKey(filter)
-    return tostring(filter.range) .. "|" .. filter.source .. "|" .. (filter.water or "all")
+    return tostring(filter.range) .. "|" .. filter.source .. "|" .. (filter.water or "all") .. "|"
+        .. (filter.bonus or "all")
+end
+
+-- The camp bonus keys in rank order, for the menus (spec 020).
+function CatchDB.BonusKeys()
+    local keys = {}
+    for i, bonus in ipairs(BONUSES) do
+        keys[i] = bonus.key
+    end
+    return keys
 end
 local FilterKey = CatchDB.FilterKey
 
@@ -430,7 +673,7 @@ function CatchDB.Query(mapID, cell, filter)
         return cache[cacheKey]
     end
     local ranges = Ranges(filter)
-    local sources = Sources(filter.source, mapID, filter.water)
+    local sources = Sources(filter, mapID)
     local reportersKey = mapID .. "|" .. filter.source
     reportersCache[reportersKey] = reportersCache[reportersKey] or Reporters(sources, mapID)
     local rules = { mine = filter.source == "mine", reporters = reportersCache[reportersKey] }
@@ -467,7 +710,7 @@ end
 -- catalog's zone rows and the tooltips (specs/005-catch-catalog/contracts/api.md).
 function CatchDB.QueryMap(mapID, filter)
     return ByStamp("map", mapID, filter, function()
-        local sources = Sources(filter.source, mapID, filter.water)
+        local sources = Sources(filter, mapID)
         local map = SumMap(sources, mapID, Ranges(filter))
         return BuildView(RawCatches(map) > 0 and "map" or "none", map, MapRules(sources, mapID, filter))
     end)
@@ -477,7 +720,7 @@ end
 -- carries cell and, with positions, point.
 function CatchDB.QueryCells(mapID, filter)
     return ByStamp("cells", mapID, filter, function()
-        local sources, ranges = Sources(filter.source, mapID, filter.water), Ranges(filter)
+        local sources, ranges = Sources(filter, mapID), Ranges(filter)
         local rules, views = MapRules(sources, mapID, filter), {}
         for cell in pairs(MapCells(sources, mapID, ranges)) do
             local sum = SumSpot(sources, mapID, ranges, cell)
@@ -526,10 +769,28 @@ function CatchDB.Maps(filter)
     return list
 end
 
+-- Calls fn(cells) for every held cell table until it returns true: the seed, the own counts and every record's builds
+-- (with sharingOnly, other players' records only while sharing is on: the views read them only then).
+local function EachHeldCells(fn, sharingOnly)
+    if fn(Seed().cells) or fn(ns.db.shared.mine) then
+        return
+    end
+    local myID, sharing = ns.db.shared.myID, ns.Share.IsEnabled()
+    for unit, record in pairs(ns.db.shared.records) do
+        if (sharing or unit == myID or not sharingOnly) and type(record) == "table"
+            and type(record.builds) == "table" then
+            for _, cells in pairs(record.builds) do
+                if fn(cells) then
+                    return
+                end
+            end
+        end
+    end
+end
+
 -- True once any held cell has a pool part (research R5): the "Water" filter shows only then. A false answer is kept
 -- until the stored data changes (SHARED_DATA_CHANGED). No own catch writes one since spec 011 (the source is not
 -- known); only data from older builds can have it.
-
 local function AnyPool(cells)
     for _, cell in pairs(type(cells) == "table" and cells or {}) do
         if type(cell) == "table" and type(cell.p) == "table" and (tonumber(cell.p.c) or 0) > 0 then
@@ -541,14 +802,37 @@ end
 
 function CatchDB.HasPoolData()
     if P.poolData == nil then
-        P.poolData = AnyPool(Seed().cells) or AnyPool(ns.db.shared.mine)
-        for _, record in pairs(ns.db.shared.records) do
-            for _, cells in pairs(type(record) == "table" and type(record.builds) == "table" and record.builds or {}) do
-                P.poolData = P.poolData or AnyPool(cells)
-            end
-        end
+        P.poolData = false
+        EachHeldCells(function(cells)
+            P.poolData = AnyPool(cells)
+            return P.poolData
+        end)
     end
     return P.poolData
+end
+
+-- True once a held cell has a camp bonus part of the bonus `key` (any bonus without one; specs/020-camp-buffs,
+-- FR-024): the seed, the own counts, the own record and, while sharing is on, other players' records; a part of a bit
+-- this version does not know counts for nothing. The "Camp bonus" button shows only then. P.bonusData keeps the union
+-- of every held part's mask; dropped at ADDON_LOADED, on every SHARED_DATA_CHANGED (a record with the only part may
+-- leave: FR-027) and when the own catch makes a new part (CatchDB.lua).
+function CatchDB.HasBonusData(key)
+    if P.bonusData == nil then
+        local bits = 0
+        EachHeldCells(function(cells)
+            for _, cell in pairs(type(cells) == "table" and cells or {}) do
+                local parts = type(cell) == "table" and Parts(cell)
+                if parts then
+                    bits = OrMasks(bits, PartsUnion(parts))
+                end
+            end
+        end, true)
+        P.bonusData = bits
+    end
+    if key == nil then
+        return P.bonusData > 0
+    end
+    return Camp.HasBit(P.bonusData, key)
 end
 
 -- The seed's cell of a place key, or nil (the eviction order of Share.lua weighs records by it).
@@ -566,13 +850,34 @@ function CatchDB.HasSeed()
     return next(Seed().cells) ~= nil
 end
 
+-- The own counts of each camp bonus part of a place (spec 020, FR-038), English, for the debug report: "bonus parts
+-- here: 1 = 12 catches / 3 misses, 3 = ..." by mask, or "none".
+function CatchDB.DescribeBonusParts(placeKey)
+    local cell = placeKey and ns.db.shared.mine[placeKey]
+    local parts = type(cell) == "table" and Parts(cell)
+    local keys = {}
+    for key in pairs(parts or {}) do
+        table.insert(keys, key)
+    end
+    table.sort(keys, function(a, b) return (tonumber(a) or 0) < (tonumber(b) or 0) end)
+    local texts = {}
+    for _, key in ipairs(keys) do
+        local part = parts[key]
+        table.insert(texts, ("%s = %d catches / %d misses"):format(key, math.floor(tonumber(part.c) or 0),
+            math.floor(tonumber(part.m) or 0)))
+    end
+    return "bonus parts here: " .. (#texts > 0 and table.concat(texts, ", ") or "none")
+end
+
 -- Lines for /okf debug; never the anonymous ID (the report goes into public bug reports).
 function CatchDB.Describe()
     local lines = {}
     table.insert(lines, ("seed epoch %d, %d places"):format(CatchDB.SeedInfo()))
     table.insert(lines, ("own places %d"):format(CountKeys(ns.db.shared.mine)))
     local mapID, range, cell = CatchDB.GetCurrentPlace()
-    table.insert(lines, "current place " .. (mapID and CatchDB.PlaceKey(mapID, range, cell) or "none"))
+    local placeKey = mapID and CatchDB.PlaceKey(mapID, range, cell)
+    table.insert(lines, "current place " .. (placeKey or "none"))
+    table.insert(lines, CatchDB.DescribeBonusParts(placeKey))
     table.insert(lines, "game version key " .. BuildKey())
     return lines
 end

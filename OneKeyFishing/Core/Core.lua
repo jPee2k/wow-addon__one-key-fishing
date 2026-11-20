@@ -146,11 +146,31 @@ end
 -- Event dispatch: several modules may listen to the same event; each handler runs on its own (ns.Safe).
 local eventFrame = CreateFrame("Frame")
 local handlers = {}
+local unitEvents = {} -- event -> the unit RegisterUnitEvent registered it for
 
 function ns.RegisterEvent(event, fn)
+    assert(not unitEvents[event], event .. " is registered for one unit (ns.RegisterUnitEvent)")
     if not handlers[event] then
         handlers[event] = {}
         eventFrame:RegisterEvent(event)
+    end
+    table.insert(handlers[event], fn)
+end
+
+-- A unit event the game sends for one unit only (UNIT_AURA of the player: the event fires for every unit around,
+-- many times a second in a crowd). Every handler of the event then hears only that unit, so it is for an event no
+-- other module registers (both functions refuse a mix, which would change what the other handlers hear).
+function ns.RegisterUnitEvent(event, unit, fn)
+    assert(handlers[event] == nil or unitEvents[event] == unit,
+        event .. " is registered for every unit or for another one")
+    if not handlers[event] then
+        handlers[event] = {}
+        unitEvents[event] = unit
+        if eventFrame.RegisterUnitEvent then
+            eventFrame:RegisterUnitEvent(event, unit)
+        else
+            eventFrame:RegisterEvent(event)
+        end
     end
     table.insert(handlers[event], fn)
 end
@@ -199,6 +219,7 @@ local DB_DEFAULTS = {
         sessionTimer = true,
         pauseOnAFK = true,
         skillCapWarning = true,
+        campBonusWarning = true, -- the camp bonus notices: 5 minutes left and ended (Fishing/Camp.lua, spec 020)
         auctionPrices = true,
         -- Take auction prices from Auctionator when it is installed (Catch/Prices.lua); written only by
         -- Prices.SetAuctionator. auctionPrices above is written only by Prices.SetAuctionPrices.

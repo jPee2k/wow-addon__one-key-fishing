@@ -27,6 +27,11 @@ How casts become catch messages, how they are counted, and how items are valued.
 - A cast that runs across a `/reload` is recognised by its channel start time (`charDB.countedCast`) and not
   counted twice.
 - The item value is computed at read time through Prices.lua.
+- The camp bonus (spec 020): each bucket also has `bonusCasts` (casts with a camp bonus) and `bonusCatches` (those
+  of them that caught a known bonus item); a bucket saved before them reads them as 0 (`Add` counts a missing field
+  from 0; no migration). `FISH_CAUGHT` and `FISH_MISSED` take their cast ID and ask `ns.Camp.CastMask(castID)`
+  ([fishing-mode.md](fishing-mode.md) `Fishing/Camp.lua`): a mask above 0 adds a bonus cast, and a catch for which
+  `Camp.IsBonusCatch(mask, items)` holds adds a bonus catch. The window's rows are in [ui.md](ui.md).
 
 ## Catch/Prices.lua
 

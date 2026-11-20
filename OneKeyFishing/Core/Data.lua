@@ -304,9 +304,31 @@ function ns.ForEachBagItem(fn)
     end
 end
 
--- A share (0..1) as whole percent: "45%".
+-- A share (0..1) as a percent (specs/020-camp-buffs research R9): a whole number from 9.95% up ("37%"), one decimal
+-- from 0.995% ("3.4%"), two decimals from 0.005% ("0.47%"), "<0.01%" below that, "0%" only for nothing. The bounds
+-- are the rounding edges, so "10.0%" and "1.00%" never appear. The decimal sign is a point in every language.
 function ns.Percent(value)
-    return ("%d%%"):format(math.floor(value * 100 + 0.5))
+    local p = value * 100
+    if p >= 9.95 then
+        return ("%d%%"):format(math.floor(p + 0.5))
+    elseif p >= 0.995 then
+        return ("%.1f%%"):format(p)
+    elseif p >= 0.005 then
+        return ("%.2f%%"):format(p)
+    elseif p > 0 then
+        return "<0.01%"
+    end
+    return "0%"
+end
+
+-- A count with one decimal, written whole when the rounded value is whole ("1", "1.5"), with the game client's decimal
+-- separator (ns.FormatDecimal): the pieces per catch (specs/020-camp-buffs).
+function ns.FormatCount(value)
+    local tenths = math.floor(value * 10 + 0.5)
+    if tenths % 10 == 0 then
+        return ("%d"):format(math.floor(tenths / 10))
+    end
+    return ns.FormatDecimal(tenths / 10, 1)
 end
 
 -- The item ID of an item link (or any text holding one), or nil.

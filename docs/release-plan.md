@@ -42,6 +42,18 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
+## 1.5.0 (planned)
+
+- Spec 020 (`specs/020-camp-buffs`): the camp bonuses of a Fishing Rack and a Fishing Hut, built on `020-camp-buffs`
+  (implemented 2026-11-20). It has eight open `VERIFY` markers, V60 to V67 (`specs/020-camp-buffs/verification.md`),
+  closed by its checklist [checklists/camp-buffs.md](checklists/camp-buffs.md); the Hut's steps (V60, V62) need
+  Fishing 300 and may stay open, then the author accepts them or releases with `--force`.
+- **Before the release**: read the size of the own record with bonus parts (V67, the checklist's size step): if a
+  place with a part costs twice a place without or more, the roll before a 501st place counts such a place as two
+  (research R16) before the release, not after.
+- At the release (publishing.md): the version 1.5.0, the harvest (the seed then carries the bonus parts), the
+  changelog's `[Unreleased]` under its version.
+
 ## 1.4.0 (released 2026-11-18)
 
 **Released 2026-11-18**: pull request #11 (`019-auctionator-prices`) merged into `develop`, pull request #12 merged

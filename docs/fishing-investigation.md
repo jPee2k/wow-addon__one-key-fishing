@@ -5,7 +5,8 @@ a catch, the items and skill sources, what fishing earns, how an addon can tell 
 that means for the catch database. Researched on 2026-11-19 from the client's game data (DB2 tables of build
 1.60.1.70959 on wago.tools), Blizzard's hotfix posts, the client's generated API documentation, guides and this
 repository, then checked in game the same day with a Fishing Rack: the results are in "Checked in game", and they
-overrule an inference elsewhere in this document. The Fishing Hut (it needs Fishing 300) was not checked.
+overrule an inference elsewhere in this document. The Fishing Hut (it needs Fishing 300) was checked on 2026-11-20
+("Checked in game", "The Fishing Hut").
 
 The API facts confirmed in game are also in [forever-api.md](forever-api.md), "Verified in game".
 
@@ -31,6 +32,9 @@ Each statement carries its weight:
   Mithril Head Trout.
 - In game the aura is granted at once on placing a Rack, reads by ID, survives the Rack and a relog, and cannot be
   read in a fight.
+- **Game** (2026-11-20). The Hut's aura works like the Rack's (granted at placing, one hour, read by ID), but its
+  extra item comes far more often (at least 10 in 92 catches in one hour) and from a mixed table: Bloated fish of
+  any kind, Blindweed, Iron Ore, Mithril Bar, Heavy Hide, Dream Dust. A Bloated fish can hold an uncommon neck item.
 - The aura lasts an hour and the placed object 15 minutes, so the buff travels with the player. An addon reads it
   with `C_UnitAuras.GetPlayerAuraBySpellID`; nearness to the object is the wrong signal.
 - The addon reads no aura today and a catch cell has no place for a condition, so catches under a buff already mix
@@ -113,6 +117,71 @@ The Rack and the camp:
   camp's benefit, apart from the fishing aura.
 - Auras 1230098 "Boosted Stats" and 1308027 "Camping" did not show among the added auras.
 - The Fishing Hut needs Fishing 300 to be placed, as its data says.
+
+### The Fishing Hut
+
+**Game**, 2026-11-20, a character with Fishing 300, logged by the `UNIT_AURA` and `UNIT_SPELLCAST_SUCCEEDED`
+listeners of check 4 (cut to 255 characters).
+
+- Before: neither 1280341 nor 1280342 up (`GetPlayerAuraBySpellID` empty for both).
+- `CAST 1307227 Basic Campfire`, and in the same second `AURA+ 1283391 Campfire Nearby` with duration 0.
+- `CAST 1307246 Fishing Hut`, and **in the same second** `AURA+ 1280342 Rare Fishing 3600`. Like the Rack's, the
+  aura is granted at once on placing, with no sitting.
+- `C_UnitAuras.GetPlayerAuraBySpellID(1280342)` returns the same shape as the Rack's: `spellId = 1280342`,
+  `name = "Rare Fishing"`, `duration = 3600`, `isHelpful = true`, `sourceUnit = "player"`, `applications = 0`,
+  empty `points`, `icon = 5976329`, `auraInstanceID = 107`, `expirationTime = 28208.717` (read at 02:52:09, two
+  minutes after placing: about 58 minutes left, so on `GetTime()`'s clock).
+- The placed Hut opens with spell **6477** "Opening" (the Rack's was 6247) and gives Camper's Lure (291005), the
+  same lure as the Rack's, **5** of them, as the Rack.
+- The addon of spec 020 sees it: `/okf debug` gave "hut: aura 1280342, active, 3334 s left", "last cast mask: 2"
+  and one catch in the bonus part of mask 2 (V60 confirmed).
+- The first cast under the aura (map 1450, a lure on) gave **two items at once: Raw Redgill and Blindweed**
+  (8839, a herb). Blindweed is no ordinary catch of open water, so it may be the Hut's extra item, as the Bloated
+  fish is the Rack's; one cast proves nothing yet.
+- **22 casts under the Hut's aura** (Moonglade, Lake Elune'ara, map 1450, open water, Camper's Lure on; 20
+  catches, 2 misses), logged with a `LOOT_OPENED` listener printing each slot and its source. The ordinary catches:
+  Raw Redgill, Raw Nightfin Snapper, Oily Blackmouth, Raw Mithril Head Trout, one item each. **Three casts gave a
+  second item**, every slot with the bobber as its source (`GameObject-...-35591-...`), the ordinary fish in slot
+  1:
+  - Raw Redgill + **Blindweed** (8839), the first cast;
+  - Raw Mithril Head Trout + **Mithril Bar** (3860);
+  - Raw Redgill + **Bloated Firefin Snapper** (21163).
+- So the Hut's extra item is not only a Bloated fish: a herb and a metal bar came the same way. Three in 22 casts
+  is far more often than the Rack's two in about two hours.
+- **The Hut gives Bloated fish too**, so "Rare Fishing" seems to include the Rack's loot. And the Bloated fish was
+  **not the Bloated form of the fish of the same cast** (Bloated Firefin Snapper next to Raw Redgill): the Rack's
+  "same fish" pattern does not hold. Unlike the Rack's two, the Bloated fish came in slot 2, not slot 1.
+- The Bloated Firefin Snapper, opened (source `Item-6938-0-...`), held Firefin Snapper and Silver Hook: four out of
+  four, a Bloated fish holds one ordinary fish of its kind and one grey junk item.
+- 36 more casts at the same water, under the same aura (the zone column of the statistics: 63 casts, 59 catches,
+  4 misses, all 63 with a camp bonus), brought two more extras, both Bloated fish next to Raw Nightfin Snapper:
+  **Bloated Bristle Whisker Catfish** (6647) and **Bloated Brilliant Smallfish** (6643), the ordinary fish in slot
+  1, the Bloated one in slot 2, both from the bobber. The catfish held Raw Bristle Whisker Catfish and Silver Hook.
+- In all, **5 extra items in 59 catches** under the Hut (about 8 %): Blindweed, Mithril Bar and three Bloated fish.
+  Neither the Smallfish nor the Catfish lives in Lake Elune'ara, so the Bloated fish is drawn from the Bloated list,
+  not from the water's fish. Five out of five, a Bloated fish holds its own raw fish and a Silver Hook (or, once, a
+  grey boot).
+- After a relog the Hut's aura was still up, `auraInstanceID` 5 (107 before) and `expirationTime` 28218.663
+  (28208.717 before): re-based, as the Rack's.
+- The last quarter hour of the aura, same water, three more extras in slot 2, from the bobber: **Bloated Mud
+  Snapper** (6645) and **Bloated Redgill** (13881), each next to another raw fish, and **Dream Dust** (11176), an
+  enchanting material, next to Raw Nightfin Snapper.
+- **A Bloated fish can hold gear**: the Bloated Redgill held Raw Redgill and **Vanadium Talisman of the
+  Channeler**, an uncommon neck item, in place of the grey junk. So the "valuables" of the guides are real.
+- The addon's toast "The Fishing Hut bonus ends in 5 minutes." came about five minutes before the end (V64), and
+  the end toast when the buff ran out, out of combat. The aura ended on time; `/okf debug` then read "hut: aura
+  1280342, not active".
+- The whole hour at that water, by the addon's bonus part of mask 2 at place `1450:4:54`: **92 catches and 5
+  misses** under the Hut. At least 10 of the catches carried an extra item in slot 2: Blindweed (8839), Mithril Bar
+  (3860), Dream Dust (11176), **Iron Ore** (2772), **Heavy Hide** (4235) and five Bloated fish (6643, 6645, 6647,
+  13881, 21163); the last two were seen in the bags, not in the log, and the author confirmed they came as a second
+  slot. Not every cast was logged.
+- **What it means for the addon.** The Hut's extra item is drawn from a mixed table (Bloated fish, herb, ore, bar,
+  hide, enchanting dust), not tied to the water's fish. A known list of the Hut's items by ID is hard to keep; the
+  data of the bonus part (items caught only under mask 2) are the better source of a tag.
+- **The addon's "Bonus catches" stayed 0** for the session while "Casts with a camp bonus" was 22: a cast is a
+  bonus catch only when its item is in the known list of a bonus in its mask, and the Hut's list
+  (`GameData/CampBonuses.lua`) is empty; the Bloated fish are listed under the Rack only.
 
 ## The camp features of Fishing
 
@@ -352,6 +421,10 @@ The research's recommendation (an opinion until a spec decides): option B with b
 
 A1 stays the fallback if 1.4.0 clients linger; their share cannot be measured, since `HELLO` carries no version.
 
+What [spec 020](../specs/020-camp-buffs/) built: option B's inclusive part, but one part per **mask** of bonuses
+(`q = { ["<mask>"] = { c, m, i } }`, keyed by the mask as a string, disjoint), not one part per condition, so a
+cast under both bonuses is in one part only; `filter.bonus`, a tag from the data and a known list, and the notices.
+
 ## Wording for the feature
 
 Proposed English texts (the `ns.L` keys) for the feature that records catches under the camp auras; the nine
@@ -372,7 +445,7 @@ translations are written with the feature, in `Locales/`. The rules behind them:
 | Filter value | `No camp bonus` | not "No buff" |
 | Filter value | `Fishing Rack` | catches made with "Uncommon Fishing" up |
 | Filter value | `Fishing Hut` | catches made with "Rare Fishing" up |
-| Filter tooltip | `Show the catches made with a camp bonus: the fishing buff from a Fishing Rack or a Fishing Hut placed by a campfire.` | |
+| Filter tooltip | `Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire.` | shortened on 2026-11-20 to fit a code line |
 | Filter tooltip, second line | `"No camp bonus" also holds older catches for which the bonus is not known.` | the honest limit of old data |
 | Tag: the row's icon, named in its tooltip | `Fishing Rack bonus` / `Fishing Hut bonus` | the rows have no room for the words: the tag is the camp feature's item icon, the words are the tooltip's first line (spec 020) |
 | Tag's tooltip, item tooltip line | `Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing).` / `... of a Fishing Hut (Rare Fishing).` | says what to do to get it |
@@ -391,7 +464,7 @@ the results are in "Checked in game". **Still open:**
 
 - How often the bonus comes and whether it is always the Bloated form of the fish of the same cast; whether a
   Bloated fish ever comes without the aura. Two bonus catches were seen (an extra loot slot each).
-- Everything about the Fishing Hut and aura 1280342 (Fishing 300).
+- The Fishing Hut (2026-11-20, one hour at one water): the checks left are H9 to H14 below.
 - Whether a player outside the group, or one who comes later, gets the fishing aura from the Rack, and whether
   both fishing auras can be held.
 
@@ -408,6 +481,30 @@ error in a fight: `local t=u.addedAuras if t and not issecretvalue(t) then ... e
 | 6 | The object as the interact target | `/run print(UnitGUID("softinteract"), UnitName("softinteract"))` facing the Rack or the Hut | `GameObject-...-612090-...` or `...-612092-...`, or nil. For reference only |
 | 7 | Does the aura outlive the object and the place? | Check 1 again after the object is gone (15 minutes) and 100 yards away; fish with the aura and no object near; again after a death and a relog | The aura stays with its remaining time and the catch is as in check 5. Confirms the aura, not nearness, as the signal |
 | 8 | Vignettes | `/dump C_VignetteInfo.GetVignettes()` | Nothing about the object |
+
+### The Fishing Hut: checks left
+
+Done on 2026-11-20: H1 (no fishing aura before), H2 (the aura at placing), H3 (the aura's table), H4 (`/okf debug`
+sees it, V60), H5 to H7 (an hour of catches with the loot logged, the five-minute toast, V64), H8 (the end toast out
+of combat, V65 in part). The results are in "Checked in game", "The Fishing Hut".
+
+The listeners, each under the chat line's 255 characters (a `/run` after every login):
+
+- auras: `/run local f=CreateFrame("Frame")f:RegisterUnitEvent("UNIT_AURA","player")f:SetScript("OnEvent",function(_,_,_,u)local t=u.addedAuras if t and not issecretvalue(t)then for _,x in ipairs(t)do print("AURA+",x.spellId,x.name,x.duration)end end end)`
+- casts: `/run local f=CreateFrame("Frame")f:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED","player")f:SetScript("OnEvent",function(_,_,_,_,id)print(date("%X"),"CAST",id,C_Spell.GetSpellName(id))end)`
+- loot: `/run local f=CreateFrame("Frame")f:RegisterEvent("LOOT_OPENED")f:SetScript("OnEvent",function()for i=1,GetNumLootItems()do print("LOOT",i,GetLootSlotLink(i),(GetLootSourceInfo(i)))end end)`
+
+| # | Question | How | What it decides |
+|---|---|---|---|
+| H9 | Do the extra items (a second slot) come without a camp aura? (V61) | Reset the session; at Lake Elune'ara (map 1450) with the loot listener and no fishing aura, 90 or more casts; note every second slot and the session's casts and catches | None in 90+ casts: the extra item is the aura's. Any: the Bloated list and the tag by item are wrong for it |
+| H10 | Is the Hut's aura hidden in a fight, like the Rack's? | With the aura, in a fight with an ordinary mob: `/dump C_UnitAuras.GetPlayerAuraBySpellID(1280342)`, again after the fight | Empty in the fight and back after it, as the Rack's: the kept state covers the Hut too |
+| H11 | Does a death in a fight drop the aura, and does the end toast come after the fight? (V65) | With the aura, "Leave fishing mode when attacked" off, die in a fight; after the fight read the toast and `/okf debug` | The end toast after the fight and "hut: ... not active": closes V65 |
+| H12 | Does a party member next to the Hut get "Rare Fishing"? | A party member stands by the fire when the Hut is placed, with the auras listener | `AURA+ 1280342` for them too, as with the Rack |
+| H13 | Can both auras be held, and is such a cast in the part of mask 3? (V62) | One player places a Rack, the other a Hut (each has one camp feature per hour), both in a party by the fire; `/dump` both auras, cast once, `/okf debug` | Both tables and "last cast mask: 3": the part of mask 3 is real. One aura replacing the other: mask 3 never comes |
+| H14 | Does the extra item depend on the water? | An hour of the Hut at another water (a pool, or water of another level), with the loot listener | Which extras come there: the same mixed table, or items of that zone |
+
+The rare cast in which the aura ends (V63) and the checks of the addon's own screens (V66, V67) are in the feature's
+checklist, [checklists/camp-buffs.md](checklists/camp-buffs.md).
 
 One observation no API replaces: a few hundred casts in one water with the Rack's buff and without it (and with
 the Hut's, once its blueprint is found), noting which items come, whether a Bloated fish ever comes without the

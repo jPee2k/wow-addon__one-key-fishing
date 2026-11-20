@@ -429,4 +429,42 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
         "你的漁獲：%d 項採用 Auctionator 價格，%d 項採用插件掃描價格，%d 項僅有商人價，%d 項無價格。"
     L["Values: higher of vendor and Auctionator price."] = "價值：取商人價與 Auctionator 價格較高者。"
     L["%d of your catches have no Auctionator price: run its scan."] = "你的漁獲中有 %d 項沒有 Auctionator 價格：請執行它的掃描。"
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "釣魚架加成"
+    L["Fishing Hut bonus"] = "釣魚小屋加成"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] = "加成漁獲：只有在釣魚架的增益效果（優良釣魚）下才會釣到。"
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] = "加成漁獲：只有在釣魚小屋的增益效果（稀有釣魚）下才會釣到。"
+    L["%s with the bonus"] = "加成時 %s"
+    L["All catches"] = "全部漁獲"
+    L["No camp bonus"] = "無營地加成"
+    L["Fishing Rack"] = "釣魚架"
+    L["Fishing Hut"] = "釣魚小屋"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "營地加成"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "顯示在營地加成下的漁獲：在營火旁放置的釣魚架或釣魚小屋所給予的釣魚增益效果。"
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] = "「無營地加成」也包含不知道是否有加成的較早漁獲。"
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "釣魚架加成將在 5 分鐘後結束。"
+    L["The Fishing Rack bonus has ended."] = "釣魚架加成已結束。"
+    L["The Fishing Hut bonus ends in 5 minutes."] = "釣魚小屋加成將在 5 分鐘後結束。"
+    L["The Fishing Hut bonus has ended."] = "釣魚小屋加成已結束。"
+    L["Warn when a camp bonus is ending"] = "營地加成即將結束時提醒"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "營地加成下的拋竿"
+    L["Bonus catches"] = "加成漁獲"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "僅加成漁獲"
+    L["Camp bonus: All"] = "營地加成：全部"
+    L["Camp bonus: No bonus"] = "營地加成：無"
+    L["Camp bonus: Bonus only"] = "營地加成：僅加成"
+    L["Camp bonus: Rack"] = "營地加成：釣魚架"
+    L["Camp bonus: Hut"] = "營地加成：小屋"
+    L["No bonus catch has been recorded here yet."] = "這裡尚未記錄加成漁獲。"
+    L["No bonus catch has been recorded yet."] = "尚未記錄加成漁獲。"
 end)

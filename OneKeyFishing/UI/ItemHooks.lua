@@ -24,20 +24,24 @@ if HandleModifiedItemClick then
     hooksecurefunc("HandleModifiedItemClick", OnModifiedItemClick)
 end
 
-local TOOLTIP_COLOR = { 0.2, 0.8, 1 }
+local TOOLTIP_COLOR = ns.TOOLTIP_COLOR -- UI/Widgets.lua
 
--- "Caught in:" and up to three zones with the item's chance (specs/005-catch-catalog, FR-017), any item.
+-- "Caught in:" and up to three zones with the item's chance (specs/005-catch-catalog, FR-017), any item. A tagged
+-- item (spec 020) gets the tag's explanation after them, unless the addon's own row tooltip already holds it.
 local function AddCatchLines(tooltip, itemID)
     if not ns.db.settings.tooltipChances then
         return
     end
-    local lines = ns.Catalog.TooltipLines(itemID)
+    local lines, bonus = ns.Catalog.TooltipLines(itemID)
     if not lines then
         return
     end
     tooltip:AddLine(L["Caught in:"], unpack(TOOLTIP_COLOR))
     for _, line in ipairs(lines) do
         tooltip:AddDoubleLine("  " .. line.zone, line.right, 1, 1, 1, 1, 1, 1)
+    end
+    if bonus and not ns.TooltipHasBonus(tooltip, itemID) then
+        tooltip:AddLine(ns.Catalog.BonusTip(bonus.key), 1, 1, 1, true)
     end
 end
 

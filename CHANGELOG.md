@@ -4,6 +4,41 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Catches made with a camp bonus, the fishing buff of a Fishing Rack or a Fishing Hut placed by a campfire, are
+  recorded apart from the others and shared with the rest of your catch data. A cast counts for the bonus when the
+  buff was up both when it started and when it ended.
+- Bonus catches (such as the Bloated fish of the Fishing Rack) are marked with the camp feature's icon in "What can be
+  caught here" and in the catch catalog, and show their chance among the catches made with the bonus. Hover the row
+  for the bonus's name, what to do to get it and its chance "with the bonus"; item tooltips elsewhere add the
+  explanation under "Caught in:".
+- A **Camp bonus** filter in both tabs, in the place of the Water filter, once a catch with a camp bonus is known:
+  **All catches**, **No camp bonus**, **Bonus catches only**, **Fishing Rack**, **Fishing Hut**. The button names
+  the chosen value ("Camp bonus: All", "Camp bonus: Rack"). **Bonus catches only** lists just the bonus catches,
+  with the same numbers as **All catches**.
+- A notice 5 minutes before a camp bonus ends and one when it has ended, in fishing mode, with the setting "Warn when
+  a camp bonus is ending" (on by default).
+- The statistics show "Casts with a camp bonus" and "Bonus catches" once you fished with a camp bonus.
+- Camper's Lure, from a placed Fishing Rack, is applied by the fishing key like the other lures (after the +75 lures,
+  before the +50 ones; it needs Fishing 50).
+- `/okf debug` has a section "Camp bonus", and the catch database section shows the current place's bonus counts.
+
+### Changed
+
+- Small chances are shown with a fraction ("3.4%", "0.47%", "<0.01%") instead of "0%"; from 10% on they stay whole
+  numbers.
+- The filter buttons of "What can be caught here" and of the catch catalog stand in two rows: Skill and Source, then
+  Water or Camp bonus, Kinds and (in the catalog) Sort. The Kinds button of "What can be caught here" has left the
+  top right corner.
+- The list of "What can be caught here" scrolls and shows every item (no more "and N more"); its hints and the
+  line about the shared catch database are now at the top, above the catch counts.
+- The catch catalog's status line ("Counting the catch...", "No item matches the search.") stands under the search
+  box.
+- "Per catch" drops the ".0" of whole numbers: "1" instead of "1.0", "1.3" otherwise.
+
 ## [1.4.0] - 2026-11-18
 
 ### Added

@@ -101,7 +101,7 @@ test("the default index is built 10 s after the first loading screen of the sess
     advance(9)
     eq(describe():match("^[^\n]*"), "no index yet", "not before")
     advance(1)
-    assert(describe():find("index all|all|all: ready, stale false, 5 maps", 1, true), describe())
+    assert(describe():find("index all|all|all|all: ready, stale false, 5 maps", 1, true), describe())
 end)
 
 test("the report ends with the hidden kinds (spec 014)", function()
@@ -309,7 +309,7 @@ end)
 
 test("Describe lists the state, maps, items, the build times and the name queue", function()
     local text = describe()
-    assert(text:find("index all|all|all: ready, stale false, %d+ maps, %d+ items"), text)
+    assert(text:find("index all|all|all|all: ready, stale false, %d+ maps, %d+ items"), text)
     assert(text:find("last build no clock of work, longest step no clock", 1, true), text)
     assert(text:find("names known %d+, unknown %d+, requests sent %d+, queued 0"), text)
 end)
@@ -317,7 +317,7 @@ end)
 test("the debug report holds the catalog section and no item name", function()
     local _, report = ns.Debug.Report()
     assert(report:find("-- Catch catalog --", 1, true), "section")
-    assert(report:find("index all|all|all: ready", 1, true), "the index")
+    assert(report:find("index all|all|all|all: ready", 1, true), "the index")
     for _, itemID in ipairs({ FISH, TROUT, OWN }) do
         assert(not report:find(item_names[itemID], 1, true), "no name of " .. itemID)
     end

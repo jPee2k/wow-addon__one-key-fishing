@@ -400,3 +400,40 @@ L["Auction prices are off: catch values use vendor prices."] = true
 L["Your catches: %d priced by Auctionator, %d by the addon's scan, %d at vendor price, %d without a price."] = true
 L["Values: higher of vendor and Auctionator price."] = true
 L["%d of your catches have no Auctionator price: run its scan."] = true
+
+-- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+L["Fishing Rack bonus"] = true
+L["Fishing Hut bonus"] = true
+L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] = true
+L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] = true
+L["%s with the bonus"] = true
+L["All catches"] = true
+L["No camp bonus"] = true
+L["Fishing Rack"] = true
+L["Fishing Hut"] = true
+
+-- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+L["Camp bonus"] = true
+L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] = true
+L["\"No camp bonus\" also holds older catches for which the bonus is not known."] = true
+
+-- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+L["The Fishing Rack bonus ends in 5 minutes."] = true
+L["The Fishing Rack bonus has ended."] = true
+L["The Fishing Hut bonus ends in 5 minutes."] = true
+L["The Fishing Hut bonus has ended."] = true
+L["Warn when a camp bonus is ending"] = true
+
+-- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+L["Casts with a camp bonus"] = true
+L["Bonus catches"] = true
+
+-- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+L["Bonus catches only"] = true
+L["Camp bonus: All"] = true
+L["Camp bonus: No bonus"] = true
+L["Camp bonus: Bonus only"] = true
+L["Camp bonus: Rack"] = true
+L["Camp bonus: Hut"] = true
+L["No bonus catch has been recorded here yet."] = true
+L["No bonus catch has been recorded yet."] = true

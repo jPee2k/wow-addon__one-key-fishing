@@ -468,4 +468,46 @@ ns.AddTranslation("ptBR", "Português", function(L)
         "Valores: o maior entre o preço do vendedor e o do Auctionator."
     L["%d of your catches have no Auctionator price: run its scan."] =
         "%d das suas capturas não têm preço no Auctionator: execute a verificação dele."
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "Bônus do Suporte de Pesca"
+    L["Fishing Hut bonus"] = "Bônus da Cabana de Pesca"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] =
+        "Captura bônus: só vem com o efeito de um Suporte de Pesca (Pesca Incomum)."
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
+        "Captura bônus: só vem com o efeito de uma Cabana de Pesca (Pesca Rara)."
+    L["%s with the bonus"] = "%s com bônus"
+    L["All catches"] = "Todas as capturas"
+    L["No camp bonus"] = "Sem bônus de acampamento"
+    L["Fishing Rack"] = "Suporte de Pesca"
+    L["Fishing Hut"] = "Cabana de Pesca"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "Bônus de acampamento"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "Mostra as capturas feitas com bônus de acampamento: o efeito de pesca de um Suporte de Pesca ou de uma " ..
+        "Cabana de Pesca colocados junto a uma fogueira."
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] =
+        "\"Sem bônus de acampamento\" também inclui capturas antigas cujo bônus não é conhecido."
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "O bônus do Suporte de Pesca termina em 5 minutos."
+    L["The Fishing Rack bonus has ended."] = "O bônus do Suporte de Pesca terminou."
+    L["The Fishing Hut bonus ends in 5 minutes."] = "O bônus da Cabana de Pesca termina em 5 minutos."
+    L["The Fishing Hut bonus has ended."] = "O bônus da Cabana de Pesca terminou."
+    L["Warn when a camp bonus is ending"] = "Avisar quando um bônus de acampamento estiver acabando"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "Lançamentos com bônus de acampamento"
+    L["Bonus catches"] = "Capturas bônus"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "Só capturas bônus"
+    L["Camp bonus: All"] = "Acampamento: Tudo"
+    L["Camp bonus: No bonus"] = "Acampamento: Sem bônus"
+    L["Camp bonus: Bonus only"] = "Acampamento: Só bônus"
+    L["Camp bonus: Rack"] = "Acampamento: Suporte"
+    L["Camp bonus: Hut"] = "Acampamento: Cabana"
+    L["No bonus catch has been recorded here yet."] = "Ainda não há capturas bônus aqui."
+    L["No bonus catch has been recorded yet."] = "Ainda não há capturas bônus."
 end)

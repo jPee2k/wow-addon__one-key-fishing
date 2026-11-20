@@ -137,15 +137,30 @@ local function CleanItems(items)
     return out
 end
 
+-- A part of a cell (the pool part p, a camp bonus part of q) as fresh tables of its fields only; misses only where
+-- the part has them (q's parts, spec 020).
+local function CleanPart(part, withMisses)
+    return { c = part.c, m = withMisses and part.m or nil, i = CleanItems(part.i) }
+end
+
 local function CleanCell(cell)
     local out = { c = cell.c, m = cell.m, t = cell.t, px = cell.px, py = cell.py, i = CleanItems(cell.i) }
     if cell.p then
-        out.p = { c = cell.p.c, i = CleanItems(cell.p.i) }
+        out.p = CleanPart(cell.p, false)
     end
     if cell.a then
         out.a = {} -- the subzone counts (part 4): a fresh table of the same numbers
         for areaID, count in pairs(cell.a) do
             out.a[areaID] = count
+        end
+    end
+    if cell.q then
+        -- VERIFY(V67): a record with bonus parts stays under the size a peer takes
+        -- The camp bonus parts (spec 020), keyed by the mask's text: fresh tables of c, m and i only. A 1.4.0 client
+        -- drops q here and relays the totals, which stay right (the parts are inclusive).
+        out.q = {}
+        for key, part in pairs(cell.q) do
+            out.q[key] = CleanPart(part, true)
         end
     end
     return out

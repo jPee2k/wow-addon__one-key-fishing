@@ -438,4 +438,45 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Values: higher of vendor and Auctionator price."] = "가치: 상점 판매가와 Auctionator 가격 중 높은 값."
     L["%d of your catches have no Auctionator price: run its scan."] =
         "어획물 %d개에 Auctionator 가격이 없습니다. Auctionator에서 검색을 실행하세요."
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "낚시 건조대 보너스"
+    L["Fishing Hut bonus"] = "낚시 오두막 보너스"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] =
+        "보너스 어획: 낚시 건조대의 강화 효과(고급 낚시)가 있을 때만 잡힙니다."
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
+        "보너스 어획: 낚시 오두막의 강화 효과(희귀 낚시)가 있을 때만 잡힙니다."
+    L["%s with the bonus"] = "보너스 시 %s"
+    L["All catches"] = "모든 어획"
+    L["No camp bonus"] = "야영 보너스 없음"
+    L["Fishing Rack"] = "낚시 건조대"
+    L["Fishing Hut"] = "낚시 오두막"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "야영 보너스"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "야영 보너스로 잡은 어획을 표시합니다: 모닥불 옆에 설치한 낚시 건조대나 낚시 오두막의 낚시 강화 효과입니다."
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] =
+        "\"야영 보너스 없음\"에는 보너스 여부를 알 수 없는 예전 어획도 포함됩니다."
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "낚시 건조대 보너스가 5분 후에 끝납니다."
+    L["The Fishing Rack bonus has ended."] = "낚시 건조대 보너스가 끝났습니다."
+    L["The Fishing Hut bonus ends in 5 minutes."] = "낚시 오두막 보너스가 5분 후에 끝납니다."
+    L["The Fishing Hut bonus has ended."] = "낚시 오두막 보너스가 끝났습니다."
+    L["Warn when a camp bonus is ending"] = "야영 보너스가 끝날 때 알림"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "야영 보너스 중 던진 횟수"
+    L["Bonus catches"] = "보너스 어획"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "보너스 어획만"
+    L["Camp bonus: All"] = "야영 보너스: 전체"
+    L["Camp bonus: No bonus"] = "야영 보너스: 없음"
+    L["Camp bonus: Bonus only"] = "야영 보너스: 보너스만"
+    L["Camp bonus: Rack"] = "야영 보너스: 건조대"
+    L["Camp bonus: Hut"] = "야영 보너스: 오두막"
+    L["No bonus catch has been recorded here yet."] = "이곳에서는 아직 보너스 어획이 기록되지 않았습니다."
+    L["No bonus catch has been recorded yet."] = "아직 보너스 어획이 기록되지 않았습니다."
 end)

@@ -107,7 +107,8 @@ The sources: the in-game session of 2026-11-19 and the game data in
   - a key: `{ c, m, i }` summed over the parts whose mask has the key's bit;
   - `"none"`: the cell's `c`, `m`, `i` minus all parts;
     - both keep the cell's `a`; a key takes `k`, `r` and `x` of a seed cell from its parts (R15), `"none"` keeps
-    the cell's `k` and drops `r` and `x` (as the water filter does).
+    the cell's `k` and drops `r` and `x` of a cell it reduces (as the water filter does); a cell without parts is
+    read whole, `r` and `x` included, so a place without bonus data reads the same as under `"all"`.
 - `CatchDB.FilterKey` becomes `range|source|water|bonus`; the catalog's `DefaultFilter` and `IndexFor` carry the
   field. Under a bonus filter the miss rate is shown (the parts have misses).
 - `CatchDB.HasBonusData(key)`: whether the seed, the own counts or any held record has a part with that bonus's bit,
@@ -180,14 +181,28 @@ The sources: the in-game session of 2026-11-19 and the game data in
 
 - **Decision**: one slot, one button. In both tabs the "Camp bonus" button sits where the Water button is and is
   shown when `HasBonusData()`; the Water button shows only with pool data and no bonus data. The menu offers "All
-  catches", "No camp bonus" and each bonus that has data. The button's text is the chosen value's label, and "Camp
-  bonus" for "All catches"; its tooltip is the two agreed lines.
+  catches", "No camp bonus", "Bonus catches only" (R20) and each bonus that has data, by their full labels
+  (`Catalog.BonusLabel`). Its tooltip is the two agreed lines under the title "Camp bonus".
+- **The button's text** (decision 23, after the first try in game): "Camp bonus: " with the value in short,
+  `Catalog.BonusButtonText(value)`: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only", "Camp
+  bonus: Rack", "Camp bonus: Hut". Each is a whole text, not `"Camp bonus: %s"` with a short label, so each language
+  words the pair its own way (German "Lagerbonus: Nur Bonus", French "Bonus de camp : bonus seul"). The first
+  build named the value alone ("Fishing Rack", and "Camp bonus" for all catches), which read as a list title rather
+  than a filter.
+- **Two rows** (decision 22): the filter buttons of both tabs stand in two rows, row A Skill and Source, row B the
+  slot, Kinds and, in the catalog, Sort. The slot's buttons are made by `CatchHere.CreateWaterButton(parent, x, y,
+  current, choose)` and `CatchHere.CreateBonusButton(parent, x, y, current, choose)` (both tabs);
+  `CatchHere.UpdateFilterSlot(waterButton, bonusButton, water, bonus, nextButton)` shows the one the data call for,
+  sets both texts, places `nextButton` (Kinds) right of the shown one or at the slot when none shows, and returns
+  the water and the bonus the tab's filter keeps. Sort follows Kinds. A panel button grows to its text, so a longer
+  translation pushes the next button along instead of being cut.
 - The choice lives in memory per tab, like the Water filter; every login starts at "All catches" (decision 10). A
   value that is no longer offered falls back to "All catches" (FR-027).
-- **Rationale**: decision 9; the catalog's row 2 is full (551 of 560 pixels in French with three buttons of 150),
-  and "Camp bonus: No camp bonus" would not fit a 150-pixel button, so the button does not repeat its title.
-- **Open**: that the longest value fits 150 pixels in every language is a checklist step, with the French and
-  German texts.
+- **Rationale**: decision 9 for the slot; a row of its own for the slot and Kinds leaves room for the value in the
+  button's text, which one row of four or five buttons did not (the catalog's row was 551 of 560 pixels in French
+  with three buttons of 150); the Kinds button of "What can be caught here" leaves its top right corner, so the
+  place's line gets the full width.
+- **Open**: that row B fits the tab in every language is a checklist step, with the French and German texts.
 
 ## R9. Percentages
 
@@ -278,7 +293,7 @@ The sources: the in-game session of 2026-11-19 and the game data in
   (the largest `k` of the summed parts, a lower bound like the cell's), `r` (the summed `r`, else `c`) and `x` of
   the parts it sums, so the players beside a bonus chance and the 50-catch threshold read the bonus's own
   numbers. "No camp bonus" keeps the cell's `k` (an upper bound: the data cannot split it) and drops `r` and `x`
-  as the water filter does.
+  of a cell with parts, as the water filter does; a cell without parts keeps them (it is all "No camp bonus").
 - **A cell with both a pool part and bonus parts**: a contribution's cell that has both loses `p` before it is
   scaled or checked (a record from before spec 011 with a pool part gains `q` at its next cast there), and
   `sumContributions` drops `p` from a summed cell that has `q`,
@@ -312,6 +327,8 @@ The sources: the in-game session of 2026-11-19 and the game data in
   In `Locales/enUS.lua` with nine translations. The Ukrainian texts are agreed, all of them, on 2026-11-19
   (`static/reports/camp-bonus-wording-ukUA.md`, outside the repository's checks); the others use the client's own
   names of the Fishing Rack, the Fishing Hut and the two auras in that language.
+- The follow-up of 2026-11-20 adds eight keys: `Bonus catches only`, the five button texts of R8 and the two empty
+  texts of R20, each with nine translations.
 - The debug lines and the game data comments stay English.
 
 ## R19. The tag in a row
@@ -348,3 +365,48 @@ The sources: the in-game session of 2026-11-19 and the game data in
   so in German or French.
 - **Alternatives**: a second text line per row (the rows have one fixed height); a coloured chance with no mark
   (colour alone says nothing).
+
+## R20. "Bonus catches only"
+
+- **Decision** (decisions 24 to 26, 31): a value `"bonusOnly"` of the Camp bonus filter, after "No camp bonus",
+  offered whenever the filter shows. It is a **filter of the list** over "All catches", like the kinds: it keeps the
+  items whose `item.bonus` is not `plain` (the known Bloated fish, which always carry a tag under "all", and the
+  items tagged from the data), Rack and Hut alike. Every number is the one of "All catches": the counts line, the
+  miss rate, and each row's chance with the bonus.
+- **Where it is applied**: "What can be caught here" queries with `CatchHere.QueryBonus(value)` (`"all"` for
+  `"bonusOnly"`, else the value) and narrows the view's items with `CatchHere.BonusItems(items, value)` before
+  `Catalog.Group`. The catalog's `IndexFilter` maps `"bonusOnly"` to the filter of `"all"` before `FilterKey`, so it
+  shares the index of "All catches" (no third index, nothing new in `Catalog.Describe`), and `Catalog.Items` drops the
+  untagged rows; `Places` and `Spots` read the same index, so an item's page shows all its zones (decision 31).
+  `CatchDB` never sees the value: `FilterKey` and the views stay as they are.
+- **Empty lists** (decision 26): "What can be caught here" says "No bonus catch has been recorded here yet." when
+  the view has items and none is tagged (`page.message`); the catalog's status line says "No bonus catch has been
+  recorded yet." when no row is left and there is no search text. The kind filter's own messages come first when it
+  hides tagged rows.
+- **Rationale**: the author's wish after the first try was "show me the bonus fish", not the casts under a buff:
+  under "Fishing Rack" every fish of those casts is listed, by design. A list filter answers it without a new sum,
+  a new index or a new cache key, and the numbers stay those the player knows from "All catches".
+- **Alternatives**: one value per bonus ("Rack bonus catches only", "Hut ..."): more values for a list that holds a
+  handful of items, rejected (decision 25); the tag rule applied inside `CatchDB` as a view filter: a new cache key
+  and index for the same items, rejected.
+
+## R21. The layout of "What can be caught here" and the catalog
+
+- **Decision** (decisions 27 to 30): "What can be caught here", from the top: the place (one line, the full width),
+  the scope line, the hints (`page.hint`, up to three lines, their room always kept), the exchange line
+  (`page.status`), the counts, row A, row B, the column headers and the list. The y offsets are constants in one
+  place at the top of `UI/CatchHere.lua`. The catalog: the search box, the status line (`page.status`, two lines),
+  row A, row B, the list; on an item's page the status line sits where the zones begin.
+- **The scroll list**: `ns.CreateList(parent, top, initialize)` moves from `UI/CatalogTab.lua` to
+  `UI/Widgets.lua` unchanged: a `WowScrollBoxList` with a `MinimalScrollBar`, or, when the templates are missing
+  (`pcall`), a fixed pool of rows with "and N more" (kind headers not counted, never a header on the last row).
+  "What can be caught here" uses it in place of its 16 fixed rows; its row initializer draws the row as before
+  (icon, columns, tag, kind header, unknown item, tooltip, click to the catalog), and `page.more` is gone. The tests
+  read the rows of either list through `list_rows(list)` (`tests/wow.lua`).
+- **Per catch** (decision 27): `ns.FormatCount(value)` (`Core/Data.lua`): rounds to tenths; a whole result is
+  written with `%d`, another with `ns.FormatDecimal(value, 1)`, the client's decimal separator. 1 -> "1", 1.04 ->
+  "1", 1.25 -> "1.3", 1.5 -> "1.5" ("1,5" with a comma separator).
+- **Rationale**: a scrolling list has no fixed bottom for the hints and the exchange line, so they go to the top,
+  where they are read with the counts they explain, in a room of fixed height so nothing below them moves. A scroll
+  list shows every item of a place with many kinds, as the catalog's already did, and one list serves both tabs.
+  "1.0" per catch is the common case and only noise.

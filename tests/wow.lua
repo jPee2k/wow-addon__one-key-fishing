@@ -133,17 +133,25 @@
 --   game_fold = true                    (before loading) defines CaseAccentInsensitiveParse and strcmputf8i
 --   no_scroll_templates = true          (before loading) CreateFrame with the scroll and search templates fails
 --   no_window_template = true           (before loading) CreateFrame with BasicFrameTemplateWithInset fails
+--   no_unit_events = true               (before loading) frames have no RegisterUnitEvent, as an older client
 --   tooltip_post_calls[dataType]        functions given to TooltipDataProcessor.AddTooltipPostCall (read)
 --   itemref_lines                       lines of ItemRefTooltip (read), like tooltip_lines of GameTooltip
 --   profile_ms = n, profile_step = n    debugprofilestop returns profile_ms, then adds profile_step to it (nil:
 --                                       debugprofilestop is undefined, as a clock missing)
--- Helpers: scroll_rows(box), type_text(box, text), show_item_tooltip(tooltip, itemID).
+--   item_icons[itemID] = fileID         C_Item.GetItemIconByID for that item (default 134400)
+-- Helpers: scroll_rows(box), list_rows(list), type_text(box, text), show_item_tooltip(tooltip, itemID),
+-- run_item_post_calls(tooltip, itemID) (the item post calls on a tooltip as it stands, without SetOwner).
+--   GameTooltip:HookScript("OnHide", fn), GetScript, IsShown; Hide runs the OnHide hooks
+-- The camp buffs (specs/020-camp-buffs):
+--   auras[spellID] = { expirationTime, duration }   C_UnitAuras.GetPlayerAuraBySpellID (the player's auras)
+--   auras_restricted = true             C_Secrets.ShouldAurasBeSecret; GetPlayerAuraBySpellID returns nothing then
 -- The error log (specs/006-error-log): geterrorhandler() collects the errors the addon hands on in lua_errors.
 --   take_errors()                       the collected errors as a list, and a new empty one (a test that expects
 --                                       an error takes it; any other one fails the test)
 --   check_no_errors()                   stops the file on an error handed on outside a test (test(), load_addon
 --                                       and tests/run.mjs call it)
 --   GetErrorCallstackHeight()           what the addon last set with SetErrorCallstackHeight (nil when cleared)
+-- tests/run.mjs also sets read_addon_file(path): the text of an addon file (path inside the addon folder), or nil.
 -- Every global not defined here is a permissive stub: it can be called and indexed and returns nil
 -- (except the addon's own OneKeyFishing* globals, which are nil until set).
 
@@ -439,6 +447,15 @@ function Frame:RegisterEvent(event)
     self.events[event] = true
 end
 
+-- As the game's: the frame hears the event only for the given units (fire passes the unit as the first argument).
+function Frame:RegisterUnitEvent(event, ...)
+    local units = {}
+    for _, unit in ipairs({ ... }) do
+        units[unit] = true
+    end
+    self.events[event] = units
+end
+
 function Frame:UnregisterEvent(event)
     self.events[event] = nil
 end
@@ -634,6 +651,9 @@ end
 -- Unknown lowercase keys (fields) are nil.
 local frameMeta = {
     __index = function(frame, key)
+        if key == "RegisterUnitEvent" and rawget(_G, "no_unit_events") then
+            return nil
+        end
         if Frame[key] then
             return Frame[key]
         end
@@ -812,6 +832,21 @@ function scroll_rows(box)
     return rows
 end
 
+-- The rows a list of ns.CreateList shows (UI/Widgets.lua): the scroll list's, made as the game makes the rows in
+-- sight, or the fallback's shown rows; kind headers included.
+function list_rows(list)
+    if list.box then
+        return scroll_rows(list.box)
+    end
+    local shown = {}
+    for _, row in ipairs(list.rows) do
+        if row:IsShown() then
+            table.insert(shown, row)
+        end
+    end
+    return shown
+end
+
 -- The elements of a scroll box's data provider, in order.
 function scroll_elements(box)
     local elements = {}
@@ -831,7 +866,8 @@ end
 function fire(event, ...)
     local targets = {}
     for _, frame in ipairs(frames) do
-        if frame.events[event] and frame.scripts.OnEvent then
+        local registered = frame.events[event] -- true, or the units of a unit event
+        if registered and (registered == true or registered[(...)]) and frame.scripts.OnEvent then
             table.insert(targets, frame)
         end
     end
@@ -882,6 +918,7 @@ local function DoubleLine(left, right)
     return tostring(left) .. " | " .. tostring(right)
 end
 tooltip_lines, tooltip_item, tooltip_shown, tooltip_cleared, tooltip_owner = {}, nil, false, false, nil
+local tooltipScripts = {} -- GameTooltip's scripts by name (HookScript chains them, Hide runs OnHide)
 GameTooltip = setmetatable({
     SetOwner = function(_, owner)
         tooltip_lines, tooltip_item, tooltip_cleared, tooltip_owner = {}, nil, false, owner
@@ -892,7 +929,24 @@ GameTooltip = setmetatable({
     AddDoubleLine = function(_, left, right) table.insert(tooltip_lines, DoubleLine(left, right)) end,
     SetItemByID = function(_, itemID) tooltip_item = itemID end,
     Show = function() tooltip_shown = true end,
-    Hide = function() tooltip_shown = false end,
+    Hide = function(self)
+        local wasShown = tooltip_shown
+        tooltip_shown = false
+        if wasShown and tooltipScripts.OnHide then
+            tooltipScripts.OnHide(self)
+        end
+    end,
+    IsShown = function() return tooltip_shown end,
+    GetScript = function(_, name) return tooltipScripts[name] end,
+    HookScript = function(_, name, fn)
+        local previous = tooltipScripts[name]
+        tooltipScripts[name] = function(...)
+            if previous then
+                previous(...)
+            end
+            fn(...)
+        end
+    end,
 }, { __index = function() return function() end end })
 
 -- The tooltip of chat item links, with its own lines.
@@ -915,6 +969,11 @@ TooltipDataProcessor = {
 
 function show_item_tooltip(tooltip, itemID)
     tooltip:SetOwner(UIParent, "ANCHOR_NONE")
+    run_item_post_calls(tooltip, itemID)
+end
+
+-- The item post calls on a tooltip as it stands (no SetOwner): the game's hook inside SetItemByID.
+function run_item_post_calls(tooltip, itemID)
     for _, fn in ipairs(tooltip_post_calls[Enum.TooltipDataType.Item] or {}) do
         fn(tooltip, { id = itemID })
     end
@@ -1227,8 +1286,8 @@ C_Item = {
         return "Item " .. itemID, "[Item " .. itemID .. "]", item_quality[itemID] or 1, 1, 1, "Trade Goods", "Fish",
             20, "", 134400, item_prices[itemID] or 0, 0, 0, item_bind[itemID] or 0
     end,
-    GetItemIconByID = function()
-        return 134400
+    GetItemIconByID = function(item)
+        return item_icons[tonumber(item)] or 134400
     end,
     GetItemInfoInstant = function(item)
         local itemID = tonumber(item) or tonumber(tostring(item):match("item:(%d+)"))
@@ -1265,6 +1324,7 @@ C_Item = {
     end,
 }
 item_qualities = {}
+item_icons = {}
 
 -- The map pin, the navigation arrow, the game rules and the world map (specs/005-catch-catalog, research R6).
 super_tracked, game_rules, world_maps_opened = false, {}, {}
@@ -2073,6 +2133,27 @@ end
 function InCombatLockdown()
     return in_combat
 end
+
+-- The player's auras (specs/020-camp-buffs): auras[spellID] = { expirationTime, duration }; while auras_restricted
+-- (a fight, as the game hides them) the call returns nothing for an aura that is up.
+auras = {}
+auras_restricted = false
+C_UnitAuras = {
+    GetPlayerAuraBySpellID = function(spellID)
+        local aura = auras[spellID]
+        if auras_restricted or not aura then
+            return nil
+        end
+        return { spellId = spellID, expirationTime = aura.expirationTime, duration = aura.duration }
+    end,
+}
+C_Secrets = {
+    ShouldAurasBeSecret = function()
+        return auras_restricted
+    end,
+}
+WithStubFallback("C_UnitAuras", C_UnitAuras)
+WithStubFallback("C_Secrets", C_Secrets)
 
 function GetMoneyString(copper)
     return copper .. "c"

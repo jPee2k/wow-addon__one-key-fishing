@@ -60,13 +60,13 @@ message and saved fields reach `CLAUDE.md` and the architecture pages there (the
 
 **Purpose**: the baseline; no addon behaviour.
 
-- [ ] T001 Run `npm run check` and `npm test` from the repository root on `020-camp-buffs`; note the test count and
+- [X] T001 Run `npm run check` and `npm test` from the repository root on `020-camp-buffs`; note the test count and
   that no `VERIFY` marker is open, for the hand-over.
-- [ ] T002 [P] Read `tools/check.mjs` and `tools/addon.mjs` for the rules the new files meet: the list of game data
+- [X] T002 [P] Read `tools/check.mjs` and `tools/addon.mjs` for the rules the new files meet: the list of game data
   files or their data-only check, the files allowed to call `CreateFrame`, the layer table, the unused-global and
   unused-key rules, the test-name rule. Note for T005 and T009 what, if anything, has to be listed there. No file
   changes.
-- [ ] T003 [P] `tests/wow.lua`: stubs for the aura API. A table `wow.auras` (spell ID -> `{ expirationTime, duration
+- [X] T003 [P] `tests/wow.lua`: stubs for the aura API. A table `wow.auras` (spell ID -> `{ expirationTime, duration
   }`) and a switch `wow.aurasRestricted`; `C_UnitAuras.GetPlayerAuraBySpellID(id)` returns nil while restricted, else
   a table `{ spellId = id, expirationTime = ..., duration = ... }` or nil; `C_Secrets.ShouldAurasBeSecret()` returns
   the switch; `InCombatLockdown()` keeps its present stub. The present `C_Item.GetItemIconByID` stub gains an optional
@@ -82,12 +82,12 @@ message and saved fields reach `CLAUDE.md` and the architecture pages there (the
 
 **Purpose**: the list every story reads. Blocks US1, US2, US3, US5, US6, US8.
 
-- [ ] T004 `tests/gamedata/camp_bonuses_test.lua` (new, fails first): `ns.GameData.CampBonuses` is a list of two
+- [X] T004 `tests/gamedata/camp_bonuses_test.lua` (new, fails first): `ns.GameData.CampBonuses` is a list of two
   entries in rank order; entry 1 is `key = "rack"`, `bit = 1`, `aura = 1280341`, `item = 279965` with the twelve
   items 6643, 6644, 6645, 6646, 6647, 8366, 13881, 13891, 21162, 21163, 21164, 21243 set to true; entry 2 is `key =
   "hut"`, `bit = 2`, `aura = 1280342`, `item = 279966` with an empty `items`; keys and bits are distinct, each bit
   a power of two.
-- [ ] T005 `OneKeyFishing/GameData/CampBonuses.lua` (new, data only, header comment like the other game data files
+- [X] T005 `OneKeyFishing/GameData/CampBonuses.lua` (new, data only, header comment like the other game data files
   with the source: the client's game data and the in-game session of 2026-11-19 in
   `docs/fishing-investigation.md`): the list of data-model.md. `-- VERIFY(V60): the Hut's aura behaves like the
   Rack's` above the Hut's entry; `-- VERIFY(V61): Bloated fish come only under a camp buff` above the Rack's
@@ -104,10 +104,10 @@ message and saved fields reach `CLAUDE.md` and the architecture pages there (the
 
 **Independent Test**: `tests/core/percent_test.lua`; in game, a rare item reads with a fraction.
 
-- [ ] T006 [US4] `tests/core/percent_test.lua` (new, fails first): `ns.Percent` gives `37%` for 0.374, `10%` for
+- [X] T006 [US4] `tests/core/percent_test.lua` (new, fails first): `ns.Percent` gives `37%` for 0.374, `10%` for
   0.0996 and for 0.0995, `9.9%` for 0.0994, `3.4%` for 0.0344, `1.0%` for 0.00996, `0.99%` for 0.00994, `0.47%` for
   0.00468, `0.01%` for 0.00006, `<0.01%` for 0.00004 and for 1e-9, `0%` for 0, `100%` for 1 (FR-029's edges).
-- [ ] T007 [US4] `OneKeyFishing/Core/Data.lua`, `ns.Percent(value)`: with `p = value * 100`: `p >= 9.95` a whole
+- [X] T007 [US4] `OneKeyFishing/Core/Data.lua`, `ns.Percent(value)`: with `p = value * 100`: `p >= 9.95` a whole
   number (`math.floor(p + 0.5)` with `%d`); `p >= 0.995` `("%.1f%%")`; `p >= 0.005` `("%.2f%%")`; `p > 0` the
   literal `<0.01%`; else `0%` (research R9). Update its comment. T006 passes. Run the whole suite: fix every test
   that compared a text built by hand against the old rounding (search `tests/` for `%%` and `Percent`); a test that
@@ -124,7 +124,7 @@ message and saved fields reach `CLAUDE.md` and the architecture pages there (the
 **Independent Test**: the tests below; in game, `/okf debug` after fishing with a Rack (the debug lines come in
 T036).
 
-- [ ] T008 [US1] `tests/fishing/camp_state_test.lua` (new, fails first), over the stubs of T003 and the events the
+- [X] T008 [US1] `tests/fishing/camp_state_test.lua` (new, fails first), over the stubs of T003 and the events the
   module listens to:
   - no aura: `Camp.IsActive("rack")` is false after `PLAYER_ENTERING_WORLD`; `Camp.Mask()` is 0;
   - the Rack's aura with `expirationTime = GetTime() + 600`: active, `TimeLeft("rack")` about 600, `Mask()` 1;
@@ -140,7 +140,7 @@ T036).
     failed read: the state stays as it was;
   - the source text of `OneKeyFishing/Fishing/Camp.lua` holds none of `CastSpell`, `UseItem`, `UseContainerItem`,
     `SecureActionButton`, `CreateFrame` (FR-008).
-- [ ] T009 [US1] `OneKeyFishing/Fishing/Camp.lua` (new): `ns.Camp` with `Read`, `IsActive`, `TimeLeft`, `Mask`,
+- [X] T009 [US1] `OneKeyFishing/Fishing/Camp.lua` (new): `ns.Camp` with `Read`, `IsActive`, `TimeLeft`, `Mask`,
   `HasBit`, `KnownBonus` (contracts). State per key `{ known, expires, first }` (data-model.md "State of a bonus");
   a read per research R2 on `PLAYER_ENTERING_WORLD`, `UNIT_AURA` (only when its first argument is `"player"`; the
   second is not touched), `PLAYER_REGEN_ENABLED`. `-- VERIFY(V64): expirationTime is on GetTime()'s clock` where
@@ -149,7 +149,7 @@ T036).
   `Fishing/Skill.lua`. `OneKeyFishing/OneKeyFishing.toc`: `Fishing\Camp.lua` after `Fishing\Skill.lua`, before
   `Catch\Stats.lua`. `.luacheckrc`: `C_UnitAuras` and `C_Secrets` in `read_globals`. What T002 noted for a new
   module. T008 passes.
-- [ ] T010 [US1] `tests/fishing/camp_cast_test.lua` (new, fails first), driving `FISHING_CAST_START` through the
+- [X] T010 [US1] `tests/fishing/camp_cast_test.lua` (new, fails first), driving `FISHING_CAST_START` through the
   addon's own cast path as `tests/catch/caught_test.lua` does:
   - the Rack active at the start and at the settle: `Camp.CastMask(castID)` is 1; asked a second time for the same
     cast (two modules ask): 1 again;
@@ -162,12 +162,12 @@ T036).
     is still 1 (`Catch/Catch.lua` settles a miss a second after the stop);
   - after `CastMask(N+1)` the mask of N is gone (`CastMask(N)` is 0); after ten more cast starts without a settle
     no mask older than eight casts is kept.
-- [ ] T011 [US1] `OneKeyFishing/Fishing/Camp.lua`: on `FISHING_CAST_START` read (when allowed), keep `Mask()` (or
+- [X] T011 [US1] `OneKeyFishing/Fishing/Camp.lua`: on `FISHING_CAST_START` read (when allowed), keep `Mask()` (or
   `false`) under `ns.GetFishingCastID()` and drop masks more than eight casts old; `Camp.CastMask(castID)` per
   research R3 and data-model.md "The mask of a cast" (drop the masks of casts before `castID`, keep `castID`'s);
   remember the answer as `lastMask`. `-- VERIFY(V63): the bonus is decided by the aura during the cast` above
   `CastMask`. T010 passes.
-- [ ] T012 [US1] `tests/catchdb/bonus_recording_test.lua` (new, fails first), in the style of
+- [X] T012 [US1] `tests/catchdb/bonus_recording_test.lua` (new, fails first), in the style of
   `tests/catchdb/recording_test.lua`:
   - a catch with the Rack active: the place's cell in `shared.mine` and in the own record has `c` one higher, the
     item in `i`, and `q["1"] = { c = 1, m = 0, i = { [itemID] = { 1, pieces } } }`; `q[1]` (the number key) is nil;
@@ -177,13 +177,13 @@ T036).
   - both buffs: only `q["3"]` grows;
   - a cast whose mask is 0 by the rule of T010 (the buff ended in it): totals only;
   - two catches of the same item under the Rack: `q["1"].i[itemID]` is `{ 2, pieces }`.
-- [ ] T013 [US1] `OneKeyFishing/CatchDB/Events.lua`: in the `FISH_CAUGHT` and `FISH_MISSED` handlers set
+- [X] T013 [US1] `OneKeyFishing/CatchDB/Events.lua`: in the `FISH_CAUGHT` and `FISH_MISSED` handlers set
   `cast.mask = ns.Camp.CastMask(castID)` on the taken cast before `Settle`. `OneKeyFishing/CatchDB/CatchDB.lua`,
   `Settle`: when `(cast.mask or 0) > 0`, for each target cell add to `cell.q[tostring(cast.mask)]` (created as `{
   c = 0, m = 0, i = {} }`): `c` and the items through `AddItems`, or `m`; set `P.bonusData = nil` when a part is
   created (the cache `HasBonusData` fills in T030; until then the field is only written). Update the comment above
   `Settle`. T012 passes.
-- [ ] T014 [US1] `tests/catchdb/bonus_check_test.lua` (new, fails first), in the style of the present record check
+- [X] T014 [US1] `tests/catchdb/bonus_check_test.lua` (new, fails first), in the style of the present record check
   tests: a record whose cell has a valid `q` passes; each of these is refused with the reason of data-model.md:
   `q` not a table; nine parts; a key that is the number 1, or the strings `"0"`, `"256"`, `"01"`, `"1.5"`, `"x"`;
   a part that is not a table; a part's `c` or `m` not a count; a part's `c` above the cell's `c`; two parts whose
@@ -191,7 +191,7 @@ T036).
   `i`; a part item with more catches than the cell's item; the rest (cell minus parts) breaking an item rule. A
   part under `"4"` and one under `"255"` pass. A cell without `q` passes as before. The own record written by the
   steps of T012 (a catch, a miss, both buffs) passes `CatchDB.CheckRecord`.
-- [ ] T015 [US1] `OneKeyFishing/CatchDB/Checks.lua`, `CheckCell`: the rules of data-model.md "Validation" after the
+- [X] T015 [US1] `OneKeyFishing/CatchDB/Checks.lua`, `CheckCell`: the rules of data-model.md "Validation" after the
   pool part's (a local `MAX_BONUS_PARTS = 8`; sum the parts' items into one table and reuse `CheckItems(cell.i,
   cell.c - sum, summedItems)` for the rest, as the open-water check does). T014 passes.
 
@@ -205,19 +205,19 @@ T036).
 
 **Independent Test**: the tests below; in game, checklist step 8 and the size reading (V67).
 
-- [ ] T016 [US8] `tests/exchange/share/bonus_clean_test.lua` (new, fails first), in the style of the present exchange
+- [X] T016 [US8] `tests/exchange/share/bonus_clean_test.lua` (new, fails first), in the style of the present exchange
   store tests: a received record whose cells carry `q` is stored with equal parts in fresh tables (changing the
   sender's table afterwards changes nothing stored); it is offered on with its parts (the encoded and decoded
   record holds them, under their string keys); a field beside `c`, `m`, `i` inside a part is dropped. No size is
   asserted (the rules above).
-- [ ] T017 [US8] `OneKeyFishing/Exchange/Share.lua`, `CleanCell`: copy `q` (per key `{ c = part.c, m = part.m, i =
+- [X] T017 [US8] `OneKeyFishing/Exchange/Share.lua`, `CleanCell`: copy `q` (per key `{ c = part.c, m = part.m, i =
   CleanItems(part.i) }`). `-- VERIFY(V67): a record with bonus parts stays under the size a peer takes` above the
   copy. T016 passes.
-- [ ] T018 [P] [US8] `tests/exchange/share/bonus_old_client_test.lua` (new; a guard, it passes once T015 is in):
+- [X] T018 [P] [US8] `tests/exchange/share/bonus_old_client_test.lua` (new; a guard, it passes once T015 is in):
   a copy of 1.4.0's `CleanCell` field list inside the test (the fields `c, m, t, px, py, i, p, a`, with a comment
   naming 1.4.0) applied to a cell with `q` gives a cell without `q`, with the same `c`, `m`, `i`, that passes
   `CatchDB.CheckRecord` in its record with the record's `seq` unchanged (FR-011): the rule "parts are inclusive".
-- [ ] T019 [US8] `tests/tools/harvest_test.mjs` (extended, fails first): a contribution whose cells carry parts:
+- [X] T019 [US8] `tests/tools/harvest_test.mjs` (extended, fails first): a contribution whose cells carry parts:
   - the cleaned cell keeps them; a part above the totals, or under a key like `"0"`, `"01"` or `"x"`, makes its
     cell skipped like any bad cell (a number key cannot be written in a saved file the parser tells apart);
   - two contributions' parts of one mask are summed per place;
@@ -233,7 +233,7 @@ T036).
     `checkCell`;
   - the written seed text holds `q = { ["1"] = { c = ..., m = ..., i = { ... } } }` (with `k`, `r`, `x` when
     present) and reads back equal.
-- [ ] T020 [US8] `tools/harvest.mjs`: `cleanCell`, `checkCell`, `sumContributions`, `cellLines` carry `q` by the rules
+- [X] T020 [US8] `tools/harvest.mjs`: `cleanCell`, `checkCell`, `sumContributions`, `cellLines` carry `q` by the rules
   of T015; `scaleCell` per research R15 (each part and the rest scaled apart, the totals built as their sum);
   `sumContributions` writes each part's own `k`, `r`, `x` and drops `p` from a summed cell that has `q`; a
   contribution's cell with both `p` and `q` loses `p` before it is scaled or checked. T019 passes. Do not run `npm run
@@ -250,7 +250,7 @@ the tooltips.
 
 **Independent Test**: the tests below; in game, checklist step 2.
 
-- [ ] T021 [US2] `tests/catchdb/bonus_views_test.lua` (new, fails first), in the style of
+- [X] T021 [US2] `tests/catchdb/bonus_views_test.lua` (new, fails first), in the style of
   `tests/catchdb/water_test.lua`, with own, seed and another player's cells that carry parts:
   - `bonus = "rack"`: catches, misses, items and the miss rate come from the parts with bit 1 (`"1"` and `"3"`);
   - `bonus = "hut"`: `"2"` and `"3"`; `bonus = "none"`: the cell minus all parts, a cast of mask 3 subtracted once;
@@ -261,7 +261,7 @@ the tooltips.
   - `CatchDB.FilterKey` differs between the four values and is equal for a missing `bonus` and `"all"`;
   - with `bonus ~= "all"` a `water` value other than `"all"` changes nothing;
   - `CatchDB.BonusKeys()` is `{ "rack", "hut" }`.
-- [ ] T022 [US2] `OneKeyFishing/CatchDB/Views.lua`: a `ThroughBonus(cell, bonus)` beside `ThroughWater` (research
+- [X] T022 [US2] `OneKeyFishing/CatchDB/Views.lua`: a `ThroughBonus(cell, bonus)` beside `ThroughWater` (research
   R6, R15): a key sums the parts with its bit into `{ c, m, i, a = cell.a }`, and for a seed cell `k` = the largest
   `k` of those parts (else `cell.k`), `r` = their summed `r` (where a part has none, its `c`), `x` = their summed
   `x` (where none, `c`); `"none"` subtracts all parts and keeps `k = cell.k`, without `r` and `x`. `AddCell`
@@ -269,7 +269,7 @@ the tooltips.
   miss rate is shown under a bonus filter (it stays nil only under a water filter); `FilterKey` gains `|bonus`;
   `CatchDB.BonusKeys()`. Update the comments. T021 passes; extend T021 first with a seed cell whose parts carry
   `k` and `r`: the view under `"rack"` has the parts' players and the raw catches against the threshold.
-- [ ] T023 [US2] `tests/catchdb/bonus_tag_test.lua` (new, fails first):
+- [X] T023 [US2] `tests/catchdb/bonus_tag_test.lua` (new, fails first):
   - a known item (6643) in a scope with 50 catches under the Rack: `item.bonus = { key = "rack", chance = its
     catches under the Rack / catches under the Rack, littleData = false, catches = 50, players = those with a
     catch under the Rack }`;
@@ -295,12 +295,12 @@ the tooltips.
     is tagged from the data there;
   - building any of these views calls no other query (count the calls of `CatchDB.Query`, `QueryMap` and
     `QueryCells` made from inside a build: none).
-- [ ] T024 [US2] `OneKeyFishing/CatchDB/Views.lua`: per research R7, in the pass that sums a scope: the sub-sum per
+- [X] T024 [US2] `OneKeyFishing/CatchDB/Views.lua`: per research R7, in the pass that sums a scope: the sub-sum per
   bonus key under `"all"`, `rawAll` under a key or `"none"`, and who holds each item under each bonus; after the
   view is built set `item.bonus` by data-model.md "A view item's bonus" (the four shapes); a known item (through
   `ns.GameData.CampBonuses`) gets its tag in every view. No change for a scope without parts and no known item.
   T023 passes, and the present view tests still do.
-- [ ] T025 [US2] `tests/catalog/bonus_test.lua` (new, fails first): with an index over maps whose views carry
+- [X] T025 [US2] `tests/catalog/bonus_test.lua` (new, fails first): with an index over maps whose views carry
   `item.bonus`:
   - a zone place's `chance`, `littleData`, `catches`, `players` are the bonus's and `place.bonus` is the
     `item.bonus` table; the same for a row of `Catalog.Places` and for a spot row of `Catalog.Spots`; a list row
@@ -321,7 +321,7 @@ the tooltips.
     numbers and `place.bonus.key = "rack"`; under `"none"` a known item's place keeps the ordinary numbers and
     `place.bonus.plain` is true;
   - `Catalog.MinimapLines()` gives a tagged item's right text in the bonus form.
-- [ ] T026 [US2] `OneKeyFishing/Catalog/Catalog.lua`: the contract's changes (the filter field in `DEFAULT_FILTER`,
+- [X] T026 [US2] `OneKeyFishing/Catalog/Catalog.lua`: the contract's changes (the filter field in `DEFAULT_FILTER`,
   `DefaultFilter`, `IndexFor`; `RebuildItems`, `Places`, `Spots` and the rows; `ChanceText`'s fourth argument
   (`withBonus`) and its nil chance; `BonusTag`, `BonusTip`, `BonusLabel`, `BonusIcon` with `-- VERIFY(V66): the camp
   features' item icons are known to every client` above it; `TooltipLines`' second value; `MinimapLines`). The texts:
@@ -329,7 +329,7 @@ the tooltips.
   (Uncommon Fishing).`, `Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing).`, `%s with the bonus`,
   `All catches`, `No camp bonus`, `Fishing Rack`, `Fishing Hut` in `Locales/enUS.lua` with the nine translations
   (`C_Item` is already a declared global; if `GetItemIconByID` needs a stub, T003 added it). T025 passes.
-- [ ] T027 [US2] `tests/ui/here_bonus_test.lua` and `tests/ui/catalog_bonus_test.lua` (new, fail first; only the
+- [X] T027 [US2] `tests/ui/here_bonus_test.lua` and `tests/ui/catalog_bonus_test.lua` (new, fail first; only the
   tag steps in this task, the button's in T029):
   - **the icon**: a tagged item's row in "What can be caught here", in the catalog's list, zone rows and spot rows
     shows the tag's icon at the right end of the name column and, in the chance cell, the number of
@@ -350,7 +350,7 @@ the tooltips.
     leaves nothing kept, so the call adds it.
   `tests/ui/tooltips_test.lua` (extended): an item tooltip outside the addon's rows of a tagged item has one more
   line under "Caught in:" with `Catalog.BonusTip`; an untagged item has none; with `tooltipChances` off neither.
-- [ ] T028 [US2] `OneKeyFishing/UI/Widgets.lua`: `ns.AddBonusLines(tooltip, bonus)`, `ns.ShowItemTooltip(owner,
+- [X] T028 [US2] `OneKeyFishing/UI/Widgets.lua`: `ns.AddBonusLines(tooltip, bonus)`, `ns.ShowItemTooltip(owner,
   itemID, withPrice, bonus)` setting what it keeps after `SetOwner` and before `SetItemByID` on every call (nil
   without a bonus), a `GameTooltip:HookScript("OnHide")` clearing it, and `ns.TooltipHasBonus(tooltip,
   itemID)` (contract). `OneKeyFishing/UI/CatchHere.lua`: the icon texture on a row (research R19; 14 pixels, at the
@@ -373,7 +373,7 @@ the tooltips.
 
 **Independent Test**: the tests below; in game, checklist step 3.
 
-- [ ] T029 [US3] `tests/catchdb/bonus_views_test.lua` (extended, fails first): `CatchDB.HasBonusData()` is false
+- [X] T029 [US3] `tests/catchdb/bonus_views_test.lua` (extended, fails first): `CatchDB.HasBonusData()` is false
   without any part; true with a part in the seed, in the own counts or in a held record; `HasBonusData("hut")`
   only with a part whose mask has bit 2; it turns true after the own first cast under a buff and after a received
   record (`SHARED_DATA_CHANGED`), and **false again** after the record with the only part is removed; a held record
@@ -388,7 +388,7 @@ the tooltips.
   search text and each sort order still narrow and order the same filtered list (FR-028); the chosen value stays
   when a camp aura comes or goes (`UNIT_AURA` with the stub changed: US3 scenario 6); "No camp bonus" at a place
   whose every catch was under a buff shows the tab's usual empty message (the edge case).
-- [ ] T030 [US3] `OneKeyFishing/CatchDB/Views.lua`: `CatchDB.HasBonusData(key)` cached in `P.bonusData` (a table: per
+- [X] T030 [US3] `OneKeyFishing/CatchDB/Views.lua`: `CatchDB.HasBonusData(key)` cached in `P.bonusData` (a table: per
   key and for "any"). `OneKeyFishing/CatchDB/Events.lua`: set `P.bonusData = nil` at `ADDON_LOADED` and on **every**
   `SHARED_DATA_CHANGED` (not only when it holds a "no", unlike `P.poolData`). `OneKeyFishing/UI/ CatchHere.lua`: the
   bonus state (memory only), `CatchHere.OpenBonusMenu(owner, current, choose)`, `CatchHere.SetBonus`, the button
@@ -405,7 +405,7 @@ the tooltips.
 
 ## Phase 8: User Story 5 - A notice before the camp bonus ends (Priority: P3)
 
-- [ ] T031 [US5] `tests/fishing/camp_notice_test.lua` (new, fails first), with the test clock and the
+- [X] T031 [US5] `tests/fishing/camp_notice_test.lua` (new, fails first), with the test clock and the
   `C_Timer.After` stub. In every case the aura is first shown at grant (3600 s left) unless the step says otherwise:
   - fishing mode on: at 300 s left one `CAMP_BONUS_WARNING` with `L["The Fishing Rack bonus ends in 5 minutes."]`,
     at the end one with `L["The Fishing Rack bonus has ended."]`; the Hut's texts for the Hut; never a second one
@@ -431,7 +431,7 @@ the tooltips.
   `tests/core/migrations_test.lua` (extended): the default of `campBonusWarning` is true.
   `tests/ui/toast_bonus_test.lua` (new; `tests/ui/` has no toast test yet): the toast shows the message's text
   with `settings.toasts` off.
-- [ ] T032 [US5] `OneKeyFishing/Fishing/Camp.lua`: the timers and the crossings of research R10 (`first`, `seen`,
+- [X] T032 [US5] `OneKeyFishing/Fishing/Camp.lua`: the timers and the crossings of research R10 (`first`, `seen`,
   `warned`, `ended` per key, set when a crossing is found whether or not a notice is shown); the four texts, read when
   a notice fires, with nine translations. `OneKeyFishing/Core/Core.lua`: the default `campBonusWarning = true`.
   `OneKeyFishing/UI/Toast.lua`: `ns.On("CAMP_BONUS_WARNING", ...)` showing the text always, in the color the skill
@@ -443,7 +443,7 @@ the tooltips.
 
 ## Phase 9: User Story 6 - Camp bonus rows in the statistics (Priority: P3)
 
-- [ ] T033 [US6] `tests/catch/stats_bonus_test.lua` (new, fails first): a catch and a miss under the Rack add 2 to
+- [X] T033 [US6] `tests/catch/stats_bonus_test.lua` (new, fails first): a catch and a miss under the Rack add 2 to
   `bonusCasts` of the session, the current zone and the total; a miss whose `FISH_MISSED` comes after the next
   cast started still counts; a catch under the Rack that holds item 6643 adds 1 to `bonusCatches`, a catch that
   holds two known items also 1, a catch of an ordinary fish 0; a catch of 6643 with mask 0 adds nothing; a saved
@@ -454,7 +454,7 @@ the tooltips.
   show in the three columns when the total has a bonus cast ("Bonus catches" then also with 0); both are hidden
   otherwise, their place kept; the window is 736 high and the "Top catches" header sits two lines lower than
   today (FR-035).
-- [ ] T034 [US6] `OneKeyFishing/Fishing/Camp.lua`: `Camp.IsBonusCatch(mask, items)` (the list of `FISH_CAUGHT`).
+- [X] T034 [US6] `OneKeyFishing/Fishing/Camp.lua`: `Camp.IsBonusCatch(mask, items)` (the list of `FISH_CAUGHT`).
   `OneKeyFishing/Catch/Stats.lua`: `NewBucket` with the two fields; the handlers take the cast ID (`FISH_CAUGHT`'s
   second and `FISH_MISSED`'s first argument) and add through a helper that reads a missing field as 0.
   `OneKeyFishing/UI/StatsFrame.lua`: the two rows as the last entries of the "Results" block of `ROWS` (the window
@@ -468,7 +468,7 @@ the tooltips.
 
 ## Phase 10: User Story 7 - The Rack's lure is applied like any other (Priority: P3)
 
-- [ ] T035 [P] [US7] `tests/fishing/lures_test.lua` (extended, fails first): with 291005 and 6530 in the bags the
+- [X] T035 [P] [US7] `tests/fishing/lures_test.lua` (extended, fails first): with 291005 and 6530 in the bags the
   offered lure is 291005; with 291005 and 6532 it is 6532; at Fishing 49 it is passed over, at 50 offered; the
   orders of `GameData.Lures` are 1 to 7 without a gap; with Camper's Lure on the pole (the weapon enchant stub
   set) the key offers no lure until it runs out, as for any lure. `OneKeyFishing/GameData/Lures.lua`: a comment
@@ -480,13 +480,13 @@ the tooltips.
 
 ## Phase 11: Polish & Cross-Cutting
 
-- [ ] T036 `tests/core/report_sections_test.lua` (extended, fails first) then `OneKeyFishing/Fishing/Camp.lua`
+- [X] T036 `tests/core/report_sections_test.lua` (extended, fails first) then `OneKeyFishing/Fishing/Camp.lua`
   `Camp.Describe()`, `OneKeyFishing/CatchDB/Views.lua` `CatchDB.DescribeBonusParts(placeKey)` and
   `OneKeyFishing/Core/Debug.lua`: a section `-- Camp bonus --` with a line per bonus (`rack: aura 1280341, active,
   1234 s left` / `not active` / `unknown`), `aura reads restricted: true|false`, `last cast mask: N`, `setting
   campBonusWarning`; in the catch database section, after the current place, `bonus parts here: 1 = 12 catches / 3
   misses, ...` or `none` (FR-038). English, not localized.
-- [ ] T037 [P] Documents of the architecture:
+- [X] T037 [P] Documents of the architecture:
   - `CLAUDE.md`: `CampBonuses` in the `GameData/*.lua` row; a row for `Fishing/Camp.lua` (after `Fishing/Skill.lua`)
     with its job and `fishing-mode.md`; the message `CAMP_BONUS_WARNING (text: a camp bonus ends in 5 minutes or
     has ended, Fishing/Camp.lua; the toast shows it even with catch notifications off)`; cross-module rules: the
@@ -503,7 +503,7 @@ the tooltips.
   - `docs/fishing-investigation.md`, "What it means for the catch database": what spec 020 built (the parts by
     mask, not option B's one part per condition) in three lines, with the link.
   - `docs/development.md` if it lists the test files or the game data files.
-- [ ] T038 [P] `docs/checklists/camp-buffs.md` following `docs/checklists/README.md` "How a checklist is built":
+- [X] T038 [P] `docs/checklists/camp-buffs.md` following `docs/checklists/README.md` "How a checklist is built":
   header (closes V60 to V67; needs a character with Fishing 140 and a Fishing Rack, a campfire, a party member,
   a mob for a fight, French or German as a second language, a second player on the new version and one on 1.4.0
   for step 8, a character that never fished under a buff for the size reading, Fishing 300 and a Fishing Hut for
@@ -514,7 +514,7 @@ the tooltips.
   notes whether a tagged row's bonus lines survive the first hover of an item the client was still loading (the
   game rebuilds such a tooltip, as it does today with the price line). Steps already seen on 2026-11-19 are not repeated
   (cite the investigation document instead). Its row in the table of `docs/checklists/README.md`.
-- [ ] T039 `CHANGELOG.md`: `## [Unreleased]` above the newest release. `### Added`: catches made with a camp bonus
+- [X] T039 `CHANGELOG.md`: `## [Unreleased]` above the newest release. `### Added`: catches made with a camp bonus
   (the fishing buff of a Fishing Rack or a Fishing Hut) are recorded apart and shared; bonus catches are marked with
   the camp feature's icon and show their chance with the bonus in "What can be caught here", the catalog and item
   tooltips; a "Camp bonus" filter in both tabs; a notice 5 minutes before a camp bonus ends and when it ends, with its
@@ -523,12 +523,81 @@ the tooltips.
   a section on the camp bonus (what it is in two lines, the icon and its tooltip, the filter and what "No camp bonus"
   holds, the notices and the setting and that a buff lost in a fight gives none with "Leave fishing mode when
   attacked" on, the statistics rows), the percentages, Camper's Lure in the lures list, the settings list.
-- [ ] T040 Run `npm run check` and `npm test`; compare with T001 (the new tests added; the open markers are V60 to
+- [X] T040 Run `npm run check` and `npm test`; compare with T001 (the new tests added; the open markers are V60 to
   V67 and no other); set the spec's status to "Implemented (in-game checklist `docs/checklists/camp-buffs.md`
   open)"; `docs/release-plan.md`: the open markers of this feature and that V67 is read before the release; hand
   the checklist to the author. The version stays 1.4.0 here: the bump to 1.5.0 and the harvest are release steps
   of `docs/publishing.md`, and `npm run build` refuses while a marker is open (the author closes them or releases
   with `--force`).
+
+---
+
+## Phase 12: Follow-up after the first in-game try (2026-11-20)
+
+**Goal**: decisions 21 to 31 of the spec (FR-041 to FR-048): the filter buttons in two rows in both tabs, the Camp
+bonus button that names its value, the value "Bonus catches only", "Per catch" without ".0", the hints and the
+exchange line at the top of "What can be caught here" over a scrolling list, the catalog's status line under the
+search box. No data change: `CatchDB` and the saved data stay as they are; no new `VERIFY` marker.
+
+**Independent Test**: the tests below; in game, checklist steps 3 and 10 to 13 of
+`docs/checklists/camp-buffs.md`.
+
+- [X] T041 `tests/core/count_format_test.lua` (new, fails first): `ns.FormatCount(1)` is "1", 1.04 "1", 1.25 "1.3",
+  1.5 "1.5", 12.96 "13", and with the decimal separator stubbed to a comma 1.5 is "1,5" and 2 is "2".
+  `tests/ui/here_page_test.lua` and `here_kinds_test.lua` (extended): the "Per catch" cell of one piece reads "1".
+  `OneKeyFishing/Core/Data.lua`: `ns.FormatCount(value)` beside `ns.Percent` (tenths rounded; a whole result through
+  `%d` of a `math.floor`ed value, another through `ns.FormatDecimal(value, 1)`); `UI/CatchHere.lua` writes the
+  column with it (FR-046). The tests pass.
+- [X] T042 `tests/wow.lua`: the helper `list_rows(list)` (the rows a list of `ns.CreateList` shows: the scroll list's
+  rows as the game makes them, or the fallback's shown rows; kind headers included). `tests/ui/here_page_test.lua`,
+  `here_kinds_test.lua`, `here_seed_test.lua`, `catalog_kinds_saved_test.lua` read the rows of "What can be caught
+  here" through it; the "and N more" case of `here_kinds_test.lua` becomes "the list scrolls: every item and header
+  is listed, no 'and N more'" (fails first). `OneKeyFishing/UI/Widgets.lua`: `ns.CreateList(parent, top,
+  initialize)` moved from `UI/CatalogTab.lua` unchanged (the scroll list, or the fixed rows with "and N more" without
+  the templates, V37); `UI/CatchHere.lua`: the list through it in place of the 16 fixed rows, the row initializer
+  drawing an item row or a kind header as before, `page.more` gone (FR-047). The catalog's fallback tests still see
+  "and N more". The tests pass.
+- [X] T043 `tests/ui/here_bonus_test.lua` (a layout case), `tests/ui/catalog_sort_test.lua` and
+  `catalog_kinds_test.lua` (extended, fail first): in "What can be caught here" the hints and the exchange line above
+  the counts, the counts above row A, row A above row B, the Water and the Camp bonus buttons at one slot, Kinds
+  right of the Camp bonus button (at the slot without pool or bonus data), no `page.more`; in the catalog the search
+  box at -32, the status line at -56, row A at -88, the slot at -114, Sort right of Kinds, the list at -146.
+  `OneKeyFishing/UI/CatchHere.lua`: the y offsets as constants at the top (the place, the scope line, the hints up to
+  three lines with their room kept, the exchange line, the counts, row A, row B, the column headers, the list); the
+  place's line 540 wide (Kinds left its top right corner); `CatchHere.CreateWaterButton(parent, x, y, current,
+  choose)`, `CatchHere.CreateBonusButton(parent, x, y, current, choose)` and `CatchHere.UpdateFilterSlot(waterButton,
+  bonusButton, water, bonus, nextButton)` for both tabs (the shown slot button, both texts, the next button placed
+  after it). `OneKeyFishing/UI/CatalogTab.lua`: the status line under the search box (where the zones begin on an
+  item's page), row A Skill and Source, row B the slot, Kinds and Sort, the list below (FR-041, FR-047, FR-048). The
+  tests pass.
+- [X] T044 `tests/ui/here_bonus_test.lua`, `tests/ui/catalog_bonus_test.lua` (extended, fail first): the button reads
+  `L["Camp bonus: All"]` at first and the short text of each chosen value; the menu keeps the full labels.
+  `OneKeyFishing/Catalog/Catalog.lua`: `Catalog.BonusButtonText(value)` with the five whole texts `Camp bonus: All`,
+  `Camp bonus: No bonus`, `Camp bonus: Bonus only`, `Camp bonus: Rack`, `Camp bonus: Hut`, nine translations each
+  (the French and German ones short enough for row B); `CatchHere.BonusButtonText` removed, `UpdateFilterSlot` sets
+  the text (FR-042). The tests pass.
+- [X] T045 `tests/ui/here_bonus_test.lua`, `tests/ui/catalog_bonus_test.lua` (extended, fail first): the menu offers
+  "Bonus catches only" after "No camp bonus"; under it "What can be caught here" lists only the tagged rows (the
+  Bloated fish and the item tagged from the data, no ordinary fish), with the counts line of "All catches" and the
+  chance with the bonus; a place with catches but no tagged item says `L["No bonus catch has been recorded here
+  yet."]` and has no rows; the catalog lists only the tagged items (a known item without data among them), an item's
+  page shows all its zones, `Catalog.Describe()` names no index of its own, and with bonus data but no tagged item
+  the status line says `L["No bonus catch has been recorded yet."]`. `OneKeyFishing/UI/CatchHere.lua`:
+  `OpenBonusMenu` with `"bonusOnly"`, `OfferedBonus` keeping it while `HasBonusData()`, `CatchHere.QueryBonus` and
+  `CatchHere.BonusItems`, the empty text in `page.message`. `OneKeyFishing/Catalog/Catalog.lua`: `IndexFilter`
+  (`"bonusOnly"` reads the index of `"all"`), `Catalog.Items` drops the untagged rows, `BonusLabel("bonusOnly")`.
+  `OneKeyFishing/UI/CatalogTab.lua`: the empty text in `StatusText`. The three texts with nine translations; `CatchDB`
+  untouched (FR-043 to FR-045). The tests pass.
+- [X] T046 [P] Documents: `spec.md` (decisions 21 to 31, FR-023 and FR-024 adjusted, FR-041 to FR-048, User Story 3
+  scenarios 2 and 7 to 11, two edge cases), `plan.md` (the follow-up section), `research.md` (R8 updated, R18's keys,
+  R20 "Bonus catches only", R21 the layout), `data-model.md` (the value `"bonusOnly"`, UI and catalog only),
+  `contracts/module-api.md`, `quickstart.md`, this phase; `docs/architecture/ui.md` (the two rows, the button's text,
+  the value, the top block and the shared list), `catalog.md` (`IndexFilter`, `Catalog.Items` under `"bonusOnly"`,
+  `BonusButtonText`), `core.md` (`ns.FormatCount`); `docs/checklists/camp-buffs.md` (the steps of the follow-up);
+  `CHANGELOG.md` under `[Unreleased]` (Added: "Bonus catches only"; Changed: the button's text, the two rows, the
+  scrolling list with the hints at the top, the catalog's status line, "Per catch"); `OneKeyFishing/README.md` ("What
+  can be caught here", "Catch catalog", "Camp bonus").
+- [X] T047 Run `npm run check` and `npm test`; no new `VERIFY` marker; hand the new checklist steps to the author.
 
 ---
 
@@ -543,6 +612,8 @@ the tooltips.
 - US3 (T029, T030) needs T022 and the UI of T028 (the same two files).
 - US5 (T031, T032) needs T009. US6 (T033, T034) needs T011. US7 (T035) needs nothing.
 - Phase 11 after every story; T037 and T038 in parallel; T039, T040 last.
+- Phase 12 after the first try in game: T041 on its own, T042 before T043 (the same rows), T044 before T045
+  (the same button and tests); T046 after the code, T047 last.
 
 Files touched by several tasks (no [P] between them): `Fishing/Camp.lua` (T009, T011, T032, T034, T036),
 `CatchDB/Views.lua` (T022, T024, T030, T036), `CatchDB/Events.lua` (T013, T030), `UI/CatchHere.lua` and
@@ -572,7 +643,8 @@ they do not meet, except in the locale files (US2 and US5: one after the other).
 3. **Then**: US5, US6, US7 (the notices, the statistics rows, the lure), each on its own.
 4. **Last**: the debug section, the documents, the checklist, the changelog and the manual, the final check.
 
-Nineteen new visible texts in all (T026: 9, T030: 3, T032: 5, T034: 2), each with nine translations.
+Nineteen new visible texts in all (T026: 9, T030: 3, T032: 5, T034: 2), each with nine translations; the
+follow-up adds eight (T044: 5, T045: 3).
 
 ## Notes
 

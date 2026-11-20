@@ -62,3 +62,17 @@ export function getGlobalNumber(L, name) {
   lua.lua_pop(L, 1);
   return value;
 }
+
+// Sets a global Lua function `name(text)` that returns what `fn(text)` returns (a string, or nil).
+export function setGlobalStringFunction(L, name, fn) {
+  lua.lua_pushcfunction(L, (state) => {
+    const result = fn(lauxlib.luaL_checkstring(state, 1) ? lua.lua_tojsstring(state, 1) : "");
+    if (typeof result === "string") {
+      lua.lua_pushstring(state, to_luastring(result));
+    } else {
+      lua.lua_pushnil(state);
+    }
+    return 1;
+  });
+  lua.lua_setglobal(L, to_luastring(name));
+}

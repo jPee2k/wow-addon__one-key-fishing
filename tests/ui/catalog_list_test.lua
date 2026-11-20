@@ -185,7 +185,7 @@ test("with pool data the Water button shows, and Open water builds its own index
     ns.CatalogTab.SetWater("open")
     advance(0)
     tick(window)
-    assert(table.concat(ns.Catalog.Describe(), "\n"):find("index all|all|open: ready", 1, true), "its own index")
+    assert(table.concat(ns.Catalog.Describe(), "\n"):find("index all|all|open|all: ready", 1, true), "its own index")
     for _, row in ipairs(rows(tab.list)) do
         assert(row.itemID ~= TROUT, "the trout only came from the pool")
     end

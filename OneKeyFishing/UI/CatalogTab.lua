@@ -19,14 +19,13 @@ local ROW_WIDTH = 520
 local ITEM_NAME_WIDTH = 350
 local ITEM_RIGHT_WIDTH = 140
 local TOP = -32 -- below the window title
--- Three rows over the list (spec 017): the search box; Skill, Source and Water; Sort and Kinds.
-local FILTER_TOP = TOP - 28 -- row 2: Skill, Source, Water
-local SORT_TOP = TOP - 54 -- row 3: Sort, Kinds
-local LIST_TOP = TOP - 88 -- the item list, below row 3
+-- Over the list (spec 017, spec 020 decisions 28-30): the search box; the status line (two lines); row A: Skill,
+-- Source; row B: Water or Camp bonus, Kinds, Sort (the same two rows as "What can be caught here").
+local STATUS_TOP = TOP - 24 -- the status line under the search box
+local FILTER_TOP = TOP - 56 -- row A: Skill, Source
+local SORT_TOP = TOP - 82 -- row B: Water or Camp bonus, Kinds, Sort
+local LIST_TOP = TOP - 114 -- the item list, below row B
 local ITEM_LIST_TOP = TOP - 46 -- the zone rows, below the item header and the column headers
-local BOTTOM = 40 -- the lists end above the status line
-local WINDOW_HEIGHT = 660 -- the statistics window (UI/StatsFrame.lua)
-local MAX_ROWS = 26 -- rows of the fixed list when the scroll templates are missing
 local INDENT = 16 -- spot rows under their zone
 local PIN_ATLAS = "Waypoint-MapPin-Untracked"
 -- The zone and spot rows: x and width inside a row, and the text alignment.
@@ -59,68 +58,6 @@ local function MarkDirty()
 end
 
 ---------------------------------------------------------------------------
--- Lists: the game's scroll list, or a fixed pool of rows with "and N more" when the client lacks the templates
----------------------------------------------------------------------------
-local function CreateList(parent, top, initialize)
-    local list = { initialize = initialize }
-    -- The scroll list, the scroll bar and the search box render inside the statistics window (V37, seen in game)
-    local ok = pcall(function()
-        local box = CreateFrame("Frame", nil, parent, "WowScrollBoxList")
-        box:SetPoint("TOPLEFT", LABEL_X, top)
-        box:SetPoint("BOTTOMRIGHT", -LABEL_X - 18, BOTTOM)
-        local bar = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
-        bar:SetPoint("TOPLEFT", box, "TOPRIGHT", 6, 0)
-        bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 6, 0)
-        local view = CreateScrollBoxListLinearView()
-        view:SetElementExtent(LINE_HEIGHT)
-        view:SetElementInitializer("Button", initialize)
-        ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
-        list.box = box
-    end)
-    if not ok then
-        list.box, list.rows = nil, {}
-        local rows = math.min(MAX_ROWS, math.floor((WINDOW_HEIGHT + top - BOTTOM) / LINE_HEIGHT) - 1)
-        for i = 1, rows do
-            local row = CreateFrame("Button", nil, parent)
-            row:SetSize(ROW_WIDTH, LINE_HEIGHT)
-            row:SetPoint("TOPLEFT", LABEL_X, top - (i - 1) * LINE_HEIGHT)
-            list.rows[i] = row
-        end
-        list.more = CreateText(parent, "GameFontDisableSmall")
-        list.more:SetPoint("TOPLEFT", LABEL_X, top - rows * LINE_HEIGHT - 2)
-    end
-    -- Shows the elements; retain keeps the scroll position (new data, FR-028).
-    function list.Show(elements, retain)
-        if list.box then
-            list.box:SetDataProvider(CreateDataProvider(elements), retain and true or nil)
-            return
-        end
-        -- A kind header (spec 014) never takes the last row: it needs room for one of its items, as in CatchHere.
-        local last = #list.rows
-        if elements[last] and elements[last].header then
-            last = last - 1
-        end
-        for i, row in ipairs(list.rows) do
-            if i <= last and elements[i] then
-                list.initialize(row, elements[i])
-                row:Show()
-            else
-                row:Hide()
-            end
-        end
-        -- "and N more" counts the elements left out, kind headers not.
-        local more = 0
-        for i = last + 1, #elements do
-            if not elements[i].header then
-                more = more + 1
-            end
-        end
-        list.more:SetText(more > 0 and (L["and %d more"]):format(more) or "")
-    end
-    return list
-end
-
----------------------------------------------------------------------------
 -- The item list
 ---------------------------------------------------------------------------
 local GREY = 0.5 -- the right column's "No price"
@@ -137,7 +74,8 @@ local function RightColumn(element)
         end
         return L["No price"], true
     elseif sort == "chance" then
-        return element.chance and ns.Catalog.ChanceText(element.chance, element.littleData) or "", false
+        -- A known camp bonus item without data under its bonus (spec 020) has no chance: "Little data".
+        return ns.Catalog.ChanceText(element.chance, element.littleData), false
     end
     return (L["Zones: %d"]):format(element.zones), false
 end
@@ -156,10 +94,12 @@ local function InitItemRow(row, element)
         row.zones = CreateText(row, "GameFontHighlight", "RIGHT")
         row.zones:SetPoint("RIGHT", -4, 0)
         row.zones:SetWidth(ITEM_RIGHT_WIDTH)
+        row.tag = ns.CreateTagIcon(row, 22 + ITEM_NAME_WIDTH)
         -- A header row (kindHeader) has no item: hover and click do nothing on it.
         row:SetScript("OnEnter", function(self)
             if not self.kindHeader then
-                ns.ShowItemTooltip(self, self.itemID, true) -- with its own "Caught in" lines (UI/ItemHooks.lua)
+                -- with its own "Caught in" lines (UI/ItemHooks.lua) and its camp bonus lines (spec 020)
+                ns.ShowItemTooltip(self, self.itemID, true, self.bonus)
             end
         end)
         row:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -172,18 +112,21 @@ local function InitItemRow(row, element)
     row.name:ClearAllPoints()
     row.kindHeader = element.header -- the kind of a header row, nil for an item
     if element.header then
-        row.itemID = nil
+        row.itemID, row.bonus = nil, nil
         row.icon:Hide()
+        row.tag:Hide()
         row.name:SetPoint("LEFT", 2, 0)
+        row.name:SetWidth(ITEM_NAME_WIDTH)
         row.name:SetTextColor(1, 0.82, 0) -- the game's header gold
         row.name:SetText(ns.Catalog.KindText(element.header))
         row.zones:SetText("")
         return
     end
-    row.itemID = element.itemID
+    row.itemID, row.bonus = element.itemID, element.bonus
     local text, icon = ns.ItemDisplay(element.itemID)
     row.icon:SetTexture(icon)
     row.icon:Show()
+    ns.ShowTag(row.tag, row.name, ITEM_NAME_WIDTH, element.bonus)
     row.name:SetPoint("LEFT", 22, 0)
     row.name:SetTextColor(1, 1, 1)
     row.name:SetText(text)
@@ -213,6 +156,7 @@ local function ShowPlaceTooltip(self)
         end
     end
     GameTooltip:AddLine(ns.Catalog.CatchesText(element.place.catches, element.place.players), 1, 1, 1)
+    ns.AddBonusLines(GameTooltip, element.place.bonus) -- a tagged place's own bonus (spec 020)
     GameTooltip:Show()
 end
 
@@ -255,6 +199,7 @@ local function InitPlaceRow(row, element)
             row[column.key] = text
         end
         row.pinButton = CreatePinButton(row)
+        row.tag = ns.CreateTagIcon(row, COLUMNS[1].x + COLUMNS[1].width)
         row:SetScript("OnEnter", ShowPlaceTooltip)
         row:SetScript("OnLeave", function() GameTooltip:Hide() end)
         row:SetScript("OnClick", function(self)
@@ -269,7 +214,7 @@ local function InitPlaceRow(row, element)
     row.toggle:SetText(zone and (expanded[place.mapID] and "-" or "+") or "")
     row.name:ClearAllPoints()
     row.name:SetPoint("LEFT", COLUMNS[1].x + (zone and 0 or INDENT), 0)
-    row.name:SetWidth(COLUMNS[1].width - (zone and 0 or INDENT))
+    ns.ShowTag(row.tag, row.name, COLUMNS[1].width - (zone and 0 or INDENT), place.bonus)
     row.name:SetText(place.name)
     row.skill:SetText(SpanLabel(place.ranges))
     row.chance:SetText(ns.Catalog.ChanceText(place.chance, place.littleData))
@@ -292,6 +237,12 @@ end
 
 function CatalogTab.SetWater(value)
     filter.water = value
+    CatalogTab.Refresh()
+end
+
+-- The catalog's own Camp bonus filter (spec 020), in memory like the Water filter.
+function CatalogTab.SetBonus(value)
+    filter.bonus = value
     CatalogTab.Refresh()
 end
 
@@ -349,19 +300,17 @@ function CatalogTab.Create(parent)
         ns.CatchHere.OpenSourceMenu(self, function() return filter.source end, CatalogTab.SetSource)
     end)
     page.sourceButton:SetPoint("LEFT", page.skillButton, "RIGHT", 8, 0)
-    -- Row 2 holds the three filters alone: with the longest translations (French) they take about 551 of its 560
-    -- pixels (specs/017-catalog-sort, research R6). Water shows only with pool data.
-    page.waterButton = ns.CreateButton(page.listView, "", 150, function(self)
-        ns.CatchHere.OpenWaterMenu(self, function() return filter.water end, CatalogTab.SetWater)
-    end)
-    page.waterButton:SetPoint("LEFT", page.sourceButton, "RIGHT", 8, 0)
-    page.waterButton:Hide()
-    -- Row 3: the list's order, then the kind menu, which is the catch tab's: one choice for both (spec 014).
-    page.sortButton = ns.CreateButton(page.listView, "", 150, OpenSortMenu)
-    page.sortButton:SetPoint("TOPLEFT", LABEL_X - 4, SORT_TOP)
+    -- Row B: one slot for Water (with pool data) or Camp bonus (with bonus data, spec 020), then the kind menu (the
+    -- catch tab's: one choice for both, spec 014) and the list's order. Each button follows the previous one, so a
+    -- longer translation pushes the next along.
+    page.waterButton = ns.CatchHere.CreateWaterButton(page.listView, LABEL_X - 4, SORT_TOP,
+        function() return filter.water end, CatalogTab.SetWater)
+    page.bonusButton = ns.CatchHere.CreateBonusButton(page.listView, LABEL_X - 4, SORT_TOP,
+        function() return filter.bonus end, CatalogTab.SetBonus)
     page.kindButton = ns.CreateButton(page.listView, "", ns.CatchHere.KIND_WIDTH, ns.CatchHere.OpenKindMenu)
-    page.kindButton:SetPoint("LEFT", page.sortButton, "RIGHT", 8, 0)
-    page.list = CreateList(page.listView, LIST_TOP, InitItemRow)
+    page.sortButton = ns.CreateButton(page.listView, "", 150, OpenSortMenu)
+    page.sortButton:SetPoint("LEFT", page.kindButton, "RIGHT", 8, 0)
+    page.list = ns.CreateList(page.listView, LIST_TOP, InitItemRow)
 
     page.itemView = CreateFrame("Frame", nil, page)
     page.itemView:SetAllPoints()
@@ -380,12 +329,13 @@ function CatalogTab.Create(parent)
         header:SetWidth(column.width)
         header:SetText(headers[column.key])
     end
-    page.places = CreateList(page.itemView, ITEM_LIST_TOP, InitPlaceRow)
+    page.places = ns.CreateList(page.itemView, ITEM_LIST_TOP, InitPlaceRow)
     page.itemView:Hide()
 
+    -- One status line: under the search box on the list, where the zones begin on an item's page (Refresh).
     page.status = CreateText(page, "GameFontDisable")
-    page.status:SetPoint("BOTTOMLEFT", LABEL_X, BOTTOM - 26)
     page.status:SetWidth(540)
+    page.status:SetMaxLines(2) -- its room between the search box and row A (STATUS_TOP)
     page:Hide()
     return page
 end
@@ -401,10 +351,13 @@ local function StatusText(items, state, shown)
         return search ~= "" and L["The kind filter hides the matches."] or L["The kind filter hides every item."]
     elseif search ~= "" then
         return L["No item matches the search."]
+    elseif filter.bonus == "bonusOnly" then
+        return L["No bonus catch has been recorded yet."] -- spec 020
     elseif filter.source == "mine" then
         return L["You have not caught anything yet."]
     end
-    return L["Nothing has been caught yet."] .. "\n"
+    -- One paragraph: on two lines it keeps clear of row A in every language (the second sentence alone wraps).
+    return L["Nothing has been caught yet."] .. " "
         .. L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."]
 end
 
@@ -449,16 +402,15 @@ function CatalogTab.Refresh(retain)
     dirty = false
     page.skillButton:SetText((L["Skill: %s"]):format(ns.RangeLabel(filter.range)))
     page.sourceButton:SetText((L["Source: %s"]):format(ns.CatchHere.SourceLabel(filter.source)))
-    local pools = ns.CatchDB.HasPoolData()
-    if not pools then
-        filter.water = "all" -- no Water button, no filter
-    end
-    page.waterButton:SetText((L["Water: %s"]):format(ns.CatchHere.WaterLabel(filter.water)))
-    page.waterButton:SetShown(pools)
+    -- One slot for the Water and the Camp bonus buttons (spec 020); a filter without its button is "all".
+    filter.water, filter.bonus = ns.CatchHere.UpdateFilterSlot(page.waterButton, page.bonusButton, filter.water,
+        filter.bonus, page.kindButton)
     page.kindButton:SetText(ns.CatchHere.KindLabel())
     page.sortButton:SetText((L["Sort: %s"]):format(ns.Catalog.SortText(ns.Catalog.GetSort())))
     page.listView:SetShown(chosen == nil)
     page.itemView:SetShown(chosen ~= nil)
+    page.status:ClearAllPoints()
+    page.status:SetPoint("TOPLEFT", LABEL_X, chosen and ITEM_LIST_TOP or STATUS_TOP)
     local state
     if chosen then
         ShowItem(retain)
