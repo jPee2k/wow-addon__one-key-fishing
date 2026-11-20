@@ -694,7 +694,6 @@ function Catalog.BonusButtonText(value)
     return texts[value] or texts.all
 end
 
--- VERIFY(V66): the camp features' item icons are known to every client
 -- The tag's icon: the camp feature's item icon (by its item ID, the same in every language), or nil.
 function Catalog.BonusIcon(key)
     local bonus = ns.Camp.Bonus(key)

@@ -11,7 +11,6 @@ ns.GameData = GameData
 -- The Bloated fish: an extra loot slot under either bonus, the Rack's "Uncommon Fishing" and the Hut's "Rare
 -- Fishing" (the Hut gives them too, seen 2026-11-20); a Bloated fish is drawn from this list, not from the water's
 -- fish. One table, named by both entries.
--- VERIFY(V61): Bloated fish come only under a camp buff
 local BLOATED = {
     [6643] = true, -- Bloated Brilliant Smallfish
     [6644] = true, -- Bloated Mackerel

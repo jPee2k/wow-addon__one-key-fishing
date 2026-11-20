@@ -660,7 +660,8 @@ No saved data change, no recount of old statistics; one new marker, `VERIFY(V68)
   `tests/catalog/bonus_test.lua` and `tests/ui/here_bonus_test.lua`); the four Bloated fish missing from
   `GameData/ItemKinds.lua` (6644, 6646, 6647, 13891) are containers, with a test that every Bloated fish of the
   bonuses is (`tests/gamedata/camp_bonuses_test.lua`); the "Chance" column of "What can be caught here" is 110 wide
-  (x 225), the name 195, so French "Peu de données" is no longer cut.
+  (x 225), the name 195, so French "Peu de données" is no longer cut; on the catalog's item page the chance column
+  is 110 too (x 320), the skill column x 250, the name 230.
 
 ---
 

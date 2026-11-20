@@ -30,9 +30,10 @@ local INDENT = 16 -- spot rows under their zone
 local PIN_ATLAS = "Waypoint-MapPin-Untracked"
 -- The zone and spot rows: x and width inside a row, and the text alignment.
 local COLUMNS = {
-    { key = "name", x = 16, width = 270, justify = "LEFT" },
-    { key = "skill", x = 290, width = 70, justify = "LEFT" },
-    { key = "chance", x = 360, width = 70, justify = "RIGHT" },
+    { key = "name", x = 16, width = 230, justify = "LEFT" },
+    { key = "skill", x = 250, width = 70, justify = "LEFT" },
+    -- 110 wide: French "Little data" was cut at 70 (seen 2026-11-20), as in "What can be caught here"
+    { key = "chance", x = 320, width = 110, justify = "RIGHT" },
     { key = "catches", x = 435, width = 60, justify = "RIGHT" },
 }
 

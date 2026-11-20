@@ -368,7 +368,8 @@ The sources: the in-game session of 2026-11-19 and the game data in
   catalog's list and the item tooltip follow the item's best place; each zone and spot row shows its own tag
   (spec, edge cases).
 - **Rationale**: the chance columns are 90 and 70 pixels and the name columns 220 ("What can be caught here"; since
-  2026-11-20 the chance column there is 110 and the name 195, for French "Peu de données"), 270 (the
+  2026-11-20 the chance column there is 110 and the name 195, for French "Peu de données"; the catalog's zone and
+  spot rows likewise: chance 110, name 230), 270 (the
   catalog's zone and spot rows) and 350 (its list), without word wrap:
   "0.47% with the bonus (3 players)" and "Bloated Mithril Head Trout" plus "Fishing Rack bonus" do not fit, less
   so in German or French.

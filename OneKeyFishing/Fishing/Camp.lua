@@ -37,7 +37,6 @@ end
 -- Auras are restricted in a fight: the call returns nothing for an aura that is up (seen 2026-11-19). The player's
 -- combat flag counts too: it is set before the lockdown (PLAYER_REGEN_DISABLED runs first), and an aura event of the
 -- fight's first moment must not read an empty answer as "no buff".
--- VERIFY(V69): the player's combat flag is clear when PLAYER_REGEN_ENABLED fires
 local function Restricted()
     if InCombatLockdown() or (UnitAffectingCombat ~= nil and UnitAffectingCombat("player")) then
         return true
@@ -233,7 +232,6 @@ end
 -- known bonus item of one of the mask's bonuses, or, without the quest items fished beside an ordinary catch, two
 -- loot slots or more (both bonuses give their extra item as a second slot; without a buff a catch has one).
 -- items: the list of FISH_CAUGHT, one { itemID, ... } entry per loot slot.
--- VERIFY(V68): without a camp buff a catch has one loot slot, quest items aside
 function Camp.IsBonusCatch(mask, items)
     if type(mask) ~= "number" or mask <= 0 then
         return false
@@ -290,7 +288,6 @@ end
 ns.RegisterEvent("PLAYER_ENTERING_WORLD", function()
     Camp.Read()
 end)
--- VERIFY(V65): UNIT_AURA fires when the aura comes and goes out of combat
 -- UNIT_AURA is registered for the player only (it fires for every unit around); its payload (secret tables in a
 -- fight) is never read.
 ns.RegisterUnitEvent("UNIT_AURA", "player", function(_, unit)

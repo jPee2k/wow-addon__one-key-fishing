@@ -45,9 +45,12 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 ## 1.5.0 (planned)
 
 - Spec 020 (`specs/020-camp-buffs`): the camp bonuses of a Fishing Rack and a Fishing Hut, built on `020-camp-buffs`
-  (implemented 2026-11-20). It has eight open `VERIFY` markers, V60 to V67 (`specs/020-camp-buffs/verification.md`),
-  closed by its checklist [checklists/camp-buffs.md](checklists/camp-buffs.md); the Hut's steps (V60, V62) need
-  Fishing 300 and may stay open, then the author accepts them or releases with `--force`.
+  (implemented 2026-11-20). Three `VERIFY` markers are open after the in-game checks of 2026-11-20: V62 (both
+  auras at once: needs a second player), V63 (the cast in which a buff ends: rare) and V67 (the own record's size
+  with many bonus parts; 1448 bytes for 18 places, 2 with a part, so far) (`specs/020-camp-buffs/verification.md`,
+  checklist [checklists/camp-buffs.md](checklists/camp-buffs.md)); V61 and V68 were accepted on 63 catches
+  without a buff at one water, V60, V64, V65, V66 and V69 confirmed. What stays open the author accepts or
+  releases with `--force`.
 - **Before the release**: read the size of the own record with bonus parts (V67, the checklist's size step): if a
   place with a part costs twice a place without or more, the roll before a 501st place counts such a place as two
   (research R16) before the release, not after.

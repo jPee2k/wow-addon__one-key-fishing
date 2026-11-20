@@ -191,7 +191,7 @@ and it creates no frame (FR-008).
   (the statistics' bonus catches, decision 33: with a mask above 0, the catch holds a known item of one of the
   mask's bonuses, or two loot slots or more once the quest items of `GameData.FishedQuestItems` are left out, by
   their list or their class through `C_Item.GetItemInfoInstant`; `items` is `FISH_CAUGHT`'s list, one entry per loot
-  slot; `VERIFY(V68)`: without a buff a catch has one slot).
+  slot; V68, accepted 2026-11-20: without a buff a catch has one slot).
 - The notices (research R10): a check runs after every allowed read and when a timer comes due; the clock alone
   never shows one. Each active buff arms two `C_Timer.After` timers, a second past the five-minute threshold and a
   second past the end, so the timer's own check finds the crossing; while auras are restricted a timer does nothing
@@ -205,4 +205,5 @@ and it creates no frame (FR-008).
   The texts are read when a notice fires, not at load.
 - `Camp.Describe()` gives the debug report's "Camp bonus" lines (English): each bonus's state, whether aura reads
   are restricted, the last mask `CastMask` answered, the setting.
-- Its assumptions: `VERIFY(V62)` to `VERIFY(V65)` ([verification.md](../../specs/020-camp-buffs/verification.md)).
+- Its assumptions: `VERIFY(V62)` and `VERIFY(V63)` are open; V64, V65 and V69 confirmed, V68 accepted
+  ([verification.md](../../specs/020-camp-buffs/verification.md)).

@@ -211,8 +211,20 @@ needs any tagged item.
 
 ## Results
 
-- Date, build, client language: ____
-- Problems found: ____
+- Date, build, client language: 2026-11-20, 1.60.1 (70959), enUS client; the addon in Ukrainian, French and German.
+- Passed: the tooltip lines stay cyan in the catalog under "Bonus only" (step 15); a Bloated fish caught only under
+  the Hut shows the Hut's icon and the "Rack or Hut" explanation (step 16); the tag icons on a level 1 character
+  that never saw the items (V66); the layout of "What can be caught here" and the catalog in Ukrainian, French and
+  German (steps 11 to 13); "Per catch" "1" and "2.3"; "Bonus catches" under the Hut equal to the catches with two
+  items, 4 of 36 at Lake Elune'ara (step 14); the buff lost at a death in a fight read at once after it (V65,
+  V69); Camper's Lure applied by the key (step 7); no notice with the setting off, both with it on (step 5);
+  "No camp bonus" lists no tagged item (FR-053); 63 catches without a buff, no second slot (V61, V68 accepted).
+- Problems found and fixed the same day: French "Peu de données" cut in the chance column of both tabs (now 110
+  wide); four Bloated fish (6644, 6646, 6647, 13891) listed under "Other" (now containers).
+- Open: V62 (both auras, a second player), V63 (rare), V67 (1448 bytes for 18 places, 2 with a part: no risk yet,
+  measure again with 20 or more places with a part); the list of "What can be caught here" holding its scroll while
+  fishing (no place had enough items to scroll); H14 (the Hut's extras at other waters: none in 50 casts at
+  Hillsbrad Foothills).
 
 What the checklist confirms goes into `docs/forever-api.md` and `docs/fishing-investigation.md`; each `V` it closes
 is marked in [verification.md](../../specs/020-camp-buffs/verification.md) and its marker removed from the code.

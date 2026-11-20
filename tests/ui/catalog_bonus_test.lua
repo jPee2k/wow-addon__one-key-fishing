@@ -104,7 +104,7 @@ test("zone and spot rows: the icon, the bonus's chance and catches", function()
     eq(#zones, 2, "two zones")
     local zone = zones[1]
     assert(zone.tag:IsShown(), "the icon on the zone row")
-    eq(zone.name:GetWidth(), 270 - TAG, "the name makes room")
+    eq(zone.name:GetWidth(), 230 - TAG, "the name makes room")
     eq(zone.chance.text, ns.Percent(0.2), "the bonus chance")
     eq(zone.catches.text, "50", "the bonus catches")
     eq(zones[2].chance.text, L["Little data"], "the zone without data")

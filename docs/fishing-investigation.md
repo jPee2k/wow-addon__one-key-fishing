@@ -189,7 +189,8 @@ listeners of check 4 (cut to 255 characters).
 
 ### A second loot slot without a buff
 
-Why a second loot slot can stand for the camp bonus in the statistics (spec 020 decision 33, `VERIFY(V68)`):
+Why a second loot slot can stand for the camp bonus in the statistics (spec 020 decision 33, V68, accepted
+2026-11-20):
 
 - **Game.** Without a buff every catch had one slot, in open water and in a pool (2026-11-19). Pools, schools and
   floating wreckage or debris give one item too: a quantity in one slot, or a trunk opened later.
@@ -203,7 +204,13 @@ Why a second loot slot can stand for the camp bonus in the statistics (spec 020 
 - **The addon.** `GameData/FishedQuestItems.lua` lists them (Electropeller 6718, Nat Pagle's fish 16967 to 16970,
   Dezian Queenfish 19806, Speckled Tastyfish 19807) and names the quest class (12), and `Camp.IsBonusCatch` leaves
   their slots out. If another item comes as a second slot without a buff, "Bonus catches" reads too high under a buff
-  until the item joins that list. Check H9 below closes it.
+  until the item joins that list.
+- **Game, 2026-11-20 (H9 in part).** 63 catches without any fishing aura at Lake Elune'ara (map 1450), counted by a
+  `LOOT_OPENED` listener (`IsFishingLoot()`, `GetNumLootItems() > 1`): no second slot and no Bloated fish. Under the
+  Hut at the same water a second slot came in 4 of 36 and 5 of 59 catches, so a zero without the buff by chance is
+  about 0.5 %. The author accepted V61 and V68 on it; other waters are not checked.
+- **Game, 2026-11-20 (H14 in part).** 50 casts under the Hut at Hillsbrad Foothills (open water) gave no second slot
+  at all, against about 8 % at Lake Elune'ara: the Hut's extra item may depend on the water or its level.
 
 ## The camp features of Fishing
 
@@ -508,7 +515,10 @@ error in a fight: `local t=u.addedAuras if t and not issecretvalue(t) then ... e
 
 Done on 2026-11-20: H1 (no fishing aura before), H2 (the aura at placing), H3 (the aura's table), H4 (`/okf debug`
 sees it, V60), H5 to H7 (an hour of catches with the loot logged, the five-minute toast, V64), H8 (the end toast out
-of combat, V65 in part). The results are in "Checked in game", "The Fishing Hut".
+of combat, V65 in part). The results are in "Checked in game", "The Fishing Hut". Later that day: H9 in part (63
+catches without an aura, no second slot; V61 and V68 accepted), H11 (the buff lost at a death in a fight was read
+at once after it, V65 and V69 confirmed), H14 in part (no extra item in 50 casts at Hillsbrad Foothills); see "A
+second loot slot without a buff".
 
 The listeners, each under the chat line's 255 characters (a `/run` after every login):
 

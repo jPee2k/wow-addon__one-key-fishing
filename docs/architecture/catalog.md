@@ -84,7 +84,7 @@ parts" builds `item.bonus` in each view).
   way: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only", "Camp bonus: Rack", "Camp bonus: Hut";
   an unknown value reads as "all"), all looked up when drawn.
   `Catalog.BonusIcon(key)`: the camp feature's item icon by `GameData.CampBonuses[].item` through
-  `C_Item.GetItemIconByID` (by ID, the same in every language), or nil (`VERIFY(V66)`).
+  `C_Item.GetItemIconByID` (by ID, the same in every language), or nil (V66, confirmed 2026-11-20).
 - "Bonus catches only" (`filter.bonus == "bonusOnly"`, spec 020 research R20) is a filter of the list over "All
   catches", like the kinds: `IndexFilter` maps it to the filter of `"all"`, so `IndexFor`, `Places` and `Spots` read
   the index of "All catches" (an item's page shows all its zones, and `Describe` names no index for it), and
