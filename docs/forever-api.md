@@ -414,6 +414,28 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   language types, so they break when the language is switched; letters, numbers, F-keys and mouse buttons do not.
   There is no API for physical keys; the settings and README tell players to bind such keys once per language
   (two slots per binding).
+- Player auras and the camp's fishing buff (2026-11-19, build 70959; the whole session is in
+  [fishing-investigation.md](fishing-investigation.md), "Checked in game"):
+  - `C_UnitAuras.GetPlayerAuraBySpellID(1280341)` ("Uncommon Fishing", the Fishing Rack's aura) returns nothing
+    without the buff and an `AuraData` table with it (`spellId`, `name`, `duration = 3600`, `expirationTime`,
+    `auraInstanceID`, `sourceUnit = "player"`, `isHelpful`).
+  - `C_Secrets.GetSpellAuraSecrecy(1280341)` and `(1280342)` give 2; `C_Secrets.ShouldAurasBeSecret()` is false
+    out of combat and true in a fight with an ordinary mob, where `GetPlayerAuraBySpellID` returns nothing for an
+    aura that is up. The table is back after the fight: an empty answer in a fight means "unknown".
+  - In a fight the `UNIT_AURA` payload is secret (`addedAuras` and `updatedAuraInstanceIDs` secret tables,
+    `isFullUpdate` a secret boolean); `ipairs` over one raises "bad argument #1 to 'ipairs' (table expected, got
+    secret)". Check `issecretvalue` first.
+  - The aura is added one second after the placing cast (`UNIT_SPELLCAST_SUCCEEDED` 1307247), outlives the placed
+    object and a logout to the character screen; its `auraInstanceID` changes over a relog.
+  - Under the aura the Fishing cast (18248), the bobber (35591) and the loot source are unchanged; `LOOT_READY`
+    fires two or three times per catch. The aura's bonus is a second loot slot of the same catch (slot 1 Bloated
+    Mithril Head Trout, slot 2 Raw Mithril Head Trout), both with the bobber's GUID as the source. The loot of an opened Bloated fish has the
+    source `Item-...` (the item's GUID).
+  - A lure from the camp (Camper's Lure, item 291005) is a weapon enchant like the others:
+    `GetWeaponEnchantInfo()` gives true, the time left in ms and the enchant ID 8773 (+60, 5 minutes).
+  - A placed Fishing Rack is opened like a container (spell 6247 "Opening"); its loot source is
+    `GameObject-...-612090-...`.
+  - `C_VignetteInfo.GetVignettes()` returns an empty table there.
 
 ## Open questions
 

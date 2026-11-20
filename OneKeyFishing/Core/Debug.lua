@@ -86,6 +86,13 @@ local function BuildReport()
         end
     end)
 
+    -- The camp bonuses (specs/020-camp-buffs, Fishing/Camp.lua): their state, the restriction, the last cast's mask.
+    Section(lines, "Camp bonus", function()
+        for _, line in ipairs(ns.Camp.Describe()) do
+            add("%s", line)
+        end
+    end)
+
     Section(lines, "Gear", function()
         local mainHand = GetInventoryItemID("player", ns.GameData.EquipSlots.mainHand)
         add("main hand: %s, fishing pole: %s, fishing bonus: %s", ItemText(mainHand),

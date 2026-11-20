@@ -47,6 +47,7 @@ ns.RegisterEvent("ADDON_LOADED", function(_, loadedName)
     end
     P.version = P.version + 1 -- the seed or the record may be new
     P.others, P.frozen, P.ownItems, P.ownIndex, P.poolData = nil, nil, nil, nil, nil
+    P.bonusData = nil -- CatchDB.HasBonusData (spec 020)
     BumpAll()
 end)
 
@@ -71,13 +72,17 @@ ns.On("FISHING_CAST_STOP", function()
     end
 end)
 
--- Catch.lua settles a cast and every earlier one with it; only the named cast is counted.
+-- Catch.lua settles a cast and every earlier one with it; only the named cast is counted. Its camp bonus mask is
+-- asked from Camp (spec 020), never sent in the message.
 local function TakeCast(castID)
     local cast = casts[castID]
     for id in pairs(casts) do
         if id <= castID then
             casts[id] = nil
         end
+    end
+    if cast then
+        cast.mask = ns.Camp.CastMask(castID)
     end
     return cast
 end
@@ -116,6 +121,8 @@ ns.On("SHARED_DATA_CHANGED", function(keys, store)
     if P.poolData == false then
         P.poolData = nil
     end
+    -- Dropped whole, not only a "no": a record with the only camp bonus part may have left (spec 020, FR-027).
+    P.bonusData = nil
     local own = keys == nil
     for _, key in ipairs(keys or {}) do
         own = own or IsOwnKey(key)

@@ -73,10 +73,11 @@ test("the catalog has the kind button; the filter row keeps its three buttons of
         eq(tab[name].minWidth, 150, name .. ": the filter row as before spec 014")
     end
     eq(tab.kindButton.minWidth, 120, "the Kinds button")
-    local point = anchor(tab.kindButton, "LEFT")
-    assert(point, "the Kinds button follows another one (spec 017: row 3, after Sort)")
-    eq(point[2], tab.sortButton, "after the Sort button")
-    eq(point[3], "RIGHT", "to its right")
+    -- Row B (spec 020): the slot of Water or Camp bonus, Kinds, Sort; without pool or bonus data Kinds starts it.
+    assert(anchor(tab.kindButton, "TOPLEFT"), "the Kinds button at the slot's place")
+    local sort = anchor(tab.sortButton, "LEFT")
+    eq(sort[2], tab.kindButton, "Sort after Kinds")
+    eq(sort[3], "RIGHT", "to its right")
 end)
 
 test("a toggle from the catalog's own button updates its list at once (FR-007)", function()

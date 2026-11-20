@@ -304,9 +304,41 @@ function ns.ForEachBagItem(fn)
     end
 end
 
--- A share (0..1) as whole percent: "45%".
+-- A share (0..1) as a percent (specs/020-camp-buffs research R9): a whole number from 9.95% up ("37%"), one decimal
+-- from 0.995% ("3.4%"), two decimals from 0.005% ("0.47%"), "<0.01%" below that, "0%" only for nothing. The bounds
+-- are the rounding edges, so "10.0%" and "1.00%" never appear. The decimal sign is a point in every language.
 function ns.Percent(value)
-    return ("%d%%"):format(math.floor(value * 100 + 0.5))
+    local p = value * 100
+    if p >= 9.95 then
+        return ("%d%%"):format(math.floor(p + 0.5))
+    elseif p >= 0.995 then
+        return ("%.1f%%"):format(p)
+    elseif p >= 0.005 then
+        return ("%.2f%%"):format(p)
+    elseif p > 0 then
+        return "<0.01%"
+    end
+    return "0%"
+end
+
+-- A count with one decimal, written whole when the rounded value is whole ("1", "1.5"), with the game client's decimal
+-- separator (ns.FormatDecimal): the pieces per catch (specs/020-camp-buffs).
+function ns.FormatCount(value)
+    local tenths = math.floor(value * 10 + 0.5)
+    if tenths % 10 == 0 then
+        return ("%d"):format(math.floor(tenths / 10))
+    end
+    return ns.FormatDecimal(tenths / 10, 1)
+end
+
+-- The text wrapped in the colour's code ("|cffrrggbb...|r"). A coloured tooltip line carries its colour this way as
+-- well as in the arguments: the game, or another addon, may reset the line colours of the shared tooltip and turn
+-- every line white, while codes inside the text survive (seen 2026-11-08, spec 012 R5; again 2026-11-20 in the
+-- catalog's item tooltips, spec 020 decision 34). The code wraps the translated text; it is never part of an L[...]
+-- string.
+function ns.ColoredText(text, r, g, b)
+    return ("|cff%02x%02x%02x%s|r"):format(math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5),
+        math.floor(b * 255 + 0.5), text)
 end
 
 -- The item ID of an item link (or any text holding one), or nil.

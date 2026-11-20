@@ -188,3 +188,38 @@ test("the values line wraps inside the window, as wide as the next-rank line (sp
     assert(width and width > 0, "a width, so the line wraps instead of running past the window's edge")
     eq(width, window.nextRank:GetWidth(), "as wide as the next-rank line, clear of the Pin button")
 end)
+
+-- The camp bonus rows (specs/020-camp-buffs FR-035, research R12): the last two rows of "Results", shown in the three
+-- columns once the total has a bonus cast, their place kept while hidden; the window two lines taller.
+test("the camp bonus rows: hidden without a bonus cast, shown in three columns with one", function()
+    local L = ns.L
+    eq(window.cells.bonusCasts ~= nil, true, "the row exists")
+    local parts = window.rowParts
+    assert(not parts.bonusCasts.label:IsShown(), "hidden without a bonus cast")
+    assert(not window.cells.bonusCatches[3]:IsShown(), "its cells too")
+    eq(parts.bonusCasts.label.text, L["Casts with a camp bonus"], "the label")
+    eq(parts.bonusCatches.label.text, L["Bonus catches"], "the label")
+    auras[1280341] = { expirationTime = GetTime() + 3000, duration = 3600 }
+    fire("UNIT_AURA", "player")
+    fish_cast({ { FISH, 1 } })
+    ns.StatsFrame.Refresh()
+    assert(parts.bonusCasts.label:IsShown(), "shown")
+    assert(parts.bonusCatches.label:IsShown(), "bonus catches shown")
+    eq(cell("bonusCasts", 1), "1", "session")
+    eq(cell("bonusCasts", 2), "1", "this zone")
+    eq(cell("bonusCasts", 3), "1", "all time")
+    eq(cell("bonusCatches", 3), "0", "0 bonus catches")
+    auras[1280341] = nil
+    fire("UNIT_AURA", "player")
+end)
+
+test("the camp bonus rows end the Results block; the window is 736 high, Top catches two lines lower", function()
+    eq(window:GetHeight(), 736, "the height")
+    local function y(frame)
+        return anchor(frame, "TOPLEFT")[3]
+    end
+    local parts = window.rowParts
+    eq(y(parts.bonusCasts.label), y(parts.catchesPerHour.label) - 18, "after Catches per hour")
+    eq(y(parts.bonusCatches.label), y(parts.bonusCasts.label) - 18, "then Bonus catches")
+    eq(y(window.itemsHeader), -360 - 36, "Top catches two lines lower than in 1.4.0 (-360)")
+end)

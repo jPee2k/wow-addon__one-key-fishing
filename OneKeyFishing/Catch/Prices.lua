@@ -192,7 +192,8 @@ function Prices.AddTooltipLine(tooltip, itemID)
     end
     if fewLots then
         local text = (ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format(ns.FormatMoney(price))
-        tooltip:AddLine(text, 0.6, 0.6, 0.6)
+        -- the colour as a code too: it survives a reset of the line colours (ns.ColoredText, Core/Data.lua)
+        tooltip:AddLine(ns.ColoredText(text, 0.6, 0.6, 0.6), 0.6, 0.6, 0.6)
     elseif price then
         tooltip:AddLine((ns.L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(price)), 1, 1, 1)
     end

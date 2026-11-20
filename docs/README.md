@@ -6,6 +6,7 @@
 | [`../.specify/memory/constitution.md`](../.specify/memory/constitution.md) | the project principles the rules come from |
 | [development.md](development.md) | the tools (`npm run check`, `npm test`, build, link, harvest), the test suite, packaging, the definition of done |
 | [forever-api.md](forever-api.md) | what is known about the WoW Forever API, how to check a call, the facts verified in game, the open questions for the spike |
+| [fishing-investigation.md](fishing-investigation.md) | how fishing works in WoW Forever beyond the API: the camp features (Fishing Rack, Fishing Hut) and their fishing auras, what changes a catch, items and skill sources, profit, what it means for the catch database, the in-game checks still open |
 | [architecture/](architecture/) | the modules in detail: [core](architecture/core.md), [game data](architecture/game-data.md), [fishing mode](architecture/fishing-mode.md), [catches and statistics](architecture/catch-and-stats.md), [catch database](architecture/catch-db.md), [catalog](architecture/catalog.md), [exchange](architecture/exchange.md), [UI](architecture/ui.md) |
 | [languages.md](languages.md) | the interface languages, how one is chosen, the rules for translation files |
 | [publishing.md](publishing.md) | branches, release steps, Blizzard's add-on policy and the CurseForge requirements |

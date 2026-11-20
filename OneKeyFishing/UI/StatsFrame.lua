@@ -9,7 +9,8 @@ local L = ns.L
 local StatsFrame = {}
 ns.StatsFrame = StatsFrame
 
-local WIDTH, HEIGHT = 580, 700
+-- 736: the two camp bonus rows (spec 020) keep their place, so the zone lines keep their room above the buttons.
+local WIDTH, HEIGHT = 580, 736
 local LABEL_X = 20
 local COLUMN_X = { 210, 330, 450 }
 local COLUMN_WIDTH = 110
@@ -67,6 +68,11 @@ local function BuildRows()
                 local value = PerHour(c.bucket.catches, c.bucket.modeTime + c.liveMode)
                 return value and ns.FormatDecimal(value, 1) or "-"
             end },
+        -- The camp bonus (spec 020): shown once the total has a bonus cast (bonusOnly), their place kept otherwise.
+        { key = "bonusCasts", label = L["Casts with a camp bonus"], bonusOnly = true,
+            text = function(c) return tostring(c.bucket.bonusCasts or 0) end },
+        { key = "bonusCatches", label = L["Bonus catches"], bonusOnly = true,
+            text = function(c) return tostring(c.bucket.bonusCatches or 0) end },
         { section = L["Money"] },
         { key = "value", label = L["Value"],
             tip = L["Items caught, at the higher of vendor and auction price; with few lots listed, the vendor price."],
@@ -85,13 +91,16 @@ local CreateText = ns.CreateText -- UI/Widgets.lua
 local function ShowRowTooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:AddLine(self.label)
-    GameTooltip:AddLine(self.tip, 1, 1, 1, true)
+    if self.tip then
+        GameTooltip:AddLine(self.tip, 1, 1, 1, true)
+    end
     GameTooltip:Show()
 end
 
 -- Rows and section headers from ROWS, on the statistics page; returns the y below the last row.
 local function CreateTable(f, page, headerY)
     f.cells = {} -- row key -> its three cells (session, this zone, all time)
+    f.rowParts = {} -- row key -> { label, hover }: with f.cells, what a bonusOnly row hides
     local y = headerY - 4
     for _, definition in ipairs(ROWS) do
         if definition.section then
@@ -133,6 +142,7 @@ local function CreateTable(f, page, headerY)
                 cell:SetWidth(COLUMN_WIDTH)
                 cells[column] = cell
             end
+            f.rowParts[definition.key] = { label = label, hover = hover }
         end
     end
     return y
@@ -277,6 +287,7 @@ local function Create()
     local itemsHeader = CreateText(page, "GameFontNormal")
     itemsHeader:SetPoint("TOPLEFT", LABEL_X, itemsY)
     itemsHeader:SetText(L["Top catches (all time)"])
+    f.itemsHeader = itemsHeader
     f.itemLines = {}
     for i = 1, TOP_ITEMS do
         local line = CreateFrame("Frame", nil, page)
@@ -393,6 +404,21 @@ end
 -- The column contexts for ROWS; values come from the last full refresh.
 local contexts = { {}, {}, {} }
 
+-- The camp bonus rows show once the total has a bonus cast (spec 020); hidden, they keep their place.
+local function ShowBonusRows()
+    local shown = (contexts[3].bucket and contexts[3].bucket.bonusCasts or 0) > 0
+    for _, definition in ipairs(ROWS) do
+        if definition.bonusOnly then
+            local parts = frame.rowParts[definition.key]
+            parts.label:SetShown(shown)
+            parts.hover:SetShown(shown)
+            for _, cell in ipairs(frame.cells[definition.key]) do
+                cell:SetShown(shown)
+            end
+        end
+    end
+end
+
 local function FillCells(liveOnly)
     for _, definition in ipairs(ROWS) do
         if definition.text and (definition.live or not liveOnly) then
@@ -400,6 +426,9 @@ local function FillCells(liveOnly)
                 frame.cells[definition.key][column]:SetText(definition.text(context))
             end
         end
+    end
+    if not liveOnly then
+        ShowBonusRows()
     end
 end
 

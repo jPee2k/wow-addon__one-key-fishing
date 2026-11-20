@@ -79,10 +79,10 @@ stays at the root of `tests/`:
 | Folder | Area | Examples |
 |---|---|---|
 | `core/` | [core.md](architecture/core.md): loading, migrations, locales, commands, text folding, SHA-256 | `load_test.lua`, `migrations_test.lua`, `locale_test.lua`, `proof_test.lua` |
-| `gamedata/` | [game-data.md](architecture/game-data.md): the shape of every entity, the load order | `shape_test.lua`, `load_order_test.lua` |
-| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua`, `lure_skill_test.lua`, `cap_warning_test.lua` |
+| `gamedata/` | [game-data.md](architecture/game-data.md): the shape of every entity, the load order | `shape_test.lua`, `load_order_test.lua`, `camp_bonuses_test.lua` |
+| `fishing/` | [fishing-mode.md](architecture/fishing-mode.md) | `lures_test.lua`, `lure_skill_test.lua`, `cap_warning_test.lua`, `camp_state_test.lua` |
 | `catch/` | [catch-and-stats.md](architecture/catch-and-stats.md) | `auction_price_test.lua`, `caught_test.lua` |
-| `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `map_views_test.lua`, `seed_test.lua`, `proof_chain_test.lua` |
+| `catchdb/` | [catch-db.md](architecture/catch-db.md), including the own record's version chain | `recording_test.lua`, `map_views_test.lua`, `seed_test.lua`, `proof_chain_test.lua`, `bonus_views_test.lua` |
 | `catalog/` | [catalog.md](architecture/catalog.md) | `index_test.lua`, `spot_pin_test.lua`, `load_test.lua` |
 | `exchange/comm/`, `exchange/channel/`, `exchange/share/` | [exchange.md](architecture/exchange.md), one folder per module | `comm/transport_test.lua`, `channel/joining_test.lua`, `channel/sim_test.lua`, `share/protocol_test.lua` |
 | `ui/` | [ui.md](architecture/ui.md): the statistics window and its tabs, settings, the exchange's notice, tooltips | `stats_window_test.lua`, `windows_test.lua`, `here_page_test.lua`, `catalog_list_test.lua`, `shared_page_test.lua`, `notice_test.lua` |
@@ -96,10 +96,16 @@ base name of a `.lua` file in its area's addon folder (`fishing/bags_test.lua` f
 
 - `tests/run.mjs` runs every `*_test.lua` in a fresh fengari state (`tests/lua.mjs` is the fengari wrapper) after
   `tests/wow.lua`, and then every `*_test.mjs`; the chunk name of a test is its path (`tests/core/load_test.lua`).
+  It gives each Lua state a global `read_addon_file(path)` (the text of an addon file, or nil, for a test that
+  checks a file's source; `setGlobalStringFunction` in `tests/lua.mjs`).
 - `tests/wow.lua` holds the WoW API stubs: frames, events, a controllable clock and timers, configurable bag item
-  counts, cooldowns, prices, loot, maps and positions, chat and addon messages. Unknown globals are permissive
-  stubs. The game data a test can set and the helpers (`test`, `eq`, `fire`, `advance`, `tick`, `click`,
-  `load_addon`, `fish_cast`, `receive_addon`, ...) are listed in the file's header comment.
+  counts, cooldowns, prices, loot, maps and positions, chat and addon messages, the player's auras (spec 020:
+  `auras[spellID]` read by `C_UnitAuras.GetPlayerAuraBySpellID`, `auras_restricted` for `C_Secrets.ShouldAurasBeSecret`;
+  a test sets them before the event it fires), item icons (`item_icons`) and `GameTooltip`'s `HookScript`,
+  `GetScript`, `IsShown` and `OnHide` (`run_item_post_calls` runs the item post calls on a tooltip as it stands).
+  Unknown globals are permissive stubs. The game data a test can set and the helpers (`test`, `eq`, `fire`,
+  `advance`, `tick`, `click`, `load_addon`, `fish_cast`, `receive_addon`, ...) are listed in the file's header
+  comment.
 - The addon's dispatchers catch handler errors (`ns.Safe`) and hand them to `geterrorhandler()`; the stub collects
   them in `lua_errors`. A test that leaves one there fails, and one outside a test stops the file
   (`check_no_errors`, also run by `tests/run.mjs` after each file). A test that expects an error takes it with

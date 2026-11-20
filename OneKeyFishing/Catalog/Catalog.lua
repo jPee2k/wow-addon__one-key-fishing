@@ -16,11 +16,15 @@ local SYNC_MAPS = 4 -- up to this many changed maps are recomputed by the read t
 local NAME_REQUESTS_PER_STEP = 20 -- item name requests per frame step, light on the server (Principle I)
 local DEFAULT_INDEX_DELAY = 10 -- seconds after the session's first loading screen until the default index is built
 
-local DEFAULT_FILTER = { range = "all", source = "all", water = "all" }
+local DEFAULT_FILTER = { range = "all", source = "all", water = "all", bonus = "all" }
 
 -- A fresh copy of the default filter, for the tab to change (UI/CatalogTab.lua).
 function Catalog.DefaultFilter()
-    return { range = DEFAULT_FILTER.range, source = DEFAULT_FILTER.source, water = DEFAULT_FILTER.water }
+    local filter = {}
+    for key, value in pairs(DEFAULT_FILTER) do
+        filter[key] = value
+    end
+    return filter
 end
 
 local version = 0
@@ -129,7 +133,17 @@ local function PlaceBefore(a, b)
     return a.order < b.order
 end
 
+-- "Bonus catches only" (spec 020) is a list filter over "All catches": its index is the "all" one (Catalog.Items
+-- keeps the tagged rows), so it needs no index of its own, and an item's page shows all its zones.
+local function IndexFilter(filter)
+    if filter.bonus ~= "bonusOnly" then
+        return filter
+    end
+    return { range = filter.range, source = filter.source, water = filter.water, bonus = "all" }
+end
+
 local function IndexFor(filter)
+    filter = IndexFilter(filter)
     local key = FilterKey(filter)
     local index = indexes[key]
     if not index then
@@ -139,12 +153,26 @@ local function IndexFor(filter)
             end
             otherKey = key
         end
-        index = { key = key, filter = { range = filter.range, source = filter.source, water = filter.water or "all" },
+        index = { key = key, filter = { range = filter.range, source = filter.source, water = filter.water or "all",
+            bonus = filter.bonus or "all" },
             maps = {}, items = {}, state = "empty", stale = false, building = false, steps = 0, mostMapsInStep = 0 }
         indexes[key] = index
     end
     return index
 end
+
+-- What a place or a row shows for an item of a view (specs/020-camp-buffs data-model.md "A catalog place, spot and
+-- row"): chance, littleData, catches, players, withBonus: the camp bonus's numbers when the item carries one that is
+-- not plain (withBonus true: the chance is the one "with the bonus"), else the item's and the view's. A known item
+-- without data under its bonus has no chance, 0 catches and 0 players. Every reader of a tag's numbers asks this.
+function Catalog.ItemNumbers(item, view)
+    local bonus = item.bonus
+    if bonus and not bonus.plain then
+        return bonus.chance, bonus.littleData, bonus.catches, bonus.players, true
+    end
+    return item.chance, view.littleData, view.catches, view.players, false
+end
+local PlaceNumbers = Catalog.ItemNumbers
 
 -- The items of an index from its map views: item ID -> its places, in PlaceBefore order.
 local function RebuildItems(index)
@@ -153,8 +181,10 @@ local function RebuildItems(index)
         local view = entry.view
         for _, item in ipairs(view.items) do
             items[item.itemID] = items[item.itemID] or {}
-            table.insert(items[item.itemID], { mapID = mapID, item = item, view = view, littleData = view.littleData,
-                chance = item.chance, itemCatches = item.catches, order = mapID })
+            local chance, littleData, catches, players, withBonus = PlaceNumbers(item, view)
+            table.insert(items[item.itemID], { mapID = mapID, item = item, view = view, littleData = littleData,
+                chance = chance, catches = catches, players = players, bonus = item.bonus, withBonus = withBonus,
+                itemCatches = item.catches, order = mapID })
         end
     end
     for _, places in pairs(items) do
@@ -251,8 +281,8 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function()
     end
 end)
 
--- The known items of an index, sorted by name ({ itemID, name, zones, key, poor, chance, littleData: the item's best
--- place in PlaceBefore order }); kept until the version moves.
+-- The known items of an index, sorted by name ({ itemID, name, zones, key, poor, chance, littleData, players, bonus:
+-- the item's best place in PlaceBefore order }); kept until the version moves.
 local function SortedItems(index)
     if index.sorted and index.sortedVersion == version then
         return index.sorted
@@ -262,7 +292,8 @@ local function SortedItems(index)
         local entry = NameOf(itemID)
         if entry.known then
             table.insert(rows, { itemID = itemID, name = entry.name, zones = #places, key = entry.key,
-                poor = IsPoor(entry), chance = places[1].chance, littleData = places[1].littleData })
+                poor = IsPoor(entry), chance = places[1].chance, littleData = places[1].littleData,
+                players = places[1].players, bonus = places[1].bonus })
         end
     end
     table.sort(rows, function(a, b)
@@ -352,10 +383,23 @@ local function SortRows(list)
     end)
 end
 
+-- Whether a row (or a view's item) with this camp bonus tag is listed under the filter value (spec 020): "Bonus
+-- catches only" keeps the tagged ones (a non-plain tag); "No camp bonus" leaves out every tagged one, plain too
+-- (a Bloated fish of older catches whose bonus is not known: decision 35); any other value lists every row.
+function Catalog.BonusShown(bonus, value)
+    if value == "bonusOnly" then
+        return bonus ~= nil and not bonus.plain
+    elseif value == "none" then
+        return bonus == nil
+    end
+    return true
+end
+
 -- items, state: the items of the filter as { itemID, name, zones, chance, littleData }, in the saved order (by name
 -- unless the player chose another, spec 017; FR-002 to FR-005): known items only, grey ones only with search text,
--- and with search text only those whose name contains it. state is "building" while no complete index exists, else
--- "ready" (maybe stale).
+-- and with search text only those whose name contains it; under "Bonus catches only" (spec 020) the items whose best
+-- place is tagged, under "No camp bonus" the untagged ones (Catalog.BonusShown). state is "building" while no
+-- complete index exists, else "ready" (maybe stale).
 function Catalog.Items(filter, search)
     local index = IndexFor(filter)
     Freshen(index)
@@ -365,7 +409,8 @@ function Catalog.Items(filter, search)
     local key = type(search) == "string" and search ~= "" and ns.SearchKey(search) or nil
     local list = {}
     for _, row in ipairs(SortedItems(index)) do
-        if (key and row.key:find(key, 1, true)) or (not key and not row.poor) then
+        local searched = (key and row.key:find(key, 1, true)) or (not key and not row.poor)
+        if searched and Catalog.BonusShown(row.bonus, filter.bonus) then
             table.insert(list, row)
         end
     end
@@ -374,15 +419,15 @@ function Catalog.Items(filter, search)
 end
 
 -- The zones of an item under the filter, in PlaceBefore order: { mapID, name, chance, catches (the zone's),
--- itemCatches, players, littleData, ranges }.
+-- itemCatches, players, littleData, ranges, bonus }; a tagged item's numbers are its camp bonus's (spec 020).
 function Catalog.Places(itemID, filter)
     local index = IndexFor(filter)
     Freshen(index)
     local list = {}
     for _, place in ipairs(index.items[itemID] or {}) do
         table.insert(list, { mapID = place.mapID, name = Catalog.ZoneName(place.mapID), chance = place.chance,
-            catches = place.view.catches, itemCatches = place.itemCatches, players = place.view.players,
-            littleData = place.littleData, ranges = place.item.ranges })
+            catches = place.catches, itemCatches = place.itemCatches, players = place.players,
+            littleData = place.littleData, ranges = place.item.ranges, bonus = place.bonus })
     end
     return list
 end
@@ -390,8 +435,9 @@ end
 local spots = {} -- "<itemID>|<mapID>|<filter key>" -> { cells = the QueryCells list they come from, rows }
 
 -- The spots of an item on one map (FR-008), in PlaceBefore order: { cell, name, point, area, chance, catches (the
--- spot's), itemCatches, players, littleData, ranges, pin }. Summed when a zone is expanded, kept until the map's
--- stamp moves (CatchDB.QueryCells keeps its views as long).
+-- spot's), itemCatches, players, littleData, ranges, pin, bonus }; a tagged item's numbers are its camp bonus's
+-- (spec 020). Summed when a zone is expanded, kept until the map's stamp moves (CatchDB.QueryCells keeps its views
+-- as long).
 function Catalog.Spots(itemID, mapID, filter)
     local index = IndexFor(filter)
     Freshen(index)
@@ -405,9 +451,10 @@ function Catalog.Spots(itemID, mapID, filter)
     for _, view in ipairs(cells) do
         for _, item in ipairs(view.items) do
             if item.itemID == itemID then
-                local row = { cell = view.cell, point = view.point, area = view.area, chance = item.chance,
-                    catches = view.catches, itemCatches = item.catches, players = view.players,
-                    littleData = view.littleData, ranges = item.ranges, order = view.cell }
+                local chance, littleData, catches, players = PlaceNumbers(item, view)
+                local row = { cell = view.cell, point = view.point, area = view.area, chance = chance,
+                    catches = catches, itemCatches = item.catches, players = players,
+                    littleData = littleData, ranges = item.ranges, order = view.cell, bonus = item.bonus }
                 row.name = Catalog.SpotName(row)
                 -- The game's map pin for the spot (Core/MapPin.lua): none for a cell without a point.
                 row.pin = row.point and ns.MapPin.Target({ mapID }, row.point.x, row.point.y)
@@ -587,15 +634,76 @@ function Catalog.CatchesText(catches, players)
     return (L["%d catches"]):format(catches)
 end
 
--- A chance (or "Little data") with the players behind it from 2 on (part 3, FR-025).
-function Catalog.ChanceText(chance, littleData, players)
-    local text = littleData and L["Little data"] or ns.Percent(chance)
+-- A chance (or "Little data", also for a missing chance) with the players behind it from 2 on (part 3, FR-025).
+-- withBonus (spec 020: tooltips, the "Caught in:" lines, the minimap lines, never a plain tag): the chance among the
+-- catches made with the camp bonus, "0.47% with the bonus (3 players)"; the rows' cells show the number alone.
+function Catalog.ChanceText(chance, littleData, players, withBonus)
+    local text
+    if littleData or chance == nil then
+        text = L["Little data"]
+    else
+        text = ns.Percent(chance)
+        if withBonus then
+            text = (L["%s with the bonus"]):format(text)
+        end
+    end
     return (players or 0) >= 2 and (L["%s (%d players)"]):format(text, players) or text
+end
+
+-- The texts of a camp bonus by key: tag (its name, the first line of its tooltip), tip (what the player does to get
+-- the catch) and label (its value in the "Camp bonus" filter). Read when drawn, never while the files load.
+local function BonusTexts(key)
+    local texts = {
+        rack = { tag = L["Fishing Rack bonus"], label = L["Fishing Rack"],
+            tip = L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] },
+        hut = { tag = L["Fishing Hut bonus"], label = L["Fishing Hut"],
+            tip = L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] },
+    }
+    return texts[key] or texts.rack
+end
+
+function Catalog.BonusTag(key)
+    return BonusTexts(key).tag
+end
+
+-- several: the item is a known item of more than one bonus (a Bloated fish: the Rack or the Hut, decision 32).
+function Catalog.BonusTip(key, several)
+    if several then
+        return L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."]
+    end
+    return BonusTexts(key).tip
+end
+
+-- A value of the "Camp bonus" filter as its menu names it: "all", "none", "bonusOnly" or a bonus's key.
+function Catalog.BonusLabel(value)
+    if value == "none" then
+        return L["No camp bonus"]
+    elseif value == "all" then
+        return L["All catches"]
+    elseif value == "bonusOnly" then
+        return L["Bonus catches only"]
+    end
+    return BonusTexts(value).label
+end
+
+-- The button's text for a value: "Camp bonus: <the value in short>" (spec 020 decision 23; the menu has the full
+-- labels). Whole texts, so each language words them its own way.
+function Catalog.BonusButtonText(value)
+    local texts = { all = L["Camp bonus: All"], none = L["Camp bonus: No bonus"],
+        bonusOnly = L["Camp bonus: Bonus only"], rack = L["Camp bonus: Rack"], hut = L["Camp bonus: Hut"] }
+    return texts[value] or texts.all
+end
+
+-- The tag's icon: the camp feature's item icon (by its item ID, the same in every language), or nil.
+function Catalog.BonusIcon(key)
+    local bonus = ns.Camp.Bonus(key)
+    return bonus and C_Item.GetItemIconByID(bonus.item)
 end
 
 -- The "Caught in" lines of an item tooltip (FR-017): up to three { zone, right } pairs from the default index, stale
 -- or not; the zones with 50 catches or more, or only without any, the little-data ones. nil for an item outside
--- the database and before any index exists.
+-- the database and before any index exists. A tagged place's chance is in the bonus form (spec 020); the second value
+-- is the best place's camp bonus table (the tag's explanation line, UI/ItemHooks.lua), or nil.
 function Catalog.TooltipLines(itemID)
     local index = IndexFor(DEFAULT_FILTER)
     Freshen(index)
@@ -610,9 +718,9 @@ function Catalog.TooltipLines(itemID)
             break
         end
         table.insert(lines, { zone = Catalog.ZoneName(place.mapID),
-            right = Catalog.ChanceText(place.chance, place.littleData, place.view.players) })
+            right = Catalog.ChanceText(place.chance, place.littleData, place.players, place.withBonus) })
     end
-    return lines
+    return lines, places[1].bonus
 end
 
 -- The likely catches of the current place for the minimap tooltip in fishing mode (FR-018), counted like the "What
@@ -634,7 +742,8 @@ function Catalog.MinimapLines()
         end
         local entry = NameOf(item.itemID)
         if entry.known and not IsPoor(entry) then
-            table.insert(items, { name = entry.name, right = Catalog.ChanceText(item.chance, view.littleData) })
+            local chance, littleData, _, _, withBonus = PlaceNumbers(item, view) -- a tag's own numbers (spec 020)
+            table.insert(items, { name = entry.name, right = Catalog.ChanceText(chance, littleData, nil, withBonus) })
         end
     end
     return { items = items, footer = Catalog.CatchesText(view.catches, view.players) }

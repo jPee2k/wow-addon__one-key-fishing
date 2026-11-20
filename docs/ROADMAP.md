@@ -55,4 +55,11 @@ Nothing is planned right now; the ideas below are not decided.
 - **Fishing pools**: notice and point out nearby pools. The catch database already tells pool catches apart when
   the game does (the "Water" filter).
 - **Skill-up forecast**: how many catches until the next skill point or rank cap.
+- **What fished containers hold**: record what players take out of the containers they caught (chests, crates,
+  trunks, clams, Bloated fish) and show it in a window of its own: per container, the items with their counts and
+  chances. Nobody publishes these contents for WoW Forever, and they decide what a container is worth. The loot
+  of an opened container has the source `Item-...`, not the bobber
+  ([fishing-investigation.md](fishing-investigation.md), "Checked in game"). To decide in its spec: own data only
+  or shared through the catch exchange too; how a container opened later, or one that was not fished, is told
+  apart; where the value of a container in the catch lists comes from.
 

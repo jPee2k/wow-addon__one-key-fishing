@@ -15,6 +15,7 @@ test("migrations: a new player gets the current schema and the defaults", functi
     eq(OneKeyFishingDB.schema, 1, "account schema")
     eq(OneKeyFishingCharDB.schema, 1, "character schema")
     eq(OneKeyFishingDB.settings.autoLoot, true, "default setting")
+    eq(OneKeyFishingDB.settings.campBonusWarning, true, "the camp bonus notices (spec 020)")
     eq(#printed, 0, "chat lines")
 end)
 

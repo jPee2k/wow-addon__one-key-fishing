@@ -52,13 +52,23 @@ test("60 own catches at the spot: chances in percent", function()
     cast(nil)
     tick(window)
     eq(here.counts.text:sub(1, #"60 catches"), (L["%d catches"]):format(60), "catches")
-    assert(here.counts.text:find("2%", 1, true), "1 miss of 61 casts: " .. here.counts.text)
+    assert(here.counts.text:find(ns.Percent(1 / 61), 1, true), "1 miss of 61 casts: " .. here.counts.text)
     -- rows[1] is the kind header "Fish" (spec 014); the item follows it.
-    eq(here.rows[1].header.text, L["Fish"], "the kind header")
-    eq(here.rows[2].chance.text, "100%", "chance")
-    eq(here.rows[2].pieces.text, "1.0", "pieces per catch")
+    eq(list_rows(here.list)[1].header.text, L["Fish"], "the kind header")
+    eq(list_rows(here.list)[2].chance.text, "100%", "chance")
+    eq(list_rows(here.list)[2].pieces.text, "1", "pieces per catch: a whole number")
     eq(here.scope.text, "", "the spot's own numbers")
-    assert(not here.rows[3]:IsShown(), "one item")
+    assert(list_rows(here.list)[3] == nil, "one item")
+end)
+
+test("a redraw at the same place keeps the list's scroll position; another filter starts at the top", function()
+    ns.Fire("PRICES_CHANGED") -- a redraw on the next tick, as new data or an item the game learned gives
+    tick(window)
+    eq(here.list.box.retainScroll, true, "the same spot and filters keep the scroll")
+    ns.CatchHere.SetSource("mine")
+    eq(here.list.box.retainScroll, nil, "another source from the top")
+    ns.CatchHere.SetSource("all")
+    eq(here.list.box.retainScroll, nil, "back to all sources, from the top")
 end)
 
 test("a spot with few catches shows the whole map", function()
@@ -100,7 +110,7 @@ test("little data in a picked range suggests all skill levels", function()
     fishing_rank = 100
     cast({ { FISH, 1 } })
     ns.CatchHere.SetRange(1)
-    eq(here.rows[2].chance.text, L["Little data"], "no percentage")
+    eq(list_rows(here.list)[2].chance.text, L["Little data"], "no percentage")
     assert(here.hint.text:find(L["Try \"All skill levels\": little data for your skill."], 1, true), here.hint.text)
     fishing_rank = 230
     ns.CatchHere.SetRange(3)
@@ -110,11 +120,11 @@ test("turning auction prices off redraws the prices", function()
     ns.db.prices[FISH] = { price = 5000, quantity = 100, time = 1 }
     ns.Fire("PRICES_CHANGED")
     tick(window)
-    eq(here.rows[2].price.text, "5000c", "auction price")
+    eq(list_rows(here.list)[2].price.text, "5000c", "auction price")
     ns.db.settings.auctionPrices = false
     ns.Fire("SETTINGS_CHANGED")
     tick(window)
-    eq(here.rows[2].price.text, "0c", "vendor price (none in the test)")
+    eq(list_rows(here.list)[2].price.text, "0c", "vendor price (none in the test)")
     ns.db.settings.auctionPrices = true
     ns.db.prices[FISH] = nil
     ns.Fire("SETTINGS_CHANGED")
@@ -215,7 +225,7 @@ end)
 -- Items the game client does not know yet (specs/004-public-channel-sync, FR-017a)
 ---------------------------------------------------------------------------
 local function rowOf(itemID)
-    for _, row in ipairs(here.rows) do
+    for _, row in ipairs(list_rows(here.list)) do
         if row:IsShown() and row.itemID == itemID then
             return row
         end
@@ -243,7 +253,7 @@ test("an item the client does not know shows as an Unknown item row with its ID 
     eq(tooltip_lines[1], L["Unknown item"], "tooltip title")
     eq(tooltip_lines[2], L["The game has not shown this item yet."], "why")
     eq(tooltip_lines[3], L["In the bundled data"], "from the seed")
-    eq(tooltip_lines[4], (L["Item ID: %d"]):format(88888), "the item ID")
+    eq(tooltip_lines[4], ns.ColoredText((L["Item ID: %d"]):format(88888), 0.6, 0.6, 0.6), "the item ID, its grey coded")
 end)
 
 test("reported by other players, the tooltip counts them; once the game knows the item, the row is a normal one",

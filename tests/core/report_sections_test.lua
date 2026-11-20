@@ -109,3 +109,35 @@ test("the Auction prices section names a missing function and a failed call", fu
     assert(section:find("source own scan", 1, true), section)
     advance(0.1)
 end)
+
+-- The camp bonus (specs/020-camp-buffs FR-038, research R14): a section with each bonus's state, whether aura reads are
+-- restricted, the last cast's mask and the setting; the catch database section names the current place's parts.
+test("the Camp bonus section and the current place's bonus parts", function()
+    local text = made()
+    assert(text:find("-- Camp bonus --", 1, true), "the section:\n" .. text)
+    assert(text:find("rack: aura 1280341, not active", 1, true), "the Rack:\n" .. text)
+    assert(text:find("hut: aura 1280342, not active", 1, true), "the Hut:\n" .. text)
+    assert(text:find("aura reads restricted: false", 1, true), "restricted:\n" .. text)
+    assert(text:find("last cast mask: none", 1, true), "the mask:\n" .. text)
+    assert(text:find("setting campBonusWarning: true", 1, true), "the setting:\n" .. text)
+    assert(text:find("bonus parts here: none", 1, true), "the place's parts:\n" .. text)
+    auras[1280341] = { expirationTime = GetTime() + 1234, duration = 3600 }
+    fire("UNIT_AURA", "player")
+    text = made()
+    assert(text:find("rack: aura 1280341, active, 1234 s left", 1, true), "active:\n" .. text)
+    auras_restricted = true
+    text = made()
+    assert(text:find("aura reads restricted: true", 1, true), "restricted now:\n" .. text)
+    auras_restricted = false
+end)
+
+test("DescribeBonusParts: the own counts of each part of a place, by mask", function()
+    local cell = catch_cell(20, 5, { [6291] = { 20, 20 } })
+    cell.q = { ["3"] = { c = 1, m = 0, i = { [6291] = { 1, 1 } } },
+        ["1"] = { c = 12, m = 3, i = { [6291] = { 12, 12 } } } }
+    ns.db.shared.mine["1415:3:47"] = cell
+    eq(ns.CatchDB.DescribeBonusParts("1415:3:47"),
+        "bonus parts here: 1 = 12 catches / 3 misses, 3 = 1 catches / 0 misses", "two parts")
+    eq(ns.CatchDB.DescribeBonusParts("1415:3:11"), "bonus parts here: none", "a place without")
+    eq(ns.CatchDB.DescribeBonusParts(nil), "bonus parts here: none", "no place")
+end)

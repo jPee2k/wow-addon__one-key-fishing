@@ -105,6 +105,59 @@ For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):
   in Forever a pool catch has the bobber as its loot source, so the source of a catch is not known (V3). A pool part
   from an older build is still accepted and read, so the filter shows only with such data.
 
+## Camp bonus parts
+
+Spec 020 (`specs/020-camp-buffs/`, `data-model.md` "The bonus parts of a cell"): catches made under a camp bonus
+(the fishing buff of a Fishing Rack or a Fishing Hut, [fishing-mode.md](fishing-mode.md) `Fishing/Camp.lua`) are
+kept apart inside the cell.
+
+- A cell may carry `q = { ["<mask>"] = { c, m, i } }`: one part per mask of bonuses (`"1"` the Rack, `"2"` the Hut,
+  `"3"` both), keyed by `tostring(mask)`, never by a number. The parts are **inclusive** (a part's catches, misses
+  and items are also in the cell's `c`, `m`, `i`, so no total changes because of `q`) and **disjoint** (a cast is in
+  one part at most). A part exists once a cast was written to it. In the seed only, a part may also carry `k`, `r`
+  and `x`, written by the harvest over the part's own contributions; records never carry them. A cell without `q`
+  is "bonus not known" and counts for `"all"` and `"none"` only.
+- Writing: the `FISH_CAUGHT` / `FISH_MISSED` handlers (`Events.lua`) set `cast.mask = ns.Camp.CastMask(castID)`
+  before `Settle`; a cast with `mask > 0` also adds to `q[tostring(mask)]` of both target cells (`mine` and the own
+  record): `c` and the items, or `m`. A mask of 0 writes no part.
+- The filter: `filter.bonus` is `"all"` (default), `"none"` or a bonus key (`"rack"`, `"hut"`). `ThroughBonus` reads
+  a cell through it: a key sums the parts whose mask has the key's bit (a cast under both counts for both; a seed
+  part's largest `k`, its `r` and `x`), `"none"` is the cell minus all its parts (a part of a mask this version
+  does not know included; a cell without parts is read whole, a seed cell's `r` and `x` included). Under a filter
+  other than `"all"` the water filter is read as `"all"` (they do not combine), and the miss rate stays (a part has its misses); `littleData` and `catches` are the filtered ones.
+  `CatchDB.FilterKey` is `range|source|water|bonus`, a missing `bonus` read as `"all"`.
+- The tag, `item.bonus` (data-model.md "A view item's bonus"), in four shapes: nil (an ordinary item);
+  `{ key, chance, littleData, catches, players }` (a tagged item with the numbers under its bonus);
+  `{ key, littleData = true, catches = 0, players = 0 }` (a known item with no data under its bonus, in an `"all"`
+  view); `{ key, plain = true }` (a known item under `"none"` or another bonus's key: the tag is shown, the numbers
+  are the view's own). A known item (`GameData.CampBonuses[].items`, `Camp.KnownBonuses`) carries a key in every
+  view: in an `"all"` view the bonus of its list under which it has the most catches in the scope (that bonus's
+  sub-view gives the numbers), with none under any the lowest-ranked (the Rack, "Little data"); in a view under one
+  of its keys that key with the view's numbers; under `"none"` or another key the first of its list, `plain`. Every
+  tag of an item known to more than one bonus (a Bloated fish) carries `several = true` (spec 020 decision 32). Else
+  an item is
+  tagged from the data when every raw catch of it in the scope lies under the bonus and the seed, or at least 3
+  players (the own catch one of them), hold it under that bonus (`AddHolders`, `Holds`); never under the source
+  `"mine"` (one player). In an `"all"` view the higher-ranked bonus wins (the Hut over the Rack) for an item tagged
+  from the data.
+- The tag is computed in the pass that sums the view's own scope (the spot or the map `Query` chose), never from
+  another scope and never by fetching another view (research R7): `StartTagSums` gives the sum, under `"all"`, one
+  sub-sum per bonus the scope holds a part for, filled from the same cells by `AddCell`, and under a key or `"none"`
+  `rawAll`, each item's unfiltered catches. A view with `bonus == "all"` gives every untagged item the numbers of
+  1.4.0.
+- `CatchDB.HasBonusData(key)`: whether any held cell has a part with the bonus's bit (without a key: any part of a
+  known bit; an unknown bit counts for nothing): the seed, `mine`, the own record and other players' records only
+  while sharing is on. The "Camp bonus" button shows only then. Cached per key in `P.bonusData`, dropped whole at
+  `ADDON_LOADED`, on every `SHARED_DATA_CHANGED` (a record with the only part may have left) and when the own catch
+  makes a new part (`BonusPart` in `CatchDB.lua`).
+- `CatchDB.BonusKeys()`: the keys of `GameData.CampBonuses` in rank order (the menus).
+  `CatchDB.DescribeBonusParts(placeKey)`: the own counts of each part of that place by mask ("bonus parts here:
+  1 = 12 catches / 3 misses" or "none"), the line `CatchDB.Describe` adds after the current place.
+- The harvest (`tools/harvest.mjs`) checks `q` by the client's rules (`checkBonusParts`) and skips a cell that
+  breaks them; it sums the parts per mask with their own `k`, `r` and `x`, scales each part and the rest apart and
+  builds the cell's totals as their sum, and drops a contribution's pool part beside bonus parts
+  (`withoutPoolBesideBonus`: their overlap is not in the data).
+
 ## Checking a received record
 
 `CatchDB.CheckRecord(record)` checks a received record like the harvest's `checkRecord`, but rejects it whole.
@@ -112,7 +165,14 @@ Plus: an 8-character base32 ID, at most 1,000 places, `seq` not above the record
 2,147,483,647 (an item the client does not know is accepted), a `proof` of 16 base32 characters, at most
 `STEP_SECONDS` (180 s) of casting per step of `seq`, and a cell's `a` absent or at most 8 area IDs from 1
 to 2,147,483,647 with counts summing to at most `c + m`, and the open water of a pool part
-(`i - p.i` out of `c - p.c`) holding the same item rules. Share's `CleanCell` copies `a`; the harvest checks, sums
+(`i - p.i` out of `c - p.c`) holding the same item rules. A cell's `q` (spec 020, `CheckBonusParts`): a table
+of at most 8 parts (`MAX_BONUS_PARTS`, every mask of three bonuses), each key the decimal text of a whole number
+from 1 to 255 with no leading zero, each part a table with counts `c` and `m` and items passing the item rules
+against its `c`; the parts' `c` and `m` sum to at most the cell's, every part item is in the cell's `i`, and the
+cell minus the parts passes the item rules. The reasons: "the bonus parts are not a table", "too many bonus parts",
+"bonus part <key>: not a mask" / "not a part" / the item rule's reason, "the bonus parts do not fit the totals",
+"no bonus: " and the rule's reason. A mask with bits this version does not know (4 and above) is valid and kept.
+Share's `CleanCell` copies `a`; the harvest checks, sums
 (the 8 largest), scales and writes it the same way. The own ID is refused by Share's `Store.Accept`, not here
 ([exchange.md](exchange.md)). `CatchDB.IsBlocked(id)` reads the seed's `blocked`.
 

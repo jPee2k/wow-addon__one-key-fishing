@@ -21,10 +21,10 @@ local function shown(list)
     return out
 end
 
-test("an empty database shows the two empty lines", function()
+test("an empty database shows the empty state as one paragraph (two lines above row A)", function()
     advance(0)
     tick(_G.OneKeyFishingStatsFrame)
-    eq(tab.status.text, L["Nothing has been caught yet."] .. "\n"
+    eq(tab.status.text, L["Nothing has been caught yet."] .. " "
         .. L["The catalog fills with your catches, the bundled data and, with sharing on, other players' catches."],
         "the empty state")
 end)

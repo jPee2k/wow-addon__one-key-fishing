@@ -13,8 +13,11 @@ local segmentStart -- GetTime() when the running time segment began
 local castStart -- GetTime() when the current cast began
 local castChannelStart -- channel start time (ms) of the current cast, which identifies it across a /reload
 
+-- bonusCasts, bonusCatches (spec 020): casts with a camp bonus, and those of them that caught a known bonus item
+-- (Fishing/Camp.lua); a bucket saved before them reads them as 0 (Add).
 local function NewBucket()
-    return { casts = 0, catches = 0, misses = 0, modeTime = 0, castTime = 0, items = {} }
+    return { casts = 0, catches = 0, misses = 0, modeTime = 0, castTime = 0, items = {}, bonusCasts = 0,
+        bonusCatches = 0 }
 end
 
 local function NewSession()
@@ -71,8 +74,9 @@ local function Changed()
     version = version + 1
 end
 
+-- A field a saved bucket does not have yet counts from 0.
 local function Add(field, amount)
-    ForEachLiveBucket(function(bucket) bucket[field] = bucket[field] + amount end)
+    ForEachLiveBucket(function(bucket) bucket[field] = (bucket[field] or 0) + amount end)
     Changed()
 end
 
@@ -205,8 +209,20 @@ ns.On("FISHING_CAST_STOP", function()
     end
 end)
 
-ns.On("FISH_CAUGHT", function(items)
+-- The camp bonus of the cast (spec 020): asked from Camp, which keeps a cast's mask until it settles.
+local function AddBonus(castID, items)
+    local mask = ns.Camp.CastMask(castID)
+    if mask > 0 then
+        Add("bonusCasts", 1)
+        if ns.Camp.IsBonusCatch(mask, items) then
+            Add("bonusCatches", 1)
+        end
+    end
+end
+
+ns.On("FISH_CAUGHT", function(items, castID)
     Add("catches", 1)
+    AddBonus(castID, items)
     for _, item in ipairs(items) do
         local itemID = item.itemID
         if itemID then
@@ -218,8 +234,9 @@ ns.On("FISH_CAUGHT", function(items)
     Changed()
 end)
 
-ns.On("FISH_MISSED", function()
+ns.On("FISH_MISSED", function(castID)
     Add("misses", 1)
+    AddBonus(castID, nil)
 end)
 
 ns.On("MODE_CHANGED", UpdateTimer)

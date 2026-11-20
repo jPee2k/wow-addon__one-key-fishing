@@ -105,3 +105,58 @@ test("the debug report lists every lure in the bags", function()
     eq(lines[1], "6533 x1, needs: 100, usable: true, cooldown: 0 s, skipped: false")
     eq(lines[2], "6529 x3, needs: 0, usable: true, cooldown: 20 s, skipped: false")
 end)
+
+-- Camper's Lure (specs/020-camp-buffs FR-036, research R13): +60 from a placed Fishing Rack, between the +75 and the
+-- +50 lures, needing Fishing 50.
+local CAMPERS, NIGHTCRAWLERS, BRIGHT = 291005, 6530, 6532
+
+local function bags(items)
+    bag_items = {}
+    for itemID, count in pairs(items) do
+        bag_items[itemID] = count
+    end
+end
+
+test("Camper's Lure comes before the +50 lures and after the +75 ones", function()
+    Reset()
+    fishing_rank = 150
+    bags({ [CAMPERS] = 1, [NIGHTCRAWLERS] = 1 })
+    eq(Bags.FindLure(), CAMPERS, "before Nightcrawlers")
+    bags({ [CAMPERS] = 1, [BRIGHT] = 1 })
+    eq(Bags.FindLure(), BRIGHT, "after Bright Baubles")
+end)
+
+test("Camper's Lure needs Fishing 50", function()
+    Reset()
+    bags({ [CAMPERS] = 1 })
+    fishing_rank = 49
+    eq(Bags.FindLure(), nil, "passed over at 49")
+    fishing_rank = 50
+    eq(Bags.FindLure(), CAMPERS, "offered at 50")
+end)
+
+test("the lures' orders are 1 to 7 without a gap", function()
+    local orders, count = {}, 0
+    for _, lure in pairs(ns.GameData.Lures) do
+        count = count + 1
+        orders[lure.order] = true
+    end
+    eq(count, 7, "seven lures")
+    for order = 1, 7 do
+        assert(orders[order], "order " .. order)
+    end
+    eq(ns.GameData.Lures[CAMPERS].order, 4, "Camper's Lure fourth")
+    eq(ns.GameData.Lures[CAMPERS].bonus, 60, "+60")
+end)
+
+test("with Camper's Lure on the pole the key offers no lure until it runs out", function()
+    Reset()
+    bags({ [CAMPERS] = 1 })
+    local equipped = ns.IsFishingPoleEquipped
+    ns.IsFishingPoleEquipped = function() return true end
+    weapon_enchant = true
+    eq(Bags.NeedsLure(), false, "a lure is on")
+    weapon_enchant = false
+    eq(Bags.NeedsLure(), true, "it ran out")
+    ns.IsFishingPoleEquipped = equipped
+end)

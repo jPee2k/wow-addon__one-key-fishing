@@ -476,4 +476,48 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Values: higher of vendor and Auctionator price."] = "Werte: der höhere aus Händler- und Auctionator-Preis."
     L["%d of your catches have no Auctionator price: run its scan."] =
         "%d deiner Fänge haben keinen Auctionator-Preis: Starte dessen Scan."
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "Bonus des Angelgestells"
+    L["Fishing Hut bonus"] = "Bonus der Anglerhütte"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber eines Angelgestells (Ungewöhnliches Angeln)."
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber einer Anglerhütte (Seltenes Angeln)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber eines Angelgestells oder einer Anglerhütte."
+    L["%s with the bonus"] = "%s mit Bonus"
+    L["All catches"] = "Alle Fänge"
+    L["No camp bonus"] = "Ohne Lagerbonus"
+    L["Fishing Rack"] = "Angelgestell"
+    L["Fishing Hut"] = "Anglerhütte"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "Lagerbonus"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "Zeigt die Fänge mit einem Lagerbonus: dem Angel-Stärkungszauber eines Angelgestells oder einer " ..
+        "Anglerhütte, die an einem Lagerfeuer aufgestellt wurden."
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] =
+        "„Ohne Lagerbonus“ enthält auch ältere Fänge, bei denen der Bonus nicht bekannt ist."
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "Der Bonus des Angelgestells endet in 5 Minuten."
+    L["The Fishing Rack bonus has ended."] = "Der Bonus des Angelgestells ist abgelaufen."
+    L["The Fishing Hut bonus ends in 5 minutes."] = "Der Bonus der Anglerhütte endet in 5 Minuten."
+    L["The Fishing Hut bonus has ended."] = "Der Bonus der Anglerhütte ist abgelaufen."
+    L["Warn when a camp bonus is ending"] = "Warnen, wenn ein Lagerbonus endet"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "Würfe mit Lagerbonus"
+    L["Bonus catches"] = "Bonusfänge"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "Nur Bonusfänge"
+    L["Camp bonus: All"] = "Lagerbonus: Alle"
+    L["Camp bonus: No bonus"] = "Lagerbonus: Ohne"
+    L["Camp bonus: Bonus only"] = "Lagerbonus: Nur Bonus"
+    L["Camp bonus: Rack"] = "Lagerbonus: Gestell"
+    L["Camp bonus: Hut"] = "Lagerbonus: Hütte"
+    L["No bonus catch has been recorded here yet."] = "Hier wurde noch kein Bonusfang erfasst."
+    L["No bonus catch has been recorded yet."] = "Es wurde noch kein Bonusfang erfasst."
 end)

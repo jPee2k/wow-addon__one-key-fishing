@@ -43,7 +43,8 @@ One fishing round:
 ## What the addon does
 
 - **One key** for everything: cast, hook, loot. The same key applies a lure (the best one that is not on
-  cooldown and that your Fishing skill is high enough for) and opens fished clams when needed.
+  cooldown and that your Fishing skill is high enough for, Camper's Lure from a Fishing Rack included) and opens
+  fished clams when needed.
 - **Fishing mode**: one toggle that sets everything up (auto loot, the interact icon over the bobber, gear,
   camera) and puts it all back afterwards, also after a `/reload`, a disconnect or a crash.
 - **Gear swap**: the best pole in your bags (or the one you chose) plus your fishing items. On exit only the slots
@@ -94,7 +95,8 @@ Open them with `/okf stats`, Shift+Click on the minimap button or from its menu.
 bottom, **Statistics**, **What can be caught here** and **Catch catalog**; it opens on the one you used last.
 
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
-  **Results** (casts, catches, nothing caught, catches per hour) and **Money** (value, gold per hour). Hover a row
+  **Results** (casts, catches, nothing caught, catches per hour; and, once you fished with a [camp
+  bonus](#camp-bonus), casts with a camp bonus and bonus catches) and **Money** (value, gold per hour). Hover a row
   name to see how it is counted. Decimal numbers use your game client's separator (2,5 on a German client),
   whatever the interface language.
 - **Top catches** and **zones** of all time. Items your game client does not know yet are counted too and show by
@@ -117,7 +119,11 @@ The second tab of the statistics window lists what the spot you stand at gives:
   **price**, plus how many catches the numbers are based on and how often a cast there catches nothing;
 - a spot is a part of the map (the map is split into a 10 by 10 grid). When a spot has fewer than 50 catches, the
   tab shows the whole map and says so; with fewer than 50 there too, it shows **Little data** instead of
-  percentages;
+  percentages. Small chances keep a fraction ("3.4%", "0.47%", "<0.01%"); from 10% on they are whole numbers;
+- under the place, a few hints when they apply (such as "Click an item to see where else it is caught.") and a quiet
+  line with the state of the [shared catch database](#shared-catch-database); then the catch counts, two rows of
+  buttons (**Skill** and **Source**; then **Water** or **Camp bonus**, and **Kinds**) and the list, which scrolls;
+- **Pieces per catch** has one decimal when it needs one ("1.3"), and none for a whole number ("1");
 - **Skill**: your own skill range by default (0-74, 75-149, 150-224, 225-299, 300+), or any other range, or all
   of them;
 - **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
@@ -129,10 +135,11 @@ The second tab of the statistics window lists what the spot you stand at gives:
   between sessions. Hiding a kind does not change the chances of the others; with every kind hidden the tab says
   "The kind filter hides every item.";
 - WoW Forever does not tell a catch from a fish pool apart from open water, so the numbers count both together;
+- a bonus catch of a [camp bonus](#camp-bonus) carries the camp feature's icon at the end of its name, and the
+  **Camp bonus** button filters the list by it (**Bonus catches only** shows just the bonus catches);
 - an item your game client does not know yet (some items in WoW Forever stay unknown until you find one) shows as
   **Unknown item** with a question mark icon; its tooltip says how many players reported it on this map, whether the
   bundled data has it, and its item ID. Once the game knows the item, its name and icon appear;
-- a quiet line at the bottom shows the state of the [shared catch database](#shared-catch-database);
 - click an item to see where else it is caught, in the [catch catalog](#catch-catalog).
 
 The numbers come from casts in fishing mode. Every release of the addon brings the catch database gathered so far,
@@ -150,11 +157,14 @@ and, with the shared catch database on, what other players reported.
 
 - **Search**: type part of an item name, in your game client's language and in any letter case; the list narrows
   with every letter. Grey items only show when you search for them. An item your game client does not know yet
-  stays out of the list until the game loads it.
-- **Filters**: **Skill** (all ranges by default), **Source** (**All** or **Only mine**), **Water** (with pool data)
-  and **Kinds** (below them, next to **Sort**), as on the "What can be caught here" tab: the list is grouped under the
-  same kind headers, and a kind you hide there is hidden here too. A search whose matches are all hidden says "The
-  kind filter hides the matches."; an item opened by its link or from the other tab always shows, whatever its kind.
+  stays out of the list until the game loads it. A line under the search box says when the catalog is still being
+  counted or the list is empty ("No item matches the search.").
+- **Filters**, in two rows as on the "What can be caught here" tab: **Skill** (all ranges by default) and **Source**
+  (**All** or **Only mine**); then **Water** (with pool data) or **Camp bonus** (once a catch with a [camp
+  bonus](#camp-bonus) is known; it takes the Water button's place), **Kinds** and **Sort**. The list is grouped under
+  the same kind headers as on the other tab, and a kind you hide there is hidden here too. A search whose matches are
+  all hidden says "The kind filter hides the matches."; an item opened by its link or from the other tab always
+  shows, whatever its kind.
 - **Sort**: **Name** (alphabetical, the default), **Price** (the dearest first) or **Chance** (the highest chance
   first), inside each kind. The right end of each row shows what the list is sorted by: the number of zones, the
   price per piece (the same value the statistics use: the vendor price or your last auction scan, whichever is
@@ -176,6 +186,43 @@ and, with the shared catch database on, what other players reported.
 **Catch chances in tooltips**: the tooltip of any item in the database adds **Caught in:** with its three best
 zones and its chance there, also for chat links. In fishing mode, the minimap button's tooltip adds the three most
 likely catches of the place you stand at. **Show catch chances in tooltips** in the settings turns both off.
+
+## Camp bonus
+
+A **Fishing Rack** or a **Fishing Hut** placed by a campfire gives you and your group a fishing buff for an hour
+("Uncommon Fishing", "Rare Fishing"): the **camp bonus**. Under it some casts bring an extra **bonus catch** next to
+the fish: a Bloated fish with either camp feature; with the Fishing Hut also a herb, ore, a metal bar, a hide or
+enchanting dust.
+
+- The addon records the casts made with a camp bonus apart from the others (and shares them like the rest of your
+  catch data). A cast counts for the bonus when the buff was up both when the cast started and when it ended.
+- A bonus catch carries the camp feature's icon at the end of its name in "What can be caught here" and in the catch
+  catalog, and its chance is the chance among the catches made with the bonus. Hover the row for the bonus's name,
+  what to do to get the catch and its chance "with the bonus" (for example "0.47% with the bonus (3 players)").
+  Item tooltips elsewhere (bags, chat links) add the explanation under **Caught in:**. A Bloated fish shows the
+  icon of the camp feature it was caught with most often there (the Fishing Rack's when there is no such catch yet),
+  and its explanation names both.
+- **Camp bonus** filter in both tabs, once a catch with a camp bonus is known: **All catches** (the default, every
+  login), **No camp bonus**, **Bonus catches only**, **Fishing Rack** and, with data for it, **Fishing Hut**. The
+  button shows the chosen value in short: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only",
+  "Camp bonus: Rack", "Camp bonus: Hut". It takes the place of the **Water** filter, at the start of the second row
+  of buttons.
+  - **Fishing Rack** and **Fishing Hut** count only the casts made with that bonus: every item those casts brought,
+    with its chance among them.
+  - **No camp bonus** counts the other casts; it also holds older catches for which the bonus is not known. Bonus
+    catches (those with the icon) are left out of its list.
+  - **Bonus catches only** keeps the list of **All catches** but shows just the bonus catches (those with the
+    icon), with the same numbers. Where none was caught the tab says "No bonus catch has been recorded here yet."; in
+    the catalog an item's page still shows all its zones.
+- **Notices**: in fishing mode a short message shows 5 minutes before a camp bonus ends and when it has ended, also
+  with catch notifications off (**Warn when a camp bonus is ending** in the settings). A buff lost in a fight is
+  noticed after the fight only when **Leave fishing mode when attacked** is off: with it on, fishing mode ends with
+  the fight and no notice comes.
+- **Statistics**: **Casts with a camp bonus** and **Bonus catches** (casts with a camp bonus that brought an extra
+  item: a Bloated fish or a second item in the loot; quest fish, which can come beside a fish without a bonus, do
+  not count) show at the end of **Results** once you fished with a camp bonus.
+- **Camper's Lure**, from a placed Fishing Rack (+60, needs Fishing 50), is applied by the fishing key like any other
+  lure: after the +75 lures and before the +50 ones.
 
 ## Shared catch database
 
@@ -354,6 +401,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
   - Show session fishing time under the indicator
   - Pause the fishing timer while AFK
   - Remind me about the next Fishing rank
+  - Warn when a camp bonus is ending (see [Camp bonus](#camp-bonus))
   - Zoom the camera while fishing (set the distance with **−** and **+**)
   - Show the minimap button
   - Show catch chances in tooltips (the zones in item tooltips, the likely catches in the minimap tooltip)

@@ -59,6 +59,7 @@ a slash command is missing from the manual.
 | [`docs/development.md`](docs/development.md) | the tools, the test suite, packaging, the definition of done |
 | [`docs/architecture/`](docs/architecture/) | the modules in detail, one page per area (the game data model in `game-data.md`) |
 | [`docs/forever-api.md`](docs/forever-api.md) | the WoW Forever API: the facts verified in game, how to check a call, the open questions |
+| [`docs/fishing-investigation.md`](docs/fishing-investigation.md) | how fishing works in WoW Forever: the camp features and their fishing auras, what changes a catch, items, profit |
 | [`docs/tech-debt.md`](docs/tech-debt.md) | the known issues with their severity |
 | [`docs/publishing.md`](docs/publishing.md) | branches, release steps, Blizzard's add-on policy and CurseForge requirements |
 | [`docs/release-plan.md`](docs/release-plan.md) | the in-game checks left after 1.2.0 and what the next patch waits for |

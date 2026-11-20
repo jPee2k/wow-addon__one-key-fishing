@@ -18,7 +18,7 @@ local here = window.herePage
 -- What the shown rows are: "H:<kind text>" for a header, the item ID for an item.
 local function Shown()
     local list = {}
-    for _, row in ipairs(here.rows) do
+    for _, row in ipairs(list_rows(here.list)) do
         if row:IsShown() then
             if row.itemID then
                 table.insert(list, tostring(row.itemID))
@@ -31,7 +31,7 @@ local function Shown()
 end
 
 local function RowOf(itemID)
-    for _, row in ipairs(here.rows) do
+    for _, row in ipairs(list_rows(here.list)) do
         if row:IsShown() and row.itemID == itemID then
             return row
         end
@@ -57,7 +57,7 @@ test("the rows are grouped under kind headers in the fixed order (FR-006, SC-002
 end)
 
 test("a header row has no item, no icon, no numbers, and its scripts do nothing", function()
-    local header = here.rows[1]
+    local header = list_rows(here.list)[1]
     eq(header.itemID, nil, "no item")
     eq(header.icon:IsShown(), false, "no icon")
     eq(header.chance:IsShown() and header.chance.text ~= "" , false, "no chance")
@@ -82,7 +82,7 @@ test("an item row keeps its numbers: the chance is the view's", function()
     local row = RowOf(FISH)
     eq(row.icon:IsShown(), true, "icon shown")
     eq(row.chance.text, ns.Catalog.ChanceText(chance, view.littleData), "chance")
-    eq(row.pieces.text, "1.0", "per catch")
+    eq(row.pieces.text, "1", "per catch: a whole number (spec 020)")
 end)
 
 -- US2: the kind menu (FR-007 to FR-011).
@@ -90,7 +90,7 @@ end)
 -- The row texts of every shown item: "<id>=<chance>|<per catch>|<price>".
 local function Numbers()
     local list = {}
-    for _, row in ipairs(here.rows) do
+    for _, row in ipairs(list_rows(here.list)) do
         if row:IsShown() and row.itemID then
             table.insert(list, ("%d=%s|%s|%s"):format(row.itemID, tostring(row.chance.text), tostring(row.pieces.text),
                 tostring(row.price.text)))
@@ -103,7 +103,7 @@ end
 
 test("the kind button reads 'Kinds: all' and opens five checkboxes, all checked", function()
     eq(here.kindButton.text, L["Kinds: all"], "button")
-    assert(anchor(here.kindButton, "TOPRIGHT"), "at the top right (unchanged by spec 017's catalog layout)")
+    assert(anchor(here.kindButton, "TOPLEFT"), "in row B, at the slot's place without pool or bonus data (spec 020)")
     here.kindButton.scripts.OnClick(here.kindButton)
     local texts = {}
     for _, entry in ipairs(menu_entries) do
@@ -176,19 +176,19 @@ test("an item hidden as Other that the game then loads as a fish shows up withou
 end)
 
 -- Last: the extra items below fill the page for the rest of the file.
-test("'and N more' counts the items not drawn, not the headers", function()
-    -- 15 more fish kinds of item: with the headers they no longer fit the 16 rows.
+test("the list scrolls: every item and header is listed, no 'and N more' (spec 020)", function()
+    -- 15 more fish kinds of item: with the headers they no longer fit the old 16 rows.
     for itemID = 91001, 91015 do
         item_classes[itemID] = { 7, 8 }
         fish_cast({ { itemID, 1 } })
     end
     tick(window)
     local items, headers = 0, 0
-    for _, row in ipairs(here.rows) do
+    for _, row in ipairs(list_rows(here.list)) do
         if row:IsShown() then
             if row.itemID then items = items + 1 else headers = headers + 1 end
         end
     end
-    eq(items + headers, 16, "every row used")
-    eq(here.more.text, (L["and %d more"]):format(20 - items), "the items left out")
+    eq(items, 20, "every item")
+    eq(here.more, nil, "no 'and N more' line")
 end)

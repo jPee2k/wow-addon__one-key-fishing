@@ -29,6 +29,7 @@ local function Toggles()
         { key = "sessionTimer", label = L["Show session fishing time under the indicator"] },
         { key = "pauseOnAFK", label = L["Pause the fishing timer while AFK"] },
         { key = "skillCapWarning", label = L["Remind me about the next Fishing rank"] },
+        { key = "campBonusWarning", label = L["Warn when a camp bonus is ending"] },
         { key = "camera", label = L["Zoom the camera while fishing"] },
         { key = "minimapButton", label = L["Show the minimap button"] },
         { key = "tooltipChances", label = L["Show catch chances in tooltips"] },
