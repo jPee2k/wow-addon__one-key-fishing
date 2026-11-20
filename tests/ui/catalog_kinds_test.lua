@@ -68,7 +68,7 @@ end)
 
 
 test("the catalog has the kind button; the filter row keeps its three buttons of 150", function()
-    eq(tab.kindButton.text, L["Kinds: all"], "button")
+    eq(tab.kindButton.text, L["Kinds: All"], "button")
     for _, name in ipairs({ "skillButton", "sourceButton", "waterButton" }) do
         eq(tab[name].minWidth, 150, name .. ": the filter row as before spec 014")
     end

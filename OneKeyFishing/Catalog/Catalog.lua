@@ -731,7 +731,9 @@ function Catalog.MinimapLines()
         return nil
     end
     local mapID, range, cell = ns.CatchDB.GetCurrentPlace()
-    local view = mapID and ns.CatchDB.Query(mapID, cell, { range = range, source = "all", water = "all" })
+    -- The own range sums the ranges below it; 300+ is "all", the same views as the tabs' (spec 021).
+    local view = mapID and ns.CatchDB.Query(mapID, cell,
+        { range = ns.CatchDB.SkillFilter(range), source = "all", water = "all" })
     if not view or view.scope == "none" then
         return { items = {}, footer = L["Nothing has been caught here yet."] }
     end

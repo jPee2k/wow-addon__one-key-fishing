@@ -36,7 +36,7 @@ test("nothing caught yet", function()
 end)
 
 test("the filters start at the own skill range and all sources", function()
-    eq(here.skillButton.text, (L["Skill: %s"]):format("225-299"), "skill filter")
+    eq(here.skillButton.text, (L["Skill: Up to %d"]):format(299), "skill filter")
     eq(here.sourceButton.text, (L["Source: %s"]):format(L["All"]), "source filter")
 end)
 
@@ -90,30 +90,38 @@ end)
 test("the skill filter follows the rank until a range is picked by hand", function()
     fishing_rank = 300
     tick(window)
-    eq(here.skillButton.text, (L["Skill: %s"]):format("225-299"), "the range is read again only on a skill event")
+    eq(here.skillButton.text, (L["Skill: Up to %d"]):format(299), "the range is read again only on a skill event")
     fire("SKILL_LINES_CHANGED")
     tick(window)
-    eq(here.skillButton.text, (L["Skill: %s"]):format("300+"), "follows the new range")
-    eq(here.message.text, L["Nothing has been caught here yet."], "nothing in range 4 yet")
+    eq(here.skillButton.text, L["Skill: All"], "follows the new range: 300+ is all (spec 021)")
+    eq(here.counts.text, (L["%d catches"]):format(60) .. "    " .. L["Nothing caught: little data"],
+        "every range's catches; no cast at 300+ for the miss rate")
     ns.CatchHere.SetRange("all")
-    eq(here.skillButton.text, (L["Skill: %s"]):format(L["All skill levels"]), "picked by hand")
+    eq(here.skillButton.text, L["Skill: All"], "picked by hand")
     eq(here.counts.text:sub(1, #"60 catches"), (L["%d catches"]):format(60), "all ranges")
     fishing_rank = 230
     fire("SKILL_LINES_CHANGED")
     tick(window)
-    eq(here.skillButton.text, (L["Skill: %s"]):format(L["All skill levels"]), "a hand-picked range stays")
+    eq(here.skillButton.text, L["Skill: All"], "a hand-picked range stays")
 end)
 
-test("little data in a picked range suggests all skill levels", function()
+test("little data in a picked range: no percentage, and no hint (spec 021 removed it)", function()
     ns.CatchHere.SetRange(1)
-    eq(here.message.text, L["Nothing has been caught here yet."], "nothing in range 1")
+    eq(here.message.text, L["Nothing has been caught here yet."], "nothing up to 149")
+    -- On another map: a catch of 75-149 here would count in "up to 299" too (spec 021) and change the tests below.
+    player_map_id = 1420
+    fire("ZONE_CHANGED_NEW_AREA")
     fishing_rank = 100
     cast({ { FISH, 1 } })
     ns.CatchHere.SetRange(1)
+    tick(window)
     eq(list_rows(here.list)[2].chance.text, L["Little data"], "no percentage")
-    assert(here.hint.text:find(L["Try \"All skill levels\": little data for your skill."], 1, true), here.hint.text)
+    assert(not here.hint.text:find("All skill levels", 1, true), here.hint.text)
+    player_map_id = 1415
+    fire("ZONE_CHANGED_NEW_AREA")
     fishing_rank = 230
     ns.CatchHere.SetRange(3)
+    tick(window)
 end)
 
 test("turning auction prices off redraws the prices", function()

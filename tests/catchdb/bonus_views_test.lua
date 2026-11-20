@@ -44,6 +44,12 @@ local function filter(bonus, water)
     return { range = "all", source = "all", water = water or "all", bonus = bonus }
 end
 
+-- A place's view (Query) in the range of the test's data, 225-299: only Query carries a miss rate, from the chosen
+-- range alone (specs/021-cumulative-skill-filter research R3).
+local function place(mapID, cell, bonus, water)
+    return CatchDB.Query(mapID, cell, { range = 3, source = "all", water = water or "all", bonus = bonus })
+end
+
 local function item(view, itemID)
     for _, entry in ipairs(view.items) do
         if entry.itemID == itemID then
@@ -132,7 +138,7 @@ test("\"rack\": the parts with bit 1 (\"1\" and \"3\") of the seed and the own c
     eq(item(view, FISH).catches, 6 + 4 + 3, "fish")
     eq(item(view, BLOATED).catches, 4, "Bloated fish")
     eq(item(view, OIL), nil, "no oil under the Rack")
-    near(view.missRate, 4 / 21, "the miss rate")
+    near(place(1415, "47", "rack").missRate, 4 / 21, "the miss rate (the map: too few catches at the spot)")
 end)
 
 test("\"hut\": \"2\" and \"3\"; \"none\": the cell minus all parts, mask 3 once", function()
@@ -193,7 +199,7 @@ test("a weighted seed cell without parts reads the same under \"none\" as under 
     eq(all.catches, 60, "the raw catches under \"all\"")
     eq(none.catches, all.catches, "the same under \"none\"")
     eq(none.littleData, all.littleData, "the same threshold")
-    near(none.missRate, all.missRate, "the same miss rate")
+    near(place(1419, "x", "none").missRate, place(1419, "x", "all").missRate, "the same miss rate")
     eq(none.players, all.players, "the same players")
 end)
 
@@ -212,7 +218,8 @@ test("under a bonus filter the water filter changes nothing", function()
     local plain = CatchDB.QueryMap(1415, filter("rack"))
     local pool = CatchDB.QueryMap(1415, filter("rack", "pool"))
     eq(pool.catches, plain.catches, "catches")
-    near(pool.missRate, plain.missRate, "the miss rate stays")
+    assert(place(1415, "47", "rack").missRate, "a miss rate under the bonus filter")
+    near(place(1415, "47", "rack", "pool").missRate, place(1415, "47", "rack").missRate, "the miss rate stays")
 end)
 
 test("BonusKeys lists the bonuses in rank order", function()

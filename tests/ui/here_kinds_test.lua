@@ -102,7 +102,7 @@ end
 
 
 test("the kind button reads 'Kinds: all' and opens five checkboxes, all checked", function()
-    eq(here.kindButton.text, L["Kinds: all"], "button")
+    eq(here.kindButton.text, L["Kinds: All"], "button")
     assert(anchor(here.kindButton, "TOPLEFT"), "in row B, at the slot's place without pool or bonus data (spec 020)")
     here.kindButton.scripts.OnClick(here.kindButton)
     local texts = {}

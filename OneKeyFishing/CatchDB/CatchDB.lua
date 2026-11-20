@@ -36,6 +36,24 @@ for range = 0, MAX_RANGE do
     CatchDB.RANGES[range + 1] = range
 end
 
+-- The skill range of a Fishing rank (nil for none): the range of the place keys a cast writes, and the own range the
+-- skill filter marks (specs/021-cumulative-skill-filter research R5).
+function CatchDB.RangeOf(rank)
+    if rank == nil then
+        return nil
+    end
+    return math.min(MAX_RANGE, math.floor(rank / RANGE_STEP))
+end
+
+-- A skill range as a value of the skill filter (spec 021 research R1): 0 to 3 themselves; 300+ and no range are
+-- "all", the filter's last value, which sums every range (the views read a range r as the ranges 0 to r).
+function CatchDB.SkillFilter(range)
+    if range == nil or range >= MAX_RANGE then
+        return "all"
+    end
+    return range
+end
+
 -- State shared by the CatchDB/*.lua files lives on P (reassigned, so never re-bound into a local):
 --   P.version   grows with every change the views must see (GetVersion)
 --   P.ownItems  item ID -> true: the items of the own catch, for the views (Index.lua OwnItems)
@@ -165,7 +183,7 @@ function CatchDB.GetCurrentPlace()
     if onContinent and not x then
         return nil
     end
-    return mapID, math.min(MAX_RANGE, math.floor(rank / RANGE_STEP)), cell, x, y
+    return mapID, CatchDB.RangeOf(rank), cell, x, y
 end
 
 -- The game's area ID of the player's subzone (research R3 of specs/011-catch-place-fixes): the lowest area ID whose

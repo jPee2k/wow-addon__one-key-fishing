@@ -72,6 +72,14 @@ or before a 501st place:
   others' part (water-filling over the raw counts); the seed and the own catch are not scaled. Chances and pieces
   are weighted by catches, `missRate` by casts (so many misses with few catches are capped too); `catches` stays raw
   (a seed cell the harvest weighted gives its raw catches as `r`).
+- The skill filter (specs/021-cumulative-skill-filter): `filter.range` is `0` to `3` or `"all"`; `Ranges`
+  reads a range r as the ranges 0 to r (more skill never undoes what less skill catches) and `"all"` (or a stray
+  `MAX_RANGE`) as every range, for every view. `CatchDB.RangeOf(rank)` is a rank's range (the place keys, the own
+  range); `CatchDB.SkillFilter(range)` its filter value (300+ and none are `"all"`). The miss rate is the one
+  exception: `Query` sums the chosen range alone (`MissRange`: 300+ for `"all"`) at the scope it chose (the list's
+  own sum for range 0) and `BuildView` builds `missRate` and `missLittleData` (fewer than `LITTLE_DATA` raw
+  casts) from it, since less skill misses more. Only `Query`'s views carry them; `QueryMap` and `QueryCells`
+  (the catalog's) have no miss rate.
 - Items: an item neither in the seed nor in the own catch shows only once 3 other IDs reported it on the map
   (`reporters` and `inSeed` per item). Items the client does not know yet are kept and shown as "Unknown item"
   ([ui.md](ui.md)), which the tab reads when it draws the row.

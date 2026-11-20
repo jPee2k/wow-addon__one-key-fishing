@@ -42,7 +42,7 @@ load_addon(function()
         ["1415:3:47"] = cell(100, { [CA] = { 60, 60 }, [CB] = { 30, 30 }, [CC] = { 10, 10 } }),
         ["1416:3:11"] = cell(10, { [CD] = { 10, 10 } }),
         ["1417:3:11"] = cell(10, { [CE] = { 5, 5 }, [CB] = { 5, 5 } }),
-        ["1418:2:11"] = cell(80, { [CC] = { 80, 80 } }),
+        ["1418:4:11"] = cell(80, { [CC] = { 80, 80 } }),
     } }
 end)
 
@@ -227,7 +227,8 @@ end)
 test("by chance under a skill filter: the filtered index's places", function()
     local range3 = { range = 3, source = "all", water = "all" }
     local list = settle(range3)
-    eq(ids(list, CHANCE_SET), join(CA, CB, CC, CD, CE), "map 1418 (range 2) left out: Cedar 0.1")
+    eq(ids(list, CHANCE_SET), join(CA, CB, CC, CD, CE),
+        "map 1418 (300+, above the filter: it sums 0-299) left out: Cedar 0.1")
     assertChanceOrder(list)
     Catalog.SetSort("name")
 end)

@@ -436,3 +436,22 @@ test("MinimapLines: the top three of the place, no grey or unknown items, and th
     player_map_id = 1415
     ns.Mode.IsActive = active
 end)
+
+test("MinimapLines: the own range sums the ranges below it; 300+ reads every range (spec 021)", function()
+    local active = ns.Mode.IsActive
+    ns.Mode.IsActive = function() return true end
+    ns.SeedData.cells["1421:1:47"] = cell(60, { [FISH] = { 60, 60 } }, 1) -- 75-149 only
+    ns.Fire("SHARED_DATA_CHANGED")
+    player_map_id = 1421
+    local lines = Catalog.MinimapLines()
+    eq(lines.items[1] and lines.items[1].name, "Deviate Fish", "225-299 sums the catches of 75-149")
+    eq(lines.footer, (ns.L["%d catches"]):format(60), "their catches")
+    fishing_rank = 300
+    fire("SKILL_LINES_CHANGED")
+    lines = Catalog.MinimapLines()
+    eq(lines.items[1] and lines.items[1].name, "Deviate Fish", "300+ is every range")
+    fishing_rank = 230
+    fire("SKILL_LINES_CHANGED")
+    player_map_id = 1415
+    ns.Mode.IsActive = active
+end)

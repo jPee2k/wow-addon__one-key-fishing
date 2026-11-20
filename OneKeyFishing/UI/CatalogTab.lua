@@ -297,6 +297,8 @@ function CatalogTab.Create(parent)
         ns.CatchHere.OpenSkillMenu(self, function() return filter.range end, CatalogTab.SetRange)
     end)
     page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, FILTER_TOP)
+    page.skillButton:SetScript("OnEnter", function(self) ns.ShowSkillTooltip(self, filter.range) end) -- spec 021
+    page.skillButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
     page.sourceButton = ns.CreateButton(page.listView, "", 150, function(self)
         ns.CatchHere.OpenSourceMenu(self, function() return filter.source end, CatalogTab.SetSource)
     end)
@@ -401,7 +403,7 @@ function CatalogTab.Refresh(retain)
         return
     end
     dirty = false
-    page.skillButton:SetText((L["Skill: %s"]):format(ns.RangeLabel(filter.range)))
+    page.skillButton:SetText(ns.SkillFilterLabel(filter.range))
     page.sourceButton:SetText((L["Source: %s"]):format(ns.CatchHere.SourceLabel(filter.source)))
     -- One slot for the Water and the Camp bonus buttons (spec 020); a filter without its button is "all".
     filter.water, filter.bonus = ns.CatchHere.UpdateFilterSlot(page.waterButton, page.bonusButton, filter.water,

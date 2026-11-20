@@ -55,8 +55,9 @@ are settings': `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (sp
 - `Catalog.TooltipLines(itemID)`: the "Caught in" lines, up to three `{ zone, right }` pairs from the default
   index, stale or not; reliable zones first, little-data ones only without any; nil for an item outside the
   database and before any index exists. `Catalog.MinimapLines()`: the likely catches of the current place in
-  fishing mode, counted like the "What can be caught here" tab with its defaults; nil outside fishing mode or
-  with `settings.tooltipChances` off.
+  fishing mode, counted like the "What can be caught here" tab with its defaults (the own range through
+  `CatchDB.SkillFilter`, so the ranges up to it, 300+ as `"all"`: spec 021); nil outside fishing mode or with
+  `settings.tooltipChances` off.
 - `Catalog.Find(text)`: the item IDs of the default index whose name contains the text, for `/okf catalog`;
   `Catalog.CommandArg(rest)` turns an item link into its ID.
 - `Catalog.Describe()`: lines for `/okf debug`, counts and times only, never an item name.
