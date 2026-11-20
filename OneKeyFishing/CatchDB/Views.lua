@@ -584,19 +584,30 @@ local function Tag(view, sum, rules, scope)
     end
 end
 
--- rules: { mine = source "mine" (every item shown), reporters = Reporters(...) }.
-function BuildView(scope, sum, rules)
+-- The miss rate's numbers of a sum: its misses and casts weighted by casts (research.md R7 of part 3), and its raw
+-- casts (the threshold of spec 021's missLittleData: real catches and misses, every player's part).
+local function MissNumbers(sum)
+    local castFactors = WeightFactors(sum, Players(sum), Casts)
+    local misses, casts, rawMisses = sum.m, Casts(sum), sum.m
+    for id, part in pairs(sum.parts) do
+        local factor = castFactors[id] or 1
+        misses, casts = misses + part.m * factor, casts + Casts(part) * factor
+        rawMisses = rawMisses + part.m
+    end
+    return misses, casts, RawCatches(sum) + rawMisses
+end
+
+-- rules: { mine = source "mine" (every item shown), reporters = Reporters(...) }. missSum: the sum the miss rate comes
+-- from (the chosen skill range alone, spec 021 research R3); without it the view has no miss rate (the catalog's).
+function BuildView(scope, sum, rules, missSum)
     local players = Players(sum)
     local factors, castFactors = WeightFactors(sum, players, Catches), WeightFactors(sum, players, Casts)
     local weighted, raw = { c = 0, m = 0, i = {} }, { c = 0, m = 0, i = {} }
-    local misses, casts = sum.m, Casts(sum) -- the miss rate's sums, weighted by casts
     AddCounts(weighted, sum)
     AddCounts(raw, sum)
     for id, part in pairs(sum.parts) do
         AddCounts(weighted, part, factors[id])
         AddCounts(raw, part)
-        local factor = castFactors[id] or 1
-        misses, casts = misses + part.m * factor, casts + Casts(part) * factor
     end
     local seed, own, reporters = SeedItems(), OwnItems(), rules.reporters
     local items = {}
@@ -637,20 +648,39 @@ function BuildView(scope, sum, rules)
     end
     local catches = RawCatches(sum)
     local view = { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches,
-        misses = raw.m,
-        -- No miss rate under a water filter: a miss has no loot source (FR-022). A camp bonus part has its misses,
-        -- so the miss rate stays under a bonus filter (spec 020).
-        missRate = (sum.water or "all") == "all" and (casts > 0 and misses / casts or 0) or nil, items = items,
-        players = players, others = others,
+        misses = raw.m, items = items, players = players, others = others,
         point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
+    -- No miss rate under a water filter: a miss has no loot source (FR-022). A camp bonus part has its misses, so the
+    -- miss rate stays under a bonus filter (spec 020): missSum passed the same filter.
+    if missSum and (sum.water or "all") == "all" then
+        local misses, casts, rawCasts = MissNumbers(missSum)
+        view.missRate = casts > 0 and misses / casts or 0
+        view.missLittleData = rawCasts < LITTLE_DATA
+    end
     if sum.tagged then
         Tag(view, sum, rules, scope)
     end
     return view
 end
 
+-- The ranges a filter sums: a range r sums every range from 0 to r, since more skill never undoes what less skill
+-- catches; "all" (and a stray MAX_RANGE) every range (specs/021-cumulative-skill-filter, research R1 and R2).
+local UP_TO = {}
+for range = 0, MAX_RANGE - 1 do
+    UP_TO[range] = {}
+    for lower = 0, range do
+        UP_TO[range][lower + 1] = lower
+    end
+end
+
 local function Ranges(filter)
-    return filter.range == "all" and CatchDB.RANGES or { filter.range }
+    return UP_TO[filter.range] or CatchDB.RANGES
+end
+
+-- The one range the miss rate comes from: the chosen range itself, 300+ for "all" (spec 021 research R3): lower skill
+-- misses more, so a summed miss rate would show a skilled player the misses of beginners.
+local function MissRange(filter)
+    return UP_TO[filter.range] and filter.range or MAX_RANGE
 end
 
 -- "<range>|<source>|<water>|<bonus>": a filter as the view caches (and the catalog, Catalog.lua) key it; a missing
@@ -674,13 +704,16 @@ local cache, cacheVersion = {}, nil
 local reportersCache = {} -- "<mapID>|<source>" -> Reporters(...): the map's, whatever the spot or range
 
 -- What a place gives (contracts/catchdb-api.md): the spot, or the whole map when the spot has fewer than
--- LITTLE_DATA catches. filter = { range = 0..4 or "all", source = "all" or "mine" }. A view is
+-- LITTLE_DATA catches. filter = { range = 0..3 or "all", source = "all" or "mine" }; a range sums the ranges 0 to it
+-- (spec 021). A view is
 -- { scope = "spot" | "map" | "none", littleData, catches, misses, missRate, players, others (another player's catch
 -- is in the sum),
 -- items = { { itemID, catches, chance, pieces, reporters, inSeed } } }: catches is the real sum (a seed cell the
 -- harvest weighted gives its raw catches, r); misses and the items' catches are summed unweighted, but a weighted
 -- seed cell holds them weighted; chance, pieces and missRate come from the sums weighted by research.md R7 of part 3;
--- an item neither the seed nor
+-- missRate and missLittleData (fewer than LITTLE_DATA casts) come from the chosen range alone at the view's scope
+-- (300+ for "all"; spec 021), and only Query's views carry them, not QueryMap's or QueryCells'; an item neither the
+-- seed nor
 -- the own catch has needs NEW_ITEM_REPORTERS other contributions on the map (FR-014); players is a lower bound where
 -- the seed cannot tell (specs/003-guild-group-sync/research.md R9).
 function CatchDB.Query(mapID, cell, filter)
@@ -698,14 +731,19 @@ function CatchDB.Query(mapID, cell, filter)
     local reportersKey = mapID .. "|" .. filter.source
     reportersCache[reportersKey] = reportersCache[reportersKey] or Reporters(sources, mapID)
     local rules = { mine = filter.source == "mine", reporters = reportersCache[reportersKey] }
+    -- The miss rate's sum: the chosen range alone at the scope of the list (spec 021 research R3); range 0 is the
+    -- list's own sum.
+    local missRange = MissRange(filter)
     local spot = SumSpot(sources, mapID, ranges, cell)
     local view
     if RawCatches(spot) >= LITTLE_DATA then
-        view = BuildView("spot", spot, rules)
+        local missSum = missRange == 0 and spot or SumSpot(sources, mapID, { missRange }, cell)
+        view = BuildView("spot", spot, rules, missSum)
         view.cell = cell
     else
         local map = SumMap(sources, mapID, ranges)
-        view = BuildView(RawCatches(map) > 0 and "map" or "none", map, rules) -- "none": nothing caught at all
+        local missSum = missRange == 0 and map or SumMap(sources, mapID, { missRange })
+        view = BuildView(RawCatches(map) > 0 and "map" or "none", map, rules, missSum) -- "none": nothing caught
     end
     cache[cacheKey] = view
     return view

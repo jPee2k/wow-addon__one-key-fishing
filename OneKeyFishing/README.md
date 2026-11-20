@@ -124,8 +124,11 @@ The second tab of the statistics window lists what the spot you stand at gives:
   line with the state of the [shared catch database](#shared-catch-database); then the catch counts, two rows of
   buttons (**Skill** and **Source**; then **Water** or **Camp bonus**, and **Kinds**) and the list, which scrolls;
 - **Pieces per catch** has one decimal when it needs one ("1.3"), and none for a whole number ("1");
-- **Skill**: your own skill range by default (0-74, 75-149, 150-224, 225-299, 300+), or any other range, or all
-  of them;
+- **Skill**: the catches of a skill range and of every lower one (more skill never undoes what less skill
+  catches): **Up to 74**, **Up to 149**, **Up to 224**, **Up to 299** or **All (300+)**. Your own range is the
+  default, marked "(yours)" in the menu, and follows your skill as it grows until you pick another value (kept until
+  the interface reloads). The share of casts that catch nothing comes from the chosen range alone, since less skill
+  misses more: "Nothing caught: little data" until that range has 50 casts. Hover the button for what it holds;
 - **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
   you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from 3
   players");
@@ -159,12 +162,12 @@ and, with the shared catch database on, what other players reported.
   with every letter. Grey items only show when you search for them. An item your game client does not know yet
   stays out of the list until the game loads it. A line under the search box says when the catalog is still being
   counted or the list is empty ("No item matches the search.").
-- **Filters**, in two rows as on the "What can be caught here" tab: **Skill** (all ranges by default) and **Source**
-  (**All** or **Only mine**); then **Water** (with pool data) or **Camp bonus** (once a catch with a [camp
-  bonus](#camp-bonus) is known; it takes the Water button's place), **Kinds** and **Sort**. The list is grouped under
-  the same kind headers as on the other tab, and a kind you hide there is hidden here too. A search whose matches are
-  all hidden says "The kind filter hides the matches."; an item opened by its link or from the other tab always
-  shows, whatever its kind.
+- **Filters**, in two rows as on the "What can be caught here" tab: **Skill** (**All (300+)** by default; a value
+  holds the catches of its range and every lower one) and **Source** (**All** or **Only mine**); then **Water**
+  (with pool data) or **Camp bonus** (once a catch with a [camp bonus](#camp-bonus) is known; it takes the Water
+  button's place), **Kinds** and **Sort**. The list is grouped under the same kind headers as on the other tab, and
+  a kind you hide there is hidden here too. A search whose matches are all hidden says "The kind filter hides the
+  matches."; an item opened by its link or from the other tab always shows, whatever its kind.
 - **Sort**: **Name** (alphabetical, the default), **Price** (the dearest first) or **Chance** (the highest chance
   first), inside each kind. The right end of each row shows what the list is sorted by: the number of zones, the
   price per piece (the same value the statistics use: the vendor price or your last auction scan, whichever is

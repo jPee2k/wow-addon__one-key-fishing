@@ -164,8 +164,16 @@ ns.AddTranslation("frFR", "Français", function(L)
     -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
     L["Statistics"] = "Statistiques"
     L["What can be caught here"] = "Ce qu'on pêche ici"
-    L["Skill: %s"] = "Compétence : %s"
-    L["All skill levels"] = "Tous les niveaux de compétence"
+    L["Skill: Up to %d"] = "Compétence : Jusqu'à %d"
+    L["Skill: All"] = "Compétence : Toutes"
+    L["Up to %d"] = "Jusqu'à %d"
+    L["Up to %d (yours)"] = "Jusqu'à %d (la vôtre)"
+    L["All (%d+)"] = "Toutes (%d+)"
+    L["All (%d+) (yours)"] = "Toutes (%d+) (la vôtre)"
+    L["Catches with skill up to %d."] = "Prises avec une compétence jusqu'à %d."
+    L["Catches with any skill."] = "Prises avec toute compétence."
+    L["Misses only with skill %s."] = "Lancers sans prise seulement avec la compétence %s."
+    L["Nothing caught: little data"] = "Rien de pêché : peu de données"
     L["Source: %s"] = "Source : %s"
     L["All"] = "Tout"
     L["Only mine"] = "Seulement les miennes"
@@ -176,8 +184,6 @@ ns.AddTranslation("frFR", "Français", function(L)
         "Chiffres de toute la carte : trop peu de prises à cet endroit."
     L["Little data"] = "Peu de données"
     L["Nothing has been caught here yet."] = "Rien n'a encore été pêché ici."
-    L["Try \"All skill levels\": little data for your skill."] =
-        "Essayez « Tous les niveaux de compétence » : peu de données pour votre compétence."
     L["and %d more"] = "et %d de plus"
     L["No bundled data in this version: only your own catches are shown."] =
         "Aucune donnée incluse dans cette version : seules vos propres prises sont affichées."
@@ -452,7 +458,7 @@ ns.AddTranslation("frFR", "Français", function(L)
     L["Potions & drinks"] = "Potions et boissons"
     L["Reagents & herbs"] = "Composants et herbes"
     L["Other"] = "Autres"
-    L["Kinds: all"] = "Types : tous"
+    L["Kinds: All"] = "Types : Tous"
     L["Kinds: %d of %d"] = "Types : %d sur %d"
     L["The kind filter hides every item."] = "Le filtre de types masque tous les objets."
     L["The kind filter hides the matches."] = "Le filtre de types masque les résultats."
@@ -517,11 +523,11 @@ ns.AddTranslation("frFR", "Français", function(L)
 
     -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
     L["Bonus catches only"] = "Prises bonus uniquement"
-    L["Camp bonus: All"] = "Bonus de camp : tout"
-    L["Camp bonus: No bonus"] = "Bonus de camp : sans"
-    L["Camp bonus: Bonus only"] = "Bonus de camp : bonus seul"
-    L["Camp bonus: Rack"] = "Bonus de camp : râtelier"
-    L["Camp bonus: Hut"] = "Bonus de camp : cabane"
+    L["Camp bonus: All"] = "Bonus de camp : Tout"
+    L["Camp bonus: No bonus"] = "Bonus de camp : Sans"
+    L["Camp bonus: Bonus only"] = "Bonus de camp : Bonus seul"
+    L["Camp bonus: Rack"] = "Bonus de camp : Râtelier"
+    L["Camp bonus: Hut"] = "Bonus de camp : Cabane"
     L["No bonus catch has been recorded here yet."] = "Aucune prise bonus enregistrée ici pour l'instant."
     L["No bonus catch has been recorded yet."] = "Aucune prise bonus enregistrée pour l'instant."
 end)

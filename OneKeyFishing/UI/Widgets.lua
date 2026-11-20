@@ -279,11 +279,8 @@ function ns.KeyText(binding, short, unbound, separator)
 end
 
 -- The skill ranges min to max of CatchDB (whole ranges of RANGE_STEP points; max defaults to min): "0-74",
--- "75-224", "300+", "75+"; "All skill levels" for "all".
+-- "75-224", "300+", "75+". Real ranges only: the catalog's Skill column and the Skill button's miss range.
 function ns.RangeLabel(min, max)
-    if min == "all" then
-        return ns.L["All skill levels"]
-    end
     max = max or min
     local step = ns.CatchDB.RANGE_STEP
     local from = min * step
@@ -291,6 +288,46 @@ function ns.RangeLabel(min, max)
         return from .. "+"
     end
     return from .. "-" .. ((max + 1) * step - 1)
+end
+
+-- The skill filter of both tabs (specs/021-cumulative-skill-filter): a value 0 to 3 sums the ranges up to it and
+-- reads "up to" the range's top; "all" (300+) sums every range. The misses come from the value's own range.
+local function SkillTop(range)
+    return (range + 1) * ns.CatchDB.RANGE_STEP - 1
+end
+
+local function AllFrom()
+    return ns.CatchDB.MAX_RANGE * ns.CatchDB.RANGE_STEP
+end
+
+-- The Skill button's text: "Skill: Up to 224", "Skill: All".
+function ns.SkillFilterLabel(value)
+    if value == "all" then
+        return ns.L["Skill: All"]
+    end
+    return (ns.L["Skill: Up to %d"]):format(SkillTop(value))
+end
+
+-- A value's text in the Skill menu, with "(yours)" when it is the own range's value `own` (nil: none).
+function ns.SkillMenuText(value, own)
+    local L, yours = ns.L, value == own
+    if value == "all" then
+        return (yours and L["All (%d+) (yours)"] or L["All (%d+)"]):format(AllFrom())
+    end
+    return (yours and L["Up to %d (yours)"] or L["Up to %d"]):format(SkillTop(value))
+end
+
+-- The Skill button's tooltip: what the list sums and the one range its miss rate comes from.
+function ns.ShowSkillTooltip(button, value)
+    local L = ns.L
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(L["Skill"])
+    local all = value == "all"
+    local holds = all and L["Catches with any skill."] or (L["Catches with skill up to %d."]):format(SkillTop(value))
+    GameTooltip:AddLine(holds, 1, 1, 1, true)
+    local miss = all and ns.CatchDB.MAX_RANGE or value
+    GameTooltip:AddLine((L["Misses only with skill %s."]):format(ns.RangeLabel(miss)), 1, 1, 1, true)
+    GameTooltip:Show()
 end
 
 local function ShowReason(button)

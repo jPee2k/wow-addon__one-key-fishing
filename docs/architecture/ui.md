@@ -65,8 +65,12 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
 
 The "What can be caught here" page ([catch-db.md](catch-db.md)):
 
-- `CatchDB.Query` for the current place, a skill filter that follows the own range until one is picked by hand
-  and a source filter, both in memory only;
+- `CatchDB.Query` for the current place, a skill filter that follows the own range (`CatchDB.SkillFilter`: 300+ is
+  "all") until one is picked by hand and a source filter, both in memory only;
+- the Skill button (spec 021) in both tabs: `ns.SkillFilterLabel` ("Skill: Up to 224", "Skill: All"), the menu of
+  `CatchHere.OpenSkillMenu` ("Up to 74" ... "All (300+)", `ns.SkillMenuText`, the own range marked "(yours)" from
+  the rank, so also without a map), and `ns.ShowSkillTooltip` on hover (what the list sums, the one range its misses
+  come from);
 - redrawn on the 1 s tick when the data, the place or a filter changed;
 - the map and the skill range are read again on zone, loading-screen and skill events, the cell every second;
 - the layout, top to bottom (spec 020 decisions 22, 28 and 29; the y offsets are constants at the top of the file):
@@ -83,7 +87,8 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
   players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
   `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (FR-017a of
   `specs/004-public-channel-sync`);
-- the miss line uses the view's `missRate` (weighted), and is left out under a water filter;
+- the miss line uses the view's `missRate` (weighted, the chosen range's alone), "Nothing caught: little data" when
+  `missLittleData`, and is left out under a water filter;
 - the Water button shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
 - the Camp bonus button (spec 020, research R8) takes the Water button's slot at the start of row B: shown while
   `CatchDB.HasBonusData()`, and then the Water button is hidden and the water reads as "all" (the two filters do not
@@ -113,7 +118,7 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - the items are grouped under kind headers (`Catalog.Group`, spec 014): a header is a row in header mode (the kind's
   text only, no item, so its hover and click do nothing), elements of the scroll list like the items; the Kinds
   button is the second of row B (spec 020 decision 22; before it stood at the top right, beside the place's name);
-- the Kinds button reads "Kinds: all" or "Kinds: N of 5" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
+- the Kinds button reads "Kinds: All" or "Kinds: N of 5" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
   (`UI/Widgets.lua`, which shares its body with `ns.OpenRadioMenu`) with one checkbox per kind; a click goes
   through `Catalog.SetKindShown`, and each tab redraws itself at once on `SETTINGS_CHANGED("hiddenKinds")` (a hidden
   one when shown again); the menu stays open (the game's checkbox answers `MenuResponse.Refresh`); the choice is saved
@@ -189,7 +194,9 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   more"; `list.Show(elements, retain)`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
   a red "not bound"; the minimap tooltip, the settings key line and the indicator use it), `ns.RangeLabel(min, max)`
-  (the skill range label of both catch pages: "0-74", "75-224", "300+"), `ns.UpdateScanButton(button)`
+  (a real skill range's label: "0-74", "75-224", "300+"; the catalog's Skill column, the Skill tooltip's miss range),
+  `ns.SkillFilterLabel`, `ns.SkillMenuText`, `ns.ShowSkillTooltip` (the Skill button of both catch pages, spec 021),
+  `ns.UpdateScanButton(button)`
   (the auction scan button of the statistics window and above the auction window; the settings page has none,
   since opening the settings closes the auction house window: enabled by `Auction.CanScan()`, the reason
   `Auction.WhyNot()` on hover, also while disabled) and

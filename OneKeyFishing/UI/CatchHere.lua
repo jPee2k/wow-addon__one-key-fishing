@@ -54,8 +54,6 @@ local dirty = false
 -- them the page follows the player's cell with one position lookup per second.
 local placeChanged = true
 
-local RangeLabel = ns.RangeLabel -- UI/Widgets.lua: "0-74", ..., "300+"; "All skill levels" for "all"
-
 local function SourceLabel(value)
     return value == "mine" and L["Only mine"] or L["All"]
 end
@@ -196,9 +194,9 @@ function CatchHere.SetBonus(value)
     CatchHere.Refresh()
 end
 
--- The skill filter: the one picked by hand, else the own range.
+-- The skill filter: the one picked by hand, else the own range's value (300+ is "all"; spec 021).
 local function EffectiveRange(ownRange)
-    return pickedRange or ownRange or "all"
+    return pickedRange or ns.CatchDB.SkillFilter(ownRange)
 end
 
 function CatchHere.SetRange(range)
@@ -219,10 +217,10 @@ function CatchHere.OpenKindMenu(owner)
     end)
 end
 
--- "Kinds: all" or "Kinds: N of 5" (FR-009).
+-- "Kinds: All" or "Kinds: N of 5" (FR-009).
 function CatchHere.KindLabel()
     local count, total = ns.Catalog.ShownKinds()
-    return count == total and L["Kinds: all"] or (L["Kinds: %d of %d"]):format(count, total)
+    return count == total and L["Kinds: All"] or (L["Kinds: %d of %d"]):format(count, total)
 end
 
 function CatchHere.SetSource(value)
@@ -232,12 +230,16 @@ function CatchHere.SetSource(value)
 end
 
 -- The skill and source menus, like the Water menu above (also the catalog's): current() is the chosen value.
+-- Skill (spec 021): "up to" each range below 300+, then "all (300+)"; the own range's value, from the rank (also
+-- where the game gives no map), is marked "(yours)".
 function CatchHere.OpenSkillMenu(owner, current, choose)
+    local rank = ns.Skill.Get()
+    local own = rank and ns.CatchDB.SkillFilter(ns.CatchDB.RangeOf(rank))
     local choices = {}
-    for _, range in ipairs(ns.CatchDB.RANGES) do
-        table.insert(choices, { value = range, text = RangeLabel(range) })
+    for range = 0, ns.CatchDB.MAX_RANGE - 1 do
+        table.insert(choices, { value = range, text = ns.SkillMenuText(range, own) })
     end
-    table.insert(choices, { value = "all", text = RangeLabel("all") })
+    table.insert(choices, { value = "all", text = ns.SkillMenuText("all", own) })
     ns.OpenRadioMenu(owner, choices, function(value) return current() == value end, choose)
 end
 
@@ -378,6 +380,8 @@ function CatchHere.Create(parent)
         CatchHere.OpenSkillMenu(self, function() return shown and shown.range end, CatchHere.SetRange)
     end)
     page.skillButton:SetPoint("TOPLEFT", LABEL_X - 4, ROW_A_TOP)
+    page.skillButton:SetScript("OnEnter", function(self) ns.ShowSkillTooltip(self, shown and shown.range or "all") end)
+    page.skillButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
     page.sourceButton = ns.CreateButton(page, "", 150, function(self)
         CatchHere.OpenSourceMenu(self, function() return source end, CatchHere.SetSource)
     end)
@@ -428,7 +432,7 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     -- scroll position, as the catalog's does (FR-028); a new place or filter starts at the top.
     local retain = previous ~= nil and previous.mapID == mapID and previous.cell == cell
         and previous.filterKey == shown.filterKey
-    page.skillButton:SetText((L["Skill: %s"]):format(RangeLabel(filter.range)))
+    page.skillButton:SetText(ns.SkillFilterLabel(filter.range))
     page.sourceButton:SetText((L["Source: %s"]):format(SourceLabel(source)))
     page.kindButton:SetText(CatchHere.KindLabel())
     page.message:SetText("")
@@ -461,9 +465,11 @@ function CatchHere.Refresh(mapID, ownRange, cell)
     else
         -- "from K players" once other players are behind the numbers (none under "Only mine").
         local catches = ns.Catalog.CatchesText(view.catches, view.players)
-        -- The miss rate is weighted (part 3, research R7), and nil under a water filter: a miss has no source.
-        page.counts:SetText(view.missRate and (catches .. "    " ..
-            (L["Nothing caught: %s"]):format(ns.Percent(view.missRate))) or catches)
+        -- The miss rate is weighted (part 3, research R7), and nil under a water filter: a miss has no source. It is
+        -- the chosen skill range's alone, "little data" below 50 casts there (spec 021).
+        local misses = view.missLittleData and L["Nothing caught: little data"]
+            or view.missRate and (L["Nothing caught: %s"]):format(ns.Percent(view.missRate))
+        page.counts:SetText(misses and (catches .. "    " .. misses) or catches)
         -- The items under their kind headers (spec 014), only the tagged ones under "Bonus catches only".
         local items = CatchHere.BonusItems(view.items, bonus)
         local hidden
@@ -476,9 +482,6 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         end
         if itemsShown > 0 then
             table.insert(hints, L["Click an item to see where else it is caught."])
-        end
-        if view.littleData and filter.range ~= "all" then
-            table.insert(hints, L["Try \"All skill levels\": little data for your skill."])
         end
     end
     page.list.Show(elements, retain)

@@ -19,7 +19,7 @@ test("the window opens on the tab saved last time", function()
 end)
 
 test("the filters start at their defaults", function()
-    eq(here.skillButton.text, (L["Skill: %s"]):format("225-299"), "own skill range")
+    eq(here.skillButton.text, (L["Skill: Up to %d"]):format(299), "own skill range")
     eq(here.sourceButton.text, (L["Source: %s"]):format(L["All"]), "all sources")
 end)
 

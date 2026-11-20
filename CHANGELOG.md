@@ -29,6 +29,16 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 ### Changed
 
+- The **Skill** filter of "What can be caught here" and of the catch catalog shows the catches of the chosen skill
+  range and of every lower one, since more skill never undoes what less skill catches: a place where nobody has
+  fished with your skill yet still lists what was caught there with less. Its values read **Up to 74**, **Up to
+  149**, **Up to 224**, **Up to 299** and **All (300+)**, your own range marked "(yours)"; the button reads "Skill:
+  Up to 224" or "Skill: All", and its tooltip says what the list holds. "All skill levels" is now **All (300+)**,
+  and the hint to try it is gone.
+- The filter buttons of both tabs write their value the same way in every language, with a capital letter after the
+  colon ("Kinds: All", "Skill: All", "Camp bonus: All").
+- The share of casts that catch nothing ("Nothing caught") comes from the chosen skill range alone, because less
+  skill misses more; below 50 casts in that range it says "little data".
 - Small chances are shown with a fraction ("3.4%", "0.47%", "<0.01%") instead of "0%"; from 10% on they stay whole
   numbers.
 - The filter buttons of "What can be caught here" and of the catch catalog stand in two rows: Skill and Source, then
