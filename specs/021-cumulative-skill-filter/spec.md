@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-20
 
-**Status**: Draft
+**Status**: Implemented, checked in game on 2026-11-20 (`docs/checklists/skill-filter.md`)
 
 **Input**: User description: "Cumulative skill filter". The Skill filter of "What can be caught here" and of the
 catalog shows, for a skill range, the catches of that range and of every lower one, so a player whose own range has
