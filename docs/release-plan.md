@@ -51,6 +51,11 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
   checklist [checklists/camp-buffs.md](checklists/camp-buffs.md)); V61 and V68 were accepted on 63 catches
   without a buff at one water, V60, V64, V65, V66 and V69 confirmed. What stays open the author accepts or
   releases with `--force`.
+- Spec 021 (`specs/021-cumulative-skill-filter`): the Skill filter of both catch pages sums the chosen range and
+  every lower one, the miss rate comes from the chosen range alone; merged into `develop` on 2026-11-20 (pull
+  request #14). No `VERIFY` marker; checked in game the same day
+  ([checklists/skill-filter.md](checklists/skill-filter.md): step 3, the "(yours)" mark without a map, skipped
+  and covered by the tests).
 - **Before the release**: read the size of the own record with bonus parts (V67, the checklist's size step): if a
   place with a part costs twice a place without or more, the roll before a 501st place counts such a place as two
   (research R16) before the release, not after.

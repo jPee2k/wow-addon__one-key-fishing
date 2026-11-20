@@ -57,6 +57,8 @@ One fishing round:
 - **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price,
   from your own catches, the catch database that comes with the addon and the catches of the addon users you play
   with.
+- **Camp bonus**: catches made with the fishing buff of a Fishing Rack or a Fishing Hut are counted apart, the bonus
+  catches are marked and can be filtered, and a notice comes before the buff ends.
 - **Shared catch database**: catch counts travel under a random ID between addon users in your guild, group and
   friends list, and through a hidden chat channel to every other addon user, in the background. Two settings turn it
   off.
@@ -258,10 +260,10 @@ Players who fish together see each other's catches right away, without waiting f
   as you turn it back on. **Use the public channel** below it leaves the channel and keeps the guild, group and
   friends exchange; what came through the channel before still counts. A popup at the first login says the same once
   (and once more after the update that brings the public channel).
-- **State**: the line at the bottom of **What can be caught here**, the settings page and `/okf share` (the bundled
-  data and its version, the contributions you hold, the players seen in the last hour, the last exchange, the
-  traffic, and whether the public channel is in use or why not). `/okf debug` has the same numbers for bug reports,
-  without your ID or anybody's name.
+- **State**: the line above the catch counts of **What can be caught here**, the settings page and `/okf share` (the
+  bundled data and its version, the contributions you hold, the players seen in the last hour, the last exchange,
+  the traffic, and whether the public channel is in use or why not). `/okf debug` has the same numbers for bug
+  reports, without your ID or anybody's name.
 - Data that does not add up (more catches than the casting time allows, impossible item counts) is refused, and the
   player who sent it is ignored until the end of the session. Nothing is ever counted twice, also not after a
   release bundles data you already got from other players.
