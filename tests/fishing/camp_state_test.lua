@@ -47,8 +47,11 @@ test("both auras give mask 3, the Hut's alone 2; the bits and the known items", 
     eq(Camp.HasBit(3, "hut"), true, "3 holds the Hut")
     eq(Camp.HasBit(2, "rack"), false, "2 does not hold the Rack")
     eq(Camp.HasBit(0, "rack"), false, "0 holds nothing")
-    eq(Camp.KnownBonus(6643), "rack", "a Bloated fish")
-    eq(Camp.KnownBonus(6291), nil, "an ordinary fish")
+    local known = Camp.KnownBonuses(6643)
+    eq(#known, 2, "a Bloated fish: both bonuses")
+    eq(known[1], "rack", "the Rack first (rank order)")
+    eq(known[2], "hut", "then the Hut")
+    eq(Camp.KnownBonuses(6291), nil, "an ordinary fish")
 end)
 
 test("restricted from the start: unknown, no mask", function()
@@ -75,6 +78,18 @@ test("a fight keeps the state read before it; the clock ends the buff", function
     advance(101)
     eq(Camp.IsActive("rack"), false, "ended by the clock")
     eq(Camp.Mask(), 0, "mask 0")
+end)
+
+test("the fight's first moment, before the lockdown: the player's combat flag keeps the state", function()
+    reset()
+    auras[RACK] = { expirationTime = GetTime() + 600, duration = 3600 }
+    enter()
+    UnitAffectingCombat = function(unit) return unit == "player" end
+    auras[RACK] = nil -- the aura call answers nothing already, the lockdown is not on yet
+    fire("UNIT_AURA", "player")
+    UnitAffectingCombat = nil
+    eq(Camp.IsActive("rack"), true, "still active: no read with the combat flag set")
+    eq(Camp.Mask(), 1, "mask 1")
 end)
 
 test("the fight's end reads again", function()

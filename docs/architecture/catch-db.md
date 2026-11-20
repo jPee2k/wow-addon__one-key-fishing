@@ -130,10 +130,16 @@ kept apart inside the cell.
   `{ key, chance, littleData, catches, players }` (a tagged item with the numbers under its bonus);
   `{ key, littleData = true, catches = 0, players = 0 }` (a known item with no data under its bonus, in an `"all"`
   view); `{ key, plain = true }` (a known item under `"none"` or another bonus's key: the tag is shown, the numbers
-  are the view's own). A known item (`GameData.CampBonuses[].items`) carries its key in every view. Else an item is
+  are the view's own). A known item (`GameData.CampBonuses[].items`, `Camp.KnownBonuses`) carries a key in every
+  view: in an `"all"` view the bonus of its list under which it has the most catches in the scope (that bonus's
+  sub-view gives the numbers), with none under any the lowest-ranked (the Rack, "Little data"); in a view under one
+  of its keys that key with the view's numbers; under `"none"` or another key the first of its list, `plain`. Every
+  tag of an item known to more than one bonus (a Bloated fish) carries `several = true` (spec 020 decision 32). Else
+  an item is
   tagged from the data when every raw catch of it in the scope lies under the bonus and the seed, or at least 3
   players (the own catch one of them), hold it under that bonus (`AddHolders`, `Holds`); never under the source
-  `"mine"` (one player). In an `"all"` view the higher-ranked bonus wins (the Hut over the Rack).
+  `"mine"` (one player). In an `"all"` view the higher-ranked bonus wins (the Hut over the Rack) for an item tagged
+  from the data.
 - The tag is computed in the pass that sums the view's own scope (the spot or the map `Query` chose), never from
   another scope and never by fetching another view (research R7): `StartTagSums` gives the sum, under `"all"`, one
   sub-sum per bonus the scope holds a part for, filled from the same cells by `AddCell`, and under a key or `"none"`

@@ -50,6 +50,7 @@ GameData\NpcNames.lua
 GameData\Bobber.lua
 GameData\Lures.lua
 GameData\CampBonuses.lua
+GameData\FishedQuestItems.lua
 GameData\FishedContainers.lua
 GameData\AuctionUnanswered.lua
 GameData\ItemKinds.lua

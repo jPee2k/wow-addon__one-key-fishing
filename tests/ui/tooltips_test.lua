@@ -104,7 +104,8 @@ test("with Auctionator's price for the item the addon adds no price line; the fa
     eq(own_line(), (L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(200)), "the fallback price")
     ns.db.prices[FEW_LOTS] = { price = 900, quantity = 2, lots = 1, time = 1 }
     ns.ShowItemTooltip(UIParent, FEW_LOTS, true)
-    eq(own_line(), (L["Auction price (OneKeyFishing): %s (few lots)"]):format(ns.FormatMoney(900)), "with its mark")
+    local fewLots = (L["Auction price (OneKeyFishing): %s (few lots)"]):format(ns.FormatMoney(900))
+    eq(own_line(), ns.ColoredText(fewLots, 0.6, 0.6, 0.6), "with its mark, its grey as a code too")
     ns.Prices.SetAuctionator(false)
     ns.ShowItemTooltip(UIParent, FISH, true)
     eq(own_line(), (L["Auction price (OneKeyFishing): %s"]):format(ns.FormatMoney(300)), "the switch off: as before")
@@ -124,7 +125,7 @@ test("a tagged item's tooltip has the tag's explanation under Caught in:", funct
     seed.cells["1416:3:x"] = tagged
     ns.SeedData = seed
     ns.Fire("SHARED_DATA_CHANGED")
-    local tip = ns.Catalog.BonusTip("rack")
+    local tip = ns.Catalog.BonusTip("rack", true) -- a Bloated fish: the Rack or the Hut
     show_item_tooltip(GameTooltip, BLOATED)
     local header = index(tooltip_lines, L["Caught in:"])
     local line = index(tooltip_lines, tip)

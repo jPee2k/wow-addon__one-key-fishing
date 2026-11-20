@@ -137,8 +137,9 @@ The sources: the in-game session of 2026-11-19 and the game data in
   - under any filter: per bonus key and item, **who** has the item under that bonus: the seed (a flag), the own
     catch, each other record's ID.
 - **The tag of an item** (data-model.md, "A view item's bonus"):
-  - **known**: the item is in `GameData.CampBonuses[...].items` (the twelve Bloated fish, the Rack). A known item
-    carries its key in every view (FR-016).
+  - **known**: the item is in `GameData.CampBonuses[...].items` (the twelve Bloated fish, the Rack's and, since
+    R22, the Hut's too: `Camp.KnownBonuses` gives both keys). A known item carries a key in every view (FR-016);
+    which one, when it has two, is R22's rule.
   - **from the data**, for a bonus: all the item's raw catches of the scope lie under that bonus (in an "all" view:
     its raw catches equal those in the bonus's sub-sum; in a key view: its filtered raw catches equal
     `rawAll`), **and** the seed holds it under that bonus or at least three different players do (the own catch
@@ -154,10 +155,12 @@ The sources: the in-game session of 2026-11-19 and the game data in
   - "all" view: `item.bonus = { key, chance, littleData, catches, players }` from the bonus's sub-sum built as a
     view of the same scope (`catches`: all catches of the scope under the bonus, the chance's denominator;
     `players`: those with a catch there under the bonus); a known item without data under its bonus: `{ key,
-    littleData = true, catches = 0, players = 0 }`, no chance.
-  - a view under the item's own bonus key: the same five fields from the view itself.
-  - `"none"`, or a view under another bonus's key: only a known item is tagged, as `{ key, plain = true }`: the tag
-    shows, the numbers are the ordinary ones of that view.
+    littleData = true, catches = 0, players = 0 }`, no chance. A known item of two bonuses takes the one under
+    which it has the most catches, else the lowest-ranked (R22).
+  - a view under one of the item's own bonus keys: the same five fields from the view itself.
+  - `"none"`, or a view under another bonus's key: only a known item is tagged, as `{ key, plain = true }` (`key`
+    its first known bonus): the tag shows, the numbers are the ordinary ones of that view.
+  - every tag of an item known to more than one bonus also carries `several = true` (R22).
 - An untagged item has no `item.bonus` and its numbers are today's (SC-008).
 - **The catalog** (`Catalog/Catalog.lua`) takes a place's `chance`, `littleData`, `catches` and `players` from
   `item.bonus` when the item has one that is not `plain`: the zone rows (`RebuildItems`), the spot rows
@@ -253,12 +256,14 @@ The sources: the in-game session of 2026-11-19 and the game data in
 
 - **Decision**: a statistics bucket gains `bonusCasts` and `bonusCatches` (read as 0 when missing in a saved bucket).
   On `FISH_CAUGHT` and `FISH_MISSED`, `Stats` asks `Camp.CastMask(castID)`: a mask above 0 adds a bonus cast; a catch
-  that holds an item of the known list of one of the mask's bonuses adds a bonus catch. The statistics window shows
+  for which `Camp.IsBonusCatch(mask, items)` holds adds a bonus catch: since R22 an item of the known list of one of
+  the mask's bonuses, or two loot slots or more once the fished quest items are left out. The statistics window shows
   the two rows in its three columns (session, current zone, total) when the total has a bonus cast. The window is laid
   out once with fixed offsets, so the two rows keep their place when hidden (a two-line gap at the end of the
   "Results" block) and the window grows by two lines (`HEIGHT` 700 to 736).
-- **Rationale**: decision 14. Only the known list counts (FR-034): `Stats` is layer 1 and cannot ask the views,
-  and a number of the player's own must not change with other players' data.
+- **Rationale**: decision 14. Only the known list and the catch's own loot count (FR-034): `Stats` is layer 1 and
+  cannot ask the views, and a number of the player's own must not change with other players' data. The first rule
+  (the known list alone) left the Hut's bonus catches at 0 (R22).
 
 ## R13. Camper's Lure
 
@@ -329,6 +334,8 @@ The sources: the in-game session of 2026-11-19 and the game data in
   names of the Fishing Rack, the Fishing Hut and the two auras in that language.
 - The follow-up of 2026-11-20 adds eight keys: `Bonus catches only`, the five button texts of R8 and the two empty
   texts of R20, each with nine translations.
+- The follow-up after the Hut session adds one key, "Bonus catch: comes only with the buff of a Fishing Rack or a
+  Fishing Hut." (R22), with nine translations.
 - The debug lines and the game data comments stay English.
 
 ## R19. The tag in a row
@@ -338,7 +345,8 @@ The sources: the in-game session of 2026-11-19 and the game data in
   Fishing Hut), by ID, the same in every language (V66). The name's width shrinks by the icon's on a tagged row.
   The chance cell shows the number alone.
 - **The words come from one helper**, `ns.AddBonusLines(tooltip, bonus)` in `UI/Widgets.lua`: the tag's name
-  (`Catalog.BonusTag`), the explanation (`Catalog.BonusTip`) and, unless the tag is `plain`, the chance with the
+  (`Catalog.BonusTag`, its colour also as a code in the text: R22), the explanation (`Catalog.BonusTip(bonus.key,
+  bonus.several)`) and, unless the tag is `plain`, the chance with the
   bonus and its players (`Catalog.ChanceText(..., true)`). Every row kind calls it from its own `bonus` table:
   - an item row ("What can be caught here", the catalog's list): through `ns.ShowItemTooltip(owner, itemID,
     withPrice, bonus)`, after the game's item lines;
@@ -410,3 +418,58 @@ The sources: the in-game session of 2026-11-19 and the game data in
   where they are read with the counts they explain, in a room of fixed height so nothing below them moves. A scroll
   list shows every item of a place with many kinds, as the catalog's already did, and one list serves both tabs.
   "1.0" per catch is the common case and only noise.
+
+## R22. Follow-up after the Hut session (decisions 32 to 34)
+
+The session of 2026-11-20 ([docs/fishing-investigation.md](../../docs/fishing-investigation.md), "The Fishing
+Hut"): the Hut's extra item is a second loot slot from a mixed table (Bloated fish, Blindweed 8839, Mithril Bar
+3860, Iron Ore 2772, Heavy Hide 4235, Dream Dust 11176); the Hut gives Bloated fish too; "Bonus catches" stayed 0
+under the Hut, whose known list was empty; the addon's cyan lines in the catalog's item tooltips sometimes showed
+white.
+
+- **Decision 32, the Bloated fish under both bonuses**: `GameData/CampBonuses.lua` has one local table `BLOATED`,
+  the `items` of both entries. `Camp.KnownBonuses(itemID)` (replacing `Camp.KnownBonus`) gives the keys of the
+  bonuses whose list names the item, in rank order, or nil. The tag in `CatchDB/Views.lua` (`Tag`):
+  - in an "all" view a known item takes, among its bonuses, the one under which it has the most catches in the
+    view's scope, its numbers from that bonus's sub-view; with no catch under any, the lowest-ranked (the Rack:
+    the cheapest way to get it), `{ key, littleData = true, catches = 0, players = 0 }`;
+  - in a view under a bonus key, a known item of that key carries the view's own numbers; a known item not of that
+    key, or under `"none"`, is `{ key = known[1], plain = true }`;
+  - every tag of an item known to more than one bonus carries `several = true`, carried to the catalog's places
+    and rows with the rest of the table; `Catalog.BonusTip(key, several)` then gives one text naming both camp
+    features ("Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut.").
+  The Hut's other extras are not listed: they are ordinary items elsewhere (Iron Ore is mined, Blindweed picked)
+  and the data tag them by R7's rule (all raw catches of the scope under the bonus, and the seed or three players).
+- **Decision 33, a bonus catch**: `Camp.IsBonusCatch(mask, items)` with a mask above 0 holds when a catch has a
+  known item of one of the mask's bonuses, or two loot slots or more once the quest items fished beside an ordinary
+  catch are left out (`FISH_CAUGHT`'s items are one entry per loot slot). The quest items are
+  `GameData.FishedQuestItems`: `classID = 12` (`Enum.ItemClass.Questitem`, any item of the quest class, by
+  `C_Item.GetItemInfoInstant`) and `items` (Electropeller 6718, Nat Pagle's fish 16967 to 16970, Dezian Queenfish
+  19806, Speckled Tastyfish 19807; most are of class 15, so the class alone misses them).
+  - **Evidence**: without a buff a catch had one slot in open water and in a pool (2026-11-19); pools, schools and
+    floating wreckage give one item (a quantity in one slot, or a trunk opened later); only fished quest items come
+    as a second slot without a buff (warcraft.wiki.gg, "Nat Pagle, Angler Extreme": "As well as looting the quest
+    fish, you will loot another fish or item"; classicdb, quest 1580, on Electropellers: "always in the same loot as
+    some other fish"). The bundled seed agrees: 43 of 525 places have more item catches than catches, 306 extra
+    slots in 33951 catches (0.9 %), and the large ones follow the quest items (Darkshore 1439:1:47: 24 extra, 24
+    Electropellers; Feralas 1444:3:65: 16, Feralas Ahi; Swamp of Sorrows, Desolace, Stranglethorn likewise).
+  - Marked `-- VERIFY(V68): without a camp buff a catch has one loot slot, quest items aside` (verification.md).
+  - Old statistics are not recounted: the Hut session's 0 stays.
+- **Decision 34, coloured lines**: `ns.ColoredText(text, r, g, b)` (`Core/Data.lua`, moved from `UI/Minimap.lua`'s
+  local `Colored`) wraps a text in its colour code; `ns.AddColoredLine(tooltip, text, r, g, b, wrap)`
+  (`UI/Widgets.lua`) adds the line with the coded text and the colour arguments. Used for the tag's name in
+  `ns.AddBonusLines`, "Caught in:" and the two fishing gear lines in `UI/ItemHooks.lua`, the grey "(few lots)" price
+  line in `Prices.AddTooltipLine`, and the minimap tooltip's lines. The codes wrap the translated text, never inside
+  an `L[...]` string.
+- **Rationale**: the Hut's extra slot is the bonus the player sees; the slot count is the player's own loot, so the
+  statistics stay layer 1 and independent of other players' data. A Bloated fish is the same item under either
+  bonus; the bonus that gave it most often at a place is the one whose chance means something there. The colour code
+  survives whatever resets the line colours, as the minimap tooltip showed (spec 012 R5).
+- **Alternatives**:
+  - the known list only, with the Hut's items listed (Q1): rejected, the herbs, ore, bars, hides and dust are
+    ordinary items elsewhere, so a list would tag them wrongly at every other place;
+  - slots without exceptions: rejected, the quest fish come as a second slot without a buff;
+  - the tag always of the higher bonus: rejected, a water fished only with the Rack would read "Little data" under
+    the Hut's tag;
+  - two tag lines, one per bonus: more code and tooltip room for the same fact, rejected;
+  - finding the addon that resets the colours first: rejected, the code fix works whatever resets them.

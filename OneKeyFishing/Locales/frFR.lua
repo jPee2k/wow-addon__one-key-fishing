@@ -488,6 +488,8 @@ ns.AddTranslation("frFR", "Français", function(L)
         "Prise bonus : ne vient qu'avec l'amélioration d'un râtelier de pêche (Pêche inhabituelle)."
     L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
         "Prise bonus : ne vient qu'avec l'amélioration d'une cabane de pêche (Pêche rare)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Prise bonus : ne vient qu'avec l'amélioration d'un râtelier de pêche ou d'une cabane de pêche."
     L["%s with the bonus"] = "%s avec le bonus"
     L["All catches"] = "Toutes les prises"
     L["No camp bonus"] = "Sans bonus de camp"

@@ -13,16 +13,18 @@ local KEEP_CASTS = 8 -- a cast's mask is kept until it settles, or until it is m
 -- state[key] = { known, expires }: known: read at least once this session; expires: the GetTime() at which the buff
 -- ends, nil when not active.
 local state = {}
--- The bonuses by key and the known bonus items (item ID -> key): Camp is the one owner of these lookups (CatchDB and
--- Catalog ask it).
+-- The bonuses by key and the known bonus items (item ID -> the keys of the bonuses whose list names it, in rank
+-- order: a Bloated fish is both bonuses'): Camp is the one owner of these lookups (CatchDB and Catalog ask it).
 local BY_KEY, KNOWN_ITEMS = {}, {}
 for _, bonus in ipairs(BONUSES) do
     state[bonus.key] = { known = false }
     BY_KEY[bonus.key] = bonus
     for itemID in pairs(bonus.items) do
-        KNOWN_ITEMS[itemID] = bonus.key
+        KNOWN_ITEMS[itemID] = KNOWN_ITEMS[itemID] or {}
+        table.insert(KNOWN_ITEMS[itemID], bonus.key)
     end
 end
+local QUEST_ITEMS = ns.GameData.FishedQuestItems
 
 local castMasks = {} -- castID -> the mask at the cast's start, or false when it was unknown
 local lastMask -- what CastMask last answered (the debug report)
@@ -32,9 +34,12 @@ function Camp.Bonus(key)
     return BY_KEY[key]
 end
 
--- Auras are restricted in a fight: the call returns nothing for an aura that is up (seen 2026-11-19).
+-- Auras are restricted in a fight: the call returns nothing for an aura that is up (seen 2026-11-19). The player's
+-- combat flag counts too: it is set before the lockdown (PLAYER_REGEN_DISABLED runs first), and an aura event of the
+-- fight's first moment must not read an empty answer as "no buff".
+-- VERIFY(V69): the player's combat flag is clear when PLAYER_REGEN_ENABLED fires
 local function Restricted()
-    if InCombatLockdown() then
+    if InCombatLockdown() or (UnitAffectingCombat ~= nil and UnitAffectingCombat("player")) then
         return true
     end
     return C_Secrets ~= nil and C_Secrets.ShouldAurasBeSecret ~= nil and C_Secrets.ShouldAurasBeSecret() == true
@@ -176,9 +181,29 @@ function Camp.HasBit(mask, key)
     return bonus ~= nil and type(mask) == "number" and math.floor(mask / bonus.bit) % 2 == 1
 end
 
--- The key of the bonus whose known list names the item, or nil.
-function Camp.KnownBonus(itemID)
+-- The keys of the bonuses whose known list names the item, in rank order (a list, not to be changed), or nil.
+function Camp.KnownBonuses(itemID)
     return KNOWN_ITEMS[itemID]
+end
+
+-- Whether the mask holds the bit of one of the bonuses whose known list names the item.
+local function KnownUnder(mask, itemID)
+    for _, key in ipairs(KNOWN_ITEMS[itemID] or {}) do
+        if Camp.HasBit(mask, key) then
+            return true
+        end
+    end
+    return false
+end
+
+-- A quest item fished beside the ordinary catch without any bonus (GameData/FishedQuestItems.lua): its slot is no
+-- camp bonus.
+local function IsQuestItem(itemID)
+    if QUEST_ITEMS.items[itemID] then
+        return true
+    end
+    local _, _, _, _, _, classID = C_Item.GetItemInfoInstant(itemID)
+    return classID == QUEST_ITEMS.classID
 end
 
 -- VERIFY(V63): the bonus is decided by the aura during the cast
@@ -204,14 +229,27 @@ function Camp.CastMask(castID)
     return mask
 end
 
--- Whether a catch under the mask holds a known bonus item of one of the mask's bonuses (the statistics' bonus
--- catches, FR-034); items: the list of FISH_CAUGHT ({ itemID, ... } entries).
+-- Whether a catch under the mask is a bonus catch (the statistics' bonus catches, FR-034, decision 33): it holds a
+-- known bonus item of one of the mask's bonuses, or, without the quest items fished beside an ordinary catch, two
+-- loot slots or more (both bonuses give their extra item as a second slot; without a buff a catch has one).
+-- items: the list of FISH_CAUGHT, one { itemID, ... } entry per loot slot.
+-- VERIFY(V68): without a camp buff a catch has one loot slot, quest items aside
 function Camp.IsBonusCatch(mask, items)
+    if type(mask) ~= "number" or mask <= 0 then
+        return false
+    end
+    local slots = 0
     for _, item in ipairs(items or {}) do
-        local key = item.itemID and Camp.KnownBonus(item.itemID)
-        if key and Camp.HasBit(mask, key) then
+        local itemID = item.itemID
+        if itemID and KnownUnder(mask, itemID) then
             return true
         end
+        if itemID and not IsQuestItem(itemID) then -- an entry without an item ID (a currency link) is no item
+            slots = slots + 1
+        end
+    end
+    if slots >= 2 then
+        return true
     end
     return false
 end

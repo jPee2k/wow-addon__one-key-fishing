@@ -406,6 +406,7 @@ L["Fishing Rack bonus"] = true
 L["Fishing Hut bonus"] = true
 L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] = true
 L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] = true
+L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] = true
 L["%s with the bonus"] = true
 L["All catches"] = true
 L["No camp bonus"] = true

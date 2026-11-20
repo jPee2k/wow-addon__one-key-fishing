@@ -60,6 +60,23 @@ test("a known item with mask 0 adds nothing", function()
     each("bonusCasts", 6, "no bonus cast")
 end)
 
+test("under the Hut: a Bloated fish or a second loot slot is a bonus catch, a quest item's slot is not", function()
+    local HUT, BLINDWEED, ELECTROPELLER = 1280342, 8839, 6718
+    auras[HUT] = { expirationTime = GetTime() + 3000, duration = 3600 }
+    fire("UNIT_AURA", "player")
+    fish_cast({ { FISH, 1 }, { BLOATED, 1 } })
+    each("bonusCatches", 3, "a Bloated fish under the Hut (decision 32)")
+    fish_cast({ { FISH, 1 }, { BLINDWEED, 1 } })
+    each("bonusCatches", 4, "the Hut's herb as a second slot (decision 33)")
+    fish_cast({ { FISH, 1 }, { ELECTROPELLER, 1 } })
+    each("bonusCatches", 4, "a quest item beside the fish: no bonus catch")
+    fish_cast({ { FISH, 1 } })
+    each("bonusCatches", 4, "one slot")
+    each("bonusCasts", 10, "four casts under the Hut")
+    auras[HUT] = nil
+    fire("UNIT_AURA", "player")
+end)
+
 test("a saved bucket without the fields reads 0 and counts on", function()
     local total = Stats.GetTotal()
     total.bonusCasts, total.bonusCatches = nil, nil

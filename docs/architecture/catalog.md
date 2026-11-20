@@ -75,8 +75,10 @@ parts" builds `item.bonus` in each view).
   the number goes inside `L["%s with the bonus"]`, then the players' wrapper ("0.47% with the bonus (3 players)"),
   for the tooltips, the "Caught in:" lines and the minimap lines, never for a `plain` tag; the rows' cells show the
   number alone.
-- `Catalog.BonusTag(key)` (the tag's name, "Fishing Rack bonus" / "Fishing Hut bonus"), `Catalog.BonusTip(key)` (its
-  explanation: the catch comes only with that buff), `Catalog.BonusLabel(value)` (a filter value as the menu names
+- `Catalog.BonusTag(key)` (the tag's name, "Fishing Rack bonus" / "Fishing Hut bonus"), `Catalog.BonusTip(key,
+  several)` (its explanation: the catch comes only with that buff; with `several`, an item known to more than one
+  bonus, the one text "... of a Fishing Rack or a Fishing Hut.", spec 020 decision 32; callers pass `bonus.key,
+  bonus.several`), `Catalog.BonusLabel(value)` (a filter value as the menu names
   it: "All catches", "No camp bonus", "Bonus catches only", "Fishing Rack", "Fishing Hut"),
   `Catalog.BonusButtonText(value)` (the button's text, one whole text per value so each language words it its own
   way: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only", "Camp bonus: Rack", "Camp bonus: Hut";

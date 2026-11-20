@@ -86,6 +86,29 @@ decisions above.
 30. **The catalog's status line under the search box**; on an item's page it sits where the zones begin.
 31. **An item's page under "Bonus catches only"** shows all the item's zones, as under "All catches".
 
+### Decisions of the author, 2026-11-20, after the Hut session
+
+The in-game session with a Fishing Hut (docs/fishing-investigation.md, "Checked in game", "The Fishing Hut") showed
+that the Hut's extra item is a second loot slot from a mixed table (Bloated fish, Blindweed, Mithril Bar, Iron Ore,
+Heavy Hide, Dream Dust), that the Hut gives Bloated fish too, and that "Bonus catches" stayed 0 under the Hut, whose
+known list was empty. The addon's cyan lines in the catalog's item tooltips sometimes showed white. The numbers go
+on from the decisions above (FR-049 to FR-052, tasks T048 onwards).
+
+32. **Bloated fish belong to both bonuses.** The twelve Bloated fish are the known list of the Rack and of the Hut
+    alike. In "All catches" such an item takes, among its bonuses, the one under which it has the most catches in
+    the selection; with no catch under either, the Rack's (the cheapest way to get it), with "Little data". Its
+    explanation names both camp features. The Hut's other extras (a herb, ore, a bar, a hide, enchanting dust) are
+    not listed: they are ordinary items elsewhere and are tagged from the data by FR-017.
+33. **A bonus catch in the statistics** is a catch under a buff that holds a known item of one of its bonuses, or
+    that has two loot slots or more once the quest items fished beside an ordinary catch are left out (a list kept
+    with the game data, and any item of the quest class). Without a buff a catch has one slot (the session of
+    2026-11-19; pools, schools and wreckage give one item); only fished quest items come as a second slot without a
+    buff, which the bundled database confirms (0.9 % extra slots, at the places of the quest fish). Old statistics
+    are not recounted: the Hut session's 0 stays.
+34. **The addon's coloured lines in item tooltips carry their colour as a code in the text too**, as the minimap
+    tooltip's lines already do (spec 012 R5): another addon or the game may reset the line colours. The code wraps
+    the translated text, never inside an `L[...]` string.
+
 ### Facts from the game, 2026-11-19
 
 They shape the requirements; the full session is in the investigation document.
@@ -164,6 +187,8 @@ Bloated fish carries the tag and a chance computed from the catches under the bu
    player looks at it, **Then** it carries the tag and "Little data": the old catches give it no chance.
 5. **Given** an item that is not on the known list and was caught only under the Hut's buff, by at least three
    players or in the bundled data, **When** the player looks at it, **Then** it carries the tag "Fishing Hut bonus".
+   A Bloated fish caught only under the Hut's buff carries the Hut's tag, and its explanation names both the Rack
+   and the Hut (decision 32).
 6. **Given** an ordinary fish caught with and without a buff, **When** the player looks at it, **Then** it has no
    tag and its chance is computed as today.
 7. **Given** a tagged item, **When** the player hovers it anywhere in the game, **Then** the addon's tooltip lines
@@ -282,9 +307,10 @@ shared data.
    are not shown.
 2. **Given** casts under a camp buff, **When** the player opens the statistics, **Then** "Casts with a camp bonus"
    counts them for the session, the current zone and in total, Rack and Hut together.
-3. **Given** a catch under a buff that held a known bonus item of that buff (a Bloated fish under the Rack's),
-   **When** the player opens the statistics, **Then** "Bonus catches" grew by one, however many bonus items the
-   catch held.
+3. **Given** a catch under a buff that held a known bonus item of that buff (a Bloated fish under the Rack's or
+   the Hut's), or a second loot slot that is not a fished quest item (a herb or ore under the Hut's), **When** the
+   player opens the statistics, **Then** "Bonus catches" grew by one, however many bonus items the catch held
+   (decision 33).
 4. **Given** a cast that counted for no condition (story 1, scenarios 4 and 5), **When** the statistics are shown,
    **Then** it is not among the casts with a camp bonus.
 
@@ -429,7 +455,8 @@ buff, and compare the other's lists; build the bundled database from records wit
 **Tag**
 
 - **FR-016**: The twelve known Bloated fish (items 6643, 6644, 6645, 6646, 6647, 8366, 13881, 13891, 21162, 21163,
-  21164, 21243) MUST carry the tag of the Fishing Rack wherever they are listed, from a list kept with the game data,
+  21164, 21243) MUST carry the tag of a camp bonus (the Rack's or the Hut's: FR-049) wherever they are listed, from
+  a list kept with the game data,
   whatever the collected data say and whatever the filter's value. Under "No camp bonus" (where its older catches with
   the bonus not known are counted) and under the filter of another condition it keeps the tag and its chance is the
   plain one of that selection, not a chance "with the bonus".
@@ -438,7 +465,7 @@ buff, and compare the other's lists; build the bundled database from records wit
   the item under that condition, or at least three different players' data (the own catch counts as one) to do so, the
   same number as the rule for an item new to a map; one player's catch alone gives no tag.
 - **FR-018**: An item that qualifies for both conditions' tags MUST show the Fishing Hut's (the higher feature);
-  an item of the known list keeps the Rack's tag.
+  an item of the known list takes its tag by FR-049.
 - **FR-019**: The tag MUST show in the rows of the "what can be caught here" tab and of the catalog as a small icon
   of the camp feature (the Fishing Rack's or the Fishing Hut's own item icon) next to the item, since the columns
   have no room for its words. The row's tooltip MUST say the words: the tag's name, that the item comes only with
@@ -502,9 +529,9 @@ buff, and compare the other's lists; build the bundled database from records wit
 
 - **FR-034**: The statistics MUST count, for the session, the current zone and in total, the casts that counted
   for at least one condition ("Casts with a camp bonus") and the catches under a condition that held at least one
-  known bonus item of that condition (FR-016's list; "Bonus catches"), Rack and Hut together. An item tagged only
-  from the data does not count here: the statistics are the player's own and must not change afterwards with
-  what other players report.
+  known bonus item of that condition (FR-016's list) or a second loot slot by FR-050 ("Bonus catches"), Rack and
+  Hut together. An item tagged only from the data does not count by itself: the statistics are the player's own and
+  must not change afterwards with what other players report.
 - **FR-035**: Both rows MUST be hidden while the character's total of casts with a camp bonus is zero, and both
   shown from the first such cast on ("Bonus catches" then may read 0).
 
@@ -524,10 +551,10 @@ buff, and compare the other's lists; build the bundled database from records wit
 - **FR-039**: The player manual and the changelog MUST describe the tag, the filter, the notices, the statistics
   rows, the new percentage format and Camper's Lure.
 - **FR-040**: Everything the game has not confirmed MUST be marked in the code and listed in this feature's
-  verification document (V60 to V67): all behaviour of the Fishing Hut's buff, that the known Bloated fish come only
+  verification document (V60 to V69): all behaviour of the Fishing Hut's buff, that the known Bloated fish come only
   under the buff, that both buffs can be held at once, when the game decides a catch's bonus (at the cast or at the
-  hook), the aura's clock, the aura events out of a fight, the camp features' icons, and the size of a record with
-  parts.
+  hook), the aura's clock, the aura events out of a fight, the camp features' icons, the size of a record with
+  parts, and that a catch without a buff has one loot slot, quest items aside.
 
 **After the first try in game (decisions 21 to 31)**
 
@@ -561,6 +588,26 @@ buff, and compare the other's lists; build the bundled database from records wit
 - **FR-048**: The catalog's status line (the index being counted, the empty states) MUST sit under the search box on
   the list, and where the zones begin on an item's page.
 
+**After the Hut session (decisions 32 to 34)**
+
+- **FR-049**: The twelve Bloated fish MUST be known bonus items of the Rack and of the Hut alike (one list named by
+  both). Under "All catches" such an item MUST carry the tag of the bonus under which it has the most catches in the
+  selection, with that bonus's chance and players (FR-020, FR-021); with no catch under either, the Rack's tag (the
+  lower-ranked bonus, the cheapest way to get it) with "Little data". Under a bonus's value it carries that bonus's
+  tag with the selection's own numbers; under "No camp bonus" it keeps the Rack's tag with the plain chance
+  (FR-016). The Hut's other extras are not listed; FR-017 tags them from the data.
+- **FR-050**: A catch under a condition MUST count as a bonus catch (FR-034) when it holds a known item of one of its
+  conditions, or when it has two loot slots or more once the quest items fished beside an ordinary catch are left
+  out: the items of a list kept with the game data (Electropeller, Nat Pagle's four fish, the two fish of the
+  Stranglethorn Fishing Extravaganza) and any item of the quest class. Old statistics MUST NOT be recounted.
+- **FR-051**: An item known to more than one condition MUST be explained by one text naming both camp features:
+  "Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut.", wherever the tag's explanation shows
+  (the row's tooltip and the addon's lines of an item tooltip); its tag's name stays that of the chosen bonus.
+- **FR-052**: Every coloured line the addon adds to an item tooltip or to the minimap button's tooltip ("Caught
+  in:", the tag's name, the fishing gear lines, the grey "(few lots)" price line) MUST carry its colour as a code
+  around the translated text as well as in the line's colour, so a reset of the tooltip's line colours leaves it
+  coloured.
+
 ### Key Entities
 
 - **Condition**: a camp fishing buff a cast can be made under (the plan, the code and the interface call it a
@@ -571,8 +618,8 @@ buff, and compare the other's lists; build the bundled database from records wit
 - **Condition part of a place**: the casts, misses and items made at a place under one combination of conditions,
   contained in the place's totals; what was made under one condition is the sum of the parts that include it. Shared
   with the player's record and summed across players like the totals.
-- **Known bonus item**: an item tied to a condition by the game data list (the twelve Bloated fish, tied to the
-  Fishing Rack).
+- **Known bonus item**: an item tied to a condition by the game data list (the twelve Bloated fish, tied to both
+  the Fishing Rack and the Fishing Hut since decision 32).
 - **Tag**: the mark "Fishing Rack bonus" or "Fishing Hut bonus" on an item in a list or a tooltip, from the known
   list or derived from the data.
 - **Camp bonus filter**: the player's choice of which casts a tab counts: all, those under no condition, or those
@@ -618,6 +665,10 @@ buff, and compare the other's lists; build the bundled database from records wit
   per hour.
 - A bonus is an extra item next to the ordinary fish (seen twice in game), so the chances of ordinary items are not
   distorted by counting casts with and without a buff together, and "All catches" stays the right default.
+- Without a camp buff a catch has one loot slot, apart from the quest items fished beside an ordinary catch
+  (decision 33; seen in open water and a pool, and in the bundled database). If another item comes as a second slot
+  without a buff, a catch under a buff that holds it counts as a bonus catch and "Bonus catches" reads too high
+  until the item joins the quest list.
 - Both buffs may be held at once. If the game never allows it, the "both" case simply never occurs.
 - A 1.4.0 client drops the part of a record it does not know and passes the record on without it (read from its
   code). The loss shrinks as players update; its size cannot be measured, since the exchange carries no version.

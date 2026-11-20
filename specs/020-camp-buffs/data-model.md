@@ -7,9 +7,10 @@ The spec's "condition" is a **bonus** here and in the code; a combination of act
 ## Game data (`GameData/CampBonuses.lua`, layer 0, data only)
 
 ```lua
+local BLOATED = { [6643] = true, ... } -- the twelve Bloated fish (decision 32)
 GameData.CampBonuses = {
-    { key = "rack", bit = 1, aura = 1280341, item = 279965, items = { [6643] = true, ... } }, -- Fishing Rack
-    { key = "hut", bit = 2, aura = 1280342, item = 279966, items = {} },                      -- Fishing Hut
+    { key = "rack", bit = 1, aura = 1280341, item = 279965, items = BLOATED }, -- Fishing Rack
+    { key = "hut", bit = 2, aura = 1280342, item = 279966, items = BLOATED },  -- Fishing Hut
 }
 ```
 
@@ -19,9 +20,23 @@ GameData.CampBonuses = {
 | `bit` | its bit in a mask: 1, 2; the next bonus takes 4 |
 | `aura` | the player aura's spell ID ("Uncommon Fishing", "Rare Fishing") |
 | `item` | the camp feature's item ID, for the tag's icon |
-| `items` | the known bonus items (item ID -> true): the twelve Bloated fish for the Rack, none yet for the Hut |
+| `items` | the known bonus items (item ID -> true): the twelve Bloated fish, one table named by both entries (decision 32); the Hut's other extras are tagged from the data |
 
 The list's order is the rank: a later entry is the higher bonus (the Hut over the Rack, FR-018).
+
+### Fished quest items (`GameData/FishedQuestItems.lua`, decision 33)
+
+```lua
+GameData.FishedQuestItems = {
+    classID = 12, -- Enum.ItemClass.Questitem: any item of the quest class
+    items = { [6718] = true, [16967] = true, [16968] = true, [16969] = true, [16970] = true, [19806] = true,
+        [19807] = true },
+}
+```
+
+The quest items that come as a second loot slot beside an ordinary catch without any buff: Electropeller, Nat
+Pagle's four fish, the two fish of the Stranglethorn Fishing Extravaganza (most of class 15, so the class alone
+misses them). `Camp.IsBonusCatch` leaves their slots out when it counts a catch's slots (research R22).
 
 `GameData.Lures[291005] = { bonus = 60, order = 4, skill = 50 }` (Camper's Lure); the three weaker lures move to
 orders 5, 6, 7.
@@ -127,7 +142,12 @@ item.bonus = { key, littleData = true, catches = 0, players = 0 }   a known item
 item.bonus = { key, plain = true }                            a known item under "none" or another bonus's key
 ```
 
-- `key`: the bonus of the known list that names the item; else, in an "all" view, the highest-ranked bonus under
+Each of these tables of an item known to more than one bonus (a Bloated fish) also carries `several = true`.
+
+- `key`: for a known item (research R22), in an "all" view the bonus of its known list under which it has the
+  most catches in the scope, with none under any the lowest-ranked (the Rack); in a view under one of its bonus
+  keys, that key; under `"none"` or another key, the first of its known bonuses (`plain`). For any other item, in
+  an "all" view, the highest-ranked bonus under
   which **all** the item's raw catches of the scope were made **and** which the seed, or at least three different
   players (the own catch one of them), hold the item under; in a view under a bonus key, that key when all the
   item's raw catches lie under it and the same holders' rule holds.
@@ -136,13 +156,16 @@ item.bonus = { key, plain = true }                            a known item under
   the players with a catch in it. In a view filtered by that key they are the view's own. For the seed the
   players are the largest `k` of the summed parts (a lower bound, like a cell's).
 - `plain`: the tag is shown; every number is the ordinary one of that view, not marked "with the bonus".
+- `several`: the item is known to more than one bonus; its explanation is the one text naming both camp features
+  (`Catalog.BonusTip(key, several)`).
 - The scope is always the view's own (the spot or the map `Query` chose): a bonus is never read from another
   scope.
 
 ### A catalog place, spot and row
 
 `chance`, `littleData`, `catches` and `players` come from `item.bonus` when the item has one that is not `plain`,
-else from the item and the view as today; `bonus = item.bonus` (the table: its `key`, its `plain`) is carried along.
+else from the item and the view as today; `bonus = item.bonus` (the table: its `key`, its `plain`, its `several`)
+is carried along.
 This holds for the zone rows, the spot rows (`Catalog.Spots`), `Catalog.Places` and the list rows (the best
 place's, with its `players` too). A missing chance is written as "Little data"; catches and players are never nil.
 

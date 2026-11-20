@@ -45,16 +45,12 @@ local function OpenMenu(owner)
     end)
 end
 
--- Each coloured line carries its colour as a code in its text as well as in the arguments: once the game reset the
--- line colours of the shared tooltip and every line turned white, while codes inside the text survived (2026-11-08,
--- spec 012 R5). The codes wrap the translated text; they are never part of an L[...] string.
-local function Colored(text, r, g, b)
-    return ("|cff%02x%02x%02x%s|r"):format(math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5),
-        math.floor(b * 255 + 0.5), text)
-end
+-- Each coloured line carries its colour as a code in its text as well as in the arguments (ns.ColoredText,
+-- Core/Data.lua: the game once turned every line of the shared tooltip white).
+local Colored = ns.ColoredText
 
 local function AddLine(text, r, g, b, wrap)
-    GameTooltip:AddLine(Colored(text, r, g, b), r, g, b, wrap)
+    ns.AddColoredLine(GameTooltip, text, r, g, b, wrap)
 end
 
 local function AddDoubleLine(left, right, lr, lg, lb, rr, rg, rb)

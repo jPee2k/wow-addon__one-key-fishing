@@ -24,7 +24,12 @@ if HandleModifiedItemClick then
     hooksecurefunc("HandleModifiedItemClick", OnModifiedItemClick)
 end
 
-local TOOLTIP_COLOR = ns.TOOLTIP_COLOR -- UI/Widgets.lua
+-- The addon's lines carry their colour as a code in the text too (ns.AddColoredLine, UI/Widgets.lua): another addon or
+-- the game may reset the tooltip's line colours (spec 020 decision 34).
+local function AddColored(tooltip, text)
+    local r, g, b = unpack(ns.TOOLTIP_COLOR)
+    ns.AddColoredLine(tooltip, text, r, g, b)
+end
 
 -- "Caught in:" and up to three zones with the item's chance (specs/005-catch-catalog, FR-017), any item. A tagged
 -- item (spec 020) gets the tag's explanation after them, unless the addon's own row tooltip already holds it.
@@ -36,12 +41,12 @@ local function AddCatchLines(tooltip, itemID)
     if not lines then
         return
     end
-    tooltip:AddLine(L["Caught in:"], unpack(TOOLTIP_COLOR))
+    AddColored(tooltip, L["Caught in:"])
     for _, line in ipairs(lines) do
         tooltip:AddDoubleLine("  " .. line.zone, line.right, 1, 1, 1, 1, 1, 1)
     end
     if bonus and not ns.TooltipHasBonus(tooltip, itemID) then
-        tooltip:AddLine(ns.Catalog.BonusTip(bonus.key), 1, 1, 1, true)
+        tooltip:AddLine(ns.Catalog.BonusTip(bonus.key, bonus.several), 1, 1, 1, true)
     end
 end
 
@@ -60,9 +65,9 @@ local function OnItemTooltip(tooltip, data)
         return
     end
     if ns.Gear.IsFishingGear(itemID) then
-        tooltip:AddLine(L["OneKeyFishing: fishing gear (Alt+Click to remove)"], unpack(TOOLTIP_COLOR))
+        AddColored(tooltip, L["OneKeyFishing: fishing gear (Alt+Click to remove)"])
     elseif ns.IsFishingPole(itemID) or ns.GetFishingBonus(itemID) > 0 then
-        tooltip:AddLine(L["OneKeyFishing: Alt+Click to add to fishing gear"], unpack(TOOLTIP_COLOR))
+        AddColored(tooltip, L["OneKeyFishing: Alt+Click to add to fishing gear"])
     end
 end
 

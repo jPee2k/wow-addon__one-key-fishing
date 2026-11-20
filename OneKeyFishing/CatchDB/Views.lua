@@ -506,6 +506,15 @@ local function BonusNumbers(key, entry, view)
         players = view.players }
 end
 
+local function Contains(list, value)
+    for _, entry in ipairs(list) do
+        if entry == value then
+            return true
+        end
+    end
+    return false
+end
+
 local function ItemsByID(view)
     local byID = {}
     for _, item in ipairs(view and view.items or {}) do
@@ -531,10 +540,20 @@ local function Tag(view, sum, rules, scope)
             return subViews[key], subItems[key]
         end
         for _, item in ipairs(view.items) do
-            local known = Camp.KnownBonus(item.itemID)
+            local known = Camp.KnownBonuses(item.itemID)
             if known then
-                local subView, items = Sub(known)
-                item.bonus = BonusNumbers(known, items[item.itemID], subView)
+                -- Of the bonuses that give it, the one under which it has the most catches here; without any, the
+                -- lowest-ranked (the cheapest to get it with: decision 32).
+                local best, bestView, bestEntry = known[1], nil, nil
+                for _, key in ipairs(known) do
+                    local subView, items = Sub(key)
+                    local entry = items[item.itemID]
+                    if entry and (not bestEntry or entry.catches > bestEntry.catches) then
+                        best, bestView, bestEntry = key, subView, entry
+                    end
+                end
+                item.bonus = BonusNumbers(best, bestEntry, bestView)
+                item.bonus.several = #known > 1 or nil
             else
                 for i = #BONUSES, 1, -1 do
                     local key = BONUSES[i].key
@@ -552,11 +571,13 @@ local function Tag(view, sum, rules, scope)
         return
     end
     for _, item in ipairs(view.items) do
-        local known = Camp.KnownBonus(item.itemID)
-        if known == bonus then
+        local known = Camp.KnownBonuses(item.itemID)
+        local several = known and #known > 1 or nil
+        if known and Contains(known, bonus) then
             item.bonus = BonusNumbers(bonus, item, view)
+            item.bonus.several = several
         elseif known then
-            item.bonus = { key = known, plain = true }
+            item.bonus = { key = known[1], plain = true, several = several }
         elseif sum.rawAll and item.catches == (sum.rawAll[item.itemID] or 0) and Holds(sum, bonus, item.itemID) then
             item.bonus = BonusNumbers(bonus, item, view)
         end
@@ -818,12 +839,20 @@ end
 -- leave: FR-027) and when the own catch makes a new part (CatchDB.lua).
 function CatchDB.HasBonusData(key)
     if P.bonusData == nil then
-        local bits = 0
+        -- The walk stops once every known bonus has a part (it helps only once both have data); the answer is
+        -- recomputed after every data change.
+        local bits, every = 0, 0
+        for _, bonus in ipairs(BONUSES) do
+            every = every + bonus.bit
+        end
         EachHeldCells(function(cells)
             for _, cell in pairs(type(cells) == "table" and cells or {}) do
                 local parts = type(cell) == "table" and Parts(cell)
                 if parts then
                     bits = OrMasks(bits, PartsUnion(parts))
+                    if bits == every then
+                        return true
+                    end
                 end
             end
         end, true)

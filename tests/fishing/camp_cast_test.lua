@@ -113,7 +113,29 @@ end)
 test("IsBonusCatch: a known item of one of the mask's bonuses", function()
     eq(Camp.IsBonusCatch(1, { { itemID = 6643, quantity = 1 } }), true, "a Bloated fish under the Rack")
     eq(Camp.IsBonusCatch(3, { { itemID = 6291, quantity = 1 }, { itemID = 6643, quantity = 1 } }), true, "mask 3")
-    eq(Camp.IsBonusCatch(2, { { itemID = 6643, quantity = 1 } }), false, "under the Hut only")
+    eq(Camp.IsBonusCatch(2, { { itemID = 6643, quantity = 1 } }), true, "under the Hut too (decision 32)")
     eq(Camp.IsBonusCatch(0, { { itemID = 6643, quantity = 1 } }), false, "no bonus")
+    eq(Camp.IsBonusCatch(nil, { { itemID = 6643, quantity = 1 } }), false, "no mask")
     eq(Camp.IsBonusCatch(1, { { itemID = 6291, quantity = 1 } }), false, "an ordinary fish")
+end)
+
+test("IsBonusCatch: a second loot slot under a bonus, quest items left out (decision 33)", function()
+    local BLINDWEED, REDGILL = 8839, 13758
+    eq(Camp.IsBonusCatch(2, { { itemID = REDGILL, quantity = 1 }, { itemID = BLINDWEED, quantity = 1 } }), true,
+        "the Hut's herb beside the fish")
+    eq(Camp.IsBonusCatch(1, { { itemID = REDGILL, quantity = 1 }, { itemID = BLINDWEED, quantity = 1 } }), true,
+        "any second slot under the Rack too")
+    eq(Camp.IsBonusCatch(0, { { itemID = REDGILL, quantity = 1 }, { itemID = BLINDWEED, quantity = 1 } }), false,
+        "two slots without a bonus")
+    eq(Camp.IsBonusCatch(2, { { itemID = REDGILL, quantity = 3 } }), false, "one slot of three pieces")
+    eq(Camp.IsBonusCatch(2, { { itemID = REDGILL, quantity = 1 }, { itemID = 6718, quantity = 1 } }), false,
+        "a listed quest item (Electropeller) beside the fish")
+    item_classes[90001] = { 12, 0 }
+    eq(Camp.IsBonusCatch(2, { { itemID = REDGILL, quantity = 1 }, { itemID = 90001, quantity = 1 } }), false,
+        "an item of the quest class")
+    eq(Camp.IsBonusCatch(2, { { itemID = REDGILL, quantity = 1 }, { itemID = 6718, quantity = 1 },
+        { itemID = BLINDWEED, quantity = 1 } }), true, "a quest item and a second slot besides")
+    eq(Camp.IsBonusCatch(2, { { itemID = REDGILL, quantity = 1 }, { quantity = 1 } }), false,
+        "an entry without an item ID is no second slot")
+    item_classes[90001] = nil
 end)

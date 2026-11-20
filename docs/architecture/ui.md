@@ -175,12 +175,14 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   refuses addon code in combat), `ns.CreateButton` (the panel button, which grows to its
   text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip(owner,
   itemID, withPrice, bonus)` (item tooltip with the addon's auction price, `Prices.AddTooltipLine`, and with a bonus
-  table `ns.AddBonusLines` after the item's own lines), `ns.AddBonusLines(tooltip, bonus)` (spec 020: the tag's
-  name, its explanation and, unless `plain`, the chance with the bonus and its players, whatever
-  `settings.tooltipChances`), `ns.TooltipHasBonus(tooltip, itemID)` (`ShowItemTooltip` keeps `{ owner, itemID }`
-  after `SetOwner` and before `SetItemByID`, which runs the game's item hook, on every call: nil without a bonus; a
-  `GameTooltip:HookScript("OnHide")` clears it; true when something is kept, the tooltip is `GameTooltip` and its
-  owner and item match, so ItemHooks adds no doubled explanation line), `ns.CreateList(parent, top, initialize)`
+  table `ns.AddBonusLines` after the item's own lines), `ns.AddColoredLine(tooltip, text, r, g, b, wrap)` (spec 020
+  decision 34: `AddLine` with the text in `ns.ColoredText` and the colour arguments, so a reset of the line colours
+  leaves it coloured), `ns.AddBonusLines(tooltip, bonus)` (spec 020: the tag's name through `ns.AddColoredLine`, its
+  explanation, `Catalog.BonusTip(bonus.key, bonus.several)`, and, unless `plain`, the chance with the bonus and its
+  players, whatever `settings.tooltipChances`), `ns.TooltipHasBonus(tooltip, itemID)` (`ShowItemTooltip` keeps
+  `{ owner, itemID }` after `SetOwner` and before `SetItemByID`, which runs the game's item hook, on every call: nil
+  without a bonus; a `GameTooltip:HookScript("OnHide")` clears it; true when something is kept, the tooltip is
+  `GameTooltip` and its owner and item match, so ItemHooks adds no doubled explanation line), `ns.CreateList(parent, top, initialize)`
   (spec 020, moved from `UI/CatalogTab.lua`: the list of both catch pages, a `WowScrollBoxList` with a
   `MinimalScrollBar` from `top` to the window's bottom, or without the templates a fixed pool of rows with "and N
   more"; `list.Show(elements, retain)`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
@@ -211,12 +213,15 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   combat (the game refuses its secure value to addon code then, docs/forever-api.md); in fishing mode with
   `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`. The tooltip is
   cleared after `SetOwner`, and every coloured line carries its colour as a code in its text as well as in the
-  arguments: the game once reset the line colours (every line white) while text codes survived (spec 012).
+  arguments (`ns.ColoredText`, `ns.AddColoredLine`): the game once reset the line colours (every line white) while
+  text codes survived (spec 012).
 - ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line; the item post call adds
   "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
   `settings.tooltipChances` (V38). A tagged place's chance is in the bonus form, and for a tagged item (the second
-  value of `TooltipLines`) one more line, the tag's explanation (`Catalog.BonusTip`), unless
-  `ns.TooltipHasBonus(tooltip, itemID)` says the addon's row tooltip already holds it.
+  value of `TooltipLines`) one more line, the tag's explanation (`Catalog.BonusTip(bonus.key, bonus.several)`),
+  unless `ns.TooltipHasBonus(tooltip, itemID)` says the addon's row tooltip already holds it. "Caught in:" and the
+  two fishing gear lines go through `ns.AddColoredLine` in `ns.TOOLTIP_COLOR` (spec 020 decision 34: another addon
+  or the game reset the line colours of the catalog's item tooltips on 2026-11-20).
 - CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug`
   report; `ns.ShowDebugReport` shows the debug report (the command, the minimap menu and the
   settings page). Set up by `ns.SetupWindow`; every `ns.ShowCopyWindow` raises it.

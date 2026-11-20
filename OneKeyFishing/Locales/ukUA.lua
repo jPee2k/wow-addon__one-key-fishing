@@ -470,6 +470,8 @@ ns.AddTranslation("ukUA", "Українська", function(L)
         "Бонусний улов: ловиться лише з бафом рибальської рами (Ловля незвичайної риби)."
     L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
         "Бонусний улов: ловиться лише з бафом рибальської хижки (Ловля рідкісної риби)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Бонусний улов: ловиться лише з бафом рибальської рами або хижки."
     L["%s with the bonus"] = "%s із бонусом"
     L["All catches"] = "Усі улови"
     L["No camp bonus"] = "Без табірного бонусу"

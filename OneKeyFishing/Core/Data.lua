@@ -331,6 +331,16 @@ function ns.FormatCount(value)
     return ns.FormatDecimal(tenths / 10, 1)
 end
 
+-- The text wrapped in the colour's code ("|cffrrggbb...|r"). A coloured tooltip line carries its colour this way as
+-- well as in the arguments: the game, or another addon, may reset the line colours of the shared tooltip and turn
+-- every line white, while codes inside the text survive (seen 2026-11-08, spec 012 R5; again 2026-11-20 in the
+-- catalog's item tooltips, spec 020 decision 34). The code wraps the translated text; it is never part of an L[...]
+-- string.
+function ns.ColoredText(text, r, g, b)
+    return ("|cff%02x%02x%02x%s|r"):format(math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5),
+        math.floor(b * 255 + 0.5), text)
+end
+
 -- The item ID of an item link (or any text holding one), or nil.
 function ns.ItemIDFromLink(text)
     return type(text) == "string" and tonumber(text:match("|Hitem:(%d+)")) or nil

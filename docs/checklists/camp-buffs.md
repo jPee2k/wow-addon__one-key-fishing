@@ -5,14 +5,16 @@ shared; the bonus tag and its chance with the bonus; the "Camp bonus" filter; th
 notices before and at a buff's end; the statistics rows; Camper's Lure; after the first try in game (2026-11-20) the
 value "Bonus catches only", the button that names its value, the two rows of buttons, the scrolling list of "What can
 be caught here" with its hints at the top, "Per catch" without ".0" and the catalog's status line under the search
-box (`specs/020-camp-buffs`).
-**Closes**: `V60` to `V67` of [verification.md](../../specs/020-camp-buffs/verification.md); SC-001, SC-002, SC-004 to
+box; after the Hut session (2026-11-20) the Bloated fish under both bonuses, the bonus catches with a second loot slot
+and the colour of the addon's tooltip lines (`specs/020-camp-buffs`).
+**Closes**: `V60` to `V69` of [verification.md](../../specs/020-camp-buffs/verification.md); SC-001, SC-002, SC-004 to
 SC-007 and SC-010 of the spec, which only the game can show; the fit and the look of FR-041 to FR-048 (steps 3 and 10
-to 13).
+to 13); FR-049 to FR-052 (steps 14 to 16).
 **Needs**: a character with Fishing 140 and a Fishing Rack (item 279965) to place, a campfire, a party member (who
 can place the next Rack while the own camp cooldown of one hour runs), a mob for a fight, French and German as second
 interface languages (step 11); for step 8 a second player on the new version and one on 1.4.0; for the size reading of
-step 3 a character that never fished under a buff; for step 9 Fishing 300 and a Fishing Hut (item 279966).
+step 3 a character that never fished under a buff; for steps 9, 14 and 16 Fishing 300 and a Fishing Hut (item
+279966).
 
 **Already seen in game** on 2026-11-19 and not repeated here ([fishing-investigation.md](../fishing-investigation.md),
 "Checked in game"): the Rack's aura 1280341 is granted in the second of the placing, also to a party member next to
@@ -27,9 +29,9 @@ so plan the buffs: a party member's Rack gives the buff to both of you. A `/okf 
 
 ## Setup
 
-1. Install the build (`npm run install-addon`), or link the working folder once (`npm run link`). The TOC gained two
-   files (`GameData\CampBonuses.lua`, `Fishing\Camp.lua`): **restart the game completely** (a `/reload` does not
-   read a TOC change).
+1. Install the build (`npm run install-addon`), or link the working folder once (`npm run link`). The TOC gained three
+   files (`GameData\CampBonuses.lua`, `GameData\FishedQuestItems.lua`, `Fishing\Camp.lua`): **restart the game
+   completely** (a `/reload` does not read a TOC change).
 2. Log in on the character with Fishing 140 and the Rack; a key bound to "Fishing action"; water near a place where
    a campfire can be lit.
 3. Before any buff: `/okf debug`, section `-- Camp bonus --`. Expected: `rack: aura 1280341, not active`,
@@ -50,7 +52,8 @@ so plan the buffs: a party member's Rack gives the buff to both of you. A `/okf 
    included, and read `/okf debug` after every few: `last cast mask: 1`, and `bonus parts here: 1 = A catches / B
    misses` grows by one catch or one miss with every cast. Readings: ____ / ____ / ____. Start a fight with a mob and
    read `/okf debug` in it: `aura reads restricted: true` and the rack line still `active` (the kept state, FR-003).
-   After the fight: `restricted: false` again. Pasted: ____
+   After the fight: `restricted: false` again, and the rack line still `active` at once, without a cast (V69: the
+   read at the fight's end ran). Pasted: ____
    A party member on the new version who got the buff from the same Rack: their `/okf debug` shows `rack: ...
    active` too and their casts grow their own part of mask 1. [ ] Noted: ____
 
@@ -119,9 +122,10 @@ so plan the buffs: a party member's Rack gives the buff to both of you. A `/okf 
 
 6. [ ] **The statistics rows** (FR-034, FR-035): open the statistics window. On the buffed character, at the end of
    "Results", the rows "Casts with a camp bonus" and "Bonus catches" in all three columns (session, zone, total);
-   "Casts with a camp bonus" counts the casts of step 1, "Bonus catches" the catches that held a Bloated fish
-   (0 before the first one). The window is a little taller and nothing overlaps its bottom buttons. On the character
-   that never fished under a buff, both rows are missing. Values: ____
+   "Casts with a camp bonus" counts the casts of step 1, "Bonus catches" the catches under the buff that held a
+   Bloated fish or a second loot slot, fished quest items aside (0 before the first one; under the Hut: step 14).
+   The window is a little taller and nothing overlaps its bottom buttons. On the character that never fished under a
+   buff, both rows are missing. Values: ____
 
 ### The lure
 
@@ -138,8 +142,9 @@ so plan the buffs: a party member's Rack gives the buff to both of you. A `/okf 
    (or "Little data"). Noted: ____
    The player on 1.4.0: `/okf share` shows the record held, the place's totals are counted as from a record without
    a split, no Lua error, the sender not refused or ignored. Noted: ____
-   **Optional, V61**: a few hundred casts without a buff at a water where a Bloated fish came with it: did a Bloated
-   fish come without the buff? ____ (casts: ____)
+   **Optional, V61 and V68**: a few hundred casts without a buff at a water where a Bloated fish came with it (check
+   H9 of [fishing-investigation.md](../fishing-investigation.md), with the loot listener): did a Bloated fish come
+   without the buff? ____ Any second loot slot without the buff, and its item: ____ (casts: ____)
 
 ### The Fishing Hut
 
@@ -181,6 +186,27 @@ step 3, on the buffed character at a place where a Bloated fish was caught (step
     stands right under the search box, above the two rows of buttons (open the catalog at once after a `/reload`:
     "Counting the catch..." stands there too). On an item's page a status line, such as "No data for this item
     under these filters.", stands where the zones begin. Noted: ____
+
+### After the Hut session (2026-11-20)
+
+Steps 14 to 16 check decisions 32 to 34 of the spec. Steps 14 and 16 need the Fishing Hut (Fishing 300); step 15
+needs any tagged item.
+
+14. [ ] **Bonus catches under the Hut** (FR-034, FR-050): with the Hut's buff, the loot listener of
+    [fishing-investigation.md](../fishing-investigation.md) ("The Fishing Hut: checks left") on, and the statistics
+    window open, fish until a catch brings a second item (a herb, ore, a bar, a hide, dust or a Bloated fish). After
+    that catch "Bonus catches" grew by one in all three columns; after a catch of one item it did not. Second slots
+    seen and "Bonus catches" before and after: ____
+15. [ ] **The colour of the tooltip lines** (FR-052): in the catalog choose "Camp bonus: Bonus only" and hover
+    several tagged items one after another, back and forth, ten times or more; then an item in the bags and a fishing
+    pole. "Caught in:", the tag's name ("Fishing Rack bonus" / "Fishing Hut bonus") and the fishing gear line stay
+    cyan every time; an auction price with "(few lots)" stays grey; the minimap button's tooltip keeps its colours.
+    Any white line, and what was hovered before it: ____
+16. [ ] **A Bloated fish under the Hut** (FR-049, FR-051): at a water where a Bloated fish was caught only under the
+    Hut (none under the Rack there), its row in "What can be caught here" shows the Fishing Hut's icon, with the
+    chance among the Hut's catches (or "Little data"); its tooltip reads "Fishing Hut bonus" and "Bonus catch: comes
+    only with the buff of a Fishing Rack or a Fishing Hut."; the same explanation under "Caught in:" in the fish's
+    bag tooltip. Noted: ____
 
 ## Results
 

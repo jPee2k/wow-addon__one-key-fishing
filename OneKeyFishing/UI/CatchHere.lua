@@ -253,7 +253,7 @@ local function ShowRowTooltip(self)
         GameTooltip:AddLine(L["The game has not shown this item yet."], 1, 1, 1, true)
         GameTooltip:AddLine(unknown.inSeed and L["In the bundled data"]
             or (L["Reported by %d players on this map"]):format(unknown.reporters), 1, 1, 1, true)
-        GameTooltip:AddLine((L["Item ID: %d"]):format(unknown.itemID), 0.6, 0.6, 0.6)
+        ns.AddColoredLine(GameTooltip, (L["Item ID: %d"]):format(unknown.itemID), 0.6, 0.6, 0.6) -- decision 34
         ns.AddBonusLines(GameTooltip, self.bonus)
         GameTooltip:Show()
     elseif self.itemID then

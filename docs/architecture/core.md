@@ -160,8 +160,10 @@ Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-d
   "0.47%"; "<0.01%" below; "0%" only for 0; the bounds are the rounding edges, so "10.0%" and "1.00%" never appear;
   a point in every language); `ns.FormatCount(value)` (a count with one decimal, the "Per catch" column, spec 020
   decision 27: rounded to tenths, written whole when the rounded value is whole, "1" for 1 and 1.04, else with
-  `ns.FormatDecimal(value, 1)`, the client's separator: "1.3", "1,5"); `ns.ItemIDFromLink(text)` (the item ID in an
-  item link).
+  `ns.FormatDecimal(value, 1)`, the client's separator: "1.3", "1,5"); `ns.ColoredText(text, r, g, b)` (the text
+  wrapped in the colour's code, `|cffrrggbb...|r`, spec 020 decision 34: a coloured tooltip line carries its colour
+  this way too, since the game or another addon may reset the line colours; it wraps a translated text, never part
+  of an `L[...]` string); `ns.ItemIDFromLink(text)` (the item ID in an item link).
 - Text: `ns.FoldCase(text)` (lower case for ASCII, Latin-1 Supplement and Cyrillic by UTF-8 byte patterns, the same
   in 5.1 and 5.3), `ns.SearchKey(text)` (folds after the game's `CaseAccentInsensitiveParse` when present) and
   `ns.CompareText(a, b)` (`strcmputf8i` when present, else the search keys): the catalog's search and order, and

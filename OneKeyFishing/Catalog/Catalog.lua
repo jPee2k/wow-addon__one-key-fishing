@@ -653,7 +653,11 @@ function Catalog.BonusTag(key)
     return BonusTexts(key).tag
 end
 
-function Catalog.BonusTip(key)
+-- several: the item is a known item of more than one bonus (a Bloated fish: the Rack or the Hut, decision 32).
+function Catalog.BonusTip(key, several)
+    if several then
+        return L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."]
+    end
     return BonusTexts(key).tip
 end
 

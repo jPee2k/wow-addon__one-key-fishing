@@ -446,6 +446,8 @@ ns.AddTranslation("koKR", "한국어", function(L)
         "보너스 어획: 낚시 건조대의 강화 효과(고급 낚시)가 있을 때만 잡힙니다."
     L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
         "보너스 어획: 낚시 오두막의 강화 효과(희귀 낚시)가 있을 때만 잡힙니다."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "보너스 어획: 낚시 건조대나 낚시 오두막의 강화 효과가 있을 때만 잡힙니다."
     L["%s with the bonus"] = "보너스 시 %s"
     L["All catches"] = "모든 어획"
     L["No camp bonus"] = "야영 보너스 없음"

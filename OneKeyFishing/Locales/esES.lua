@@ -480,6 +480,8 @@ ns.AddTranslation("esES", "Español (EU)", function(L)
         "Captura de bonificación: solo sale con el beneficio de un soporte de pesca (Pesca poco común)."
     L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
         "Captura de bonificación: solo sale con el beneficio de una cabaña de pesca (Pesca rara)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Captura de bonificación: solo sale con el beneficio de un soporte de pesca o de una cabaña de pesca."
     L["%s with the bonus"] = "%s con bonificación"
     L["All catches"] = "Todas las capturas"
     L["No camp bonus"] = "Sin bonificación de campamento"

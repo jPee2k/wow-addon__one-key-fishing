@@ -77,6 +77,12 @@ end
 -- The colour of the addon's own lines in item tooltips ("Caught in:", the camp bonus tag; UI/ItemHooks.lua).
 ns.TOOLTIP_COLOR = { 0.2, 0.8, 1 }
 
+-- A tooltip line with its colour both as a code in the text and in the arguments (ns.ColoredText, Core/Data.lua), so
+-- a reset of the tooltip's line colours leaves it coloured.
+function ns.AddColoredLine(tooltip, text, r, g, b, wrap)
+    tooltip:AddLine(ns.ColoredText(text, r, g, b), r, g, b, wrap)
+end
+
 -- The camp bonus tag of a row (specs/020-camp-buffs research R19): the camp feature's icon at the right end of the
 -- row's name column, whose right edge is at x; the name keeps the rest of the column. Both tabs' rows use it.
 local TAG_SIZE = 14
@@ -110,8 +116,9 @@ function ns.AddBonusLines(tooltip, bonus)
         return
     end
     local Catalog = ns.Catalog
-    tooltip:AddLine(Catalog.BonusTag(bonus.key), unpack(ns.TOOLTIP_COLOR))
-    tooltip:AddLine(Catalog.BonusTip(bonus.key), 1, 1, 1, true)
+    local r, g, b = unpack(ns.TOOLTIP_COLOR)
+    ns.AddColoredLine(tooltip, Catalog.BonusTag(bonus.key), r, g, b)
+    tooltip:AddLine(Catalog.BonusTip(bonus.key, bonus.several), 1, 1, 1, true)
     if not bonus.plain then
         tooltip:AddLine(Catalog.ChanceText(bonus.chance, bonus.littleData, bonus.players, true), 1, 1, 1)
     end
@@ -155,7 +162,7 @@ end
 ---------------------------------------------------------------------------
 local LIST_X, LIST_LINE, LIST_ROW_WIDTH = 20, 18, 520
 local LIST_BOTTOM = 40 -- the lists end above the window's bottom edge
-local LIST_WINDOW_HEIGHT = 660 -- the height the fallback rows are counted for
+local LIST_WINDOW_HEIGHT = 736 -- the height the fallback rows are counted for: the statistics window's (StatsFrame)
 local LIST_MAX_ROWS = 26 -- rows of the fixed list when the scroll templates are missing
 
 -- initialize(row, element) draws an element on a row (made by the list, built on first use); list.Show(elements,

@@ -253,7 +253,7 @@ test("an item the client does not know shows as an Unknown item row with its ID 
     eq(tooltip_lines[1], L["Unknown item"], "tooltip title")
     eq(tooltip_lines[2], L["The game has not shown this item yet."], "why")
     eq(tooltip_lines[3], L["In the bundled data"], "from the seed")
-    eq(tooltip_lines[4], (L["Item ID: %d"]):format(88888), "the item ID")
+    eq(tooltip_lines[4], ns.ColoredText((L["Item ID: %d"]):format(88888), 0.6, 0.6, 0.6), "the item ID, its grey coded")
 end)
 
 test("reported by other players, the tooltip counts them; once the game knows the item, the row is a normal one",

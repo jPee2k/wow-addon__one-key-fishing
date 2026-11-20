@@ -47,6 +47,11 @@ local function count(text)
     return n
 end
 
+-- The tag's line as drawn: its colour as a code in the text too (spec 020 decision 34).
+local function tagLine(key)
+    return ns.ColoredText(Catalog.BonusTag(key), unpack(ns.TOOLTIP_COLOR))
+end
+
 local function has(text)
     return count(text) > 0
 end
@@ -70,13 +75,13 @@ end)
 test("hovering a tagged row: the tag, its explanation and the chance with the bonus", function()
     local row = rowOf(BLOATED)
     row.scripts.OnEnter(row)
-    assert(has(Catalog.BonusTag("rack")), "the tag")
-    assert(has(Catalog.BonusTip("rack")), "the explanation")
+    assert(has(tagLine("rack")), "the tag")
+    assert(has(Catalog.BonusTip("rack", true)), "the explanation (a Bloated fish: the Rack or the Hut)")
     assert(has(Catalog.ChanceText(0.2, false, 3, true)), "the chance with the bonus")
     GameTooltip:Hide()
     ns.db.settings.tooltipChances = false
     row.scripts.OnEnter(row)
-    assert(has(Catalog.BonusTip("rack")), "also with the chances in tooltips off")
+    assert(has(Catalog.BonusTip("rack", true)), "also with the chances in tooltips off")
     GameTooltip:Hide()
     ns.db.settings.tooltipChances = true
 end)
@@ -85,7 +90,7 @@ test("a plain tag shows the tag and the explanation only", function()
     GameTooltip:SetOwner(UIParent)
     ns.AddBonusLines(GameTooltip, { key = "rack", plain = true })
     eq(#tooltip_lines, 2, "two lines")
-    eq(tooltip_lines[1], Catalog.BonusTag("rack"), "the tag")
+    eq(tooltip_lines[1], tagLine("rack"), "the tag")
     eq(tooltip_lines[2], Catalog.BonusTip("rack"), "the explanation")
 end)
 
@@ -107,19 +112,19 @@ test("the explanation is not doubled by the game's item hook, and comes back for
     local row = rowOf(BLOATED)
     row.scripts.OnEnter(row)
     run_item_post_calls(GameTooltip, BLOATED)
-    assert(has(L["Caught in:"]), "the hook ran")
-    eq(count(Catalog.BonusTip("rack")), 1, "once")
+    assert(has(ns.ColoredText(L["Caught in:"], unpack(ns.TOOLTIP_COLOR))), "the hook ran")
+    eq(count(Catalog.BonusTip("rack", true)), 1, "once")
     GameTooltip:Hide()
     local bag = CreateFrame("Button")
     GameTooltip:SetOwner(bag)
     run_item_post_calls(GameTooltip, BLOATED)
-    eq(count(Catalog.BonusTip("rack")), 1, "a bag tooltip after the hide gets it")
+    eq(count(Catalog.BonusTip("rack", true)), 1, "a bag tooltip after the hide gets it")
     ns.ShowItemTooltip(bag, BLOATED, false)
     run_item_post_calls(GameTooltip, BLOATED)
-    eq(count(Catalog.BonusTip("rack")), 1, "a tooltip without a bonus keeps nothing")
+    eq(count(Catalog.BonusTip("rack", true)), 1, "a tooltip without a bonus keeps nothing")
     ns.ShowItemTooltip(row, BLOATED, false, nil)
     run_item_post_calls(GameTooltip, BLOATED)
-    eq(count(Catalog.BonusTip("rack")), 1, "the same owner without a bonus neither")
+    eq(count(Catalog.BonusTip("rack", true)), 1, "the same owner without a bonus neither")
     GameTooltip:Hide()
 end)
 

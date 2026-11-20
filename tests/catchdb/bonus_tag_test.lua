@@ -42,6 +42,11 @@ local SEED = { epoch = 1, absorbed = {}, resets = {}, cells = {
     ["2010:3:x"] = seedCell(100, { [FISH] = { 90, 90 }, [BLOATED] = { 10, 10 } }, 3),
     ["2011:3:x"] = seedCell(30, { [FISH] = { 28, 28 }, [BLOATED] = { 2, 2 } }, 2,
         { ["3"] = part(4, { [FISH] = { 2, 2 }, [BLOATED] = { 2, 2 } }, 1) }),
+    -- a Bloated fish under both bonuses, more often under the Hut (decision 32)
+    ["2012:3:x"] = seedCell(60, { [FISH] = { 52, 52 }, [BLOATED] = { 8, 8 } }, 3, {
+        ["1"] = part(10, { [FISH] = { 8, 8 }, [BLOATED] = { 2, 2 } }, 2),
+        ["2"] = part(50, { [FISH] = { 44, 44 }, [BLOATED] = { 6, 6 } }, 3),
+    }),
 } }
 
 load_addon(function()
@@ -160,15 +165,33 @@ test("a view under \"rack\": the known item with the view's own numbers, others 
     eq(item(view, FISH).bonus, nil, "an ordinary fish")
 end)
 
-test("under \"hut\" a known Rack item is plain; under \"none\" too, and no data tag", function()
-    local hut = item(CatchDB.QueryMap(2011, filter("hut")), BLOATED).bonus
-    eq(hut.key, "rack", "the Rack's item under the Hut")
-    eq(hut.plain, true, "plain")
-    eq(hut.chance, nil, "no numbers of its own")
+test("a Bloated fish is both bonuses' (decision 32): tagged under \"hut\" with the view's numbers", function()
+    local view = CatchDB.QueryMap(2011, filter("hut"))
+    local hut = item(view, BLOATED)
+    eq(hut.bonus.key, "hut", "the Hut's under the Hut")
+    eq(hut.bonus.plain, nil, "not plain")
+    near(hut.bonus.chance, hut.chance, "the view's chance")
+    eq(hut.bonus.catches, view.catches, "the view's catches")
+    eq(hut.bonus.several, true, "known to more than one bonus")
+end)
+
+test("under \"none\" a known item is plain (the first bonus's key), and no data tag", function()
     local none = item(CatchDB.QueryMap(2003, filter("none")), BLOATED).bonus
     eq(none.key, "rack", "none: key")
     eq(none.plain, true, "none: plain")
+    eq(none.several, true, "none: both bonuses'")
     eq(item(CatchDB.QueryMap(2008, filter("none")), OIL).bonus, nil, "no data tag under \"none\"")
+end)
+
+test("\"all\": a known item takes the bonus with its most catches here (decision 32)", function()
+    local bonus = item(CatchDB.QueryMap(2012, filter()), BLOATED).bonus
+    eq(bonus.key, "hut", "6 under the Hut against 2 under the Rack")
+    near(bonus.chance, 6 / 50, "its chance among the Hut's catches")
+    eq(bonus.catches, 50, "the Hut's catches")
+    eq(bonus.littleData, false, "50 catches")
+    eq(bonus.several, true, "both bonuses'")
+    eq(item(CatchDB.QueryMap(2001, filter()), BLOATED).bonus.key, "rack", "only under the Rack: the Rack")
+    eq(item(CatchDB.QueryMap(2003, filter()), BLOATED).bonus.key, "rack", "under none: the Rack, the cheapest")
 end)
 
 test("building a view calls no other query", function()

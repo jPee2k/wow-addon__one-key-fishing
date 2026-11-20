@@ -190,15 +190,18 @@ likely catches of the place you stand at. **Show catch chances in tooltips** in 
 ## Camp bonus
 
 A **Fishing Rack** or a **Fishing Hut** placed by a campfire gives you and your group a fishing buff for an hour
-("Uncommon Fishing", "Rare Fishing"): the **camp bonus**. Under it some casts bring an extra **bonus catch**, such as
-the Bloated fish of the Fishing Rack.
+("Uncommon Fishing", "Rare Fishing"): the **camp bonus**. Under it some casts bring an extra **bonus catch** next to
+the fish: a Bloated fish with either camp feature; with the Fishing Hut also a herb, ore, a metal bar, a hide or
+enchanting dust.
 
 - The addon records the casts made with a camp bonus apart from the others (and shares them like the rest of your
   catch data). A cast counts for the bonus when the buff was up both when the cast started and when it ended.
 - A bonus catch carries the camp feature's icon at the end of its name in "What can be caught here" and in the catch
   catalog, and its chance is the chance among the catches made with the bonus. Hover the row for the bonus's name,
   what to do to get the catch and its chance "with the bonus" (for example "0.47% with the bonus (3 players)").
-  Item tooltips elsewhere (bags, chat links) add the explanation under **Caught in:**.
+  Item tooltips elsewhere (bags, chat links) add the explanation under **Caught in:**. A Bloated fish shows the
+  icon of the camp feature it was caught with most often there (the Fishing Rack's when there is no such catch yet),
+  and its explanation names both.
 - **Camp bonus** filter in both tabs, once a catch with a camp bonus is known: **All catches** (the default, every
   login), **No camp bonus**, **Bonus catches only**, **Fishing Rack** and, with data for it, **Fishing Hut**. The
   button shows the chosen value in short: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only",
@@ -214,8 +217,9 @@ the Bloated fish of the Fishing Rack.
   with catch notifications off (**Warn when a camp bonus is ending** in the settings). A buff lost in a fight is
   noticed after the fight only when **Leave fishing mode when attacked** is off: with it on, fishing mode ends with
   the fight and no notice comes.
-- **Statistics**: **Casts with a camp bonus** and **Bonus catches** (casts with a camp bonus that brought a known
-  bonus catch) show at the end of **Results** once you fished with a camp bonus.
+- **Statistics**: **Casts with a camp bonus** and **Bonus catches** (casts with a camp bonus that brought an extra
+  item: a Bloated fish or a second item in the loot; quest fish, which can come beside a fish without a bonus, do
+  not count) show at the end of **Results** once you fished with a camp bonus.
 - **Camper's Lure**, from a placed Fishing Rack (+60, needs Fishing 50), is applied by the fishing key like any other
   lure: after the +75 lures and before the +50 ones.
 

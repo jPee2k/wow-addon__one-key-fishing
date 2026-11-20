@@ -221,6 +221,25 @@ checklist step).
   can be caught here" or the catalog's layout (`here_page_test`, `here_kinds_test`, `here_seed_test`,
   `catalog_kinds_test`, `catalog_kinds_saved_test`, `catalog_sort_test`).
 
+## Follow-up after the Hut session (2026-11-20)
+
+Decisions 32 to 34 of the spec, requirements FR-049 to FR-052, research R22, tasks T048 onwards (Phase 13). No
+saved data change; old statistics are not recounted. Two new markers, `VERIFY(V68)` and, from the review,
+`VERIFY(V69)` (the combat flag in `Restricted()`; `.luacheckrc` gains `UnitAffectingCombat`).
+
+- **Bloated fish under both bonuses**: `GameData/CampBonuses.lua` names one local `BLOATED` table in both entries;
+  `Camp.KnownBonuses(itemID)` (a list of keys) replaces `Camp.KnownBonus`. `CatchDB/Views.lua`'s `Tag` picks, in an
+  "all" view, the bonus with the most catches of the item in the scope, else the Rack; every tag of such an item
+  carries `several = true`, and `Catalog.BonusTip(key, several)` then names both camp features (one new key).
+- **Bonus catches**: `Camp.IsBonusCatch` also counts a catch with two loot slots or more once the fished quest items
+  are left out; the quest items are the new `GameData/FishedQuestItems.lua` (in the TOC after `CampBonuses.lua`).
+- **Coloured lines**: `ns.ColoredText` (`Core/Data.lua`, from `UI/Minimap.lua`) and `ns.AddColoredLine`
+  (`UI/Widgets.lua`) for the addon's coloured lines in item tooltips, the "(few lots)" price line and the minimap
+  tooltip.
+- **Files**: `GameData/CampBonuses.lua`, `GameData/FishedQuestItems.lua` (new), `OneKeyFishing.toc`,
+  `Fishing/Camp.lua`, `CatchDB/Views.lua`, `Catalog/Catalog.lua`, `Core/Data.lua`, `UI/Widgets.lua`,
+  `UI/ItemHooks.lua`, `UI/Minimap.lua`, `Catch/Prices.lua`, `Locales/*.lua`; the tests of task T054.
+
 ## Risks
 
 - **A record grows** by its bonus parts (R16): the test stubs cannot measure the encoded size, so it is read in

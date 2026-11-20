@@ -435,6 +435,7 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Fishing Hut bonus"] = "釣魚小屋加成"
     L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] = "加成漁獲：只有在釣魚架的增益效果（優良釣魚）下才會釣到。"
     L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] = "加成漁獲：只有在釣魚小屋的增益效果（稀有釣魚）下才會釣到。"
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] = "加成漁獲：只有在釣魚架或釣魚小屋的增益效果下才會釣到。"
     L["%s with the bonus"] = "加成時 %s"
     L["All catches"] = "全部漁獲"
     L["No camp bonus"] = "無營地加成"

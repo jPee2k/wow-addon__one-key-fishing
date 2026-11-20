@@ -130,7 +130,8 @@ test("item rows mark a value whose auction price rests on few lots", function()
     assert(text:find(ns.L["few lots"], 1, true), "the mark: " .. text)
     local lines = {}
     Prices.AddTooltipLine({ AddLine = function(_, line) table.insert(lines, line) end }, FISH)
-    eq(lines[1], (ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format("20000c"), "tooltip line")
+    eq(lines[1], ns.ColoredText((ns.L["Auction price (OneKeyFishing): %s (few lots)"]):format("20000c"), 0.6, 0.6, 0.6),
+        "tooltip line, its grey as a code too")
     commodity_results[FISH] = { { 20000, 20 }, { 20000, 20 }, { 20100, 10 } }
     scan(FISH)
     eq(Prices.FormatValue(FISH, 1), "20000c", "no mark with enough lots")

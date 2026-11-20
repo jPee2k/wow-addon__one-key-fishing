@@ -178,10 +178,32 @@ listeners of check 4 (cut to 255 characters).
   slot. Not every cast was logged.
 - **What it means for the addon.** The Hut's extra item is drawn from a mixed table (Bloated fish, herb, ore, bar,
   hide, enchanting dust), not tied to the water's fish. A known list of the Hut's items by ID is hard to keep; the
-  data of the bonus part (items caught only under mask 2) are the better source of a tag.
-- **The addon's "Bonus catches" stayed 0** for the session while "Casts with a camp bonus" was 22: a cast is a
-  bonus catch only when its item is in the known list of a bonus in its mask, and the Hut's list
-  (`GameData/CampBonuses.lua`) is empty; the Bloated fish are listed under the Rack only.
+  data of the bonus part (items caught only under mask 2) are the better source of a tag. Since spec 020 decision
+  32 the twelve Bloated fish are the known items of both bonuses (one list in `GameData/CampBonuses.lua`); the
+  Hut's other extras are tagged from the data.
+- **The addon's "Bonus catches" stayed 0** for the session while "Casts with a camp bonus" was 22: a cast was a
+  bonus catch only when its item was in the known list of a bonus in its mask, and the Hut's list was empty; the
+  Bloated fish were listed under the Rack only. Since spec 020 decision 33 a catch under a buff is also a bonus
+  catch when it has a second loot slot that is not a fished quest item (below), and a Bloated fish counts under
+  either bonus. The session's statistics are not recounted.
+
+### A second loot slot without a buff
+
+Why a second loot slot can stand for the camp bonus in the statistics (spec 020 decision 33, `VERIFY(V68)`):
+
+- **Game.** Without a buff every catch had one slot, in open water and in a pool (2026-11-19). Pools, schools and
+  floating wreckage or debris give one item too: a quantity in one slot, or a trunk opened later.
+- **Sources.** Only fished quest items come as a second slot without a buff: Warcraft Wiki, "Nat Pagle, Angler
+  Extreme" (`https://warcraft.wiki.gg/wiki/Nat_Pagle,_Angler_Extreme`): "As well as looting the quest fish, you will
+  loot another fish or item"; classicdb, quest 1580 (`https://classicdb.ch/?quest=1580`), a comment on the
+  Electropellers: "always in the same loot as some other fish".
+- **The bundled seed.** 43 of 525 places have more item catches than catches: 306 extra slots in 33951 catches
+  (0.9 %), and the large ones follow the quest items: Darkshore `1439:1:47` has 24 extra, 24 Electropellers; Feralas
+  `1444:3:65` 16, Feralas Ahi; Swamp of Sorrows, Desolace and Stranglethorn likewise.
+- **The addon.** `GameData/FishedQuestItems.lua` lists them (Electropeller 6718, Nat Pagle's fish 16967 to 16970,
+  Dezian Queenfish 19806, Speckled Tastyfish 19807) and names the quest class (12), and `Camp.IsBonusCatch` leaves
+  their slots out. If another item comes as a second slot without a buff, "Bonus catches" reads too high under a buff
+  until the item joins that list. Check H9 below closes it.
 
 ## The camp features of Fishing
 
@@ -454,7 +476,7 @@ translations are written with the feature, in `Locales/`. The rules behind them:
 | Toast, ended | `The Fishing Rack bonus has ended.` / `The Fishing Hut bonus has ended.` | |
 | Setting | `Warn when a camp bonus is ending` | no hint: the settings rows have none |
 | Statistics row | `Casts with a camp bonus` | |
-| Statistics row | `Bonus catches` | catches under a buff that held a known bonus item (a Bloated fish) |
+| Statistics row | `Bonus catches` | catches under a buff that held a known bonus item (a Bloated fish) or a second loot slot, fished quest items aside (spec 020 decision 33) |
 | Changelog and manual | "camp bonus", "bonus catch" | the same two terms everywhere |
 
 ## In-game checks
@@ -496,7 +518,7 @@ The listeners, each under the chat line's 255 characters (a `/run` after every l
 
 | # | Question | How | What it decides |
 |---|---|---|---|
-| H9 | Do the extra items (a second slot) come without a camp aura? (V61) | Reset the session; at Lake Elune'ara (map 1450) with the loot listener and no fishing aura, 90 or more casts; note every second slot and the session's casts and catches | None in 90+ casts: the extra item is the aura's. Any: the Bloated list and the tag by item are wrong for it |
+| H9 | Do the extra items (a second slot) come without a camp aura? (V61, V68) | Reset the session; at Lake Elune'ara (map 1450) with the loot listener and no fishing aura, 90 or more casts; note every second slot and the session's casts and catches | None in 90+ casts: the extra item is the aura's. Any: the Bloated list and the tag by item are wrong for it |
 | H10 | Is the Hut's aura hidden in a fight, like the Rack's? | With the aura, in a fight with an ordinary mob: `/dump C_UnitAuras.GetPlayerAuraBySpellID(1280342)`, again after the fight | Empty in the fight and back after it, as the Rack's: the kept state covers the Hut too |
 | H11 | Does a death in a fight drop the aura, and does the end toast come after the fight? (V65) | With the aura, "Leave fishing mode when attacked" off, die in a fight; after the fight read the toast and `/okf debug` | The end toast after the fight and "hut: ... not active": closes V65 |
 | H12 | Does a party member next to the Hut get "Rare Fishing"? | A party member stands by the fire when the Hut is placed, with the auras listener | `AURA+ 1280342` for them too, as with the Rack |
@@ -533,4 +555,7 @@ aura ends.
   `https://warcraft.wiki.gg/wiki/Forever_fishing_techniques`), Method
   (`https://www.method.gg/wow-forever/fishing-in-wow-forever-leveling-guide-fishing-items-trainers`), Warcraft
   Tavern; MMOexp is a gold-selling site and its article is from the beta.
+- Fished quest items: Warcraft Wiki, "Nat Pagle, Angler Extreme"
+  (`https://warcraft.wiki.gg/wiki/Nat_Pagle,_Angler_Extreme`); classicdb, quest 1580
+  (`https://classicdb.ch/?quest=1580`).
 - The repository: the seed of epoch 6 and the code of 1.4.0.

@@ -171,8 +171,9 @@ and it creates no frame (FR-008).
   active; a read sets it, the clock ends an active bonus, nothing else changes it. `Camp.IsActive(key)` answers
   `true`, `false` or nil (unknown), `Camp.TimeLeft(key)` the seconds left.
 - `Camp.Read()` reads each aura by its spell ID (`C_UnitAuras.GetPlayerAuraBySpellID`), never by name, and never
-  while auras are restricted (`InCombatLockdown()` or `C_Secrets.ShouldAurasBeSecret()`): in a fight the call returns
-  nothing for an aura that is up. A table with a plain `expirationTime` is an active buff, nothing is no buff,
+  while auras are restricted (`InCombatLockdown()`, the player's combat flag `UnitAffectingCombat("player")`, set
+  before the lockdown at a fight's first moment (V69), or `C_Secrets.ShouldAurasBeSecret()`): in a fight the call
+  returns nothing for an aura that is up. A table with a plain `expirationTime` is an active buff, nothing is no buff,
   anything else (a secret value) changes nothing. It reads on `PLAYER_ENTERING_WORLD`, `UNIT_AURA` for `"player"`
   only (the event comes for every unit; its payload, secret tables in a fight, is never read), `PLAYER_REGEN_ENABLED`,
   `FISHING_CAST_START` and when a notice timer comes due. In a fight the state kept from before stands, and a buff
@@ -185,9 +186,12 @@ and it creates no frame (FR-008).
   stopped, maybe after the next cast started, and two modules (CatchDB and Stats) ask for the same cast; masks more
   than 8 casts old are dropped at a cast's start. The mask is never sent in a message: `FISH_CAUGHT` and
   `FISH_MISSED` keep their arguments.
-- `Camp.HasBit(mask, key)`, `Camp.KnownBonus(itemID)` (the bonus whose known list names the item) and
-  `Camp.IsBonusCatch(mask, items)` (a catch under the mask holds a known item of one of the mask's bonuses: the
-  statistics' bonus catches).
+- `Camp.HasBit(mask, key)`, `Camp.KnownBonuses(itemID)` (the keys of the bonuses whose known list names the item,
+  in rank order, or nil: a Bloated fish is both bonuses', spec 020 decision 32) and `Camp.IsBonusCatch(mask, items)`
+  (the statistics' bonus catches, decision 33: with a mask above 0, the catch holds a known item of one of the
+  mask's bonuses, or two loot slots or more once the quest items of `GameData.FishedQuestItems` are left out, by
+  their list or their class through `C_Item.GetItemInfoInstant`; `items` is `FISH_CAUGHT`'s list, one entry per loot
+  slot; `VERIFY(V68)`: without a buff a catch has one slot).
 - The notices (research R10): a check runs after every allowed read and when a timer comes due; the clock alone
   never shows one. Each active buff arms two `C_Timer.After` timers, a second past the five-minute threshold and a
   second past the end, so the timer's own check finds the crossing; while auras are restricted a timer does nothing

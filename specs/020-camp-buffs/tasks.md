@@ -129,7 +129,8 @@ T036).
   - no aura: `Camp.IsActive("rack")` is false after `PLAYER_ENTERING_WORLD`; `Camp.Mask()` is 0;
   - the Rack's aura with `expirationTime = GetTime() + 600`: active, `TimeLeft("rack")` about 600, `Mask()` 1;
   - both auras: `Mask()` 3; only the Hut's: 2; `Camp.HasBit(3, "rack")` and `HasBit(3, "hut")` true, `HasBit(2,
-    "rack")` false; `Camp.KnownBonus(6643)` is `"rack"`, `KnownBonus(6291)` nil;
+    "rack")` false; `Camp.KnownBonus(6643)` is `"rack"`, `KnownBonus(6291)` nil (since T050 `Camp.KnownBonuses`,
+    `{ "rack", "hut" }` for 6643);
   - restricted from the start (no read yet): `IsActive` nil, `Mask()` nil;
   - active, then restricted with the aura stub now empty: still active (no read); after the clock passes
     `expires`: not active, `Mask()` 0;
@@ -449,7 +450,8 @@ the tooltips.
   holds two known items also 1, a catch of an ordinary fish 0; a catch of 6643 with mask 0 adds nothing; a saved
   bucket without the two fields reads 0 and counts on without an error; a session reset zeroes them.
   `tests/fishing/camp_cast_test.lua` (extended): `Camp.IsBonusCatch(1, { { itemID = 6643, quantity = 1 } })` true,
-  with mask 2 false, with mask 0 false, with an ordinary item false. `tests/ui/stats_window_test.lua` (extended):
+  with mask 2 false (true since T050: the Hut knows the Bloated fish too), with mask 0 false, with an ordinary item
+  false. `tests/ui/stats_window_test.lua` (extended):
   the rows `L["Casts with a camp bonus"]` and `L["Bonus catches"]` are the last two rows of the "Results" block and
   show in the three columns when the total has a bonus cast ("Bonus catches" then also with 0); both are hidden
   otherwise, their place kept; the window is 736 high and the "Top catches" header sits two lines lower than
@@ -601,6 +603,61 @@ search box. No data change: `CatchDB` and the saved data stay as they are; no ne
 
 ---
 
+## Phase 13: Follow-up after the Hut session (2026-11-20)
+
+**Goal**: decisions 32 to 34 of the spec (FR-049 to FR-052, research R22): the Bloated fish are both bonuses' known
+items and an item of both takes the tag of the bonus with its most catches; a bonus catch is also a catch with a
+second loot slot, the fished quest items aside; the addon's coloured tooltip lines carry their colour as a code.
+No saved data change, no recount of old statistics; one new marker, `VERIFY(V68)`.
+
+**Independent Test**: the tests of T054; in game, checklist steps 14 to 16 of `docs/checklists/camp-buffs.md`.
+
+- [X] T048 `OneKeyFishing/GameData/CampBonuses.lua`: one local `BLOATED` table (the twelve Bloated fish, with
+  `-- VERIFY(V61)` above it), named as `items` by the Rack and the Hut. `OneKeyFishing/GameData/FishedQuestItems.lua`
+  (new): `GameData.FishedQuestItems = { classID = 12, items = { [6718], [16967] to [16970], [19806], [19807] } }`;
+  `OneKeyFishing/OneKeyFishing.toc`: `GameData\FishedQuestItems.lua` after `GameData\CampBonuses.lua`.
+- [X] T049 `OneKeyFishing/Fishing/Camp.lua`: `Camp.KnownBonuses(itemID)` (the keys of the bonuses whose list names
+  the item, in rank order, or nil) in place of `Camp.KnownBonus`.
+- [X] T050 `OneKeyFishing/Fishing/Camp.lua`: `Camp.IsBonusCatch(mask, items)`: false without a mask above 0; true for
+  a known item of one of the mask's bonuses, or for two loot slots or more once the quest items
+  (`GameData.FishedQuestItems`' list, or its class by `C_Item.GetItemInfoInstant`) are left out;
+  `-- VERIFY(V68): without a camp buff a catch has one loot slot, quest items aside` above it (FR-050).
+- [X] T051 `OneKeyFishing/CatchDB/Views.lua` (`Tag`): in an "all" view a known item takes the bonus with its most
+  catches in the scope (that bonus's sub-view numbers), else the lowest-ranked with "Little data"; in a view under a
+  bonus key a known item of that key carries the view's numbers, another is `plain` with `key = known[1]`; every tag
+  of an item known to more than one bonus carries `several = true` (FR-049).
+- [X] T052 `OneKeyFishing/Catalog/Catalog.lua`: `Catalog.BonusTip(key, several)`, with `several` the new text
+  `L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."]` (nine translations);
+  `ns.AddBonusLines` and `UI/ItemHooks.lua` pass `bonus.key, bonus.several` (FR-051).
+- [X] T053 `OneKeyFishing/Core/Data.lua`: `ns.ColoredText(text, r, g, b)` (moved from `UI/Minimap.lua`'s local
+  `Colored`); `OneKeyFishing/UI/Widgets.lua`: `ns.AddColoredLine(tooltip, text, r, g, b, wrap)`; used for the tag line
+  of `ns.AddBonusLines`, "Caught in:" and the two fishing gear lines of `UI/ItemHooks.lua`, the "(few lots)" line of
+  `Prices.AddTooltipLine` and the minimap tooltip's lines (FR-052).
+- [X] T054 Tests (extended, failing first where the rule is new): `tests/gamedata/camp_bonuses_test.lua` (both
+  bonuses name one list; the quest items and their class), `tests/fishing/camp_state_test.lua` (`KnownBonuses(6643)`
+  is `{ "rack", "hut" }`, an ordinary fish nil), `tests/fishing/camp_cast_test.lua` (a Bloated fish under the Hut, no
+  mask; a second slot under either bonus, none without one, one slot of three pieces, a listed quest item and an
+  item of the quest class left out), `tests/catch/stats_bonus_test.lua` (under the Hut a Bloated fish and a herb as
+  a second slot count, a quest item and one slot do not), `tests/catchdb/bonus_tag_test.lua` (a Bloated fish tagged
+  under "hut" with the view's numbers; under "none" plain with `several`; in "all" the bonus with its most catches,
+  the Rack with none), `tests/ui/here_bonus_test.lua`, `tests/ui/catalog_bonus_test.lua` and
+  `tests/ui/tooltips_test.lua` (the tag line with its colour code, `BonusTip(key, true)`, "Caught in:" coded),
+  `tests/catch/auction_price_test.lua` (the "(few lots)" line coded).
+- [X] T055 Documents: `spec.md` (decisions 32 to 34, FR-016, FR-018, FR-034, FR-040, User Story 2 scenario 5, User
+  Story 6 scenario 3, an assumption, FR-049 to FR-052), `plan.md`, `research.md` (R7, R12, R18, R19, R22),
+  `data-model.md`, `contracts/module-api.md`, `verification.md` (V61, V68), `quickstart.md`, this phase;
+  `CLAUDE.md` (the GameData files); `docs/architecture/game-data.md`, `fishing-mode.md`, `catch-db.md`,
+  `catalog.md`, `catch-and-stats.md`, `core.md`, `ui.md`; `docs/checklists/camp-buffs.md`;
+  `docs/fishing-investigation.md`; `OneKeyFishing/README.md`; `CHANGELOG.md` (the unreleased lines).
+- [X] T056 Run `npm run check` and `npm test`.
+- [X] T057 Review fixes (2026-11-20): `Fishing/Camp.lua` `Restricted()` also counts `UnitAffectingCombat("player")`
+  (an aura event at a fight's first moment, before the lockdown, must not read the buff as gone; `-- VERIFY(V69)`,
+  `.luacheckrc`), with a test in `tests/fishing/camp_state_test.lua`; `CatchDB.HasBonusData` stops its walk once
+  every known bonus has a part; the fallback list counts its rows for the window's 736 pixels (`UI/Widgets.lua`);
+  the unknown item's grey "Item ID" line in `UI/CatchHere.lua` carries its colour code (decision 34).
+
+---
+
 ## Dependencies & Execution Order
 
 - Phase 1 -> Phase 2 -> the stories. T002 and T003 are independent of T001.
@@ -614,6 +671,8 @@ search box. No data change: `CatchDB` and the saved data stay as they are; no ne
 - Phase 11 after every story; T037 and T038 in parallel; T039, T040 last.
 - Phase 12 after the first try in game: T041 on its own, T042 before T043 (the same rows), T044 before T045
   (the same button and tests); T046 after the code, T047 last.
+- Phase 13 after the Hut session: T048 before T049 to T051; T052 and T053 on their own; T054 with each; T055 after
+  the code, T056 last; T057 after the review.
 
 Files touched by several tasks (no [P] between them): `Fishing/Camp.lua` (T009, T011, T032, T034, T036),
 `CatchDB/Views.lua` (T022, T024, T030, T036), `CatchDB/Events.lua` (T013, T030), `UI/CatchHere.lua` and
@@ -644,7 +703,7 @@ they do not meet, except in the locale files (US2 and US5: one after the other).
 4. **Last**: the debug section, the documents, the checklist, the changelog and the manual, the final check.
 
 Nineteen new visible texts in all (T026: 9, T030: 3, T032: 5, T034: 2), each with nine translations; the
-follow-up adds eight (T044: 5, T045: 3).
+follow-up adds eight (T044: 5, T045: 3), the follow-up after the Hut session one (T052).
 
 ## Notes
 

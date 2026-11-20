@@ -48,7 +48,7 @@ read_globals = {
     "Auctionator",
 
     -- Global API
-    "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "IsPlayerSpell",
+    "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "UnitAffectingCombat", "IsPlayerSpell",
     "GetProfessions", "GetProfessionInfo", "GetTime", "GetMoneyString",
     "GetBindingKey", "GetBindingText", "SetOverrideBinding", "SetOverrideBindingClick", "ClearOverrideBindings",
     "RegisterStateDriver", "hooksecurefunc", "HandleModifiedItemClick",

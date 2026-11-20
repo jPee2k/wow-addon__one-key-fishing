@@ -99,7 +99,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
-| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `CampBonuses`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
+| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `CampBonuses`, `FishedQuestItems`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names and the own name, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |

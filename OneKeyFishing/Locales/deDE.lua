@@ -484,6 +484,8 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "Bonusfang: kommt nur mit dem Stärkungszauber eines Angelgestells (Ungewöhnliches Angeln)."
     L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
         "Bonusfang: kommt nur mit dem Stärkungszauber einer Anglerhütte (Seltenes Angeln)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber eines Angelgestells oder einer Anglerhütte."
     L["%s with the bonus"] = "%s mit Bonus"
     L["All catches"] = "Alle Fänge"
     L["No camp bonus"] = "Ohne Lagerbonus"

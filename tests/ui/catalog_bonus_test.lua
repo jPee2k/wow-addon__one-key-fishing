@@ -57,6 +57,11 @@ local function listRow(itemID)
     end
 end
 
+-- The tag's line as drawn: its colour as a code in the text too (spec 020 decision 34).
+local function tagLine(key)
+    return ns.ColoredText(Catalog.BonusTag(key), unpack(ns.TOOLTIP_COLOR))
+end
+
 local function has(text)
     for _, line in ipairs(tooltip_lines) do
         if line == text then
@@ -79,8 +84,8 @@ end)
 test("hovering a tagged list row: the tag, its explanation and the chance with the bonus", function()
     local row = listRow(BLOATED)
     row.scripts.OnEnter(row)
-    assert(has(Catalog.BonusTag("rack")), "the tag")
-    assert(has(Catalog.BonusTip("rack")), "the explanation")
+    assert(has(tagLine("rack")), "the tag")
+    assert(has(Catalog.BonusTip("rack", true)), "the explanation")
     assert(has(Catalog.ChanceText(0.2, false, 3, true)), "the chance with the bonus and its players")
     GameTooltip:Hide()
 end)
@@ -115,8 +120,8 @@ test("hovering a zone row: its name, the bonus's catches, then the bonus lines",
     zone.scripts.OnEnter(zone)
     eq(tooltip_lines[1], ns.Catalog.ZoneName(1415), "the zone")
     eq(tooltip_lines[2], Catalog.CatchesText(50, 3), "the bonus's catches")
-    eq(tooltip_lines[3], Catalog.BonusTag("rack"), "the tag")
-    eq(tooltip_lines[4], Catalog.BonusTip("rack"), "the explanation")
+    eq(tooltip_lines[3], tagLine("rack"), "the tag")
+    eq(tooltip_lines[4], Catalog.BonusTip("rack", true), "the explanation")
     GameTooltip:Hide()
     local other = rows(tab.places)[3]
     other.scripts.OnEnter(other)
