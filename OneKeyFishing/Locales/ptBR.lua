@@ -160,8 +160,16 @@ ns.AddTranslation("ptBR", "Português", function(L)
     -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
     L["Statistics"] = "Estatísticas"
     L["What can be caught here"] = "O que se pesca aqui"
-    L["Skill: %s"] = "Perícia: %s"
-    L["All skill levels"] = "Todos os níveis de perícia"
+    L["Skill: Up to %d"] = "Perícia: Até %d"
+    L["Skill: All"] = "Perícia: Todas"
+    L["Up to %d"] = "Até %d"
+    L["Up to %d (yours)"] = "Até %d (a sua)"
+    L["All (%d+)"] = "Todas (%d+)"
+    L["All (%d+) (yours)"] = "Todas (%d+) (a sua)"
+    L["Catches with skill up to %d."] = "Capturas com perícia até %d."
+    L["Catches with any skill."] = "Capturas com qualquer perícia."
+    L["Misses only with skill %s."] = "Lances sem captura só com perícia %s."
+    L["Nothing caught: little data"] = "Nada pescado: poucos dados"
     L["Source: %s"] = "Fonte: %s"
     L["All"] = "Tudo"
     L["Only mine"] = "Só as minhas"
@@ -171,8 +179,6 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Numbers for the whole map: few catches at this spot."] = "Números do mapa inteiro: poucas capturas neste ponto."
     L["Little data"] = "Poucos dados"
     L["Nothing has been caught here yet."] = "Nada foi pescado aqui ainda."
-    L["Try \"All skill levels\": little data for your skill."] =
-        "Tente 'Todos os níveis de perícia': poucos dados para a sua perícia."
     L["and %d more"] = "e mais %d"
     L["No bundled data in this version: only your own catches are shown."] =
         "Nenhum dado incluído nesta versão: só as suas próprias capturas são mostradas."
@@ -440,7 +446,7 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Potions & drinks"] = "Poções e bebidas"
     L["Reagents & herbs"] = "Reagentes e ervas"
     L["Other"] = "Outros"
-    L["Kinds: all"] = "Tipos: todos"
+    L["Kinds: All"] = "Tipos: Todos"
     L["Kinds: %d of %d"] = "Tipos: %d de %d"
     L["The kind filter hides every item."] = "O filtro de tipos oculta todos os itens."
     L["The kind filter hides the matches."] = "O filtro de tipos oculta os resultados."
@@ -468,4 +474,48 @@ ns.AddTranslation("ptBR", "Português", function(L)
         "Valores: o maior entre o preço do vendedor e o do Auctionator."
     L["%d of your catches have no Auctionator price: run its scan."] =
         "%d das suas capturas não têm preço no Auctionator: execute a verificação dele."
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "Bônus do Suporte de Pesca"
+    L["Fishing Hut bonus"] = "Bônus da Cabana de Pesca"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] =
+        "Captura bônus: só vem com o efeito de um Suporte de Pesca (Pesca Incomum)."
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
+        "Captura bônus: só vem com o efeito de uma Cabana de Pesca (Pesca Rara)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Captura bônus: só vem com o efeito de um Suporte de Pesca ou de uma Cabana de Pesca."
+    L["%s with the bonus"] = "%s com bônus"
+    L["All catches"] = "Todas as capturas"
+    L["No camp bonus"] = "Sem bônus de acampamento"
+    L["Fishing Rack"] = "Suporte de Pesca"
+    L["Fishing Hut"] = "Cabana de Pesca"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "Bônus de acampamento"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "Mostra as capturas feitas com bônus de acampamento: o efeito de pesca de um Suporte de Pesca ou de uma " ..
+        "Cabana de Pesca colocados junto a uma fogueira."
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] =
+        "\"Sem bônus de acampamento\" também inclui capturas antigas cujo bônus não é conhecido."
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "O bônus do Suporte de Pesca termina em 5 minutos."
+    L["The Fishing Rack bonus has ended."] = "O bônus do Suporte de Pesca terminou."
+    L["The Fishing Hut bonus ends in 5 minutes."] = "O bônus da Cabana de Pesca termina em 5 minutos."
+    L["The Fishing Hut bonus has ended."] = "O bônus da Cabana de Pesca terminou."
+    L["Warn when a camp bonus is ending"] = "Avisar quando um bônus de acampamento estiver acabando"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "Lançamentos com bônus de acampamento"
+    L["Bonus catches"] = "Capturas bônus"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "Só capturas bônus"
+    L["Camp bonus: All"] = "Acampamento: Tudo"
+    L["Camp bonus: No bonus"] = "Acampamento: Sem bônus"
+    L["Camp bonus: Bonus only"] = "Acampamento: Só bônus"
+    L["Camp bonus: Rack"] = "Acampamento: Suporte"
+    L["Camp bonus: Hut"] = "Acampamento: Cabana"
+    L["No bonus catch has been recorded here yet."] = "Ainda não há capturas bônus aqui."
+    L["No bonus catch has been recorded yet."] = "Ainda não há capturas bônus."
 end)

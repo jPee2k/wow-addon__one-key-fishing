@@ -36,6 +36,24 @@ for range = 0, MAX_RANGE do
     CatchDB.RANGES[range + 1] = range
 end
 
+-- The skill range of a Fishing rank (nil for none): the range of the place keys a cast writes, and the own range the
+-- skill filter marks (specs/021-cumulative-skill-filter research R5).
+function CatchDB.RangeOf(rank)
+    if rank == nil then
+        return nil
+    end
+    return math.min(MAX_RANGE, math.floor(rank / RANGE_STEP))
+end
+
+-- A skill range as a value of the skill filter (spec 021 research R1): 0 to 3 themselves; 300+ and no range are
+-- "all", the filter's last value, which sums every range (the views read a range r as the ranges 0 to r).
+function CatchDB.SkillFilter(range)
+    if range == nil or range >= MAX_RANGE then
+        return "all"
+    end
+    return range
+end
+
 -- State shared by the CatchDB/*.lua files lives on P (reassigned, so never re-bound into a local):
 --   P.version   grows with every change the views must see (GetVersion)
 --   P.ownItems  item ID -> true: the items of the own catch, for the views (Index.lua OwnItems)
@@ -43,6 +61,7 @@ end
 --               the frozen own records), so a map's sum does not walk every own cell (Index.lua OwnIndex). Built on
 --               first use, grown by Settle.
 --   P.poolData  CatchDB.HasPoolData's answer: nil until read, false until a pool part shows up
+--   P.bonusData CatchDB.HasBonusData's answers per key (Views.lua): nil until read; dropped when a part is made
 --   P.others, P.frozen: Index.lua
 P.version = 0
 local lastSeqBump -- GetTime() of the last seq bump
@@ -164,7 +183,7 @@ function CatchDB.GetCurrentPlace()
     if onContinent and not x then
         return nil
     end
-    return mapID, math.min(MAX_RANGE, math.floor(rank / RANGE_STEP)), cell, x, y
+    return mapID, CatchDB.RangeOf(rank), cell, x, y
 end
 
 -- The game's area ID of the player's subzone (research R3 of specs/011-catch-place-fixes): the lowest area ID whose
@@ -627,7 +646,54 @@ local function AddItems(target, pieces)
     end
 end
 
--- Adds a settled cast (caught: item ID -> pieces, or nil for a miss) to both tables.
+-- Adds a cell's counts (c, m and items { catches, pieces }) into target, times factor (1 when nil; -1 takes them
+-- off): the views' sums, a bonus filter's reduced cell, the check of a cell's bonus parts.
+local function AddCounts(target, cell, factor)
+    factor = factor or 1
+    target.c = target.c + (tonumber(cell.c) or 0) * factor
+    target.m = target.m + (tonumber(cell.m) or 0) * factor
+    if type(cell.i) == "table" then
+        for itemID, entry in pairs(cell.i) do
+            if type(entry) == "table" then
+                local total = target.i[itemID] or { 0, 0 }
+                total[1] = total[1] + (tonumber(entry[1]) or 0) * factor
+                total[2] = total[2] + (tonumber(entry[2]) or 0) * factor
+                target.i[itemID] = total
+            end
+        end
+    end
+end
+
+-- A camp bonus part's key in a cell's q (spec 020, research R4): the mask as a string, "1" to "255" without a leading
+-- zero; PartMask reads one back (nil for a key that is not a mask). The writer, the check and the views use these.
+local function PartKey(mask)
+    return tostring(mask)
+end
+
+local function PartMask(key)
+    if type(key) ~= "string" or not key:find("^[1-9]%d*$") then
+        return nil
+    end
+    local mask = tonumber(key)
+    return mask <= 255 and mask or nil
+end
+
+-- The bonus part of a cell for a mask, made on first use.
+local function BonusPart(cell, mask)
+    local key = PartKey(mask)
+    cell.q = cell.q or {}
+    local part = cell.q[key]
+    if not part then
+        part = { c = 0, m = 0, i = {} }
+        cell.q[key] = part
+        P.bonusData = nil -- CatchDB.HasBonusData may change its answer
+    end
+    return part
+end
+
+-- Adds a settled cast (caught: item ID -> pieces, or nil for a miss) to both tables. A cast with a camp bonus mask
+-- (cast.mask > 0, from Camp.CastMask) also adds to the part of that mask: parts are inclusive (already in c, m, i)
+-- and disjoint (a cast is in one part only), spec 020.
 -- No catch writes a pool part: the source is not known (V3); a received pool part is still read.
 local function Settle(cast, caught)
     local seconds = math.max(1, math.floor((cast.stop or GetTime()) - cast.start + 0.5))
@@ -642,11 +708,14 @@ local function Settle(cast, caught)
                 cell.a[cast.area] = (cell.a[cast.area] or 0) + 1
             end
         end
-        if caught then
-            cell.c = cell.c + 1
-            AddItems(cell, caught)
-        else
-            cell.m = cell.m + 1
+        local targets = { cell, (cast.mask or 0) > 0 and BonusPart(cell, cast.mask) or nil }
+        for _, target in ipairs(targets) do
+            if caught then
+                target.c = target.c + 1
+                AddItems(target, caught)
+            else
+                target.m = target.m + 1
+            end
         end
     end
     if P.ownItems and caught then
@@ -673,3 +742,4 @@ P.BumpMap, P.BumpAll, P.MapRange, P.KeyMapRange, P.KeyMapID = BumpMap, BumpAll, 
 P.AddToOwnIndex, P.BuildKey, P.Seed, P.SeedField, P.OlderBuild = AddToOwnIndex, BuildKey, Seed, SeedField, OlderBuild
 P.OwnRecord, P.OwnChain, P.StartMarks, P.NewChain, P.Roll = OwnRecord, OwnChain, StartMarks, NewChain, Roll
 P.CatchItems, P.Settle, P.OwnProofReady = CatchItems, Settle, OwnProofReady
+P.AddCounts, P.PartKey, P.PartMask = AddCounts, PartKey, PartMask

@@ -277,6 +277,62 @@ function largestAreas(areas, max) {
     .sort((a, b) => b[1] - a[1] || Number(a[0]) - Number(b[0])).slice(0, max));
 }
 
+// The camp bonus parts q of a cell (specs/020-camp-buffs data-model.md "Validation", CatchDB/Checks.lua
+// CheckBonusParts): at most MAX_BONUS_PARTS parts keyed by a mask's text (1 to 255, no leading zero), each with its
+// own counts and items, together within the totals, every item in the cell, and the rest (the cell minus the parts)
+// holding the item rules. luaTable reads ["1"], [1] and a positional entry all as "1": a number key cannot be told
+// apart in a saved file.
+const MAX_BONUS_PARTS = 8;
+const MASK_KEY = /^[1-9]\d*$/;
+
+// The items of a cell minus every bonus part's (per item catches and pieces; an item only in a part goes negative).
+function restItems(cell) {
+  const rest = {};
+  for (const [itemID, entry] of Object.entries(cell.i || {})) {
+    rest[itemID] = { 1: entry["1"], 2: entry["2"] };
+  }
+  for (const part of Object.values(cell.q || {})) {
+    for (const [itemID, entry] of Object.entries(part.i || {})) {
+      const left = rest[itemID] || { 1: 0, 2: 0 };
+      rest[itemID] = { 1: left["1"] - entry["1"], 2: left["2"] - entry["2"] };
+    }
+  }
+  return rest;
+}
+
+function checkBonusParts(cell, where) {
+  const q = cell.q;
+  if (typeof q !== "object" || q === null) {
+    throw new Error(`${where}: the bonus parts are not a table`);
+  }
+  const entries = Object.entries(q);
+  if (entries.length > MAX_BONUS_PARTS) {
+    throw new Error(`${where}: too many bonus parts`);
+  }
+  let catches = 0;
+  let misses = 0;
+  for (const [key, part] of entries) {
+    if (!MASK_KEY.test(key) || Number(key) > 255) {
+      throw new Error(`${where}: bonus part ${key}: not a mask`);
+    }
+    if (typeof part !== "object" || part === null || !isCount(part.c) || !isCount(part.m)) {
+      throw new Error(`${where}: bonus part ${key}: not a part`);
+    }
+    checkItems(part.i, part.c, `${where} (bonus part ${key})`);
+    catches += part.c;
+    misses += part.m;
+    for (const itemID of Object.keys(part.i || {})) {
+      if (!(cell.i && cell.i[itemID])) {
+        throw new Error(`${where} (no bonus): item ${itemID} has impossible counts`);
+      }
+    }
+  }
+  if (catches > cell.c || misses > cell.m) {
+    throw new Error(`${where}: the bonus parts do not fit the totals`);
+  }
+  checkItems(restItems(cell), cell.c - catches, `${where} (no bonus)`);
+}
+
 // Only the fields the client reads (as Share.lua's CleanCell rebuilds a received cell), as own properties.
 function cleanCell(cell) {
   const items = (source) => Object.fromEntries(Object.entries(source || {})
@@ -293,10 +349,16 @@ function cleanCell(cell) {
   if (cell.a !== undefined) {
     clean.a = Object.fromEntries(Object.entries(cell.a));
   }
+  if (cell.q !== undefined) {
+    clean.q = Object.fromEntries(Object.entries(cell.q)
+      .map(([mask, part]) => [mask, { c: part.c, m: part.m, i: items(part.i) }]));
+  }
   return clean;
 }
 
-function checkCell(cell, key) {
+// Throws with the reason when a cell breaks the client's rules (CatchDB/Checks.lua CheckCell). Exported for the
+// tests, which check the seed's own cells with it.
+export function checkCell(cell, key) {
   const where = `cell ${key}`;
   if (typeof cell !== "object" || cell === null) {
     throw new Error(`${where}: not a table`);
@@ -330,6 +392,20 @@ function checkCell(cell, key) {
     checkItems(openItems(cell), cell.c - pool.c, `${where} (open water)`);
   }
   checkAreas(cell.a, casts, where);
+  if (cell.q !== undefined) {
+    checkBonusParts(cell, where);
+  }
+}
+
+// A contribution's cell with both a pool part and bonus parts loses the pool part (research R15 of spec 020): the
+// overlap of the two is not in the data, and nothing has written a pool part since spec 011.
+function withoutPoolBesideBonus(cell) {
+  if (cell && typeof cell === "object" && cell.p !== undefined && cell.q !== undefined) {
+    const copy = { ...cell };
+    delete copy.p;
+    return copy;
+  }
+  return cell;
 }
 
 // The casts (catches and misses) of every cell of every build whose counts are counts, valid or not otherwise; the
@@ -382,7 +458,8 @@ function checkRecord(record, notes) {
       continue;
     }
     builds[build] = {};
-    for (const [key, cell] of Object.entries(cells || {})) {
+    for (const [key, raw] of Object.entries(cells || {})) {
+      const cell = withoutPoolBesideBonus(raw);
       // One odd cell leaves out that cell, not the record: cells only grow, so the record would stay rejected.
       try {
         if (!PLACE_KEY.test(key)) {
@@ -471,11 +548,49 @@ function scaleItems(items, factor, catches) {
 
 // A cell scaled by weight factors (the catches and items by `factor`, the misses by `missFactor`, the one of the
 // casts), rounded and still within the cell rules. Positions are summed per cast, so they go with the casts.
+// With bonus parts (spec 020, research R15) each part and the rest (the cell minus the parts) are scaled alone and the
+// cell's c, m and i are built as their sum: no part exceeds the totals after rounding, the rest never goes negative,
+// and an item whose catches all lie in parts keeps that (its tag from the data survives the seed). A pool part
+// beside them was dropped when the contribution was read (withoutPoolBesideBonus).
+function scaleBonusCell(cell, factor, missFactor) {
+  const sumItems = (target, items) => {
+    for (const [itemID, entry] of Object.entries(items)) {
+      const total = target[itemID] || { 1: 0, 2: 0 };
+      target[itemID] = { 1: total["1"] + entry["1"], 2: total["2"] + entry["2"] };
+    }
+  };
+  const q = {};
+  const i = {};
+  let partCatches = 0;
+  let partMisses = 0;
+  let c = 0;
+  let m = 0;
+  for (const [mask, part] of Object.entries(cell.q)) {
+    const pc = Math.round(part.c * factor);
+    const scaledPart = { c: pc, m: Math.round(part.m * missFactor), i: scaleItems(part.i, factor, pc) };
+    q[mask] = scaledPart;
+    partCatches += part.c;
+    partMisses += part.m;
+    c += scaledPart.c;
+    m += scaledPart.m;
+    sumItems(i, scaledPart.i);
+  }
+  const restCatches = Math.round((cell.c - partCatches) * factor);
+  c += restCatches;
+  m += Math.round((cell.m - partMisses) * missFactor);
+  sumItems(i, scaleItems(restItems(cell), factor, restCatches));
+  return { c, m, i, q };
+}
+
 function scaleCell(cell, factor, missFactor = factor) {
-  const c = Math.round(cell.c * factor);
-  const m = Math.round(cell.m * missFactor);
+  const bonus = cell.q ? scaleBonusCell(cell, factor, missFactor) : null;
+  const c = bonus ? bonus.c : Math.round(cell.c * factor);
+  const m = bonus ? bonus.m : Math.round(cell.m * missFactor);
   const scaled = { c, m, t: Math.max(Math.round(cell.t * Math.max(factor, missFactor)), c + m) };
-  if (!cell.p) {
+  if (bonus) {
+    scaled.i = bonus.i;
+    scaled.q = bonus.q;
+  } else if (!cell.p) {
     scaled.i = scaleItems(cell.i, factor, c);
   } else {
     // The pool part and open water are scaled apart and i is their sum, so open water keeps the cell rules after
@@ -579,6 +694,36 @@ function sumContributions(store) {
       for (const [areaID, count] of Object.entries(cell.a || {})) {
         sum.a = sum.a || {};
         sum.a[areaID] = (sum.a[areaID] || 0) + count;
+      }
+      // The camp bonus parts, summed per mask, each with its own players, raw catches and catches weighted by
+      // casts (spec 020, research R15): the views read a bonus's players and threshold from them.
+      for (const [mask, part] of Object.entries(cell.q || {})) {
+        sum.q = sum.q || {};
+        const total = sum.q[mask] || { c: 0, m: 0, i: {}, players: new Set(), raw: 0, cast: 0 };
+        sum.q[mask] = total;
+        const raw = original.q[mask];
+        total.c += part.c;
+        total.m += part.m;
+        addItems(total.i, part.i);
+        total.raw += raw.c;
+        total.cast += castFactor === factor ? part.c : raw.c * castFactor;
+        if (raw.c > 0) {
+          total.players.add(id);
+        }
+      }
+    }
+    if (sum.q) {
+      // A pool part beside bonus parts: their overlap is not in the data (research R15 of spec 020).
+      delete sum.p;
+      for (const [mask, total] of Object.entries(sum.q)) {
+        const part = { c: total.c, m: total.m, k: total.players.size, i: total.i };
+        if (Math.round(total.cast) !== total.c) {
+          part.x = Math.round(total.cast);
+        }
+        if (total.raw !== total.c) {
+          part.r = total.raw;
+        }
+        sum.q[mask] = part;
       }
     }
     if (sum.a) {
@@ -752,7 +897,25 @@ function cellLines(key, cell) {
       "        ", " },"));
   }
   const items = itemParts(cell.i);
-  if (cell.p) {
+  if (cell.q) {
+    // The camp bonus parts (spec 020), keyed by the mask as a string: q = { ["1"] = { c, m, [x, r,] k, i } }.
+    lines.push(...wrap("      i = {", items, "        ", " },"));
+    lines.push("      q = {");
+    for (const mask of Object.keys(cell.q).sort(byNumber)) {
+      const part = cell.q[mask];
+      const head = [`c = ${part.c}`, `m = ${part.m}`];
+      if (part.x !== undefined) {
+        head.push(`x = ${part.x}`);
+      }
+      if (part.r !== undefined) {
+        head.push(`r = ${part.r}`);
+      }
+      head.push(`k = ${part.k}`);
+      lines.push(...wrap(`        ["${mask}"] = { ${head.join(", ")}, i = {`, itemParts(part.i), "          ",
+        " } },"));
+    }
+    lines.push("      } },");
+  } else if (cell.p) {
     lines.push(...wrap("      i = {", items, "        ", " },"));
     lines.push(...wrap(`      p = { c = ${cell.p.c}, i = {`, itemParts(cell.p.i), "        ",
       " } } },"));

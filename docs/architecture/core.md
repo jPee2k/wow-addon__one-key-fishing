@@ -59,7 +59,8 @@ frame.
 
 ## Core/Core.lua
 
-- `ns.RegisterEvent` (several handlers per event) and the internal message bus `ns.On` / `ns.Fire` (messages in
+- `ns.RegisterEvent` (several handlers per event; `ns.RegisterUnitEvent(event, unit, fn)` for an event heard for one
+  unit only, the player's `UNIT_AURA` of `Fishing/Camp.lua`; the two refuse to mix on one event) and the internal message bus `ns.On` / `ns.Fire` (messages in
   `CLAUDE.md`).
 - The error log. `ns.Safe(context, fn, ...)` runs `fn` protected and returns `true` and its results, or `false` and
   the error. On a failure it records the error and hands it on to `geterrorhandler()`, from inside the `xpcall`
@@ -107,7 +108,7 @@ new field only needs a default.
 
 | Field | Holds | Written by |
 |---|---|---|
-| `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `camera`, `minimapButton`, `tooltipChances`), `auctionPrices` and `auctionatorPrices` (spec 019, the "Auction prices" page: auction prices for the catch value, and taking them from Auctionator; both on by default, switched only through `Prices.SetAuctionPrices` / `Prices.SetAuctionator`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`), the "Sound effects" page (spec 013): `fishingSounds` (only through `Sound.SetEnabled`), `soundVolume` (0-100, step 10), `backgroundSound`, `splashFocus` (Mode.lua CVar rows), `hiddenKinds` (spec 014: the item kinds hidden in the catch lists, only through `Catalog.SetKindShown`), `catalogSort` (spec 017: the order of the catalog's list, `"name"`, `"price"` or `"chance"`, only through `Catalog.SetSort`) | UI/Settings.lua; also Core.lua (`languageHintShown`), Fishing/Camera.lua (`cameraDistance`), Exchange/ShareGame.lua (`shareDB`), Exchange/Channel.lua (`shareChannel`), Fishing/Sound.lua (`fishingSounds`, `soundVolume`), Catalog/Catalog.lua (`hiddenKinds`, the kind menu of UI/CatchHere.lua; `catalogSort`, the Sort menu of UI/CatalogTab.lua), Catch/Prices.lua (`auctionPrices`, `auctionatorPrices`) |
+| `settings` | the Features checkboxes (`autoLoot`, `bobberIcon`, `exitOnCombat`, `gear`, `lure`, `openContainers`, `indicator`, `lockIndicator`, `toasts`, `sessionTimer`, `pauseOnAFK`, `skillCapWarning`, `campBonusWarning` (spec 020: the camp bonus notices of Fishing/Camp.lua, on by default), `camera`, `minimapButton`, `tooltipChances`), `auctionPrices` and `auctionatorPrices` (spec 019, the "Auction prices" page: auction prices for the catch value, and taking them from Auctionator; both on by default, switched only through `Prices.SetAuctionPrices` / `Prices.SetAuctionator`), `cameraDistance`, `language` (`"auto"` or a code), `languageHintShown` (the one-time hint for clients without a translation was shown; Core.lua), `shareDB` and `shareChannel` (switched only through `Share.SetEnabled` / `Channel.SetEnabled`), the "Sound effects" page (spec 013): `fishingSounds` (only through `Sound.SetEnabled`), `soundVolume` (0-100, step 10), `backgroundSound`, `splashFocus` (Mode.lua CVar rows), `hiddenKinds` (spec 014: the item kinds hidden in the catch lists, only through `Catalog.SetKindShown`), `catalogSort` (spec 017: the order of the catalog's list, `"name"`, `"price"` or `"chance"`, only through `Catalog.SetSort`) | UI/Settings.lua; also Core.lua (`languageHintShown`), Fishing/Camera.lua (`cameraDistance`), Exchange/ShareGame.lua (`shareDB`), Exchange/Channel.lua (`shareChannel`), Fishing/Sound.lua (`fishingSounds`, `soundVolume`), Catalog/Catalog.lua (`hiddenKinds`, the kind menu of UI/CatchHere.lua; `catalogSort`, the Sort menu of UI/CatalogTab.lua), Catch/Prices.lua (`auctionPrices`, `auctionatorPrices`) |
 | `shareNotice`, `shareNoticeChannel` | the one-time popup about the exchange was closed; the one that names the public channel was closed | Exchange/ShareGame.lua |
 | `prices` | itemID -> `{ price, quantity, lots, time }` from auction scans | Auction.lua |
 | `priceScans` | itemID -> `time()` of the last answered auction search, with a price or not on sale (spec 018: fresh prices) | Auction.lua |
@@ -117,7 +118,7 @@ new field only needs a default.
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
 | `errors` | the error log: `{ context, message, stack, version, first, last, count }`, at most 30, ordered by last occurrence | Core.lua |
 | `statsTab` | the last open tab of the statistics window (`"stats"`, `"here"`, `"catalog"`) | UI/StatsFrame.lua |
-| `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent) | CatchDB.lua, Share.lua |
+| `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset; a cell may carry `q`, its camp bonus parts by mask, spec 020), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent) | CatchDB.lua, Share.lua |
 
 `OneKeyFishingCharDB` (per character):
 
@@ -127,7 +128,7 @@ new field only needs a default.
 | `gearSwap`, the CVar and camera snapshots, `resumeMode` | what fishing mode changed, stored *before* the change so that exit, logout, `/reload` and crashes restore it ([fishing-mode.md](fishing-mode.md)) | Mode.lua, Gear.lua, Camera.lua |
 | `resumeOwned` | CVar name -> true: the live rows ("Sound effects") the player changed by hand while fishing, from the logout of a `/reload` to the resume, so the resumed mode leaves them alone (spec 015); nil otherwise | Mode.lua |
 | `savedCameraZoom` | the zoom before fishing mode; survives a `/reload`, dropped on a real login | Camera.lua |
-| `stats`, `countedCast` | the statistics buckets and the cast running across a `/reload` | Stats.lua |
+| `stats`, `countedCast` | the statistics buckets (`session`, `total`, `zones[key]`; since spec 020 also `bonusCasts` and `bonusCatches`, read as 0 when missing) and the cast running across a `/reload` | Stats.lua |
 | `session` | the current fishing session (its counts and times; `skillStart`, the Fishing rank it began with, read by Fishing/Skill.lua) | Catch/Stats.lua, Fishing/Skill.lua (`skillStart`) |
 | `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | Core/MapPin.lua |
 | `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks) | Channel.lua |
@@ -154,8 +155,15 @@ Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-d
 - Bags: `ns.ForEachBagItem`, the shared bag iterator.
 - Names: `ns.PlayerName()` (the own name, `GetUnitName("player", true)`: "First Last" on Forever) and
   `ns.SameCharacter(a, b)` (the same character with or without the own realm suffix; another realm is somebody else);
-  names are kept as the game gives them; `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as whole percent); `ns.ItemIDFromLink(text)`
-  (the item ID in an item link).
+  names are kept as the game gives them; `ns.CountKeys(tbl)`; `ns.Percent(value)` (a share as a percent, spec 020
+  research R9: a whole number from 9.95 % up, "37%"; one decimal from 0.995 %, "3.4%"; two decimals from 0.005 %,
+  "0.47%"; "<0.01%" below; "0%" only for 0; the bounds are the rounding edges, so "10.0%" and "1.00%" never appear;
+  a point in every language); `ns.FormatCount(value)` (a count with one decimal, the "Per catch" column, spec 020
+  decision 27: rounded to tenths, written whole when the rounded value is whole, "1" for 1 and 1.04, else with
+  `ns.FormatDecimal(value, 1)`, the client's separator: "1.3", "1,5"); `ns.ColoredText(text, r, g, b)` (the text
+  wrapped in the colour's code, `|cffrrggbb...|r`, spec 020 decision 34: a coloured tooltip line carries its colour
+  this way too, since the game or another addon may reset the line colours; it wraps a translated text, never part
+  of an `L[...]` string); `ns.ItemIDFromLink(text)` (the item ID in an item link).
 - Text: `ns.FoldCase(text)` (lower case for ASCII, Latin-1 Supplement and Cyrillic by UTF-8 byte patterns, the same
   in 5.1 and 5.3), `ns.SearchKey(text)` (folds after the game's `CaseAccentInsensitiveParse` when present) and
   `ns.CompareText(a, b)` (`strcmputf8i` when present, else the search keys): the catalog's search and order, and
@@ -171,8 +179,10 @@ Shared helpers; the game data they read is in `GameData/` ([game-data.md](game-d
 ## Core/Debug.lua
 
 Builds the `/okf debug` report (English, not localized): versions and locale, the language setting, the mode state
-and keys, the Fishing spell and skill, gear, lures, pending restore, fished items, settings, the catch database
-(`CatchDB.Describe()`, never the anonymous ID), the auction prices (`Prices.Describe()`, spec 019: the source in use, both switches, Auctionator's two functions present or missing, a failed call, the own catches by the source of their price, the oldest Auctionator price), the auction scan (`Auction.Describe()`: the state, the last scan's
+and keys, the Fishing spell and skill, "Camp bonus" (`Camp.Describe()`, spec 020: each bonus's aura and state,
+whether aura reads are restricted, the last cast's mask, the setting), gear, lures, pending restore, fished items,
+settings, the catch database (`CatchDB.Describe()`, never the anonymous ID; its "bonus parts here" line gives the
+own parts of the current place, `CatchDB.DescribeBonusParts`), the auction prices (`Prices.Describe()`, spec 019: the source in use, both switches, Auctionator's two functions present or missing, a failed call, the own catches by the source of their price, the oldest Auctionator price), the auction scan (`Auction.Describe()`: the state, the last scan's
 counts, the list's groups, the remembered items, the coverage of the last result), the shared database (`Share.Describe()`, `Channel.Describe()`, no
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
 and the name queue, never an item name), "Seed items without a kind" (the bundled seed's items that

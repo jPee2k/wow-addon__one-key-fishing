@@ -60,7 +60,7 @@ local ALL = { range = "all", source = "all", water = "all" }
 test("the default index builds in steps of at most MAPS_PER_STEP maps", function()
     advance(10)
     local report = table.concat(Catalog.Describe(), "\n")
-    assert(report:find("index all|all|all: ready, stale false, 150 maps, 60 items", 1, true), report)
+    assert(report:find("index all|all|all|all: ready, stale false, 150 maps, 60 items", 1, true), report)
     local steps = tonumber(report:match("this build (%d+) steps of at most 8 maps"))
     assert(steps and steps >= MAPS / 8, report)
     print(("  maps %d, items %d, steps %d"):format(MAPS, #Catalog.Items(ALL), steps))

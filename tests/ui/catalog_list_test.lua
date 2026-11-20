@@ -66,7 +66,7 @@ test("the list waits for the index, with the filters at their defaults and no Wa
     eq(tab.status.text, L["Counting the catch..."], "status")
     eq(tab.search.template, "SearchBoxTemplate", "the game's search box")
     eq(tab.search.Instructions.text, L["Search by item name"], "hint")
-    eq(tab.skillButton.text, (L["Skill: %s"]):format(L["All skill levels"]), "skill")
+    eq(tab.skillButton.text, L["Skill: All"], "skill")
     eq(tab.sourceButton.text, (L["Source: %s"]):format(L["All"]), "source")
     assert(not (tab.waterButton and tab.waterButton:IsShown()), "no Water button without pool data")
     advance(0)
@@ -185,7 +185,7 @@ test("with pool data the Water button shows, and Open water builds its own index
     ns.CatalogTab.SetWater("open")
     advance(0)
     tick(window)
-    assert(table.concat(ns.Catalog.Describe(), "\n"):find("index all|all|open: ready", 1, true), "its own index")
+    assert(table.concat(ns.Catalog.Describe(), "\n"):find("index all|all|open|all: ready", 1, true), "its own index")
     for _, row in ipairs(rows(tab.list)) do
         assert(row.itemID ~= TROUT, "the trout only came from the pool")
     end
@@ -197,5 +197,5 @@ test("the skill range labels of both tabs come from one helper (UI/Widgets.lua)"
     eq(ns.RangeLabel(1, 2), "75-224", "a span")
     eq(ns.RangeLabel(4), "300+", "the top range")
     eq(ns.RangeLabel(1, 4), "75+", "a span to the top")
-    eq(ns.RangeLabel("all"), ns.L["All skill levels"], "all")
+    eq(ns.SkillFilterLabel("all"), ns.L["Skill: All"], "the filter's \"all\" (spec 021)")
 end)

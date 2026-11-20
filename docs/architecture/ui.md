@@ -18,6 +18,8 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
   checkbox "Use the public channel" sits under the first (greyed out while sharing is off, re-read on
   `SETTINGS_CHANGED`), with the channel's state line (`Share.ChannelLine()`) under it, and the text gains two
   sentences about the channel.
+- The main page's row "Warn when a camp bonus is ending" (`settings.campBonusWarning`, spec 020; a label, no hint)
+  switches the notices of `Fishing/Camp.lua` ([fishing-mode.md](fishing-mode.md)).
 - Bags cannot be opened while the Settings panel is open, so items are added through Alt+Click in bags
   (ItemHooks), not from the panel.
 - The "Sound effects" subcategory (spec 013, `SettingsUI.OpenSounds()`, `/okf sound`), top to bottom: "Play fishing
@@ -44,7 +46,12 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
   `StatsFrame.OpenCatalog(arg)` shows the window on the catalog.
 - The window is set up by `ns.SetupWindow` (Widgets, below) and raised whenever it is shown or opened on the
   catalog.
-- The statistics page has rows in `ROWS`, cells keyed by row key.
+- The statistics page has rows in `ROWS`, cells keyed by row key. The last two rows of the "Results" block (spec
+  020) are "Casts with a camp bonus" and "Bonus catches" (`bonusCasts`, `bonusCatches` of the buckets, 0 when
+  missing; [catch-and-stats.md](catch-and-stats.md)); they are marked `bonusOnly` and, through `f.rowParts` (each
+  row's label, hover frame and cells), hidden as a whole while the total has no bonus cast, their place kept, so
+  nothing below moves. `HEIGHT` is 736 for them, so the zone lines keep their room above the buttons. A row without
+  a `tip` shows only its label on hover.
 - A 1 s tick does a full refresh when `Stats.GetVersion()` changed or the window is marked dirty by
   `PRICES_CHANGED`, `SETTINGS_CHANGED`, a skill change, a level-up, item info of a caught item or game names
   arriving for the "Next rank" line, and otherwise only redraws the time rows, so nothing moves outside fishing
@@ -58,12 +65,21 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
 
 The "What can be caught here" page ([catch-db.md](catch-db.md)):
 
-- `CatchDB.Query` for the current place, a skill filter that follows the own range until one is picked by hand
-  and a source filter, both in memory only;
+- `CatchDB.Query` for the current place, a skill filter that follows the own range (`CatchDB.SkillFilter`: 300+ is
+  "all") until one is picked by hand and a source filter, both in memory only;
+- the Skill button (spec 021) in both tabs: `ns.SkillFilterLabel` ("Skill: Up to 224", "Skill: All"), the menu of
+  `CatchHere.OpenSkillMenu` ("Up to 74" ... "All (300+)", `ns.SkillMenuText`, the own range marked "(yours)" from
+  the rank, so also without a map), and `ns.ShowSkillTooltip` on hover (what the list sums, the one range its misses
+  come from);
 - redrawn on the 1 s tick when the data, the place or a filter changed;
 - the map and the skill range are read again on zone, loading-screen and skill events, the cell every second;
-- "N catches from K players" under "All" from 2 players on, and `Share.StatusLine()` at the bottom, updated on the
-  tick;
+- the layout, top to bottom (spec 020 decisions 22, 28 and 29; the y offsets are constants at the top of the file):
+  the place (one line, 540 wide), the scope line, the hints (`page.hint`, up to three lines, their room always
+  kept, so nothing below moves), the exchange line (`Share.StatusLine()`, updated on the tick), the counts, row A
+  (Skill, Source), row B (the slot of Water or Camp bonus, then Kinds), the column headers and the list;
+- the list is `ns.CreateList` (`UI/Widgets.lua`, the catalog's too): a scroll list whose initializer draws an item
+  row or a kind header; only its fallback without the scroll templates has "and N more";
+- "N catches from K players" under "All" from 2 players on;
 - without a bundled seed, "All" adds a hint: "only your own catches are shown", or just "No bundled data in this
   version." when another player's catch is in the numbers (`view.others`, spec 012);
 - an item the client does not know yet (`GetItemInfoInstant` nil when the row is drawn) gets the "Unknown item" text,
@@ -71,14 +87,38 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
   players reported it on the map, whether the bundled data has it, and its item ID. `GET_ITEM_INFO_RECEIVED` and
   `ITEM_DATA_LOAD_RESULT` redraw the row with the name once the game knows the item (FR-017a of
   `specs/004-public-channel-sync`);
-- the miss line uses the view's `missRate` (weighted), and is left out under a water filter;
+- the miss line uses the view's `missRate` (weighted, the chosen range's alone), "Nothing caught: little data" when
+  `missLittleData`, and is left out under a water filter;
 - the Water button shows only while `CatchDB.HasPoolData()`, in memory only like the other filters;
+- the Camp bonus button (spec 020, research R8) takes the Water button's slot at the start of row B: shown while
+  `CatchDB.HasBonusData()`, and then the Water button is hidden and the water reads as "all" (the two filters do not
+  combine). Both tabs make the slot's buttons with `CatchHere.CreateWaterButton(parent, x, y, current, choose)` and
+  `CatchHere.CreateBonusButton(parent, x, y, current, choose)`, and `CatchHere.UpdateFilterSlot(waterButton,
+  bonusButton, water, bonus, nextButton)` shows the right one, sets both texts, places `nextButton` (Kinds) right of
+  the shown one, or at the slot when none shows, and returns the water and the bonus the tab keeps. The value
+  (`"all"`, `"none"`, `"bonusOnly"` or a bonus key) is in memory only; the button reads "Camp bonus: " with the value
+  in short, a whole text per value (`Catalog.BonusButtonText`: "Camp bonus: All", "No bonus", "Bonus only",
+  "Rack", "Hut"). `CatchHere.OpenBonusMenu(owner, current, choose)` (also the catalog's) is a radio menu of the full
+  labels (`Catalog.BonusLabel`): "All catches", "No camp bonus", "Bonus catches only" and each bonus with data
+  (`CatchDB.BonusKeys`, `HasBonusData(key)`). `CatchHere.OfferedBonus` falls back to "all" without bonus data or for
+  a bonus no longer offered (FR-027). Its tooltip (`ShowBonusButtonTooltip`): the title "Camp bonus", what the
+  filter shows, and that "No camp bonus" also holds older catches for which the bonus is not known;
+- "Bonus catches only" (`"bonusOnly"`, research R20) is a filter of the list: the query gets `bonus = "all"`
+  (`CatchHere.QueryBonus`) and `CatchHere.BonusItems` keeps the items whose `item.bonus` is not `plain` before
+  `Catalog.Group`, so the counts line and every chance are those of "All catches"; with items in the view and none
+  tagged the message is "No bonus catch has been recorded here yet."; under "No camp bonus" (`"none"`) the same
+  function keeps the items without any tag, plain ones left out too (decision 35, `Catalog.BonusShown`);
+- the tag (research R19): a row whose item carries `item.bonus` shows the camp feature's icon (`Catalog.BonusIcon`,
+  `TAG_SIZE` 14 px) at the right end of the name column, the name keeping the rest (`ns.CreateTagIcon` and
+  `ns.ShowTag` of `UI/Widgets.lua`, for both tabs); its chance cell shows the chance under the bonus (`item.bonus.chance`, "Little data" when
+  `item.bonus.littleData`), without the words, unless the tag is `plain`; the row hands its bonus to
+  `ns.ShowItemTooltip`, and the "Unknown item" tooltip calls `ns.AddBonusLines`;
+- the "Per catch" cell is `ns.FormatCount(item.pieces)` ([core.md](core.md)): "1", "1.3";
 - a click on a known item row opens the catalog on it (`StatsFrame.OpenCatalog(itemID)`);
 - the items are grouped under kind headers (`Catalog.Group`, spec 014): a header is a row in header mode (the kind's
-  text only, no item, so its hover and click do nothing); headers take rows of the 16, and "and N more" counts the
-  items left out; the filter row stays Skill, Source and Water (150 each); the Kinds button sits apart at the top
-  right, beside the place's name (400 wide), so the filter row keeps its width in every language;
-- the Kinds button reads "Kinds: all" or "Kinds: N of 5" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
+  text only, no item, so its hover and click do nothing), elements of the scroll list like the items; the Kinds
+  button is the second of row B (spec 020 decision 22; before it stood at the top right, beside the place's name);
+- the Kinds button reads "Kinds: All" or "Kinds: N of 5" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
   (`UI/Widgets.lua`, which shares its body with `ns.OpenRadioMenu`) with one checkbox per kind; a click goes
   through `Catalog.SetKindShown`, and each tab redraws itself at once on `SETTINGS_CHANGED("hiddenKinds")` (a hidden
   one when shown again); the menu stays open (the game's checkbox answers `MenuResponse.Refresh`); the choice is saved
@@ -90,10 +130,13 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn from the reads of
 [catalog.md](catalog.md):
 
-- the list: three rows of controls over a `WowScrollBoxList` of `Catalog.Items` (spec 017): a `SearchBoxTemplate`
-  box (its `OnTextChanged` hooked, not set); the Skill, Source and Water buttons (CatchHere's labels and menus; with
-  the longest translations they fill the row); the Sort button (a radio menu of `Catalog.SORTS`, the choice through
-  `Catalog.SetSort`) and the Kinds button; a status line for the index being counted and the empty states;
+- the list, top to bottom (spec 017; spec 020 decisions 22 and 30): a `SearchBoxTemplate` box (its `OnTextChanged`
+  hooked, not set); the status line (two lines: the index being counted and the empty states); row A, the Skill and
+  Source buttons (CatchHere's labels and menus); row B, the slot of Water or Camp bonus (CatchHere's
+  `CreateWaterButton`, `CreateBonusButton`, `UpdateFilterSlot`), the Kinds button and the Sort button (a radio menu
+  of `Catalog.SORTS`, the choice through `Catalog.SetSort`), each right of the one before, so a longer translation
+  pushes the next along; then the list of `Catalog.Items` through `ns.CreateList`. On an item's page the same status
+  line sits where the zones begin;
 - an item row's right column shows what the list is ordered by: `Zones: N` by name, the price per piece
   (`ns.FormatMoney(Prices.Get)`, or "No price" in grey) by price, the best place's chance (`Catalog.ChanceText`) by
   chance; its color is set on every draw, as rows are reused. `SETTINGS_CHANGED("catalogSort")` redraws the list
@@ -101,11 +144,19 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   that arrives late; other items are ignored, as on the other tabs);
 - the item page: `Catalog.Places` as zone rows, each expanding into `Catalog.Spots` rows (indented), with the skill
   span, the chance or "Little data", the catches, and the players on hover;
-- without the scroll templates (`pcall`), a fixed pool of rows with "and N more" (V37; kind headers not counted);
+- the Camp bonus (spec 020): the same button as CatchHere's for the tab's own filter (`CatalogTab.SetBonus`, in
+  memory), in the Water button's slot once `CatchDB.HasBonusData()`; under "Bonus catches only" `Catalog.Items` keeps
+  the tagged rows ([catalog.md](catalog.md)), an item's page shows all its zones, and an empty list without search
+  text says "No bonus catch has been recorded yet."; the tag's icon (`ns.ShowTag` and `ns.CreateTagIcon` of
+  `UI/Widgets.lua`, 14 px at the right end of the name column) in the list rows, the zone rows and the spot rows; a
+  list row hands its bonus to `ns.ShowItemTooltip`, a place's tooltip adds `ns.AddBonusLines` after its catches
+  line, and the right column writes "Little data" for a tagged item without a chance;
+- without the scroll templates (`pcall`), the fixed pool of rows of `ns.CreateList` with "and N more" (V37; kind
+  headers not counted);
 - the list is grouped like CatchHere's (spec 014): `{ header = kind }` elements before each kind's items, drawn as a
-  gold label without icon, zones, hover or click; the same Kinds button (CatchHere's menu) in the third row, after Sort; the fallback rows never end with
-  a header (it needs room for one of its items, as in CatchHere); the status says "The kind
-  filter hides every item." or, with a search, "The kind filter hides the matches." when rows exist but none is
+  gold label without icon, zones, hover or click; the same Kinds button (CatchHere's menu) in row B, before Sort;
+  the fallback rows never end with a header (it needs room for one of its items, as in CatchHere); the status says
+  "The kind filter hides every item." or, with a search, "The kind filter hides the matches." when rows exist but none is
   shown; `Show(itemID)` opens an item whatever its kind, while a name with one match chooses it only when its kind
   is shown;
 - state in memory only; `Tick` reads the catalog every second and redraws, keeping the scroll, when
@@ -128,11 +179,24 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   dragging, top-level so that a click raises the window with its children, and the close button, the template's
   or a new one, whose click hides the frame directly: the game's own script goes through `HideUIPanel`, which
   refuses addon code in combat), `ns.CreateButton` (the panel button, which grows to its
-  text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip`
-  (item tooltip with the addon's auction price, `Prices.AddTooltipLine`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
+  text on every `SetText`), `ns.CreateText`, `ns.ItemDisplay` (an item's link and icon), `ns.ShowItemTooltip(owner,
+  itemID, withPrice, bonus)` (item tooltip with the addon's auction price, `Prices.AddTooltipLine`, and with a bonus
+  table `ns.AddBonusLines` after the item's own lines), `ns.AddColoredLine(tooltip, text, r, g, b, wrap)` (spec 020
+  decision 34: `AddLine` with the text in `ns.ColoredText` and the colour arguments, so a reset of the line colours
+  leaves it coloured), `ns.AddBonusLines(tooltip, bonus)` (spec 020: the tag's name through `ns.AddColoredLine`, its
+  explanation, `Catalog.BonusTip(bonus.key, bonus.several)`, and, unless `plain`, the chance with the bonus and its
+  players, whatever `settings.tooltipChances`), `ns.TooltipHasBonus(tooltip, itemID)` (`ShowItemTooltip` keeps
+  `{ owner, itemID }` after `SetOwner` and before `SetItemByID`, which runs the game's item hook, on every call: nil
+  without a bonus; a `GameTooltip:HookScript("OnHide")` clears it; true when something is kept, the tooltip is
+  `GameTooltip` and its owner and item match, so ItemHooks adds no doubled explanation line), `ns.CreateList(parent, top, initialize)`
+  (spec 020, moved from `UI/CatalogTab.lua`: the list of both catch pages, a `WowScrollBoxList` with a
+  `MinimalScrollBar` from `top` to the window's bottom, or without the templates a fixed pool of rows with "and N
+  more"; `list.Show(elements, retain)`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
   a red "not bound"; the minimap tooltip, the settings key line and the indicator use it), `ns.RangeLabel(min, max)`
-  (the skill range label of both catch pages: "0-74", "75-224", "300+"), `ns.UpdateScanButton(button)`
+  (a real skill range's label: "0-74", "75-224", "300+"; the catalog's Skill column, the Skill tooltip's miss range),
+  `ns.SkillFilterLabel`, `ns.SkillMenuText`, `ns.ShowSkillTooltip` (the Skill button of both catch pages, spec 021),
+  `ns.UpdateScanButton(button)`
   (the auction scan button of the statistics window and above the auction window; the settings page has none,
   since opening the settings closes the auction house window: enabled by `Auction.CanScan()`, the reason
   `Auction.WhyNot()` on hover, also while disabled) and
@@ -140,7 +204,8 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   reason)` sets it and updates a tooltip the button shows). The skill, source and water menus of the two
   catch pages are `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
-  `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`) and the map pin answers (`MAP_PIN_SET`).
+  `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`), the map pin answers (`MAP_PIN_SET`) and the camp bonus notices
+  (`CAMP_BONUS_WARNING`, spec 020: always, in gold `1, 0.82, 0`).
   `ns.Toast(text, r, g, b, always)`: `always` shows it with catch notifications off, for an answer to the player's
   click and the rank reminders, which have their own setting.
 - AuctionButton: the "Scan fish prices" button above the auction house window, made when it first opens; it
@@ -156,10 +221,15 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   combat (the game refuses its secure value to addon code then, docs/forever-api.md); in fishing mode with
   `settings.tooltipChances` their tooltip adds "Likely catch here:" from `Catalog.MinimapLines()`. The tooltip is
   cleared after `SetOwner`, and every coloured line carries its colour as a code in its text as well as in the
-  arguments: the game once reset the line colours (every line white) while text codes survived (spec 012).
+  arguments (`ns.ColoredText`, `ns.AddColoredLine`): the game once reset the line colours (every line white) while
+  text codes survived (spec 012).
 - ItemHooks: Alt+Click on items through `HandleModifiedItemClick`, plus a tooltip line; the item post call adds
   "Caught in:" and `Catalog.TooltipLines(itemID)` for `GameTooltip` and `ItemRefTooltip` before the gear line, with
-  `settings.tooltipChances` (V38).
+  `settings.tooltipChances` (V38). A tagged place's chance is in the bonus form, and for a tagged item (the second
+  value of `TooltipLines`) one more line, the tag's explanation (`Catalog.BonusTip(bonus.key, bonus.several)`),
+  unless `ns.TooltipHasBonus(tooltip, itemID)` says the addon's row tooltip already holds it. "Caught in:" and the
+  two fishing gear lines go through `ns.AddColoredLine` in `ns.TOOLTIP_COLOR` (spec 020 decision 34: another addon
+  or the game reset the line colours of the catalog's item tooltips on 2026-11-20).
 - CopyWindow: a window with read-only, selectable text (`ns.ShowCopyWindow`), used by the `/okf debug`
   report; `ns.ShowDebugReport` shows the debug report (the command, the minimap menu and the
   settings page). Set up by `ns.SetupWindow`; every `ns.ShowCopyWindow` raises it.

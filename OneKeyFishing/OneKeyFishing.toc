@@ -49,6 +49,8 @@ GameData\FishingRanks.lua
 GameData\NpcNames.lua
 GameData\Bobber.lua
 GameData\Lures.lua
+GameData\CampBonuses.lua
+GameData\FishedQuestItems.lua
 GameData\FishedContainers.lua
 GameData\AuctionUnanswered.lua
 GameData\ItemKinds.lua
@@ -70,6 +72,7 @@ Catch\Catch.lua
 Catch\Prices.lua
 Catch\Auction.lua
 Fishing\Skill.lua
+Fishing\Camp.lua
 Catch\Stats.lua
 # Sounds: the fishing sounds (Fishing/Sound.lua reads the messages of Catch.lua and Action.lua)
 Fishing\Sound.lua

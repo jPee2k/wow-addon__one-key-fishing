@@ -101,6 +101,52 @@ local function CheckAreas(areas, casts)
     return true
 end
 
+-- The bonus parts q of a cell (specs/020-camp-buffs data-model.md "Validation"): at most MAX_BONUS_PARTS parts,
+-- each keyed by a mask's decimal text (1 to 255, no leading zero), with counts and items of its own; together within
+-- the cell's totals, every item in the cell, and the rest (the cell minus the parts) holding the item rules. A mask
+-- with bits this version does not know is valid (FR-012). 8 parts hold every mask of three bonuses.
+local MAX_BONUS_PARTS = 8
+
+local function CheckBonusParts(cell)
+    local q = cell.q
+    if q == nil then
+        return true
+    end
+    if type(q) ~= "table" then
+        return false, "the bonus parts are not a table"
+    end
+    if ns.CountKeys(q) > MAX_BONUS_PARTS then
+        return false, "too many bonus parts"
+    end
+    local sum = { c = 0, m = 0, i = {} } -- every part together
+    for key, part in pairs(q) do
+        if not P.PartMask(key) then
+            return false, "bonus part " .. tostring(key) .. ": not a mask"
+        end
+        if type(part) ~= "table" or not (IsCount(part.c) and IsCount(part.m)) then
+            return false, "bonus part " .. key .. ": not a part"
+        end
+        local ok, reason = CheckItems(part.i, part.c)
+        if not ok then
+            return false, "bonus part " .. key .. ": " .. reason
+        end
+        P.AddCounts(sum, part)
+    end
+    if sum.c > cell.c or sum.m > cell.m then
+        return false, "the bonus parts do not fit the totals"
+    end
+    for itemID in pairs(sum.i) do
+        if not (cell.i and cell.i[itemID]) then
+            return false, "no bonus: item " .. itemID .. " has impossible counts"
+        end
+    end
+    local ok, reason = CheckItems(cell.i, cell.c - sum.c, sum.i)
+    if not ok then
+        return false, "no bonus: " .. reason
+    end
+    return true
+end
+
 local POSITION_FIELDS = { "px", "py" }
 
 local function CheckCell(cell)
@@ -147,7 +193,7 @@ local function CheckCell(cell)
             return false, "open water: " .. reason
         end
     end
-    return true
+    return CheckBonusParts(cell)
 end
 
 -- Casting per seq step (specs/004-public-channel-sync, research.md R9): the seq is bumped at most once a minute, on

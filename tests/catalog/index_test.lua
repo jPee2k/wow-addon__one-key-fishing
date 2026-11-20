@@ -101,7 +101,7 @@ test("the default index is built 10 s after the first loading screen of the sess
     advance(9)
     eq(describe():match("^[^\n]*"), "no index yet", "not before")
     advance(1)
-    assert(describe():find("index all|all|all: ready, stale false, 5 maps", 1, true), describe())
+    assert(describe():find("index all|all|all|all: ready, stale false, 5 maps", 1, true), describe())
 end)
 
 test("the report ends with the hidden kinds (spec 014)", function()
@@ -309,7 +309,7 @@ end)
 
 test("Describe lists the state, maps, items, the build times and the name queue", function()
     local text = describe()
-    assert(text:find("index all|all|all: ready, stale false, %d+ maps, %d+ items"), text)
+    assert(text:find("index all|all|all|all: ready, stale false, %d+ maps, %d+ items"), text)
     assert(text:find("last build no clock of work, longest step no clock", 1, true), text)
     assert(text:find("names known %d+, unknown %d+, requests sent %d+, queued 0"), text)
 end)
@@ -317,7 +317,7 @@ end)
 test("the debug report holds the catalog section and no item name", function()
     local _, report = ns.Debug.Report()
     assert(report:find("-- Catch catalog --", 1, true), "section")
-    assert(report:find("index all|all|all: ready", 1, true), "the index")
+    assert(report:find("index all|all|all|all: ready", 1, true), "the index")
     for _, itemID in ipairs({ FISH, TROUT, OWN }) do
         assert(not report:find(item_names[itemID], 1, true), "no name of " .. itemID)
     end
@@ -433,6 +433,25 @@ test("MinimapLines: the top three of the place, no grey or unknown items, and th
     lines = Catalog.MinimapLines()
     eq(#lines.items, 0, "nothing")
     eq(lines.footer, ns.L["Nothing has been caught here yet."], "said so")
+    player_map_id = 1415
+    ns.Mode.IsActive = active
+end)
+
+test("MinimapLines: the own range sums the ranges below it; 300+ reads every range (spec 021)", function()
+    local active = ns.Mode.IsActive
+    ns.Mode.IsActive = function() return true end
+    ns.SeedData.cells["1421:1:47"] = cell(60, { [FISH] = { 60, 60 } }, 1) -- 75-149 only
+    ns.Fire("SHARED_DATA_CHANGED")
+    player_map_id = 1421
+    local lines = Catalog.MinimapLines()
+    eq(lines.items[1] and lines.items[1].name, "Deviate Fish", "225-299 sums the catches of 75-149")
+    eq(lines.footer, (ns.L["%d catches"]):format(60), "their catches")
+    fishing_rank = 300
+    fire("SKILL_LINES_CHANGED")
+    lines = Catalog.MinimapLines()
+    eq(lines.items[1] and lines.items[1].name, "Deviate Fish", "300+ is every range")
+    fishing_rank = 230
+    fire("SKILL_LINES_CHANGED")
     player_map_id = 1415
     ns.Mode.IsActive = active
 end)

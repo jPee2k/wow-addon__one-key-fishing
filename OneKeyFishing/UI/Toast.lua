@@ -95,6 +95,12 @@ ns.On("SKILL_WARNING", function(text, loud)
     end
 end)
 
+-- A camp bonus ends in 5 minutes or has ended (Fishing/Camp.lua, spec 020): shown like a quiet next-rank notice,
+-- also with catch notifications off.
+ns.On("CAMP_BONUS_WARNING", function(text)
+    ns.Toast(text, 1, 0.82, 0, true)
+end)
+
 -- Core/MapPin.lua set the game's map pin at placeName, or the game refused it (nil): the answer to a click.
 ns.On("MAP_PIN_SET", function(placeName)
     if placeName then

@@ -147,8 +147,16 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
     L["Statistics"] = "統計"
     L["What can be caught here"] = "這裡能釣到什麼"
-    L["Skill: %s"] = "技能：%s"
-    L["All skill levels"] = "所有技能等級"
+    L["Skill: Up to %d"] = "技能：至%d"
+    L["Skill: All"] = "技能：全部"
+    L["Up to %d"] = "至%d"
+    L["Up to %d (yours)"] = "至%d（你的）"
+    L["All (%d+)"] = "全部（%d+）"
+    L["All (%d+) (yours)"] = "全部（%d+）（你的）"
+    L["Catches with skill up to %d."] = "技能不超過%d的漁獲。"
+    L["Catches with any skill."] = "任意技能的漁獲。"
+    L["Misses only with skill %s."] = "空竿僅計技能%s。"
+    L["Nothing caught: little data"] = "什麼都沒釣到：資料不足"
     L["Source: %s"] = "來源：%s"
     L["All"] = "全部"
     L["Only mine"] = "僅限我的"
@@ -158,7 +166,6 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Numbers for the whole map: few catches at this spot."] = "整張地圖的數據：此處漁獲太少。"
     L["Little data"] = "資料不足"
     L["Nothing has been caught here yet."] = "這裡還沒有釣到過東西。"
-    L["Try \"All skill levels\": little data for your skill."] = "試試「所有技能等級」：你的技能等級資料不足。"
     L["and %d more"] = "還有 %d 項"
     L["No bundled data in this version: only your own catches are shown."] = "此版本沒有內建資料：只顯示你自己的漁獲。"
     L["No bundled data in this version."] = "此版本沒有內建資料。"
@@ -408,7 +415,7 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Potions & drinks"] = "藥水和飲料"
     L["Reagents & herbs"] = "材料和草藥"
     L["Other"] = "其他"
-    L["Kinds: all"] = "類別：全部"
+    L["Kinds: All"] = "類別：全部"
     L["Kinds: %d of %d"] = "類別：%d/%d"
     L["The kind filter hides every item."] = "類別篩選隱藏了所有物品。"
     L["The kind filter hides the matches."] = "類別篩選隱藏了符合項目。"
@@ -429,4 +436,43 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
         "你的漁獲：%d 項採用 Auctionator 價格，%d 項採用插件掃描價格，%d 項僅有商人價，%d 項無價格。"
     L["Values: higher of vendor and Auctionator price."] = "價值：取商人價與 Auctionator 價格較高者。"
     L["%d of your catches have no Auctionator price: run its scan."] = "你的漁獲中有 %d 項沒有 Auctionator 價格：請執行它的掃描。"
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "釣魚架加成"
+    L["Fishing Hut bonus"] = "釣魚小屋加成"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] = "加成漁獲：只有在釣魚架的增益效果（優良釣魚）下才會釣到。"
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] = "加成漁獲：只有在釣魚小屋的增益效果（稀有釣魚）下才會釣到。"
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] = "加成漁獲：只有在釣魚架或釣魚小屋的增益效果下才會釣到。"
+    L["%s with the bonus"] = "加成時 %s"
+    L["All catches"] = "全部漁獲"
+    L["No camp bonus"] = "無營地加成"
+    L["Fishing Rack"] = "釣魚架"
+    L["Fishing Hut"] = "釣魚小屋"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "營地加成"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "顯示在營地加成下的漁獲：在營火旁放置的釣魚架或釣魚小屋所給予的釣魚增益效果。"
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] = "「無營地加成」也包含不知道是否有加成的較早漁獲。"
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "釣魚架加成將在 5 分鐘後結束。"
+    L["The Fishing Rack bonus has ended."] = "釣魚架加成已結束。"
+    L["The Fishing Hut bonus ends in 5 minutes."] = "釣魚小屋加成將在 5 分鐘後結束。"
+    L["The Fishing Hut bonus has ended."] = "釣魚小屋加成已結束。"
+    L["Warn when a camp bonus is ending"] = "營地加成即將結束時提醒"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "營地加成下的拋竿"
+    L["Bonus catches"] = "加成漁獲"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "僅加成漁獲"
+    L["Camp bonus: All"] = "營地加成：全部"
+    L["Camp bonus: No bonus"] = "營地加成：無"
+    L["Camp bonus: Bonus only"] = "營地加成：僅加成"
+    L["Camp bonus: Rack"] = "營地加成：釣魚架"
+    L["Camp bonus: Hut"] = "營地加成：小屋"
+    L["No bonus catch has been recorded here yet."] = "這裡尚未記錄加成漁獲。"
+    L["No bonus catch has been recorded yet."] = "尚未記錄加成漁獲。"
 end)

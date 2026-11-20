@@ -48,10 +48,12 @@ test("pool and open water add up to everywhere: catches, items, players (SC-007)
         end
         eq(itemCatches(pool, OIL) + itemCatches(open, OIL), itemCatches(all, OIL), "oil")
         eq(itemCatches(pool, FISH) + itemCatches(open, FISH), itemCatches(all, FISH), "fish")
-        eq(pool.missRate, nil, "no miss rate for pools")
-        eq(open.missRate, nil, "nor open water")
-        assert(all.missRate, "everywhere has it")
     end
+    -- The miss rate is a place's (Query, the data's range 225-299: spec 021), never under a water filter.
+    eq(CatchDB.Query(1415, "47", filter("pool", 3)).missRate, nil, "no miss rate for pools")
+    eq(CatchDB.Query(1415, "47", filter("open", 3)).missRate, nil, "nor open water")
+    assert(CatchDB.Query(1415, "47", filter("all", 3)).missRate, "everywhere has it")
+    eq(CatchDB.QueryMap(1415, filter("all")).missRate, nil, "the catalog's map view has none (spec 021)")
 end)
 
 test("the 50-catch rule counts the filtered catches; a weighted seed cell uses its filtered c", function()

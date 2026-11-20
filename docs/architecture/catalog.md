@@ -10,9 +10,10 @@ are settings': `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (sp
 
 ## The index
 
-- One index per filter key (`range|source|water`); the default filter (`all|all|all`; `Catalog.DefaultFilter()` gives
-  the tab a copy) serves the tooltips. An
-  index maps item ID -> its places (one per map), made of `CatchDB.QueryMap` views.
+- One index per filter key (`range|source|water|bonus`); the default filter (`all|all|all|all`;
+  `Catalog.DefaultFilter()` gives the tab a copy) serves the tooltips. An index maps item ID -> its places (one per
+  map), made of `CatchDB.QueryMap` views. The camp bonus value `"bonusOnly"` has no index of its own: `IndexFilter`
+  turns it into the filter of `"all"` before the key is made ("Camp bonus" below).
 - Every read first brings the index up to date (`Freshen`): nothing to do while no `CatchDB.MapStamp` moved
   (`GetStampVersion` short-cuts the comparison); up to `SYNC_MAPS` (4) changed maps are recomputed by the read that
   finds them; more go to frame steps (`C_Timer.After(0)`), each step bounded by `STEP_MS` (3 ms by
@@ -35,14 +36,14 @@ are settings': `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (sp
 
 ## Reads
 
-- `Catalog.Items(filter, search)`: `{ itemID, name, zones, chance, littleData }` (`chance` and `littleData` of the
+- `Catalog.Items(filter, search)`: `{ itemID, name, zones, chance, littleData, players, bonus }` (those of the
   item's best place, the first of `Places`) in the saved order ("List order" below; by `ns.CompareText` by default);
-  known items only, grey ones only with search text, and with search text only the names whose key contains it.
-  Returns the state too.
+  known items only, grey ones only with search text, and with search text only the names whose key contains it;
+  under `filter.bonus == "bonusOnly"` only the rows whose `bonus` is not `plain` (spec 020). Returns the state too.
 - `Catalog.Places(itemID, filter)`: the zones of an item, `{ mapID, name, chance, catches, itemCatches, players,
-  littleData, ranges }`.
+  littleData, ranges, bonus }`.
 - `Catalog.Spots(itemID, mapID, filter)`: the spots of an item on one map from `CatchDB.QueryCells`, `{ cell, name,
-  point, area, chance, catches, itemCatches, players, littleData, ranges, pin }`; summed when a zone is expanded
+  point, area, chance, catches, itemCatches, players, littleData, ranges, pin, bonus }`; summed when a zone is expanded
   and kept for the session, until the map's stamp moves.
 - A spot's `pin` is `ns.MapPin.Target({ mapID }, x, y)` (`Core/MapPin.lua`, [core.md](core.md)): `{ mapID, x, y }`
   on the spot's own map, or for a Micro map (a cave, a building) on its zone's map through the world position; nil
@@ -54,11 +55,46 @@ are settings': `SETTINGS_CHANGED("hiddenKinds")` from `Catalog.SetKindShown` (sp
 - `Catalog.TooltipLines(itemID)`: the "Caught in" lines, up to three `{ zone, right }` pairs from the default
   index, stale or not; reliable zones first, little-data ones only without any; nil for an item outside the
   database and before any index exists. `Catalog.MinimapLines()`: the likely catches of the current place in
-  fishing mode, counted like the "What can be caught here" tab with its defaults; nil outside fishing mode or
-  with `settings.tooltipChances` off.
+  fishing mode, counted like the "What can be caught here" tab with its defaults (the own range through
+  `CatchDB.SkillFilter`, so the ranges up to it, 300+ as `"all"`: spec 021); nil outside fishing mode or with
+  `settings.tooltipChances` off.
 - `Catalog.Find(text)`: the item IDs of the default index whose name contains the text, for `/okf catalog`;
   `Catalog.CommandArg(rest)` turns an item link into its ID.
 - `Catalog.Describe()`: lines for `/okf debug`, counts and times only, never an item name.
+
+## Camp bonus
+
+`specs/020-camp-buffs`: the camp bonus tag and the chance with the bonus ([catch-db.md](catch-db.md) "Camp bonus
+parts" builds `item.bonus` in each view).
+
+- `PlaceNumbers(item, view)`: a place (`RebuildItems`), a spot row (`Spots`) and so a list row take `chance`,
+  `littleData`, `catches` and `players` from `item.bonus` when the item has one that is not `plain`, else from the
+  item and the view as before; each carries `bonus = item.bonus` (the table: its `key`, its `plain`). A known item
+  without data under its bonus has no chance, 0 catches and 0 players; catches and players are never nil, and a
+  missing chance is written "Little data".
+- `Catalog.ChanceText(chance, littleData, players, withBonus)`: a nil chance is "Little data" too; with `withBonus`
+  the number goes inside `L["%s with the bonus"]`, then the players' wrapper ("0.47% with the bonus (3 players)"),
+  for the tooltips, the "Caught in:" lines and the minimap lines, never for a `plain` tag; the rows' cells show the
+  number alone.
+- `Catalog.BonusTag(key)` (the tag's name, "Fishing Rack bonus" / "Fishing Hut bonus"), `Catalog.BonusTip(key,
+  several)` (its explanation: the catch comes only with that buff; with `several`, an item known to more than one
+  bonus, the one text "... of a Fishing Rack or a Fishing Hut.", spec 020 decision 32; callers pass `bonus.key,
+  bonus.several`), `Catalog.BonusLabel(value)` (a filter value as the menu names
+  it: "All catches", "No camp bonus", "Bonus catches only", "Fishing Rack", "Fishing Hut"),
+  `Catalog.BonusButtonText(value)` (the button's text, one whole text per value so each language words it its own
+  way: "Camp bonus: All", "Camp bonus: No bonus", "Camp bonus: Bonus only", "Camp bonus: Rack", "Camp bonus: Hut";
+  an unknown value reads as "all"), all looked up when drawn.
+  `Catalog.BonusIcon(key)`: the camp feature's item icon by `GameData.CampBonuses[].item` through
+  `C_Item.GetItemIconByID` (by ID, the same in every language), or nil (V66, confirmed 2026-11-20).
+- "Bonus catches only" (`filter.bonus == "bonusOnly"`, spec 020 research R20) is a filter of the list over "All
+  catches", like the kinds: `IndexFilter` maps it to the filter of `"all"`, so `IndexFor`, `Places` and `Spots` read
+  the index of "All catches" (an item's page shows all its zones, and `Describe` names no index for it), and
+  `Catalog.Items` drops the rows whose `bonus` is nil or `plain`. `CatchDB` never sees the value. Under "No camp
+  bonus" `Catalog.Items` drops every tagged row, plain ones too (decision 35): `Catalog.BonusShown(bonus, value)`,
+  shared with "What can be caught here" (`CatchHere.BonusItems`), says which rows a value lists.
+- `Catalog.TooltipLines(itemID)` writes a tagged place's chance in the bonus form and returns a second value, the
+  best place's `bonus` table (or nil), for the explanation line of `UI/ItemHooks.lua`. `Catalog.MinimapLines()`
+  queries with `bonus = "all"` and writes a tagged item's `right` with its bonus chance.
 
 ## Item kinds
 
@@ -102,7 +138,8 @@ player may hide kinds.
 
 ## Tests
 
-`tests/catalog/sort_test.lua` (the saved order, by price, by chance, ties, a search, a skill filter),
+`tests/catalog/bonus_test.lua` (a place's bonus numbers, the texts, the icon), `tests/catalog/sort_test.lua` (the
+saved order, by price, by chance, ties, a search, a skill filter),
 `tests/catalog/kinds_test.lua` (the kinds, the seed coverage, `Group`, the choice),
 `tests/catalog/index_test.lua` (items, search, order, places, spots, names, tooltips, the name queue),
 `tests/catalog/spot_pin_test.lua` (a spot's pin target and the pin button; the pin itself is tested in

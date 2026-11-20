@@ -27,6 +27,12 @@ How casts become catch messages, how they are counted, and how items are valued.
 - A cast that runs across a `/reload` is recognised by its channel start time (`charDB.countedCast`) and not
   counted twice.
 - The item value is computed at read time through Prices.lua.
+- The camp bonus (spec 020): each bucket also has `bonusCasts` (casts with a camp bonus) and `bonusCatches` (those
+  of them that brought an extra item: a known bonus item, or a second loot slot that is not a fished quest item,
+  decision 33); a bucket saved before them reads them as 0 (`Add` counts a missing field
+  from 0; no migration). `FISH_CAUGHT` and `FISH_MISSED` take their cast ID and ask `ns.Camp.CastMask(castID)`
+  ([fishing-mode.md](fishing-mode.md) `Fishing/Camp.lua`): a mask above 0 adds a bonus cast, and a catch for which
+  `Camp.IsBonusCatch(mask, items)` holds adds a bonus catch. The window's rows are in [ui.md](ui.md).
 
 ## Catch/Prices.lua
 
@@ -57,7 +63,8 @@ is in use, else the addon's own scanned price; an item Auctionator has no price 
 - `Prices.GetAuction(itemID)` returns the price, whether it rests on few lots, and its source (`"auctionator"` or
   `"own"`); `Prices.Get` and `Prices.FormatValue` keep their rule.
 - `Prices.AddTooltipLine` adds the own price to a row's item tooltip under the addon's name ("Auction price
-  (OneKeyFishing)"; grey with the mark when it rests on few lots), so it is told apart from another addon's
+  (OneKeyFishing)"; grey with the mark when it rests on few lots, the grey also as a code in the text,
+  `ns.ColoredText`, spec 020 decision 34), so it is told apart from another addon's
   cheapest-auction line. For an item priced by Auctionator it adds nothing: Auctionator's own line is on the
   tooltip (V59).
 - `Prices.CanAuction(itemID)`: false for a loaded bound item (bind on pickup, quest); the scan's list and the

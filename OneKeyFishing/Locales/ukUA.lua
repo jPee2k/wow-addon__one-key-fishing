@@ -158,8 +158,16 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
     L["Statistics"] = "Статистика"
     L["What can be caught here"] = "Що тут ловиться"
-    L["Skill: %s"] = "Навичка: %s"
-    L["All skill levels"] = "Будь-яка навичка"
+    L["Skill: Up to %d"] = "Навичка: До %d"
+    L["Skill: All"] = "Навичка: Усі"
+    L["Up to %d"] = "До %d"
+    L["Up to %d (yours)"] = "До %d (ваша)"
+    L["All (%d+)"] = "Усі (%d+)"
+    L["All (%d+) (yours)"] = "Усі (%d+) (ваша)"
+    L["Catches with skill up to %d."] = "Улови з навичкою до %d."
+    L["Catches with any skill."] = "Улови з будь-якою навичкою."
+    L["Misses only with skill %s."] = "Промахи — лише з навичкою %s."
+    L["Nothing caught: little data"] = "Нічого не впіймано: мало даних"
     L["Source: %s"] = "Джерело: %s"
     L["All"] = "Усе"
     L["Only mine"] = "Лише моє"
@@ -169,8 +177,6 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Numbers for the whole map: few catches at this spot."] = "Дані по всій карті: на цьому місці замало уловів."
     L["Little data"] = "Мало даних"
     L["Nothing has been caught here yet."] = "Тут ще нічого не ловили."
-    L["Try \"All skill levels\": little data for your skill."] =
-        "Оберіть «Будь-яка навичка»: для вашої навички мало даних."
     L["and %d more"] = "і ще %d"
     L["No bundled data in this version: only your own catches are shown."] =
         "У цій версії немає вбудованих даних: показано лише ваш улов."
@@ -436,7 +442,7 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Potions & drinks"] = "Зілля й напої"
     L["Reagents & herbs"] = "Реагенти й трави"
     L["Other"] = "Інше"
-    L["Kinds: all"] = "Види: усі"
+    L["Kinds: All"] = "Види: Усі"
     L["Kinds: %d of %d"] = "Види: %d з %d"
     L["The kind filter hides every item."] = "Фільтр видів приховує всі предмети."
     L["The kind filter hides the matches."] = "Фільтр видів приховує збіги."
@@ -462,4 +468,47 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Values: higher of vendor and Auctionator price."] = "Вартість: більша з ціни торговця та Auctionator."
     L["%d of your catches have no Auctionator price: run its scan."] =
         "Для %d предметів вашого улову немає ціни в Auctionator: запустіть його сканування."
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "Бонус рами"
+    L["Fishing Hut bonus"] = "Бонус хижки"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] =
+        "Бонусний улов: ловиться лише з бафом рибальської рами (Ловля незвичайної риби)."
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
+        "Бонусний улов: ловиться лише з бафом рибальської хижки (Ловля рідкісної риби)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Бонусний улов: ловиться лише з бафом рибальської рами або хижки."
+    L["%s with the bonus"] = "%s із бонусом"
+    L["All catches"] = "Усі улови"
+    L["No camp bonus"] = "Без табірного бонусу"
+    L["Fishing Rack"] = "Рибальська рама"
+    L["Fishing Hut"] = "Рибальська хижка"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "Табірний бонус"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "Показати улови з табірним бонусом: рибальським бафом від рами чи хижки, поставленої біля вогнища."
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] =
+        "«Без табірного бонусу» містить і давніші улови, для яких бонус невідомий."
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "Бонус рибальської рами закінчиться за 5 хвилин."
+    L["The Fishing Rack bonus has ended."] = "Бонус рибальської рами закінчився."
+    L["The Fishing Hut bonus ends in 5 minutes."] = "Бонус рибальської хижки закінчиться за 5 хвилин."
+    L["The Fishing Hut bonus has ended."] = "Бонус рибальської хижки закінчився."
+    L["Warn when a camp bonus is ending"] = "Попереджати про кінець табірного бонусу"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "Закидання з табірним бонусом"
+    L["Bonus catches"] = "Бонусні улови"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "Тільки бонусні улови"
+    L["Camp bonus: All"] = "Табірний бонус: Усі"
+    L["Camp bonus: No bonus"] = "Табірний бонус: Без бонусу"
+    L["Camp bonus: Bonus only"] = "Табірний бонус: Бонусні"
+    L["Camp bonus: Rack"] = "Табірний бонус: Рама"
+    L["Camp bonus: Hut"] = "Табірний бонус: Хижка"
+    L["No bonus catch has been recorded here yet."] = "Бонусних уловів тут ще не було."
+    L["No bonus catch has been recorded yet."] = "Бонусних уловів ще не було."
 end)

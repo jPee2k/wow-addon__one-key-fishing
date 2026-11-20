@@ -4,6 +4,62 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-11-20
+
+### Added
+
+- Catches made with a camp bonus, the fishing buff of a Fishing Rack or a Fishing Hut placed by a campfire, are
+  recorded apart from the others and shared with the rest of your catch data. A cast counts for the bonus when the
+  buff was up both when it started and when it ended.
+- Bonus catches (such as the Bloated fish, which both camp features give) are marked with the camp feature's icon in
+  "What can be caught here" and in the catch catalog, and show their chance among the catches made with the bonus.
+  Hover the row for the bonus's name, what to do to get it and its chance "with the bonus"; item tooltips elsewhere
+  add the explanation under "Caught in:".
+- A **Camp bonus** filter in both tabs, in the place of the Water filter, once a catch with a camp bonus is known:
+  **All catches**, **No camp bonus**, **Bonus catches only**, **Fishing Rack**, **Fishing Hut**. The button names
+  the chosen value ("Camp bonus: All", "Camp bonus: Rack"). **Bonus catches only** lists just the bonus catches,
+  with the same numbers as **All catches**; **No camp bonus** leaves them out.
+- A notice 5 minutes before a camp bonus ends and one when it has ended, in fishing mode, with the setting "Warn when
+  a camp bonus is ending" (on by default).
+- The statistics show "Casts with a camp bonus" and "Bonus catches" (casts with a camp bonus that brought an extra
+  item: a Bloated fish or a second item in the loot, quest fish aside) once you fished with a camp bonus.
+- Camper's Lure, from a placed Fishing Rack, is applied by the fishing key like the other lures (after the +75 lures,
+  before the +50 ones; it needs Fishing 50).
+- `/okf debug` has a section "Camp bonus", and the catch database section shows the current place's bonus counts.
+
+### Changed
+
+- The **Skill** filter of "What can be caught here" and of the catch catalog shows the catches of the chosen skill
+  range and of every lower one, since more skill never undoes what less skill catches: a place where nobody has
+  fished with your skill yet still lists what was caught there with less. Its values read **Up to 74**, **Up to
+  149**, **Up to 224**, **Up to 299** and **All (300+)**, your own range marked "(yours)"; the button reads "Skill:
+  Up to 224" or "Skill: All", and its tooltip says what the list holds. "All skill levels" is now **All (300+)**,
+  and the hint to try it is gone.
+- The filter buttons of both tabs write their value the same way in every language, with a capital letter after the
+  colon ("Kinds: All", "Skill: All", "Camp bonus: All").
+- The share of casts that catch nothing ("Nothing caught") comes from the chosen skill range alone, because less
+  skill misses more; below 50 casts in that range it says "little data".
+- Small chances are shown with a fraction ("3.4%", "0.47%", "<0.01%") instead of "0%"; from 10% on they stay whole
+  numbers.
+- The filter buttons of "What can be caught here" and of the catch catalog stand in two rows: Skill and Source, then
+  Water or Camp bonus, Kinds and (in the catalog) Sort. The Kinds button of "What can be caught here" has left the
+  top right corner.
+- The list of "What can be caught here" scrolls and shows every item (no more "and N more"); its hints and the
+  line about the shared catch database are now at the top, above the catch counts.
+- The catch catalog's status line ("Counting the catch...", "No item matches the search.") stands under the search
+  box.
+- "Per catch" drops the ".0" of whole numbers: "1" instead of "1.0", "1.3" otherwise.
+- The bundled catch database now knows 825 fishing places (300 new) and 44 more items, from the catches players
+  shared, and holds the first catches made with a camp bonus.
+
+### Fixed
+
+- The addon's coloured lines in item tooltips ("Caught in:", the fishing gear lines, the grey auction price with
+  "(few lots)") keep their colour when another addon or the game resets the tooltip's line colours; before, they
+  could turn white.
+- Four Bloated fish (Bloated Mackerel, Bloated Albacore, Bloated Bristle Whisker Catfish, Bloated Whitescale Salmon)
+  are listed under the kind "Containers" like the other Bloated fish, not under "Other".
+
 ## [1.4.0] - 2026-11-18
 
 ### Added

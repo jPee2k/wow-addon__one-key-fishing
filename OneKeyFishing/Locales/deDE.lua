@@ -161,8 +161,16 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     -- UI/CatchHere.lua and the tabs of UI/StatsFrame.lua
     L["Statistics"] = "Statistik"
     L["What can be caught here"] = "Was man hier fangen kann"
-    L["Skill: %s"] = "Fertigkeit: %s"
-    L["All skill levels"] = "Alle Fertigkeitsstufen"
+    L["Skill: Up to %d"] = "Fertigkeit: Bis %d"
+    L["Skill: All"] = "Fertigkeit: Alle"
+    L["Up to %d"] = "Bis %d"
+    L["Up to %d (yours)"] = "Bis %d (deine)"
+    L["All (%d+)"] = "Alle (%d+)"
+    L["All (%d+) (yours)"] = "Alle (%d+) (deine)"
+    L["Catches with skill up to %d."] = "Fänge mit Fertigkeit bis %d."
+    L["Catches with any skill."] = "Fänge mit jeder Fertigkeit."
+    L["Misses only with skill %s."] = "Würfe ohne Fang nur mit Fertigkeit %s."
+    L["Nothing caught: little data"] = "Nichts gefangen: wenige Daten"
     L["Source: %s"] = "Quelle: %s"
     L["All"] = "Alle"
     L["Only mine"] = "Nur meine"
@@ -173,8 +181,6 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
         "Zahlen für die ganze Karte: zu wenige Fänge an dieser Stelle."
     L["Little data"] = "Wenige Daten"
     L["Nothing has been caught here yet."] = "Hier wurde noch nichts gefangen."
-    L["Try \"All skill levels\": little data for your skill."] =
-        "Wähle „Alle Fertigkeitsstufen“: wenige Daten für deine Fertigkeit."
     L["and %d more"] = "und %d weitere"
     L["No bundled data in this version: only your own catches are shown."] =
         "Keine mitgelieferten Daten in dieser Version: Nur deine eigenen Fänge werden gezeigt."
@@ -449,7 +455,7 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Potions & drinks"] = "Tränke & Getränke"
     L["Reagents & herbs"] = "Reagenzien & Kräuter"
     L["Other"] = "Sonstiges"
-    L["Kinds: all"] = "Arten: alle"
+    L["Kinds: All"] = "Arten: Alle"
     L["Kinds: %d of %d"] = "Arten: %d von %d"
     L["The kind filter hides every item."] = "Der Artenfilter blendet alle Gegenstände aus."
     L["The kind filter hides the matches."] = "Der Artenfilter blendet die Treffer aus."
@@ -476,4 +482,48 @@ ns.AddTranslation("deDE", "Deutsch", function(L)
     L["Values: higher of vendor and Auctionator price."] = "Werte: der höhere aus Händler- und Auctionator-Preis."
     L["%d of your catches have no Auctionator price: run its scan."] =
         "%d deiner Fänge haben keinen Auctionator-Preis: Starte dessen Scan."
+
+    -- Camp bonus tag and filter values (specs/020-camp-buffs): Catalog.lua
+    L["Fishing Rack bonus"] = "Bonus des Angelgestells"
+    L["Fishing Hut bonus"] = "Bonus der Anglerhütte"
+    L["Bonus catch: comes only with the buff of a Fishing Rack (Uncommon Fishing)."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber eines Angelgestells (Ungewöhnliches Angeln)."
+    L["Bonus catch: comes only with the buff of a Fishing Hut (Rare Fishing)."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber einer Anglerhütte (Seltenes Angeln)."
+    L["Bonus catch: comes only with the buff of a Fishing Rack or a Fishing Hut."] =
+        "Bonusfang: kommt nur mit dem Stärkungszauber eines Angelgestells oder einer Anglerhütte."
+    L["%s with the bonus"] = "%s mit Bonus"
+    L["All catches"] = "Alle Fänge"
+    L["No camp bonus"] = "Ohne Lagerbonus"
+    L["Fishing Rack"] = "Angelgestell"
+    L["Fishing Hut"] = "Anglerhütte"
+
+    -- The Camp bonus filter button (specs/020-camp-buffs): CatchHere.lua, CatalogTab.lua
+    L["Camp bonus"] = "Lagerbonus"
+    L["Show the catches made with a camp bonus: the fishing buff of a Fishing Rack or a Fishing Hut by a campfire."] =
+        "Zeigt die Fänge mit einem Lagerbonus: dem Angel-Stärkungszauber eines Angelgestells oder einer " ..
+        "Anglerhütte, die an einem Lagerfeuer aufgestellt wurden."
+    L["\"No camp bonus\" also holds older catches for which the bonus is not known."] =
+        "„Ohne Lagerbonus“ enthält auch ältere Fänge, bei denen der Bonus nicht bekannt ist."
+
+    -- The camp bonus notices and their setting (specs/020-camp-buffs): Camp.lua, Settings.lua
+    L["The Fishing Rack bonus ends in 5 minutes."] = "Der Bonus des Angelgestells endet in 5 Minuten."
+    L["The Fishing Rack bonus has ended."] = "Der Bonus des Angelgestells ist abgelaufen."
+    L["The Fishing Hut bonus ends in 5 minutes."] = "Der Bonus der Anglerhütte endet in 5 Minuten."
+    L["The Fishing Hut bonus has ended."] = "Der Bonus der Anglerhütte ist abgelaufen."
+    L["Warn when a camp bonus is ending"] = "Warnen, wenn ein Lagerbonus endet"
+
+    -- The camp bonus rows of the statistics (specs/020-camp-buffs): StatsFrame.lua
+    L["Casts with a camp bonus"] = "Würfe mit Lagerbonus"
+    L["Bonus catches"] = "Bonusfänge"
+
+    -- The Camp bonus button and Bonus catches only (spec 020 follow-up): Catalog.lua, CatchHere.lua
+    L["Bonus catches only"] = "Nur Bonusfänge"
+    L["Camp bonus: All"] = "Lagerbonus: Alle"
+    L["Camp bonus: No bonus"] = "Lagerbonus: Ohne"
+    L["Camp bonus: Bonus only"] = "Lagerbonus: Nur Bonus"
+    L["Camp bonus: Rack"] = "Lagerbonus: Gestell"
+    L["Camp bonus: Hut"] = "Lagerbonus: Hütte"
+    L["No bonus catch has been recorded here yet."] = "Hier wurde noch kein Bonusfang erfasst."
+    L["No bonus catch has been recorded yet."] = "Es wurde noch kein Bonusfang erfasst."
 end)

@@ -158,3 +158,52 @@ item class and the equipment slots (`Gear.lua`, `Action.lua`), the bobber (`Core
 - A name the game gives as a secret value (a creature tooltip line in an instance fight, seen 2026-11-08) counts
   as missing: the fallback name is used and nothing is cached.
 - `Skill.DescribeNextRank` is the line of the statistics window and the minimap tooltip.
+
+## Fishing/Camp.lua
+
+The camp bonuses (spec 020), `ns.Camp`: the fishing buffs of a Fishing Rack or a Fishing Hut placed by a campfire,
+listed in `GameData.CampBonuses` ([game-data.md](game-data.md)). It only reads: nothing is cast, used or placed,
+and it creates no frame (FR-008).
+
+- The state per bonus, `state[key] = { known, expires, first }`: `known` once read this session, `expires` the
+  `GetTime()` at which the buff ends (nil when not active; an aura without an end reads as `math.huge`), `first` the
+  seconds left when this `expires` was first seen. Unknown (a login or `/reload` inside a fight), active, or not
+  active; a read sets it, the clock ends an active bonus, nothing else changes it. `Camp.IsActive(key)` answers
+  `true`, `false` or nil (unknown), `Camp.TimeLeft(key)` the seconds left.
+- `Camp.Read()` reads each aura by its spell ID (`C_UnitAuras.GetPlayerAuraBySpellID`), never by name, and never
+  while auras are restricted (`InCombatLockdown()`, the player's combat flag `UnitAffectingCombat("player")`, set
+  before the lockdown at a fight's first moment (V69), or `C_Secrets.ShouldAurasBeSecret()`): in a fight the call
+  returns nothing for an aura that is up. A table with a plain `expirationTime` is an active buff, nothing is no buff,
+  anything else (a secret value) changes nothing. It reads on `PLAYER_ENTERING_WORLD`, `UNIT_AURA` for `"player"`
+  only (the event comes for every unit; its payload, secret tables in a fight, is never read), `PLAYER_REGEN_ENABLED`,
+  `FISHING_CAST_START` and when a notice timer comes due. In a fight the state kept from before stands, and a buff
+  ends there by the clock.
+- `Camp.Mask()` is nil when any bonus is unknown, else the sum of the bits of the active bonuses (0: none).
+  `FISHING_CAST_START` (Catch.lua, earlier in the TOC, has numbered the cast) reads and keeps the start mask under
+  the cast's ID (`false` when unknown). `Camp.CastMask(castID)` answers the start mask when it is a number equal to
+  `Mask()` now, else 0: a buff that began or ended during the cast, or a state not known, counts for no bonus. It
+  drops the masks of earlier casts and keeps this one, because Catch.lua settles a miss a second after the cast
+  stopped, maybe after the next cast started, and two modules (CatchDB and Stats) ask for the same cast; masks more
+  than 8 casts old are dropped at a cast's start. The mask is never sent in a message: `FISH_CAUGHT` and
+  `FISH_MISSED` keep their arguments.
+- `Camp.HasBit(mask, key)`, `Camp.KnownBonuses(itemID)` (the keys of the bonuses whose known list names the item,
+  in rank order, or nil: a Bloated fish is both bonuses', spec 020 decision 32) and `Camp.IsBonusCatch(mask, items)`
+  (the statistics' bonus catches, decision 33: with a mask above 0, the catch holds a known item of one of the
+  mask's bonuses, or two loot slots or more once the quest items of `GameData.FishedQuestItems` are left out, by
+  their list or their class through `C_Item.GetItemInfoInstant`; `items` is `FISH_CAUGHT`'s list, one entry per loot
+  slot; V68, accepted 2026-11-20: without a buff a catch has one slot).
+- The notices (research R10): a check runs after every allowed read and when a timer comes due; the clock alone
+  never shows one. Each active buff arms two `C_Timer.After` timers, a second past the five-minute threshold and a
+  second past the end, so the timer's own check finds the crossing; while auras are restricted a timer does nothing
+  and the read at the fight's end checks. A crossing ("ends in 5 minutes": the last check saw more than 300 s left,
+  now 300 s or less; "has ended": the last check saw it active, now it is gone) is marked as passed the moment it is
+  found, whatever the mode and the setting; it fires `CAMP_BONUS_WARNING(text)` only when fishing mode and
+  `settings.campBonusWarning` are on then, the five-minute one only within 30 s of the crossing. A crossing passed
+  silently is not shown later. A renewed buff (a later expiration on a read) starts a new pair and cancels the old
+  one's end. With "Leave fishing mode when attacked" on, Mode.lua (registered earlier) leaves the mode at the fight's
+  end before Camp reads, so a buff lost in a fight ends silently; with it off the end notice comes after the fight.
+  The texts are read when a notice fires, not at load.
+- `Camp.Describe()` gives the debug report's "Camp bonus" lines (English): each bonus's state, whether aura reads
+  are restricted, the last mask `CastMask` answered, the setting.
+- Its assumptions: V62, V63 and V68 accepted without a check or on a small one; V64, V65 and V69 confirmed
+  ([verification.md](../../specs/020-camp-buffs/verification.md)).
