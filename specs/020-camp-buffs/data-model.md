@@ -124,7 +124,9 @@ With `bonus ~= "all"` the water filter is read as `"all"`. The filter's cache ke
 ### The value "bonusOnly" (UI and catalog only)
 
 "Bonus catches only" (research R20) is a filter of the list, not of the sums: no cell is counted differently and it
-never reaches `CatchDB`, so `FilterKey` and the views know only `"all"`, `"none"` and the bonus keys.
+never reaches `CatchDB`, so `FilterKey` and the views know only `"all"`, `"none"` and the bonus keys. Under
+`"none"` the lists drop every tagged item, plain ones too (decision 35); `Catalog.BonusShown(bonus, value)` says
+which rows each value lists.
 
 | Where | What `"bonusOnly"` becomes |
 |---|---|

@@ -88,7 +88,9 @@ parts" builds `item.bonus` in each view).
 - "Bonus catches only" (`filter.bonus == "bonusOnly"`, spec 020 research R20) is a filter of the list over "All
   catches", like the kinds: `IndexFilter` maps it to the filter of `"all"`, so `IndexFor`, `Places` and `Spots` read
   the index of "All catches" (an item's page shows all its zones, and `Describe` names no index for it), and
-  `Catalog.Items` drops the rows whose `bonus` is nil or `plain`. `CatchDB` never sees the value.
+  `Catalog.Items` drops the rows whose `bonus` is nil or `plain`. `CatchDB` never sees the value. Under "No camp
+  bonus" `Catalog.Items` drops every tagged row, plain ones too (decision 35): `Catalog.BonusShown(bonus, value)`,
+  shared with "What can be caught here" (`CatchHere.BonusItems`), says which rows a value lists.
 - `Catalog.TooltipLines(itemID)` writes a tagged place's chance in the bonus form and returns a second value, the
   best place's `bonus` table (or nil), for the explanation line of `UI/ItemHooks.lua`. `Catalog.MinimapLines()`
   queries with `bonus = "all"` and writes a tagged item's `right` with its bonus chance.

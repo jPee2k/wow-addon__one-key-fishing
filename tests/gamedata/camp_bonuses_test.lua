@@ -31,6 +31,12 @@ test("both bonuses know the twelve Bloated fish (decision 32: the Hut gives them
     eq(bonuses[2].items, bonuses[1].items, "the Hut names the same list")
 end)
 
+test("every Bloated fish of the bonuses is a container among the kinds", function()
+    for itemID in pairs(bonuses[1].items) do
+        eq(ns.GameData.ItemKinds.byItem[itemID], "containers", "kind of " .. itemID)
+    end
+end)
+
 test("the fished quest items: the quest class and the known list (decision 33)", function()
     local quest = ns.GameData.FishedQuestItems
     eq(quest.classID, 12, "Enum.ItemClass.Questitem")

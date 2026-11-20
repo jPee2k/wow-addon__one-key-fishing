@@ -4,7 +4,7 @@
 
 local FISH, BLOATED, UNKNOWN = 6291, 6643, 88888
 local TAG = 14 -- the icon's size
-local NAME_WIDTH = 220 -- the name column
+local NAME_WIDTH = 195 -- the name column (the chance column took 25 for French "Little data")
 unknown_items[UNKNOWN] = true
 item_icons[279965] = 777
 
@@ -294,6 +294,32 @@ test("Bonus catches only: the tagged rows, the counts of all catches", function(
     assert(rowOf(UNKNOWN), "the item tagged from the data")
     eq(here.counts.text, counts, "the numbers of all catches")
     eq(rowOf(BLOATED).chance.text, ns.Percent(10 / 50), "the chance with the bonus")
+end)
+
+test("No camp bonus: a tagged item is left out, ordinary ones stay (decision 35)", function()
+    -- the place's cell with two Bloated fish outside its part: catches whose bonus is not known
+    local cells = {}
+    for key, value in pairs(SEED) do
+        cells[key] = value
+    end
+    local cell = catch_cell(102, 0, { [FISH] = { 85, 85 }, [BLOATED] = { 12, 12 }, [UNKNOWN] = { 5, 5 } })
+    cell.k, cell.q = 3, SEED["1415:3:47"].q
+    cells["1415:3:47"] = cell
+    setSeed(cells)
+    ns.CatchHere.SetBonus("none")
+    tick(window)
+    eq(rowOf(BLOATED), nil, "the Bloated fish of catches whose bonus is not known")
+    assert(rowOf(FISH), "an ordinary fish")
+    eq(here.message.text or "", "", "no empty-list text: the list has rows")
+    local inView = false
+    for _, entry in ipairs(ns.CatchDB.Query(1415, "47", { range = "all", source = "all", water = "all",
+        bonus = "none" }).items) do
+        inView = inView or entry.itemID == BLOATED
+    end
+    assert(inView, "the view of \"none\" still holds it: only the list leaves it out")
+    setSeed(SEED)
+    ns.CatchHere.SetBonus("bonusOnly")
+    tick(window)
 end)
 
 test("Bonus catches only where nothing tagged was caught: the empty text", function()

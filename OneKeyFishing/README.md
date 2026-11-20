@@ -209,7 +209,8 @@ enchanting dust.
   of buttons.
   - **Fishing Rack** and **Fishing Hut** count only the casts made with that bonus: every item those casts brought,
     with its chance among them.
-  - **No camp bonus** counts the other casts; it also holds older catches for which the bonus is not known.
+  - **No camp bonus** counts the other casts; it also holds older catches for which the bonus is not known. Bonus
+    catches (those with the icon) are left out of its list.
   - **Bonus catches only** keeps the list of **All catches** but shows just the bonus catches (those with the
     icon), with the same numbers. Where none was caught the tab says "No bonus catch has been recorded here yet."; in
     the catalog an item's page still shows all its zones.

@@ -101,7 +101,8 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - "Bonus catches only" (`"bonusOnly"`, research R20) is a filter of the list: the query gets `bonus = "all"`
   (`CatchHere.QueryBonus`) and `CatchHere.BonusItems` keeps the items whose `item.bonus` is not `plain` before
   `Catalog.Group`, so the counts line and every chance are those of "All catches"; with items in the view and none
-  tagged the message is "No bonus catch has been recorded here yet.";
+  tagged the message is "No bonus catch has been recorded here yet."; under "No camp bonus" (`"none"`) the same
+  function keeps the items without any tag, plain ones left out too (decision 35, `Catalog.BonusShown`);
 - the tag (research R19): a row whose item carries `item.bonus` shows the camp feature's icon (`Catalog.BonusIcon`,
   `TAG_SIZE` 14 px) at the right end of the name column, the name keeping the rest (`ns.CreateTagIcon` and
   `ns.ShowTag` of `UI/Widgets.lua`, for both tabs); its chance cell shows the chance under the bonus (`item.bonus.chance`, "Little data" when

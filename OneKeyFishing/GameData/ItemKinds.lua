@@ -85,6 +85,12 @@ GameData.ItemKinds = {
         [21163] = "containers", -- Bloated Firefin Snapper
         [21164] = "containers", -- Bloated Rockscale Cod
         [21243] = "containers", -- Bloated Glossy Mightfish (one player's report, not in the seed yet)
+        -- The rest of the camp bonuses' Bloated fish (GameData/CampBonuses.lua), not in the seed yet: 6647 was caught
+        -- under the Fishing Hut on 2026-11-20 and listed under "other"
+        [6644] = "containers", -- Bloated Mackerel
+        [6646] = "containers", -- Bloated Albacore
+        [6647] = "containers", -- Bloated Bristle Whisker Catfish
+        [13891] = "containers", -- Bloated Whitescale Salmon
         -- Fished containers of higher waters, not in the seed yet (their class, like the chests above, is no help)
         [6351] = "containers", -- Dented Crate
         [6352] = "containers", -- Waterlogged Crate

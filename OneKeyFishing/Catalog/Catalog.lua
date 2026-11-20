@@ -383,10 +383,23 @@ local function SortRows(list)
     end)
 end
 
+-- Whether a row (or a view's item) with this camp bonus tag is listed under the filter value (spec 020): "Bonus
+-- catches only" keeps the tagged ones (a non-plain tag); "No camp bonus" leaves out every tagged one, plain too
+-- (a Bloated fish of older catches whose bonus is not known: decision 35); any other value lists every row.
+function Catalog.BonusShown(bonus, value)
+    if value == "bonusOnly" then
+        return bonus ~= nil and not bonus.plain
+    elseif value == "none" then
+        return bonus == nil
+    end
+    return true
+end
+
 -- items, state: the items of the filter as { itemID, name, zones, chance, littleData }, in the saved order (by name
 -- unless the player chose another, spec 017; FR-002 to FR-005): known items only, grey ones only with search text,
 -- and with search text only those whose name contains it; under "Bonus catches only" (spec 020) the items whose best
--- place is tagged. state is "building" while no complete index exists, else "ready" (maybe stale).
+-- place is tagged, under "No camp bonus" the untagged ones (Catalog.BonusShown). state is "building" while no
+-- complete index exists, else "ready" (maybe stale).
 function Catalog.Items(filter, search)
     local index = IndexFor(filter)
     Freshen(index)
@@ -396,8 +409,8 @@ function Catalog.Items(filter, search)
     local key = type(search) == "string" and search ~= "" and ns.SearchKey(search) or nil
     local list = {}
     for _, row in ipairs(SortedItems(index)) do
-        local bonusShown = filter.bonus ~= "bonusOnly" or (row.bonus ~= nil and not row.bonus.plain)
-        if bonusShown and ((key and row.key:find(key, 1, true)) or (not key and not row.poor)) then
+        local searched = (key and row.key:find(key, 1, true)) or (not key and not row.poor)
+        if searched and Catalog.BonusShown(row.bonus, filter.bonus) then
             table.insert(list, row)
         end
     end

@@ -31,8 +31,9 @@ local ROWS_TOP = TOP - 164 -- the column headers; the list follows
 -- The item table: x and width inside a row (a row starts at LABEL_X), and the text alignment. The last column ends
 -- at 520: the scroll list (ns.CreateList) is 522 wide and clips what lies beyond, the scroll bar is to its right.
 local COLUMNS = {
-    { key = "name", x = 26, width = 220, justify = "LEFT" },
-    { key = "chance", x = 250, width = 85, justify = "RIGHT" },
+    { key = "name", x = 26, width = 195, justify = "LEFT" },
+    -- 110 wide: French "Little data" ("Peu de donnees") was cut at 85 (seen 2026-11-20)
+    { key = "chance", x = 225, width = 110, justify = "RIGHT" },
     { key = "pieces", x = 340, width = 65, justify = "RIGHT" },
     { key = "price", x = 410, width = 110, justify = "RIGHT" },
 }
@@ -174,14 +175,15 @@ function CatchHere.QueryBonus(value)
     return value == "bonusOnly" and "all" or value
 end
 
--- The items a tab lists under the camp bonus filter: under "bonusOnly" the tagged ones (a non-plain item.bonus).
+-- The items a tab lists under the camp bonus filter (Catalog.BonusShown): under "bonusOnly" the tagged ones, under
+-- "none" the untagged ones.
 function CatchHere.BonusItems(items, value)
-    if value ~= "bonusOnly" then
+    if value ~= "bonusOnly" and value ~= "none" then
         return items
     end
     local kept = {}
     for _, item in ipairs(items) do
-        if item.bonus and not item.bonus.plain then
+        if ns.Catalog.BonusShown(item.bonus, value) then
             table.insert(kept, item)
         end
     end
@@ -467,7 +469,7 @@ function CatchHere.Refresh(mapID, ownRange, cell)
         local hidden
         elements, hidden = ns.Catalog.Group(items)
         local itemsShown = #items - hidden
-        if #view.items > 0 and #items == 0 then
+        if bonus == "bonusOnly" and #view.items > 0 and #items == 0 then
             page.message:SetText(L["No bonus catch has been recorded here yet."]) -- spec 020
         elseif #items > 0 and itemsShown == 0 then
             page.message:SetText(L["The kind filter hides every item."]) -- not "no data" (FR-011)

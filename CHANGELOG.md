@@ -18,7 +18,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - A **Camp bonus** filter in both tabs, in the place of the Water filter, once a catch with a camp bonus is known:
   **All catches**, **No camp bonus**, **Bonus catches only**, **Fishing Rack**, **Fishing Hut**. The button names
   the chosen value ("Camp bonus: All", "Camp bonus: Rack"). **Bonus catches only** lists just the bonus catches,
-  with the same numbers as **All catches**.
+  with the same numbers as **All catches**; **No camp bonus** leaves them out.
 - A notice 5 minutes before a camp bonus ends and one when it has ended, in fishing mode, with the setting "Warn when
   a camp bonus is ending" (on by default).
 - The statistics show "Casts with a camp bonus" and "Bonus catches" (casts with a camp bonus that brought an extra
@@ -45,6 +45,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - The addon's coloured lines in item tooltips ("Caught in:", the fishing gear lines, the grey auction price with
   "(few lots)") keep their colour when another addon or the game resets the tooltip's line colours; before, they
   could turn white.
+- Four Bloated fish (Bloated Mackerel, Bloated Albacore, Bloated Bristle Whisker Catfish, Bloated Whitescale Salmon)
+  are listed under the kind "Containers" like the other Bloated fish, not under "Other".
 
 ## [1.4.0] - 2026-11-18
 

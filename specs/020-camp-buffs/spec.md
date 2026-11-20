@@ -108,6 +108,9 @@ on from the decisions above (FR-049 to FR-052, tasks T048 onwards).
 34. **The addon's coloured lines in item tooltips carry their colour as a code in the text too**, as the minimap
     tooltip's lines already do (spec 012 R5): another addon or the game may reset the line colours. The code wraps
     the translated text, never inside an `L[...]` string.
+35. **"No camp bonus" lists no tagged item** (the author, 2026-11-20, during the in-game checks): the mirror of
+    "Bonus catches only". A Bloated fish of older catches whose bonus is not known stays in the sums of "No camp
+    bonus" but leaves the list in both tabs; the counts line and the other chances do not change.
 
 ### Facts from the game, 2026-11-19
 
@@ -459,7 +462,8 @@ buff, and compare the other's lists; build the bundled database from records wit
   a list kept with the game data,
   whatever the collected data say and whatever the filter's value. Under "No camp bonus" (where its older catches with
   the bonus not known are counted) and under the filter of another condition it keeps the tag and its chance is the
-  plain one of that selection, not a chance "with the bonus".
+  plain one of that selection, not a chance "with the bonus"; under "No camp bonus" the lists leave it out (FR-053),
+  so the plain tag shows only on the catalog item page's zone and spot rows.
 - **FR-017**: Any other item MUST carry a condition's tag at a selection of places when all its counted catches there
   lie in that condition's part, and none outside it. A tag from the data MUST also need the bundled database to hold
   the item under that condition, or at least three different players' data (the own catch counts as one) to do so, the
@@ -595,7 +599,8 @@ buff, and compare the other's lists; build the bundled database from records wit
   selection, with that bonus's chance and players (FR-020, FR-021); with no catch under either, the Rack's tag (the
   lower-ranked bonus, the cheapest way to get it) with "Little data". Under a bonus's value it carries that bonus's
   tag with the selection's own numbers; under "No camp bonus" it keeps the Rack's tag with the plain chance
-  (FR-016). The Hut's other extras are not listed; FR-017 tags them from the data.
+  (FR-016) where it is shown, and the lists leave it out (FR-053). The Hut's other extras are not listed; FR-017
+  tags them from the data.
 - **FR-050**: A catch under a condition MUST count as a bonus catch (FR-034) when it holds a known item of one of its
   conditions, or when it has two loot slots or more once the quest items fished beside an ordinary catch are left
   out: the items of a list kept with the game data (Electropeller, Nat Pagle's four fish, the two fish of the
@@ -607,6 +612,9 @@ buff, and compare the other's lists; build the bundled database from records wit
   in:", the tag's name, the fishing gear lines, the grey "(few lots)" price line) MUST carry its colour as a code
   around the translated text as well as in the line's colour, so a reset of the tooltip's line colours leaves it
   coloured.
+- **FR-053**: Under "No camp bonus" the list of "What can be caught here" and of the catalog MUST leave out every
+  item with a camp bonus tag, plain ones too (decision 35); the counts line and the other items' numbers stay those
+  of "No camp bonus".
 
 ### Key Entities
 

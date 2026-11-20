@@ -138,6 +138,21 @@ test("under \"rack\" the view's own numbers; under \"none\" the ordinary ones, p
     eq(plain[1].mapID, 3002, "3002")
     eq(plain[1].bonus.plain, true, "plain")
     eq(plain[1].catches, 20, "the view's ordinary catches")
+    eq(rowOf(BLOATED, none), nil, "the list leaves the tagged item out under \"none\" (decision 35)")
+    assert(rowOf(FISH, none), "an untagged item stays")
+    assert(rowOf(BLOATED), "listed under \"all\"")
+end)
+
+test("BonusShown: \"bonusOnly\" keeps tagged rows, \"none\" untagged ones, any other value all", function()
+    local tagged, plain = { key = "rack" }, { key = "rack", plain = true }
+    eq(Catalog.BonusShown(tagged, "bonusOnly"), true, "bonusOnly: tagged")
+    eq(Catalog.BonusShown(plain, "bonusOnly"), false, "bonusOnly: plain")
+    eq(Catalog.BonusShown(nil, "bonusOnly"), false, "bonusOnly: untagged")
+    eq(Catalog.BonusShown(tagged, "none"), false, "none: tagged")
+    eq(Catalog.BonusShown(plain, "none"), false, "none: plain")
+    eq(Catalog.BonusShown(nil, "none"), true, "none: untagged")
+    eq(Catalog.BonusShown(plain, "rack"), true, "a key: every row")
+    eq(Catalog.BonusShown(nil, "all"), true, "all: every row")
 end)
 
 test("MinimapLines: a tagged item's chance in the bonus form", function()

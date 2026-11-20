@@ -655,6 +655,12 @@ No saved data change, no recount of old statistics; one new marker, `VERIFY(V68)
   `.luacheckrc`), with a test in `tests/fishing/camp_state_test.lua`; `CatchDB.HasBonusData` stops its walk once
   every known bonus has a part; the fallback list counts its rows for the window's 736 pixels (`UI/Widgets.lua`);
   the unknown item's grey "Item ID" line in `UI/CatchHere.lua` carries its colour code (decision 34).
+- [X] T058 In-game follow-ups (2026-11-20): "No camp bonus" leaves tagged items out of both lists (decision 35,
+  FR-053; `Catalog.BonusShown` in `Catalog/Catalog.lua`, used by `Catalog.Items` and `CatchHere.BonusItems`; tests in
+  `tests/catalog/bonus_test.lua` and `tests/ui/here_bonus_test.lua`); the four Bloated fish missing from
+  `GameData/ItemKinds.lua` (6644, 6646, 6647, 13891) are containers, with a test that every Bloated fish of the
+  bonuses is (`tests/gamedata/camp_bonuses_test.lua`); the "Chance" column of "What can be caught here" is 110 wide
+  (x 225), the name 195, so French "Peu de données" is no longer cut.
 
 ---
 
@@ -672,7 +678,7 @@ No saved data change, no recount of old statistics; one new marker, `VERIFY(V68)
 - Phase 12 after the first try in game: T041 on its own, T042 before T043 (the same rows), T044 before T045
   (the same button and tests); T046 after the code, T047 last.
 - Phase 13 after the Hut session: T048 before T049 to T051; T052 and T053 on their own; T054 with each; T055 after
-  the code, T056 last; T057 after the review.
+  the code, T056 last; T057 after the review; T058 after the first in-game checks.
 
 Files touched by several tasks (no [P] between them): `Fishing/Camp.lua` (T009, T011, T032, T034, T036),
 `CatchDB/Views.lua` (T022, T024, T030, T036), `CatchDB/Events.lua` (T013, T030), `UI/CatchHere.lua` and

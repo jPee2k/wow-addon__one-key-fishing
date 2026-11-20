@@ -85,7 +85,8 @@ so plan the buffs: a party member's Rack gives the buff to both of you. A `/okf 
    Choose "Fishing Rack": the button reads "Camp bonus: Rack", the list holds only the catches under the Rack, with
    their chances, misses and counts (FR-025); it combines with the Skill and Source buttons, the search and the
    catalog's sort (FR-028). Choose "No camp bonus": the button reads "Camp bonus: No bonus", the counts are the totals
-   minus the Rack's part. "Bonus catches only" reads "Camp bonus: Bonus only" (step 10). Gain or lose the buff
+   minus the Rack's part, and no row has the camp feature's icon (FR-053: a Bloated fish of older catches is left
+   out of the list). "Bonus catches only" reads "Camp bonus: Bonus only" (step 10). Gain or lose the buff
    meanwhile: the choice stays (FR-027). `/reload`, then log out and in: every login starts at "Camp bonus: All".
    Button texts seen: ____
    **Size of the own record** (V67): after fishing under the buff at several places, `/okf debug`, section "Shared
