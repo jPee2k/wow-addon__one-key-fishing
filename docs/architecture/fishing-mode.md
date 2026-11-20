@@ -205,5 +205,5 @@ and it creates no frame (FR-008).
   The texts are read when a notice fires, not at load.
 - `Camp.Describe()` gives the debug report's "Camp bonus" lines (English): each bonus's state, whether aura reads
   are restricted, the last mask `CastMask` answered, the setting.
-- Its assumptions: `VERIFY(V62)` and `VERIFY(V63)` are open; V64, V65 and V69 confirmed, V68 accepted
+- Its assumptions: V62, V63 and V68 accepted without a check or on a small one; V64, V65 and V69 confirmed
   ([verification.md](../../specs/020-camp-buffs/verification.md)).

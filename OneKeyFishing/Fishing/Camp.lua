@@ -159,7 +159,6 @@ function Camp.TimeLeft(key)
     end
 end
 
--- VERIFY(V62): both auras can be held at once
 -- The sum of the bits of the active bonuses (0: none), or nil when any bonus's state is unknown.
 function Camp.Mask()
     local mask = 0
@@ -205,7 +204,6 @@ local function IsQuestItem(itemID)
     return classID == QUEST_ITEMS.classID
 end
 
--- VERIFY(V63): the bonus is decided by the aura during the cast
 -- The mask the cast counts for: its start mask when that is a number equal to Mask() now, else 0 (a buff that began
 -- or ended in the cast, or a state not known, counts for no bonus: decision 17). Drops the masks of earlier casts and
 -- keeps this one: two modules ask for the same cast, and a miss settles a second after its cast stopped, when the next

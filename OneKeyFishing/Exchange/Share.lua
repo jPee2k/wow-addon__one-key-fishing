@@ -155,7 +155,6 @@ local function CleanCell(cell)
         end
     end
     if cell.q then
-        -- VERIFY(V67): a record with bonus parts stays under the size a peer takes
         -- The camp bonus parts (spec 020), keyed by the mask's text: fresh tables of c, m and i only. A 1.4.0 client
         -- drops q here and relays the totals, which stay right (the parts are inclusive).
         out.q = {}

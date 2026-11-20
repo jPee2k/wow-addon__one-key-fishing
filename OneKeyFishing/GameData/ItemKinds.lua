@@ -63,6 +63,14 @@ GameData.ItemKinds = {
         [13890] = "fish", -- Raw Plated Armorfish (12 / 0)
         [13901] = "fish", -- 15 Pound Salmon (15 / 0)
         [19805] = "fish", -- Keefer's Angelfish (15 / 0)
+        -- Fish of the seed of epoch 7 (2026-11-20; the names of this epoch's items are read from Wowhead's classic
+        -- database, and the eight with a class in brackets were checked in game the same day)
+        [1467] = "fish", -- Spotted Sunfish (12 / 0: a quest fish of Redridge)
+        [13882] = "fish", -- 42 Pound Redgill (15 / 0)
+        [13883] = "fish", -- 45 Pound Redgill
+        [13888] = "fish", -- Darkclaw Lobster (7 / 8)
+        [13893] = "fish", -- Large Raw Mightfish
+        [13908] = "fish", -- 9 Pound Lobster (15 / 0)
         -- Containers: chests, crates, trunks, clams
         [5523] = "containers", -- Small Barnacled Clam (7 / 11)
         [5524] = "containers", -- Thick-shelled Clam
@@ -112,6 +120,9 @@ GameData.ItemKinds = {
         [929] = "potions", -- Healing Potion (0 / 1)
         [3827] = "potions", -- Mana Potion (0 / 1)
         [6149] = "potions", -- Greater Mana Potion (0 / 1)
+        -- Potions of the seed of epoch 7 (2026-11-20)
+        [13443] = "potions", -- Superior Mana Potion
+        [13446] = "potions", -- Major Healing Potion
         -- Reagents & herbs
         [3820] = "reagents", -- Stranglekelp (7 / 9)
         [6470] = "reagents", -- Deviate Scale (7 / 6)
@@ -129,6 +140,21 @@ GameData.ItemKinds = {
         [10286] = "reagents", -- Heart of the Wild (7 / 10)
         [13466] = "reagents", -- Plaguebloom (7 / 9)
         [14047] = "reagents", -- Runecloth (7 / 5)
+        -- Reagents of the seed of epoch 7 (2026-11-20): ore, bars, hides, cloth, herbs, dust and elemental water; some
+        -- are the Fishing Hut's bonus catches
+        [2772] = "reagents", -- Iron Ore
+        [2776] = "reagents", -- Gold Ore
+        [3860] = "reagents", -- Mithril Bar
+        [4338] = "reagents", -- Mageweave Cloth
+        [7070] = "reagents", -- Elemental Water (7 / 10)
+        [7079] = "reagents", -- Globe of Water
+        [7080] = "reagents", -- Essence of Water
+        [7911] = "reagents", -- Truesilver Ore
+        [8169] = "reagents", -- Thick Hide
+        [10620] = "reagents", -- Thorium Ore
+        [11176] = "reagents", -- Dream Dust
+        [13465] = "reagents", -- Mountain Silversage
+        [13467] = "reagents", -- Icecap
         -- Other
         [6457] = "other", -- Rusted Engineering Parts (15 / 0)
         [9754] = "other", -- Nomad Cloak (4 / 1)
@@ -150,6 +176,31 @@ GameData.ItemKinds = {
         [6541] = "other", -- Willow Gloves (4 / 1)
         [6717] = "other", -- Gaffer Jack (12 / 0)
         [8350] = "other", -- The 1 Ring (4 / 0)
+        -- Other of the seed of epoch 7 (2026-11-20): gear, bags and recipes
+        [767] = "other", -- Long Bo Staff
+        [804] = "other", -- Large Blue Sack (1 / 0: a bag, not a fished container)
+        [2080] = "other", -- Hillborne Axe
+        [2657] = "other", -- Red Leather Bag (1 / 0: a bag)
+        [2960] = "other", -- Journeyman's Gloves
+        [3609] = "other", -- Plans: Copper Chain Vest
+        [4347] = "other", -- Pattern: Reinforced Woolen Shoulders
+        [4658] = "other", -- Warrior's Cloak
+        [4707] = "other", -- Lambent Scale Girdle
+        [6360] = "other", -- Steelscale Crushfish (2 / 4: a one-hand mace, not a fish)
+        [6378] = "other", -- Seer's Cape
+        [6520] = "other", -- Pioneer Cloak
+        [6536] = "other", -- Willow Vest
+        [6551] = "other", -- Soldier's Boots
+        [6591] = "other", -- Battleforge Wristguards
+        [7092] = "other", -- Pattern: Hands of Darkness
+        [7109] = "other", -- Pioneer Buckler
+        [7459] = "other", -- Knight's Pauldrons
+        [8179] = "other", -- Cadet's Bow
+        [8181] = "other", -- Hunting Rifle
+        [8182] = "other", -- Pellet Rifle
+        [10225] = "other", -- Nightshade Gloves
+        [10312] = "other", -- Pattern: Red Mageweave Gloves
+        [15895] = "other", -- Burnt Buckler
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {

@@ -4,7 +4,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.5.0] - 2026-11-20
 
 ### Added
 
@@ -49,6 +49,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - The catch catalog's status line ("Counting the catch...", "No item matches the search.") stands under the search
   box.
 - "Per catch" drops the ".0" of whole numbers: "1" instead of "1.0", "1.3" otherwise.
+- The bundled catch database now knows 825 fishing places (300 new) and 44 more items, from the catches players
+  shared, and holds the first catches made with a camp bonus.
 
 ### Fixed
 

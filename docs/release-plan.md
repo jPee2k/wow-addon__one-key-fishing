@@ -42,25 +42,33 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.5.0 (planned)
+## 1.5.0 (being released, 2026-11-20)
 
 - Spec 020 (`specs/020-camp-buffs`): the camp bonuses of a Fishing Rack and a Fishing Hut, built on `020-camp-buffs`
-  (implemented 2026-11-20). Three `VERIFY` markers are open after the in-game checks of 2026-11-20: V62 (both
-  auras at once: needs a second player), V63 (the cast in which a buff ends: rare) and V67 (the own record's size
-  with many bonus parts; 1448 bytes for 18 places, 2 with a part, so far) (`specs/020-camp-buffs/verification.md`,
-  checklist [checklists/camp-buffs.md](checklists/camp-buffs.md)); V61 and V68 were accepted on 63 catches
-  without a buff at one water, V60, V64, V65, V66 and V69 confirmed. What stays open the author accepts or
-  releases with `--force`.
+  (implemented 2026-11-20). No `VERIFY` marker is left: V60, V64, V65, V66 and V69 confirmed in game; V61 and V68
+  accepted on 63 catches without a buff at one water; V62 (both auras at once: needs a second player), V63 (the
+  cast in which a buff ends: rare) and V67 (the own record's size with bonus parts) accepted by the author on
+  2026-11-20 without an in-game check (`specs/020-camp-buffs/verification.md`, checklist
+  [checklists/camp-buffs.md](checklists/camp-buffs.md)). V67 rests on a measurement outside the game: a place with
+  a part costs about 1.4 times a place without, and the 500 busiest real places in one record stay under the 32 KB
+  (22.8 KB without parts, 27.2 to 31.2 KB with them). To check in play after the release: V62, V63, and V67's size
+  line in `/okf debug` once the own record holds places with parts again.
 - Spec 021 (`specs/021-cumulative-skill-filter`): the Skill filter of both catch pages sums the chosen range and
   every lower one, the miss rate comes from the chosen range alone; merged into `develop` on 2026-11-20 (pull
   request #14). No `VERIFY` marker; checked in game the same day
   ([checklists/skill-filter.md](checklists/skill-filter.md): step 3, the "(yours)" mark without a map, skipped
   and covered by the tests).
-- **Before the release**: read the size of the own record with bonus parts (V67, the checklist's size step): if a
-  place with a part costs twice a place without or more, the roll before a 501st place counts such a place as two
-  (research R16) before the release, not after.
-- At the release (publishing.md): the version 1.5.0, the harvest (the seed then carries the bonus parts), the
-  changelog's `[Unreleased]` under its version.
+- The harvest of 2026-11-20 made seed epoch 7 with 825 places (300 new) and 44 new items from 310 contributions; four
+  cells carry camp bonus parts (331 catches under a bonus), so a fresh install shows the Fishing Hut's extras (ore, a
+  bar, a hide, dust, a herb) with their tag. Seventeen records were reported as outliers (items nobody else
+  reports): gear, recipes, two junk fish, a potion and an Engineering part, most caught once. None blocked: they are
+  real items, and gear and recipes are fished in Forever (as in 1.3.2 and 1.4.0). The 45 seed items without a kind
+  got one in `GameData/ItemKinds.lua` (6 fish, 2 potions, 13 reagents, 24 other; names read from Wowhead's classic
+  database).
+- The version 1.5.0 in `package.json` and the changelog's `[Unreleased]` under `[1.5.0] - 2026-11-20`.
+- The author's scan with the build of this release (seed epoch 7, the Auctionator switch off) on 2026-11-20, since
+  the new seed items join every player's scan list: 132 items in 88 seconds, 107 prices found, the auction house
+  answered every request.
 
 ## 1.4.0 (released 2026-11-18)
 

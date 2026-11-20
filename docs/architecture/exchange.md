@@ -132,8 +132,9 @@ channel as it ships; the stub flag `channel_off` switches it off for the tests o
   fields it knows, so such a record passes its checks (the parts are inclusive: `seq <= casts` over `c + m` is
   untouched), and its `CleanCell` drops `q` and relays the totals under the same `seq`: the totals stay right, the
   split is lost on that path, nobody is ignored (FR-011). Nothing else of the exchange changes (no message, version
-  or limit). A cell fished under a bonus lists its items twice, so whether the own record stays under the 32 KB a
-  peer takes is read in game (`VERIFY(V67)`, research R16 of spec 020: if it grows too much, the roll counts a place
+  or limit). A cell fished under a bonus lists its items twice: a place with a part costs about 1.4 times a place
+  without, and 500 busy places with parts stay under the 32 KB a peer takes (V67, accepted on a measurement outside
+  the game on 2026-11-20; research R16 of spec 020: should a record grow over the limit, the roll counts a place
   with a part as two).
 
 ## Exchange/ShareNode.lua and ShareProtocol.lua: the protocol

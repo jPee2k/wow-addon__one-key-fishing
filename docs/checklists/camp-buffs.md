@@ -221,8 +221,9 @@ needs any tagged item.
   "No camp bonus" lists no tagged item (FR-053); 63 catches without a buff, no second slot (V61, V68 accepted).
 - Problems found and fixed the same day: French "Peu de données" cut in the chance column of both tabs (now 110
   wide); four Bloated fish (6644, 6646, 6647, 13891) listed under "Other" (now containers).
-- Open: V62 (both auras, a second player), V63 (rare), V67 (1448 bytes for 18 places, 2 with a part: no risk yet,
-  measure again with 20 or more places with a part); the list of "What can be caught here" holding its scroll while
+- V62 (both auras, a second player), V63 (rare) and V67 (the record's size) were accepted by the author on
+  2026-11-20 for release 1.5.0 (`specs/020-camp-buffs/verification.md`; V67 on a measurement outside the game). Still
+  open: the list of "What can be caught here" holding its scroll while
   fishing (no place had enough items to scroll); H14 (the Hut's extras at other waters: none in 50 casts at
   Hillsbrad Foothills).
 
