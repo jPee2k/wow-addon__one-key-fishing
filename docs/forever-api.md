@@ -382,7 +382,20 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
     behind them (General 1 ... OOC 6, `OneKeyFishingShare` 7).
   - `/run C_ChatInfo.SwapChatChannelsByChannelIndex(1,7)` (what a drag of a row in Chat Settings > Channels calls)
     traded the two numbers with no error and no "Interface action failed": General on 1, the addon's channel on 7.
-    Typed, so with a key press; from a timer it is V70 of `specs/022-channel-order/verification.md`.
+    Typed, so with a key press. From `C_Timer.After`, with no key press, it works the same (V70, the same day:
+    General on 6 and the channel on 1 traded places, the numbers were there at once), and the addon's own swap ran
+    with no "Interface action failed", also around a fight. The chat edit box keeps its channel as a number (its
+    `channelTarget` attribute): left on General's old number, it opened the hidden channel after the swap. The box
+    sends with `C_ChatInfo.SendChatMessage`, which has restrictions and takes secret arguments only untainted, so
+    addon code does not write that attribute (`docs/tech-debt.md`).
+  - `C_ChatInfo.GetGeneralChannelLocalID()` gives General's number (`1`; `6` with General put behind) and nothing
+    ("empty result") while the player is not in General (V71).
+  - `C_ChatInfo.GetChannelInfoFromIdentifier("General")` gives `zoneChannelID=1`, `channelType=1`, `localID` (the
+    chat number), `name="General - Stranglethorn Vale"`, `shortcut="General"`; for a custom channel `zoneChannelID=0`,
+    `channelType=0`. `GetChannelList()` gives triples of number, short name ("General", "Trade") and `true` for a
+    number that is only kept; `GetChannelName(number)` gives the long name ("General - Stranglethorn Vale") (V72).
+  - A channel of the game joined again takes the lowest free number: LocalDefense, left and joined with the addon's
+    channel on its number 3, came on 6. A `/reload` lists every channel and kept number as before it (V73).
   - After a login the client does not know the city's OOC yet: the addon's channel joined on 6, and "Chat Defaults"
     then listed OOC on 6 and the channel on 7.
   - A `/reload` keeps every number. A logout and login does not bring the addon's temporary channel back (it was not

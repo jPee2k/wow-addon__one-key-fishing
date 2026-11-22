@@ -187,7 +187,8 @@ local function GeneralNumber()
     if not read then
         return nil, false
     end
-    -- VERIFY(V71): GetGeneralChannelLocalID gives General's number, and nothing while the player is not in General
+    -- GetGeneralChannelLocalID gives General's number, and nothing while the player is not in General (V71, seen in
+    -- game 2026-11-22: 1, nothing after /leave 1, 6 with General put behind)
     local ok, number = pcall(read)
     if not ok or ns.IsSecret(number) then
         return nil, false
@@ -307,8 +308,9 @@ local function IsGame(name, number)
     if not read then
         return false
     end
-    -- VERIFY(V72): GetChannelInfoFromIdentifier (a name of GetChannelList, else the number as text) gives a
-    -- zoneChannelID above 0 for a channel of the game and 0 for a custom one
+    -- GetChannelInfoFromIdentifier (a name of GetChannelList, else the number as text) gives a zoneChannelID above 0
+    -- for a channel of the game and 0 for a custom one, and localID is the channel's number (V72, seen in game
+    -- 2026-11-22: General zoneChannelID 1, localID 6; the addon's channel zoneChannelID 0, localID 1)
     -- The answer must be about this entry: a name may read as another channel's number (a channel named "2").
     local function About(identifier)
         local ok, info = pcall(read, identifier)
@@ -409,9 +411,10 @@ FixOrder = function()
                 end
             end
         end
-        -- VERIFY(V74): a channel of the game the client learns of later (a city's, after a login outside one) joins
-        -- on the lowest free number. One with a free number below it did not come that way: the game kept that
-        -- number for it (a row dragged in an earlier session), so it is not ours to move.
+        -- A channel of the game the client learns of later (a city's, after a login outside one) joins on the lowest
+        -- free number (V74, accepted 2026-11-22; LocalDefense joined again did so in game). One with a free number
+        -- below it did not come that way: the game kept that number for it (a row dragged in an earlier session),
+        -- so it is not ours to move.
         for number = 1, (target or 0) - 1 do
             if not taken[number] then
                 target = nil
@@ -439,8 +442,8 @@ FixOrder = function()
         return
     end
     order.pending, order.at = { to = target, general = viaGeneral }, now
-    -- VERIFY(V70): addon code may swap two chat channel numbers with no key press, as Chat Settings > Channels does
-    -- on a drag (a /run swap put General back on 1, 2026-11-22), and the numbers show within SWAP_WAIT
+    -- Addon code may swap two chat channel numbers with no key press, as Chat Settings > Channels does on a drag,
+    -- and the numbers show at once (V70, seen in game 2026-11-22: from a timer, and by the addon itself)
     pcall(swap, mine, target)
     C_Timer.After(SWAP_GAP, FixOrder)
     C_Timer.After(SWAP_WAIT, FixOrder)
@@ -938,9 +941,10 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
             end
             WaitLock()
         end
-        -- VERIFY(V73): after a /reload GetChannelList() holds every channel the player is in, and every number the
-        -- game keeps, within RELOAD_SETTLE seconds of PLAYER_ENTERING_WORLD. Until then nothing listed counts as new,
-        -- also beside a join made right here.
+        -- After a /reload GetChannelList() holds every channel the player is in, and every number the game keeps,
+        -- within RELOAD_SETTLE seconds of PLAYER_ENTERING_WORLD (V73, seen in game 2026-11-22: three reloads with the
+        -- channel below Services and TradeLocal moved nothing). Until then nothing listed counts as new, also beside
+        -- a join made right here.
         order.settleAt = GetTime() + RELOAD_SETTLE
         C_Timer.After(RELOAD_SETTLE, function()
             local list = (joined or joining) and ListChannels() -- also for a join not confirmed yet

@@ -25,10 +25,15 @@ the low items left, none seen in game.
   join's check and the `/reload` scan. If a chat lockdown ever hides that number, the comparison raises an error;
   returning nil instead makes the join's check lock all six names. Not known whether the game hides it. A fix needs
   "unknown" apart from "not in the channel" in those three callers.
-- **The chat edit box after a number swap** (low). The edit box keeps its channel as a number, so after the addon's
-  swap a box left on General's old number opens the hidden channel, and a line typed there is hidden from the
-  sender by the addon's filters. A drag in Chat Settings > Channels does the same; the edit box is Blizzard's and
-  not a frame for layer 2 to write. V70's check looks at it (`specs/022-channel-order/verification.md`).
+- **The chat edit box after a number swap** (low, seen in game 2026-11-22). The edit box keeps its channel as a
+  number (its `channelTarget` attribute), so after the addon's swap a box left on General's old number opened
+  `[6. OneKeyFishingShare]`, and a line typed there goes to the hidden channel, where the addon's filters hide it
+  from the sender. It happens only when the player wrote to General on its wrong number just before the swap; a
+  drag in Chat Settings > Channels does the same. **Not fixed on purpose**: moving the box to the other number means
+  the addon writes `SetAttribute("channelTarget", ...)` on Blizzard's edit box, and the box passes that value to
+  `C_ChatInfo.SendChatMessage` (`HasRestrictions`, `SecretArguments = "AllowedWhenUntainted"` in the client's API
+  documentation): the tainted value could make the player's own chat fail in a chat lockdown, a worse fault than
+  this one. The player opens the right channel with `/1`.
 - **A channel of the game that is not seen as new** (low). `FixOrder` takes a channel for known when its name or its
   number was listed at any look since the hidden channel's join (kept on purpose: a look that misses a channel must
   not make it new). So a channel of the game that takes a number another channel left, or one that left and came

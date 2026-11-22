@@ -101,7 +101,7 @@ checked on a PvE realm and stays open.
 11. [ ] **Harvest** (SC-010): before the release, `npm run harvest` lists contributions from players outside the
     author's guild, group and friends; the outlier report is read, and any block is made with
     `npm run harvest -- --block <id> "why"`.
-12. [ ] **Numbers** (spec 022; V70 to V74). The list of channels is
+12. [x] **Numbers** (spec 022; V70 to V74). The list of channels is
     `/run for i=1,20 do local n,s=GetChannelName(i) if n>0 then print(n,s) end end`.
     1. A normal login: after about a minute the channel is behind every channel of the game, and `/okf debug` says
        "channel: in (name 1, chat number N)" and "channel number: General 1, swaps 0, failed 0, repair on".
@@ -128,6 +128,17 @@ checked on a PvE realm and stays open.
   Later the same night: step 1 over three logins (V22) and step 7's leave by hand (V41) passed; V24 (kicks) and V25
   (the throttle) were accepted without a check, to check later (`docs/release-plan.md`). Open: 5 the way back, 6, the
   rest of 7, 8 (slow join), 10, 11; a third account for two addon clients moving together; the other faction (V20).
+
+- 2026-11-22, step 12 (Drog Earthshaker, client 1.60.1.71037, a build of `develop` after `ff99079`): 12.1 a login
+  put the channel on 6 after every channel of the game, "chat number 6 ... swaps 0"; 12.2 with General left the
+  channel joined nothing ("1.Empty" in Chat Settings), and after `/join General` it joined on 6 behind General 1;
+  12.3 after two minutes it joined on 1, and `/join General` (General on 6) was answered by one swap, General 1,
+  "swaps 1, failed 0"; 12.4 not run in a capital (V74 accepted), but LocalDefense joined again behind the channel
+  got its number 3 back by one swap; 12.5 LocalDefense dragged behind the channel stayed there, also after a
+  `/reload`; 12.6 a fight: no "Interface action failed", "Errors: none"; 12.7 three `/reload` with the channel on 3
+  below Services and TradeLocal moved nothing (V73). With 1.5.0 before it: V70, V71, V72 by `/run`
+  (`specs/022-channel-order/verification.md`). Found: the chat edit box left on General's old number opens the
+  hidden channel after a swap (left as it is, `docs/tech-debt.md`).
 
 - Date, build, accounts used:
 - Problems found:

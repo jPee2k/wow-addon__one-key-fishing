@@ -4,8 +4,8 @@
 
 **Created**: 2026-11-22
 
-**Status**: Built with tests; the in-game checks V70 to V74 and step 12 of `docs/checklists/public-channel.md` are
-open
+**Status**: Built with tests and checked in game on 2026-11-22: V70 to V73 confirmed, V74 accepted, step 12 of
+`docs/checklists/public-channel.md` passed (12.4 not in a capital)
 
 **Input**: A bug found by the author in play on 2026-11-22: the addon's hidden chat channel `OneKeyFishingShare`
 stood on chat channel number 1 and General on 7, until "Chat Defaults" was pressed. Planned for the patch 1.5.1.

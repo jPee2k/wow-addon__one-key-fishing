@@ -4,7 +4,12 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.5.1] - 2026-11-22
+
+### Changed
+
+- The bundled catch database now knows 947 fishing places (122 new) and 20 more items, from the catches players
+  shared.
 
 ### Fixed
 
