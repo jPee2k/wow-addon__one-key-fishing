@@ -131,7 +131,7 @@ new field only needs a default.
 | `stats`, `countedCast` | the statistics buckets (`session`, `total`, `zones[key]`; since spec 020 also `bonusCasts` and `bonusCatches`, read as 0 when missing) and the cast running across a `/reload` | Stats.lua |
 | `session` | the current fishing session (its counts and times; `skillStart`, the Fishing rank it began with, read by Fishing/Skill.lua) | Catch/Stats.lua, Fishing/Skill.lua (`skillStart`) |
 | `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | Core/MapPin.lua |
-| `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks) | Channel.lua |
+| `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks, `generalOwed`: the comparison of its number with General's is still owed, `known`: the channel names and numbers that are not new to the repair of the numbers, spec 022) | Channel.lua |
 
 ## Core/Commands.lua (loaded last)
 

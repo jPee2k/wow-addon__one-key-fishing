@@ -17,6 +17,31 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
 
 ## Open items
 
+Reviews of the channel number fix (spec 022, five `/code-review high` rounds and an independent review, 2026-11-22):
+the low items left, none seen in game.
+
+- **The hidden channel's number as a secret value** (low, the code of 1.3.0). `NumberOf` in `Exchange/Channel.lua`
+  compares what `GetChannelName` returns without `ns.IsSecret`; it serves `Channel.GetNumber` (a channel send), the
+  join's check and the `/reload` scan. If a chat lockdown ever hides that number, the comparison raises an error;
+  returning nil instead makes the join's check lock all six names. Not known whether the game hides it. A fix needs
+  "unknown" apart from "not in the channel" in those three callers.
+- **The chat edit box after a number swap** (low, seen in game 2026-11-22). The edit box keeps its channel as a
+  number (its `channelTarget` attribute), so after the addon's swap a box left on General's old number opened
+  `[6. OneKeyFishingShare]`, and a line typed there goes to the hidden channel, where the addon's filters hide it
+  from the sender. It happens only when the player wrote to General on its wrong number just before the swap; a
+  drag in Chat Settings > Channels does the same. **Not fixed on purpose**: moving the box to the other number means
+  the addon writes `SetAttribute("channelTarget", ...)` on Blizzard's edit box, and the box passes that value to
+  `C_ChatInfo.SendChatMessage` (`HasRestrictions`, `SecretArguments = "AllowedWhenUntainted"` in the client's API
+  documentation): the tainted value could make the player's own chat fail in a chat lockdown, a worse fault than
+  this one. The player opens the right channel with `/1`.
+- **A channel of the game that is not seen as new** (low). `FixOrder` takes a channel for known when its name or its
+  number was listed at any look since the hidden channel's join (kept on purpose: a look that misses a channel must
+  not make it new). So a channel of the game that takes a number another channel left, or one that left and came
+  back behind the hidden channel (only when its old number was taken meanwhile), stays there until the next join of
+  the hidden channel; "Chat Defaults" puts it back.
+- **General kept behind a free lower number on purpose** (low, spec 022 FR-005): each new join of the hidden channel
+  takes that lower number and puts General before it; a broken order cannot be told from it.
+
 Review of the window fixes (`/code-review high`, 2026-11-18): the low items left.
 
 - **The statistics window's fallback has no background** (low, found by review, not seen in game). Without

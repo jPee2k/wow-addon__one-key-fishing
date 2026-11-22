@@ -42,7 +42,26 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
-## 1.5.0 (being released, 2026-11-20)
+## 1.5.1 (next patch)
+
+- Spec 022 (`specs/022-channel-order`, branch `022-channel-order` off `develop`): the hidden channel no longer takes
+  the number of a channel of the game (it took 1 from General on 2026-11-22) and repairs an order already broken.
+  Merged into `develop` (`016696f`, `ff99079`).
+- Checked in game on 2026-11-22: V70, V71, V72, V73 confirmed, V74 accepted (to see in a capital later); step 12
+  of the public channel checklist passed but in a capital. No `VERIFY` marker is left. Found: the chat edit box
+  after a swap (`docs/tech-debt.md`, not fixed on purpose: writing it would taint the player's chat).
+- Prepared on 2026-11-22: `package.json` and
+  `CHANGELOG.md` at 1.5.1; the harvest made seed epoch 8 with 947 places (122 new) and 20 new items from 278
+  contributions, seventeen outliers reported (single items nobody else reports, one with unlike item shares), none
+  blocked. The 14 seed items without a kind are in `GameData/ItemKinds.lua` (5 fish, 9 other; names and classes
+  from the game's item tables, build 1.60.1.71037); three of them have no name row there and were read in game
+  with `C_Item.GetItemInfo` on 2026-11-22: 1640 Monstrous War Axe, 7490 Captain's Boots, 9790 Raider's Shield.
+
+## 1.5.0 (released 2026-11-20)
+
+**Released 2026-11-20**: pull requests #13 (`020-camp-buffs`) and #14 (`021-cumulative-skill-filter`) merged into
+`develop`, pull request #15 merged into `main`, tag `1.5.0`, GitHub release and CurseForge upload
+(`OneKeyFishing-1.5.0-forever.zip`). No `VERIFY` marker.
 
 - Spec 020 (`specs/020-camp-buffs`): the camp bonuses of a Fishing Rack and a Fishing Hut, built on `020-camp-buffs`
   (implemented 2026-11-20). No `VERIFY` marker is left: V60, V64, V65, V66 and V69 confirmed in game; V61 and V68

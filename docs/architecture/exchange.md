@@ -78,6 +78,44 @@ channel as it ships; the stub flag `channel_off` switches it off for the tests o
 - Joined with `JoinTemporaryChannel(name)` 30-60 s after a login (at once after the setting or after slots free
   up), only with both settings on, the notice that names the channel closed, no pause, and two free chat channel
   slots of the 20. After a `/reload` a joined channel is taken as it is.
+- The channel's number (spec 022, `specs/022-channel-order`): a join gets the lowest free chat channel number, and
+  General's is free while the player is not in General, so the channel once took number 1 and General came back
+  behind every channel (seen 2026-11-22). Two parts keep the game's channels on their numbers:
+  - A join waits for General: while `C_ChatInfo.GetGeneralChannelLocalID()` gives nothing, `Update` joins nothing (the
+    state stays `waiting`). After 120 s without General it joins anyway (a player may have left General). The wait
+    counts from the first look that found no General when a join wanted it, and ends for good only when General is
+    seen: from that first look on a timer looks every 5 s (`PollGeneral`, through a pause, a fight and the setting
+    turned off), and every `Update`, `CHANNEL_UI_UPDATE` and join notice of another channel looks too, so the next
+    wait is a whole one. Once General is seen after a look had missed it, the join waits 10 s more
+    (`GENERAL_SETTLE`), so that the channels coming back with General take their numbers first. A `/reload` starts
+    the wait anew. A game without the call joins as before. Every join goes through it: the login, a
+    `/reload`, the setting, the end of a pause, slots given back, a kick's rejoin, a fallback name.
+  - `FixOrder` trades the channel's number with one channel of the game through
+    `C_ChatInfo.SwapChatChannelsByChannelIndex` (what a drag in Chat Settings > Channels calls) in two cases. Rule G:
+    General's number is above the channel's. It is owed once after each join; `channelSession.generalOwed` carries
+    it over a `/reload`, where a record without the field (a version before spec 022) counts as owed, so General
+    left behind by an older version is put back once and General dragged behind the channel later stays. Rule N: a
+    channel of the game (`GetChannelInfoFromIdentifier(...).zoneChannelID > 0`) that was not listed at the join
+    (neither its name nor its number) turns up above the channel; it took the lowest free number, which without the
+    addon was the channel's, so the swap gives the order the game would have had (but for a channel the player joined
+    between the two, which keeps its number: the game's channel then stands before it). The names and numbers known
+    at the join go over a `/reload` in `channelSession.known`, and whatever is listed in the 10 s after a `/reload`
+    counts as there before it (the list may still be filling; also beside a join made at the `/reload`, and after a
+    record without the channels). A new channel with a free number below it is left alone: it did not take the
+    lowest free number, the game kept that one for it (a row dragged in an earlier session). Several are handled one swap at a
+    time, the lowest first; one the game tells nothing about yet (only its number is kept) is looked at again, as is
+    a list or a number the game hides (secret values), every 5 s. It
+    runs after a join, on `CHANNEL_UI_UPDATE`, on the join notice (`YOU_CHANGED`) of another channel, on the 5 s
+    timer while General is away, on each channel round and after a fight.
+  - It never moves a channel that was listed at any look since the join (known names and numbers are only added
+    to, until the next join: a look that misses a channel after a loading screen does not make it new), the player's own channels or another addon's, or a row the
+    player dragged, and it does not write `ChatTypeInfo` (a colour stays with its number). It holds back in a fight
+    and while the channel list holds secret values; a swap counts once the channel has the other number (looked at
+    after 2 s, the gap between two swaps), one that changed nothing after 10 s is a failure and is tried again, two
+    failures in a row or six swaps stop the repair for the session. A limit: rule G cannot tell General kept behind
+    a free lower number on purpose from a broken order, so each new join of the channel there puts General back.
+  - `/okf debug` shows the channel's chat number beside the index of its name ("name 1, chat number 7") and the line
+    "channel number: General N, swaps, failed, repair on|stopped, waited for General".
 - Hidden: taken out of every chat window that lists it (`RemoveChannel`, also on `UPDATE_CHAT_WINDOWS`), and five
   `ChatFrameUtil` filters drop every line whose channel is ours (secret values untouched). The password popup for
   our names is closed in the same frame.

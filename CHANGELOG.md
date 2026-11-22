@@ -4,6 +4,23 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-11-22
+
+### Changed
+
+- The bundled catch database now knows 947 fishing places (122 new) and 20 more items, from the catches players
+  shared.
+
+### Fixed
+
+- The addon's hidden chat channel could take chat channel number 1 when it was joined while you were not in
+  General (a late General after a login or a `/reload`, a `/leave`): General then came back as the last channel and
+  stayed there until "Chat Defaults" was pressed. The addon now waits for General before it joins, up to two
+  minutes, and when a channel of the game still ends up behind the hidden channel, the two trade places by
+  themselves; General left behind it by an earlier version is put back the same way. Your own channels and an order
+  you set by hand in Chat Settings afterwards are not touched, except that General does not stay behind the hidden
+  channel when that channel is joined anew. `/okf debug` now shows the hidden channel's chat number.
+
 ## [1.5.0] - 2026-11-20
 
 ### Added

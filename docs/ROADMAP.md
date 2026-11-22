@@ -55,6 +55,24 @@ Nothing is planned right now; the ideas below are not decided.
 - **Fishing pools**: notice and point out nearby pools. The catch database already tells pool catches apart when
   the game does (the "Water" filter).
 - **Skill-up forecast**: how many catches until the next skill point or rank cap.
+- **Controller support**: fish with a gamepad, the two bindings on its buttons. Other fishing addons for WoW Forever
+  offer it (seen on their CurseForge pages, 2026-11-20). To check in game before a spec: whether the game's gamepad
+  mode (`GamePadEnable`) lets the addon's two bindings take a pad button; whether the override binding of the fishing
+  key and `INTERACTTARGET` work on one ([fishing-mode.md](architecture/fishing-mode.md)); how the indicator, the
+  minimap tooltip and the settings name a pad button (`ns.KeyText`). The rule stays: every action is a real button
+  press.
+- **TradeSkillMaster prices**: TSM as a price source next to Auctionator, for players who use it instead. By the
+  rules of spec 019 ([auction-plan.md](history/auction-plan.md)): optional, only through its public API, every call
+  in `pcall`, its presence read at runtime, nothing of its data kept, and no auction request of the addon's own
+  while its prices are in use. To decide in its spec: whether TSM runs on WoW Forever and what its API gives there;
+  which of its prices stands for an item's value (the market value or the lowest buyout); the order of the sources
+  when both addons are installed; the settings page's second switch becoming a choice of three.
+- **A helper for the Stranglethorn Fishing Extravaganza**: during the contest, a count of the Speckled Tastyfish in
+  the bags against the number the contest asks for, the time left, and a notice for the rare contest fish. The
+  contest's fish are fished in Forever already (`GameData/FishedQuestItems.lua` lists 19806 and 19807; 19805 has a
+  kind in `GameData/ItemKinds.lua`). To check in game before a spec: whether and when the contest runs in WoW
+  Forever, its rules and numbers there, and where its fish bite (pools only, as in the original game, would tie it
+  to the pools idea above). By ID, never by name; the helper only counts and tells, it casts and hands in nothing.
 - **What fished containers hold**: record what players take out of the containers they caught (chests, crates,
   trunks, clams, Bloated fish) and show it in a window of its own: per container, the items with their counts and
   chances. Nobody publishes these contents for WoW Forever, and they decide what a container is worth. The loot

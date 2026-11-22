@@ -241,7 +241,8 @@ Players who fish together see each other's catches right away, without waiting f
   `OneKeyFishingShare`, shared by every addon user, and announces itself there now and then; strangers who run the
   addon then exchange with you by whisper, unseen. The channel is listed in the **Chat Channels** window and in
   **Chat Settings**, but it is taken out of every chat window: none of its lines show, and General, Trade and your
-  own channels keep their numbers. Anyone who joins that channel by its name can see which characters in it use the
+  own channels keep their numbers: the addon waits for General before it joins (up to two minutes), and if a channel
+  of the game still ends up behind the hidden one, the two trade places by themselves. Anyone who joins that channel by its name can see which characters in it use the
   addon. The game allows 20 chat channels: the addon only joins with two slots free, and when you hit the limit
   while it is in its channel, it leaves at once and says so in one line, so your next try works. If you leave the
   channel yourself (`/leave`), the addon stays out of it until your next login. If somebody locks the channel, every

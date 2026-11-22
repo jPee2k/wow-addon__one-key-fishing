@@ -96,6 +96,9 @@
 --   channels_joined                     { name, number } of the channels joined through JoinTemporaryChannel
 --   channel_extra = n                   the player's own other channels (numbers 1..n, counted as active)
 --   channel_join_result[name] = { ... } what JoinTemporaryChannel returns for that name ({}: nil)
+--   general_local_id = n / false        the number of General while no `general` entry is in channels_joined
+--   game_channel_join(name, zone, general)  a channel of the game joins at the lowest free number
+--   channel_swaps, channel_swap_dead    the SwapChatChannelsByChannelIndex calls; true: they change nothing
 --   channel_joins, channel_leaves, channel_passwords, channel_owner_queries   calls recorded (read)
 --   window_removals                     { window, name } of each ChatFrameN:RemoveChannel (read)
 --   popups_hidden                       keys passed to StaticPopup_Hide (read)
@@ -1786,7 +1789,12 @@ end
 ---------------------------------------------------------------------------
 -- The public channel (Channel.lua): chat channels, chat windows, channel notices
 ---------------------------------------------------------------------------
-channels_joined = {} -- { name, number } of every channel the player is in that a test or the addon joined
+-- { name, number } of every channel the player is in that a test or the addon joined. A channel of the game also has
+-- zone = its zone channel ID, general = true for General, and disabled = true while the game only keeps its number.
+channels_joined = {}
+general_local_id = 1 -- General's number while channels_joined has no General (false: the player is not in General)
+channel_swaps = {} -- { first, second } of every SwapChatChannelsByChannelIndex call
+channel_swap_dead = false -- true: the game ignores the swap
 channel_extra = 0 -- the player's own other channels, numbered 1..channel_extra (counted as active)
 channel_joins, channel_leaves, channel_passwords, channel_owner_queries = {}, {}, {}, {}
 channel_join_result = {} -- name -> the values JoinTemporaryChannel returns instead ({}: nil)
@@ -1826,6 +1834,22 @@ function JoinTemporaryChannel(name, password, frameID)
     return 0, name
 end
 
+-- A channel of the game joins (General, Trade, a city's channel): the lowest free number, as for any join, or the
+-- number the game kept for it. Returns the number.
+function game_channel_join(name, zone, general)
+    local entry = JoinedChannel(name)
+    if entry then
+        entry.disabled = nil
+        return entry.number
+    end
+    local number = channel_extra + 1
+    while JoinedChannel(number) do
+        number = number + 1
+    end
+    table.insert(channels_joined, { name = name, number = number, zone = zone or 1, general = general or nil })
+    return number
+end
+
 function LeaveChannelByName(name)
     table.insert(channel_leaves, name)
     for i, entry in ipairs(channels_joined) do
@@ -1838,7 +1862,7 @@ end
 
 function GetChannelName(nameOrNumber)
     local entry = JoinedChannel(nameOrNumber)
-    if entry then
+    if entry and not entry.disabled then
         return entry.number, entry.name, 0, false
     end
     return 0
@@ -1853,7 +1877,7 @@ function GetChannelList()
     for _, entry in ipairs(sorted) do
         table.insert(out, entry.number)
         table.insert(out, entry.name)
-        table.insert(out, false)
+        table.insert(out, entry.disabled == true)
     end
     return tunpack(out)
 end
@@ -1868,7 +1892,45 @@ function DisplayChannelOwner(name)
 end
 
 C_ChatInfo.GetNumActiveChannels = function()
-    return #channels_joined + channel_extra
+    local count = channel_extra
+    for _, entry in ipairs(channels_joined) do
+        count = count + (entry.disabled and 0 or 1)
+    end
+    return count
+end
+
+-- General's number, or nothing while the player is not in General.
+C_ChatInfo.GetGeneralChannelLocalID = function()
+    for _, entry in ipairs(channels_joined) do
+        if entry.general then
+            return (not entry.disabled) and entry.number or nil
+        end
+    end
+    return general_local_id or nil
+end
+
+-- A channel the player is in, by its name or its number as text.
+C_ChatInfo.GetChannelInfoFromIdentifier = function(identifier)
+    local entry = JoinedChannel(identifier) or JoinedChannel(tonumber(identifier))
+    if entry and not entry.disabled then
+        return { name = entry.name, shortcut = entry.name, localID = entry.number, instanceID = 0,
+            zoneChannelID = entry.zone or 0, channelType = entry.zone and 1 or 3 }
+    end
+end
+
+-- What dragging a row of Chat Settings > Channels calls: the two numbers change places (one may be empty).
+C_ChatInfo.SwapChatChannelsByChannelIndex = function(first, second)
+    table.insert(channel_swaps, { first = first, second = second })
+    if channel_swap_dead then
+        return
+    end
+    local a, b = JoinedChannel(first), JoinedChannel(second)
+    if a then
+        a.number = second
+    end
+    if b then
+        b.number = first
+    end
 end
 
 -- Chat windows with their channel lists (ChatFrameMixin's ContainsChannel and RemoveChannel).

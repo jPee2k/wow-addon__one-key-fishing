@@ -30,6 +30,19 @@ local MAX_KICKS = 3 -- the third kick in a session counts as a ban
 local FREE_SLOTS = 2 -- chat channel slots that must be free to join: one always stays the player's (FR-005)
 local NIL_JOINS = 3 -- joins with no result in a session before they count as the game refusing the channel
 local POPUP = "CHAT_CHANNEL_PASSWORD" -- the game's password prompt for a locked channel
+-- The channel's number (spec 022): a join gets the lowest free number, and General's is free while the player is not
+-- in General, so a join then takes number 1 and General comes back behind every channel (seen 2026-11-22).
+local GENERAL_WAIT = 120 -- seconds a join waits for General; then it joins anyway (a player may have left General)
+local GENERAL_CHECK = 5 -- seconds between the looks for General while a join waits
+-- Seconds a join that waited for General still waits once General is there: the channels that come back with it (the
+-- game's others, the player's own) take their numbers first, as they do in the login delay.
+local GENERAL_SETTLE = 10
+local SWAP_GAP = 2 -- seconds between two swaps (and the first look for a swap's result)
+local SWAP_WAIT = 10 -- seconds a swap has to show before it counts as failed and is tried again
+local SWAP_MARGIN = 0.05 -- the swap's own timers may read GetTime() a hair early
+local RELOAD_SETTLE = 10 -- seconds after a /reload before the listed channels count as all (no record of them)
+local SWAP_FAILS = 2 -- swaps in a row that changed nothing before the repair stops for the session
+local MAX_SWAPS = 6 -- swaps in a session: no endless trade of places with another addon
 
 local lowerNames = {}
 for index, name in ipairs(Channel.NAMES) do
@@ -60,6 +73,23 @@ local sawPassword = false -- a password set by a player not heard announcing, on
 local lockTimer -- the token of the wait before moving on
 local selfHeals = 0
 local lastState, lastIndex
+-- The wait for General: `generalFrom` is the GetTime() of the look that first found no General when a join wanted
+-- it (nil once General is seen again), `generalGone` says the wait ran out, so joins no longer wait until General is
+-- seen. While `generalFrom` is set a timer looks every GENERAL_CHECK seconds, whatever else holds the join back.
+local generalFrom
+local generalGone = false
+local generalTimer = false -- a look for General is scheduled
+local generalWaited = 0 -- seconds joins waited for General this session (/okf debug)
+local generalHeldAt -- GetTime() of the last look that held a join back for General (the seconds are counted from it)
+local generalSince -- GetTime() General was seen again after a look had missed it (GENERAL_SETTLE counts from it)
+local generalSettle = false -- a join is held back for GENERAL_SETTLE (its timer is scheduled, its seconds count)
+-- The repair of the channel numbers: `known` holds the names and numbers of the channels listed at the last look
+-- (nil: not looked yet), `general` says the comparison with General is still owed (a join, or a /reload that found
+-- it owed), `pending` is a swap whose result has not shown yet ({ to = the number the channel should get }), `at`
+-- its GetTime(); `settleAt` is set for RELOAD_SETTLE seconds after every /reload (its timer clears it; the value is
+-- not compared): while it is set, whatever is listed counts as known; `recheck` says a look is scheduled for a list
+-- that could not be read or a channel the game told nothing about.
+local order = { swaps = 0, failed = 0, row = 0, off = false, general = false }
 
 function Channel.IsEnabled()
     return ns.db ~= nil and ns.db.settings.shareChannel == true
@@ -151,6 +181,33 @@ function Channel.GetNumber()
     return joined and current and NumberOf(current) or nil
 end
 
+-- General's number, or nil while the player is not in General; the second value is false when the game does not say.
+local function GeneralNumber()
+    local read = C_ChatInfo.GetGeneralChannelLocalID
+    if not read then
+        return nil, false
+    end
+    -- GetGeneralChannelLocalID gives General's number, and nothing while the player is not in General (V71, seen in
+    -- game 2026-11-22: 1, nothing after /leave 1, 6 with General put behind)
+    local ok, number = pcall(read)
+    if not ok or ns.IsSecret(number) then
+        return nil, false
+    end
+    return (type(number) == "number" and number > 0) and number or nil, true
+end
+
+-- GeneralNumber for the code that acts on it: seeing General ends the wait for it.
+local function WatchGeneral()
+    local number, told = GeneralNumber()
+    if number then
+        if generalFrom then
+            generalSince = GetTime()
+        end
+        generalFrom, generalGone = nil, false
+    end
+    return number, told
+end
+
 local function Notify()
     local state, index = Channel.GetState()
     if state ~= lastState or index ~= lastIndex then
@@ -194,15 +251,281 @@ if ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter then
 end
 
 ---------------------------------------------------------------------------
+-- The channel's number (spec 022)
+---------------------------------------------------------------------------
+-- The hidden channel must not hold a number a channel of the game would have: it trades places with General when
+-- General is behind it at a join or a /reload (rule G), and with a channel of the game that turns up behind it later
+-- (rule N: that channel took the lowest free number, which without the addon was the addon's; a channel of the
+-- player joined between the two keeps its number, so the game's channel then stands before it). Nothing else moves:
+-- not the channels listed before the join, not the player's own channels, not a row the player dragged.
+
+-- The chat channels as { number, name }, or nil when the game does not say (a secret value).
+local function Listed(...)
+    local out = {}
+    for i = 1, select("#", ...), 3 do
+        local number, name = select(i, ...)
+        if ns.IsSecret(number) or ns.IsSecret(name) or type(number) ~= "number" or type(name) ~= "string" then
+            return nil
+        end
+        out[#out + 1] = { number = number, name = name }
+    end
+    return out
+end
+
+local function ListChannels()
+    if not GetChannelList then
+        return nil
+    end
+    return Listed(GetChannelList())
+end
+
+-- The names and numbers of every listed channel but ours, and but those of `unsure` (names the game told nothing
+-- about yet: they are looked at again). `keep` (what was known) stays known beside them.
+local function Remember(list, unsure, keep)
+    local known = keep or { names = {}, numbers = {} }
+    for _, entry in ipairs(list) do
+        if not IndexOf(entry.name) and not (unsure and unsure[entry.name]) then
+            known.names[entry.name], known.numbers[entry.number] = true, true
+        end
+    end
+    order.known = known
+end
+
+-- The channel's number for the repair and the debug line: nil also while the game hides it (a secret value), which
+-- NumberOf does not ask (its callers take nil for "not in the channel").
+local function ShownNumber(index)
+    local number = GetChannelName(Channel.NAMES[index])
+    if ns.IsSecret(number) then
+        return nil, true
+    end
+    return (type(number) == "number" and number > 0) and number or nil
+end
+
+-- True for a channel of the game (General, Trade, a city channel), false for one of a player or of an addon, nil
+-- while the game tells nothing about it (a channel whose number is only kept).
+local function IsGame(name, number)
+    local read = C_ChatInfo.GetChannelInfoFromIdentifier
+    if not read then
+        return false
+    end
+    -- GetChannelInfoFromIdentifier (a name of GetChannelList, else the number as text) gives a zoneChannelID above 0
+    -- for a channel of the game and 0 for a custom one, and localID is the channel's number (V72, seen in game
+    -- 2026-11-22: General zoneChannelID 1, localID 6; the addon's channel zoneChannelID 0, localID 1)
+    -- The answer must be about this entry: a name may read as another channel's number (a channel named "2").
+    local function About(identifier)
+        local ok, info = pcall(read, identifier)
+        if ok and not ns.IsSecret(info) and type(info) == "table" and not ns.IsSecret(info.localID)
+            and info.localID == number then
+            return info
+        end
+    end
+    local info = About(name) or About(tostring(number))
+    if not info or ns.IsSecret(info.zoneChannelID) or type(info.zoneChannelID) ~= "number" then
+        return nil
+    end
+    return info.zoneChannelID > 0
+end
+
+local FixOrder
+
+-- One more look in GENERAL_CHECK seconds: the list could not be read (secret values), or the game told nothing yet
+-- about a new channel, and no event may follow.
+local function Recheck()
+    if order.recheck then
+        return
+    end
+    order.recheck = true
+    C_Timer.After(GENERAL_CHECK, function()
+        order.recheck = false
+        FixOrder()
+    end)
+end
+
+FixOrder = function()
+    local swap = C_ChatInfo.SwapChatChannelsByChannelIndex
+    if not joined or not current or order.off or not swap then
+        return
+    end
+    local mine, hidden = ShownNumber(current)
+    local list = mine and ListChannels()
+    if not list then
+        if hidden or mine then
+            Recheck() -- hidden by the game for now
+        end
+        return
+    end
+    local now = GetTime()
+    local pending = order.pending
+    if pending then
+        if mine == pending.to then
+            order.swaps, order.row = order.swaps + 1, 0
+            if pending.general then
+                order.general = false
+            end
+        elseif now - order.at < SWAP_WAIT - SWAP_MARGIN then
+            return -- the game has not answered yet
+        else
+            order.failed, order.row = order.failed + 1, order.row + 1
+            if order.row >= SWAP_FAILS then
+                order.off, order.pending = true, nil
+                return
+            end
+        end
+        order.pending = nil
+    end
+    local target, viaGeneral
+    if order.general then
+        local general = WatchGeneral()
+        if general then
+            if general > mine then
+                target, viaGeneral = general, true
+            else
+                order.general = false
+            end
+        end
+    end
+    if not target then
+        local known = order.known
+        if order.settleAt then
+            -- In the first seconds after a /reload the list may still be filling: whatever is listed then was there
+            -- before it (also beside a join made at the /reload), and what the record knew stays known.
+            Remember(list, nil, known)
+            return
+        end
+        if not known then
+            Remember(list) -- no look yet since the join was taken over (a list hidden until now)
+            return
+        end
+        local unsure
+        local taken = {}
+        for _, entry in ipairs(list) do
+            taken[entry.number] = true
+            if entry.number > mine and not known.names[entry.name] and not known.numbers[entry.number]
+                and not IndexOf(entry.name) then
+                local game = IsGame(entry.name, entry.number)
+                if game == nil then
+                    unsure = unsure or {}
+                    unsure[entry.name] = true
+                elseif game and (not target or entry.number < target) then
+                    target = entry.number
+                end
+            end
+        end
+        -- A channel of the game the client learns of later (a city's, after a login outside one) joins on the lowest
+        -- free number (V74, accepted 2026-11-22; LocalDefense joined again did so in game). One with a free number
+        -- below it did not come that way: the game kept that number for it (a row dragged in an earlier session),
+        -- so it is not ours to move.
+        for number = 1, (target or 0) - 1 do
+            if not taken[number] then
+                target = nil
+                break
+            end
+        end
+        if not target then
+            -- What was known stays known until the next join: a channel a look misses (a list still filling
+            -- after a loading screen) is not new when it is listed again.
+            Remember(list, unsure, known)
+            if unsure then
+                Recheck()
+            end
+            return
+        end
+    end
+    if InCombatLockdown() then
+        return -- after the fight (PLAYER_REGEN_ENABLED)
+    end
+    if order.at and now - order.at < SWAP_GAP - SWAP_MARGIN then
+        return -- the timer of the last swap comes back
+    end
+    if order.swaps + order.failed >= MAX_SWAPS then
+        order.off = true
+        return
+    end
+    order.pending, order.at = { to = target, general = viaGeneral }, now
+    -- Addon code may swap two chat channel numbers with no key press, as Chat Settings > Channels does on a drag,
+    -- and the numbers show at once (V70, seen in game 2026-11-22: from a timer, and by the addon itself)
+    pcall(swap, mine, target)
+    C_Timer.After(SWAP_GAP, FixOrder)
+    C_Timer.After(SWAP_WAIT, FixOrder)
+end
+
+-- Looks for General every GENERAL_CHECK seconds while it is away after a join wanted it: the join that waits, and
+-- the swap with General once it comes behind a channel that joined without it. It goes on through a pause, a fight
+-- and the setting turned off, so General coming back is seen (and the next wait is a whole one).
+local Update
+local function PollGeneral()
+    if generalTimer or not generalFrom then
+        return
+    end
+    generalTimer = true
+    C_Timer.After(GENERAL_CHECK, function()
+        generalTimer = false
+        Update()
+        FixOrder()
+        PollGeneral()
+    end)
+end
+
+-- Counts the seconds since the last look that held a join back, when that look was the one before this (a longer gap
+-- means nothing was held: the setting off, a pause).
+local function CountHeld(now)
+    if generalHeldAt and now - generalHeldAt <= GENERAL_CHECK + 1 then
+        generalWaited = generalWaited + (now - generalHeldAt)
+    end
+    generalHeldAt = nil
+end
+
+-- True while a join waits for General (its number would be the join's). The wait is GENERAL_WAIT at most, counted
+-- from the first look that found no General, and starts afresh once General was seen.
+local function HeldForGeneral()
+    local number, told = WatchGeneral()
+    local now = GetTime()
+    CountHeld(now)
+    if number and generalSince then
+        -- General is back after a look had missed it: the join gives the channels that come with it their time.
+        local left = GENERAL_SETTLE - (now - generalSince)
+        if left > SWAP_MARGIN then
+            if not generalSettle then
+                generalSettle = true
+                C_Timer.After(left, Update)
+            end
+            return true
+        end
+        if generalSettle then
+            generalWaited = generalWaited + (now - generalSince)
+        end
+        generalSince, generalSettle = nil, false
+    end
+    if number or not told or generalGone then
+        return false
+    end
+    generalSettle = false -- General went away again: the next settle time is a new one
+    if not generalFrom then
+        generalFrom = now
+        C_Timer.After(GENERAL_WAIT, Update) -- the wait ends on time, wherever the 5 s looks stand
+    end
+    PollGeneral()
+    if now - generalFrom >= GENERAL_WAIT - REJOIN_MARGIN then
+        generalGone = true
+        return false
+    end
+    generalHeldAt = now
+    return true
+end
+
+---------------------------------------------------------------------------
 -- Joining and leaving
 ---------------------------------------------------------------------------
-local Update
-
 local function OnJoined()
+    local fresh = not joined
     joining, joined = false, true
     sawPassword, lockTimer, owner = false, nil, false
     RemoveFromWindows()
     Notify()
+    if fresh then
+        order.general = true
+    end
+    FixOrder()
 end
 
 -- Every leave of one of our names goes through here, so its YOU_LEFT is known for the addon's own.
@@ -228,6 +551,7 @@ local function Leave()
     end
     joined, joining = false, false
     sawPassword, lockTimer, owner = false, nil, false
+    order.pending, order.known, order.general = nil, nil, false
 end
 
 -- Marks an index locked for the session and goes on with the next one.
@@ -246,6 +570,12 @@ end
 local function Join(index)
     current, joining, joins = index, true, joins + 1
     local join = joins
+    -- The channels listed before the join: one of the game's that turns up behind ours later is new (FixOrder).
+    order.pending, order.known = nil, nil
+    local list = ListChannels()
+    if list then
+        Remember(list)
+    end
     -- An addon can join a custom channel this way, without a key press (seen on 2026-11-06, 2026-11-16 and
     -- 2026-11-17: it returns 0, then YOU_CHANGED).
     local ok, kind = pcall(JoinTemporaryChannel, Channel.NAMES[index])
@@ -289,6 +619,7 @@ end
 
 -- Joins or leaves as the settings, the notice, the pause, the slots, the locks and a kick allow.
 Update = function()
+    WatchGeneral() -- General seen ends a wait for it, also while nothing may join
     if Gate() then
         if joined or joining then
             Leave()
@@ -306,14 +637,15 @@ Update = function()
         return
     end
     local index = NextIndex()
-    if index and not gaveWay and Channel.FreeSlots() >= FREE_SLOTS then
+    if index and not gaveWay and Channel.FreeSlots() >= FREE_SLOTS and not HeldForGeneral() then
         Join(index)
     end
     Notify()
 end
 Channel.Update = Update
 
--- The setting "Use the public channel" (FR-021): joins or leaves at once, with no login delay.
+-- The setting "Use the public channel" (FR-021): joins or leaves at once, with no login delay (a join waits for
+-- General like any other, spec 022).
 function Channel.SetEnabled(on)
     ns.db.settings.shareChannel = on and true or false
     ns.Share.CloseNotice() -- set on the page that says what is shared: the notice counts as read
@@ -330,6 +662,7 @@ function Channel.CheckSlots()
         gaveWay = false
     end
     Update()
+    FixOrder() -- a channel of the game may have come behind ours
 end
 
 -- Comm: two refusals on the channel path. reason "server": two NOT_ALLOWED_IN_CHANNEL notices on one join, the server
@@ -415,7 +748,16 @@ end
 -- only and is not read (ownership follows OWNER_CHANGED and CHANNEL_OWNER).
 local function OnNotice(_, token, player, _, _, actor, _, _, _, name)
     local index = IndexOf(name)
-    if not index or ns.IsSecret(token) then
+    if ns.IsSecret(token) then
+        return
+    end
+    if not index then
+        -- Another channel was joined (a join always brings YOU_CHANGED, seen 2026-11-06): General may be back for a
+        -- join that waits, or a channel of the game may have come behind ours.
+        if token == "YOU_CHANGED" or token == "YOU_JOINED" then
+            Update()
+            FixOrder()
+        end
         return
     end
     local by = (type(actor) == "string" and actor ~= "") and actor or player
@@ -534,7 +876,9 @@ ns.RegisterEvent("CHANNEL_UI_UPDATE", Channel.CheckSlots)
 -- next PLAYER_ENTERING_WORLD.
 ns.RegisterEvent("PLAYER_LOGOUT", function()
     ns.charDB.channelSession = { left = left, refused = refused, gaveWay = gaveWay, wayLinePrinted = wayLinePrinted,
-        kicks = kicks, rejoinAt = rejoinAt, locked = locked, lockWait = lockTimer ~= nil, sawPassword = sawPassword }
+        kicks = kicks, rejoinAt = rejoinAt, locked = locked, lockWait = lockTimer ~= nil, sawPassword = sawPassword,
+        generalOwed = order.general or joining, -- a join not confirmed yet owes the comparison too
+        known = order.known } -- the channels that are not new to the repair of the numbers
 end)
 
 local function Restore(saved)
@@ -597,7 +941,50 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
             end
             WaitLock()
         end
+        -- After a /reload GetChannelList() holds every channel the player is in, and every number the game keeps,
+        -- within RELOAD_SETTLE seconds of PLAYER_ENTERING_WORLD (V73, seen in game 2026-11-22: three reloads with the
+        -- channel below Services and TradeLocal moved nothing). Until then nothing listed counts as new, also beside
+        -- a join made right here.
+        order.settleAt = GetTime() + RELOAD_SETTLE
+        C_Timer.After(RELOAD_SETTLE, function()
+            local list = (joined or joining) and ListChannels() -- also for a join not confirmed yet
+            if list then
+                Remember(list, nil, order.known)
+            end
+            order.settleAt = nil
+            FixOrder()
+        end)
         Update()
+        if joined then
+            -- The comparison with General is owed when the record says so, and when it does not say (a version before
+            -- spec 022, which may have left General behind the channel). One that was made is not made again: General
+            -- behind the channel is then the player's own order.
+            order.general = type(saved) ~= "table" or saved.generalOwed ~= false
+            -- The channels known before the /reload stay known: one of them listed late, on the number the game kept
+            -- for it, is not a new one. Without that record the list is taken once it has had time to fill.
+            local known = type(saved) == "table" and saved.known
+            if type(known) == "table" and type(known.names) == "table" and type(known.numbers) == "table" then
+                order.known = { names = {}, numbers = {} }
+                for name in pairs(known.names) do
+                    order.known.names[name] = true
+                end
+                for number in pairs(known.numbers) do
+                    order.known.numbers[number] = true
+                end
+            else
+                order.known = nil
+            end
+            if order.general then
+                local number, told = GeneralNumber()
+                if told and not number then
+                    -- In the channel without General (a wait ran out before the /reload, or General is not listed
+                    -- yet): the 5 s look for General goes on.
+                    generalFrom = generalFrom or GetTime()
+                    PollGeneral()
+                end
+            end
+            FixOrder()
+        end
     elseif isInitialLogin then
         C_Timer.After(math.random(JOIN_DELAY_MIN, JOIN_DELAY_MAX), function()
             loginReady = true
@@ -624,6 +1011,10 @@ ns.On("SHARE_PAUSE", function()
     Update()
 end)
 
+ns.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+    FixOrder() -- a swap the fight held back
+end)
+
 -- English lines for /okf debug.
 function Channel.Describe()
     local state, index = Channel.GetState()
@@ -632,10 +1023,18 @@ function Channel.Describe()
         table.insert(lockedList, tostring(i))
     end
     table.sort(lockedList)
+    local number = index and ShownNumber(index)
+    local general, told = GeneralNumber()
+    local open = generalHeldAt and (GetTime() - generalHeldAt) or nil
+    local waited = generalWaited + ((open and open <= GENERAL_CHECK + 1) and open or 0)
     return {
+        -- "name" is the index in Channel.NAMES (1 main, 2..6 fallback), not the channel's number in the chat.
         ("channel: %s%s, free slots %d, locked %s, kicks %d, owner %s, self-heals %d, refused %s"):format(state,
-            index and (" (index " .. index .. ")") or "", Channel.FreeSlots(),
-            #lockedList > 0 and table.concat(lockedList, ",") or "none", kicks, tostring(owner), selfHeals,
-            tostring(refused)),
+            index and (" (name %d, chat number %s)"):format(index, number and tostring(number) or "none") or "",
+            Channel.FreeSlots(), #lockedList > 0 and table.concat(lockedList, ",") or "none", kicks, tostring(owner),
+            selfHeals, tostring(refused)),
+        ("channel number: General %s, swaps %d, failed %d, repair %s, waited for General %d s"):format(
+            general and tostring(general) or (told and "not joined" or "unknown"), order.swaps, order.failed,
+            order.off and "stopped" or "on", math.floor(waited)),
     }
 end

@@ -71,6 +71,12 @@ GameData.ItemKinds = {
         [13888] = "fish", -- Darkclaw Lobster (7 / 8)
         [13893] = "fish", -- Large Raw Mightfish
         [13908] = "fish", -- 9 Pound Lobster (15 / 0)
+        -- Fish of the seed of epoch 8 (2026-11-22; names and classes from the game's item tables, build 1.60.1.71037)
+        [13907] = "fish", -- 7 Pound Lobster (15 / 0)
+        [13909] = "fish", -- 12 Pound Lobster
+        [13910] = "fish", -- 15 Pound Lobster
+        [13914] = "fish", -- 70 Pound Mightfish (15 / 0)
+        [13915] = "fish", -- 85 Pound Mightfish
         -- Containers: chests, crates, trunks, clams
         [5523] = "containers", -- Small Barnacled Clam (7 / 11)
         [5524] = "containers", -- Thick-shelled Clam
@@ -201,6 +207,17 @@ GameData.ItemKinds = {
         [10225] = "other", -- Nightshade Gloves
         [10312] = "other", -- Pattern: Red Mageweave Gloves
         [15895] = "other", -- Burnt Buckler
+        -- Other items of the seed of epoch 8 (2026-11-22; names and classes from the game's item tables, build
+        -- 1.60.1.71037; three have no name row there and were read in game on 2026-11-22)
+        [1640] = "other", -- Monstrous War Axe (2 / 1, read in game)
+        [3200] = "other", -- Burnt Leather Bracers
+        [4496] = "other", -- Small Brown Pouch (1 / 0)
+        [4565] = "other", -- Simple Dagger
+        [5574] = "other", -- White Leather Bag (1 / 0)
+        [5974] = "other", -- Pattern: Guardian Cloak
+        [7490] = "other", -- Captain's Boots (4 / 3, read in game)
+        [9790] = "other", -- Raider's Shield (4 / 6, read in game)
+        [286266] = "other", -- Antonidas' Silver Coin (15 / 4)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {
