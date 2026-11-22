@@ -1,14 +1,14 @@
 # Fix Specification: The Hidden Channel Keeps Off the Game's Channel Numbers
 
-**Feature Branch**: `022-channel-order` (off `develop`)
+**Feature Branch**: `022-channel-order` (off `develop`; committed on `develop`)
 
 **Created**: 2026-11-22
 
-**Status**: Built with tests and checked in game on 2026-11-22: V70 to V73 confirmed, V74 accepted, step 12 of
+**Status**: Released in 1.5.1; checked in game on 2026-11-22: V70 to V73 confirmed, V74 accepted, step 12 of
 `docs/checklists/public-channel.md` passed (12.4 not in a capital)
 
 **Input**: A bug found by the author in play on 2026-11-22: the addon's hidden chat channel `OneKeyFishingShare`
-stood on chat channel number 1 and General on 7, until "Chat Defaults" was pressed. Planned for the patch 1.5.1.
+stood on chat channel number 1 and General on 7, until "Chat Defaults" was pressed. Released in 1.5.1 (2026-11-22).
 
 A short spec: one module changes (`Exchange/Channel.lua`), no message, no visible text; the session record
 `channelSession` gains two values (`generalOwed`, `known`; no schema change: the record is read once and dropped). The
