@@ -32,7 +32,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   `/dump`) is at most 255 characters, the chat line's limit (a longer one is cut and fails): count it with a tool
   before giving it, and split a longer one into several. Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013, 016, 018, 019 and 020 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016, 018, 019, 020 and 022 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -204,6 +204,10 @@ go there.
   later fight; a map pin follows Blizzard's `/mappin`, and the addon never opens the world map.
 - A state driver's value reaches `_onstate-*` as a number (`[combat] 1; 0` gives `1`): compare with
   `tonumber(newstate) == 1`, never `== "1"`.
+- Chat channel numbers: a join gets the lowest free number, and General's is free while the player is not in General
+  (the addon's channel once took number 1, General came back last). The hidden channel waits for General before a
+  join (120 s at most) and trades places with a channel of the game that ends up behind it
+  (`Exchange/Channel.lua`, spec 022); it never moves another channel, and every join goes through that wait.
 - Chat: 20 channels per player, a locked channel opens the game's password popup, a channel is hidden with the chat
   window's `RemoveChannel`; chat filters and handlers must skip secret values (`issecretvalue`).
 - Addon messages in a custom chat channel were refused on 2026-11-06 (`NOT_ALLOWED_IN_CHANNEL`, though the send

@@ -8,7 +8,8 @@ The protections (steps 9 and 11) are checked with the exchange of [catch-exchang
 **Feature**: the exchange through the hidden public channel and the protections against data from strangers
 (`specs/004-public-channel-sync`, part 3 of the shared catch database).
 **Closes**: V28, V29 of `specs/004-public-channel-sync/verification.md`, and the feature side of V19-V27 and V41
-(their API side is closed by [spike.md](spike.md), which runs first).
+(their API side is closed by [spike.md](spike.md), which runs first); step 12 is the feature side of V70-V74 of
+`specs/022-channel-order/verification.md` (the channel's number; their `/run` checks run first).
 **Needs**: accounts **A** and **B** for the exchange and **C** for the lock test (two accounts show everything but
 the lock). A, B and C share no guild, group or friends list. Full accounts: Trial and Veteran accounts cannot send
 addon data.
@@ -82,7 +83,7 @@ checked on a PvE realm and stays open.
    2026-11-17**: `/leave OneKeyFishingShare` gave "you left it, back at the next login" (V41). Left: the leaves within
    a few seconds of a join, and a `/join` by hand kept over a `/reload`.
 8. [ ] **Slow join and kicks** (V24): `/okf debug` after a login on a busy realm: the channel is the main one
-   (index 1), not a fallback, also when the join took a few seconds. C kicks A while A fights: A is back in the
+   ("name 1" beside its chat number, as in "channel: in (name 1, chat number 7)"), not a fallback, also when the join took a few seconds. C kicks A while A fights: A is back in the
    channel within about a minute of the combat's end, and B (who has not heard A this hour) counts A among the
    players heard in the channel (`/okf share`) within about 2 minutes of A's return. **Kick not checkable 2026-11-17**: as the channel's owner (no addon), B's
    `/run ChannelKick("OneKeyFishingShare", "Green Neerg")`, `/ckick OneKeyFishingShare Green Neerg` and
@@ -100,6 +101,22 @@ checked on a PvE realm and stays open.
 11. [ ] **Harvest** (SC-010): before the release, `npm run harvest` lists contributions from players outside the
     author's guild, group and friends; the outlier report is read, and any block is made with
     `npm run harvest -- --block <id> "why"`.
+12. [ ] **Numbers** (spec 022; V70 to V74). The list of channels is
+    `/run for i=1,20 do local n,s=GetChannelName(i) if n>0 then print(n,s) end end`.
+    1. A normal login: after about a minute the channel is behind every channel of the game, and `/okf debug` says
+       "channel: in (name 1, chat number N)" and "channel number: General 1, swaps 0, failed 0, repair on".
+    2. Turn "Use the public channel" off, `/leave 1`, turn it on: the channel is **not** joined (`/okf share`: the
+       channel waits; `/okf debug`: "General not joined"). `/join General`: about 10 seconds later the channel is joined,
+       General is on 1.
+    3. The same, but wait two minutes without General: the channel joins on 1. `/join General`: within seconds
+       General is on 1 and the channel where the game had put General; `/okf debug` says "swaps 1". General's lines
+       show in the chat window in General's colour (also after a `/reload`) and `/1 test` goes to General.
+    4. Enter a city after a login made outside one: the city's channels (OOC) are before the addon's channel.
+    5. Drag a channel of the game below the addon's channel in Chat Settings > Channels: it stays there.
+    6. A fight, a `/reload` and a second login during these steps: no "Interface action failed because of an AddOn",
+       no Lua error, `/okf share` as before.
+    7. With the hidden channel below a channel of the game (leave LocalDefense in a city, turn the setting off and
+       on): `/reload` three times; the list stays the same and `/okf debug` says "swaps 0" each time (V73).
 
 ## Results
 

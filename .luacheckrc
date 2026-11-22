@@ -63,7 +63,7 @@ read_globals = {
     "PlaySoundFile", "StopSound", "ERR_FISH_ESCAPED", "ERR_FISH_NOT_HOOKED", "MinimalSliderWithSteppersMixin",
     "issecretvalue", "debugprofilestop", "Constants", "geterrorhandler", "debugstack",
     "GetCallstackHeight", "SetErrorCallstackHeight",
-    "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName",
+    "JoinTemporaryChannel", "LeaveChannelByName", "GetChannelName", "GetChannelList",
     "SetChannelPassword", "DisplayChannelOwner",
     "CaseAccentInsensitiveParse", "strcmputf8i",
 

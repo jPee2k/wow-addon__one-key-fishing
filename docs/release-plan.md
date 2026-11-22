@@ -42,6 +42,13 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 
+## 1.5.1 (next patch)
+
+- Spec 022 (`specs/022-channel-order`, branch `022-channel-order` off `develop`): the hidden channel no longer takes
+  the number of a channel of the game (it took 1 from General on 2026-11-22) and repairs an order already broken.
+  Before the release: V70 to V74 of its `verification.md` (V70 to V72 by the `/run` checks listed there), then step 12 of
+  [checklists/public-channel.md](checklists/public-channel.md) on a build of the branch.
+
 ## 1.5.0 (released 2026-11-20)
 
 **Released 2026-11-20**: pull requests #13 (`020-camp-buffs`) and #14 (`021-cumulative-skill-filter`) merged into

@@ -17,6 +17,24 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
 
 ## Open items
 
+Reviews of the channel number fix (spec 022, five `/code-review high` rounds and an independent review, 2026-11-22):
+the low items left, none seen in game.
+
+- **The hidden channel's number as a secret value** (low, the code of 1.3.0). `NumberOf` in `Exchange/Channel.lua`
+  compares what `GetChannelName` returns without `ns.IsSecret`; it serves `Channel.GetNumber` (a channel send), the
+  join's check and the `/reload` scan. If a chat lockdown ever hides that number, the comparison raises an error;
+  returning nil instead makes the join's check lock all six names. Not known whether the game hides it. A fix needs
+  "unknown" apart from "not in the channel" in those three callers.
+- **The chat edit box after a number swap** (low). The edit box keeps its channel as a number, so after the addon's
+  swap a box left on General's old number opens the hidden channel, and a line typed there is hidden from the
+  sender by the addon's filters. A drag in Chat Settings > Channels does the same; the edit box is Blizzard's and
+  not a frame for layer 2 to write. V70's check looks at it (`specs/022-channel-order/verification.md`).
+- **A new channel on a number another channel just left** (low). `FixOrder` takes a channel for known when its
+  number was listed at the last look; a channel of the game that takes the number of one that left between two
+  looks is not seen as new and stays behind the hidden channel for the session.
+- **General kept behind a free lower number on purpose** (low, spec 022 FR-005): each new join of the hidden channel
+  takes that lower number and puts General before it; a broken order cannot be told from it.
+
 Review of the window fixes (`/code-review high`, 2026-11-18): the low items left.
 
 - **The statistics window's fallback has no background** (low, found by review, not seen in game). Without

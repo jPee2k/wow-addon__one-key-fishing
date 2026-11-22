@@ -370,6 +370,26 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   equals the entries of `GetChannelList()`). With 20 channels taken, `JoinTemporaryChannel(name)` returns nothing and
   the chat shows "You can only be in 20 channels at a time." (`ERR_TOO_MANY_CHAT_CHANNELS`); below the limit it
   returns `0` (V23).
+- Chat channel numbers (2026-11-22, Drog Earthshaker, client 1.60.1.71037, Stranglethorn Vale; found after the
+  addon's channel was seen on number 1 with General on 7):
+  - A join gets the lowest free number. The game keeps the numbers of its own channels the client knows while they
+    are not active (Trade 2, Services 4, TradeLocal 5, the city's OOC 6 outside a city: listed greyed in Chat
+    Settings > Channels, `GetChannelName(number)` gives 0 for them). It does **not** keep General's number once the
+    player leaves General: after `/leave 1` a join of `OneKeyFishingShare` got number 1, and `/join General` then put
+    General on 7, behind every channel. Nothing puts it back by itself.
+  - "Chat Defaults" in the chat settings (`ChatConfig_ResetChatSettings`, which calls
+    `C_ChatInfo.ResetDefaultZoneChannels()`) puts the game's channels back on their numbers and a custom channel
+    behind them (General 1 ... OOC 6, `OneKeyFishingShare` 7).
+  - `/run C_ChatInfo.SwapChatChannelsByChannelIndex(1,7)` (what a drag of a row in Chat Settings > Channels calls)
+    traded the two numbers with no error and no "Interface action failed": General on 1, the addon's channel on 7.
+    Typed, so with a key press; from a timer it is V70 of `specs/022-channel-order/verification.md`.
+  - After a login the client does not know the city's OOC yet: the addon's channel joined on 6, and "Chat Defaults"
+    then listed OOC on 6 and the channel on 7.
+  - A `/reload` keeps every number. A logout and login does not bring the addon's temporary channel back (it was not
+    in the list right after the login); the addon joins it again after its delay.
+  - A layer change by a group invite (the LayerSwap addon) changes no number.
+  - The checkbox of the channel's row in Chat Settings > Channels, ticked by hand, shows it in that window; the addon
+    takes it out again (`ChatFrame1:ContainsChannel("OneKeyFishingShare")` was false afterwards).
 - Channel moderation by players (2026-11-17, the owner of `OneKeyFishingShare`, no addon): `/ckick <channel> <name>`,
   `/owner <channel>`, `/run ChannelKick(channel, "First Last")` and `/run DisplayChannelOwner(channel)` print nothing
   and change nothing; the kicked player stays in the channel. `/password <channel> x` works (V24). `/chatlist` prints

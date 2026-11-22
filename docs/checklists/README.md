@@ -13,7 +13,7 @@ verified only after that (constitution, Principle IV).
 | [spike.md](spike.md) | the game facts the shared catch database was built on (`/okf spike`), run once before the four below | 002 to 006, their `verification.md` (006: the error log, V42) | a second player, several waters, the auction house |
 | [catch-database.md](catch-database.md) | "What can be caught here", the bundled data, robust prices | `specs/002-local-catch-db` | one character, a real seed |
 | [catch-exchange.md](catch-exchange.md) | the exchange with guild, group and friends | `specs/003-guild-group-sync` | a second player (and a third) |
-| [public-channel.md](public-channel.md) | the hidden public channel and the protections | `specs/004-public-channel-sync` | three accounts sharing nothing |
+| [public-channel.md](public-channel.md) | the hidden public channel and the protections; its chat channel number (step 12) | `specs/004-public-channel-sync`, `specs/022-channel-order` | three accounts sharing nothing |
 | [catch-catalog.md](catch-catalog.md) | the catalog tab, map pins, subzones, tooltips | `specs/005-catch-catalog` | two client languages, a fresh item cache |
 | [sounds.md](sounds.md) | the "Sound effects" page: the fishing sounds, their volume, background sound, splash focus | `specs/013-fishing-sounds` | one character, a mob for a fight, a second window |
 | [catch-filters.md](catch-filters.md) | the item kinds of "What can be caught here" and the catalog: the kind headers, the Kinds menu, the remembered choice | `specs/014-catch-filters` | one character, the bundled data, a second interface language |
