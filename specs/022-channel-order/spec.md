@@ -42,16 +42,16 @@ reproduced in game with `/leave 1`.
 - **FR-003** (rule G): when General's number is above the channel's, the two trade places. The comparison is owed
   once after each join; a `/reload` keeps whether it is still owed, and counts it as owed after a version before
   this spec, so General left behind by an earlier version is put back once.
-- **FR-004** (rule N): when a channel of the game that is new (neither its name nor its number was listed at the
-  addon's last look, the first one being the join) turns up above the channel, the two trade places: that channel
+- **FR-004** (rule N): when a channel of the game that is new (neither its name nor its number was listed at any of
+  the addon's looks since the join, the first one being the join itself) turns up above the channel, the two trade places: that channel
   took the lowest free number, which without the addon was the channel's, so the result is the order the game would
   have had. A new channel with a free number below it did not take the lowest free number (the game kept that number
   for it, as for a row dragged in an earlier session) and is not moved. One exception to "the order the game would
   have had": a channel of the player joined between the two keeps its number (FR-005), so the game's channel then
   stands before it. Several are handled one swap at a time, the lowest number first.
 - **FR-005**: Nothing else moves: not a channel that was listed at the last look (a player who left LocalDefense has
-  the channel on 3 below Services and TradeLocal, and they stay; LocalDefense joined again later behind the channel
-  is new and gets the channel's number), not the player's own channels or another addon's, not a channel the player
+  the channel on 3 below Services and TradeLocal, and they stay; a channel once listed stays known until the hidden channel's next
+  join, so one that a look misses, after a loading screen, is not new when it is listed again), not the player's own channels or another addon's, not a channel the player
   dragged in Chat Settings > Channels afterwards, also over a `/reload`: the channels known before it stay known,
   and whatever is listed in the 10 seconds after a `/reload` counts as there before it, also beside a join made at
   the `/reload`. Channel colours

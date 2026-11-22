@@ -309,12 +309,16 @@ local function IsGame(name, number)
     end
     -- VERIFY(V72): GetChannelInfoFromIdentifier (a name of GetChannelList, else the number as text) gives a
     -- zoneChannelID above 0 for a channel of the game and 0 for a custom one
-    local ok, info = pcall(read, name)
-    if not ok or type(info) ~= "table" then
-        ok, info = pcall(read, tostring(number))
+    -- The answer must be about this entry: a name may read as another channel's number (a channel named "2").
+    local function About(identifier)
+        local ok, info = pcall(read, identifier)
+        if ok and not ns.IsSecret(info) and type(info) == "table" and not ns.IsSecret(info.localID)
+            and info.localID == number then
+            return info
+        end
     end
-    if not ok or ns.IsSecret(info) or type(info) ~= "table" or ns.IsSecret(info.zoneChannelID)
-        or type(info.zoneChannelID) ~= "number" then
+    local info = About(name) or About(tostring(number))
+    if not info or ns.IsSecret(info.zoneChannelID) or type(info.zoneChannelID) ~= "number" then
         return nil
     end
     return info.zoneChannelID > 0
@@ -387,7 +391,7 @@ FixOrder = function()
             return
         end
         if not known then
-            Remember(list)
+            Remember(list) -- no look yet since the join was taken over (a list hidden until now)
             return
         end
         local unsure
@@ -415,7 +419,9 @@ FixOrder = function()
             end
         end
         if not target then
-            Remember(list, unsure)
+            -- What was known stays known until the next join: a channel a look misses (a list still filling
+            -- after a loading screen) is not new when it is listed again.
+            Remember(list, unsure, known)
             if unsure then
                 Recheck()
             end
@@ -937,7 +943,7 @@ ns.RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isInitialLogin, isReloadin
         -- also beside a join made right here.
         order.settleAt = GetTime() + RELOAD_SETTLE
         C_Timer.After(RELOAD_SETTLE, function()
-            local list = joined and ListChannels()
+            local list = (joined or joining) and ListChannels() -- also for a join not confirmed yet
             if list then
                 Remember(list, nil, order.known)
             end

@@ -107,7 +107,8 @@ channel as it ships; the stub flag `channel_off` switches it off for the tests o
     a list or a number the game hides (secret values), every 5 s. It
     runs after a join, on `CHANNEL_UI_UPDATE`, on the join notice (`YOU_CHANGED`) of another channel, on the 5 s
     timer while General is away, on each channel round and after a fight.
-  - It never moves a channel that was listed at its last look (the first one is the join), the player's own channels or another addon's, or a row the
+  - It never moves a channel that was listed at any look since the join (known names and numbers are only added
+    to, until the next join: a look that misses a channel after a loading screen does not make it new), the player's own channels or another addon's, or a row the
     player dragged, and it does not write `ChatTypeInfo` (a colour stays with its number). It holds back in a fight
     and while the channel list holds secret values; a swap counts once the channel has the other number (looked at
     after 2 s, the gap between two swaps), one that changed nothing after 10 s is a failure and is tried again, two

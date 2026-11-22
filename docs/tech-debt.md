@@ -29,9 +29,11 @@ the low items left, none seen in game.
   swap a box left on General's old number opens the hidden channel, and a line typed there is hidden from the
   sender by the addon's filters. A drag in Chat Settings > Channels does the same; the edit box is Blizzard's and
   not a frame for layer 2 to write. V70's check looks at it (`specs/022-channel-order/verification.md`).
-- **A new channel on a number another channel just left** (low). `FixOrder` takes a channel for known when its
-  number was listed at the last look; a channel of the game that takes the number of one that left between two
-  looks is not seen as new and stays behind the hidden channel for the session.
+- **A channel of the game that is not seen as new** (low). `FixOrder` takes a channel for known when its name or its
+  number was listed at any look since the hidden channel's join (kept on purpose: a look that misses a channel must
+  not make it new). So a channel of the game that takes a number another channel left, or one that left and came
+  back behind the hidden channel (only when its old number was taken meanwhile), stays there until the next join of
+  the hidden channel; "Chat Defaults" puts it back.
 - **General kept behind a free lower number on purpose** (low, spec 022 FR-005): each new join of the hidden channel
   takes that lower number and puts General before it; a broken order cannot be told from it.
 
