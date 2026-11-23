@@ -4,7 +4,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.5.2] - 2026-11-23
 
 ### Added
 
@@ -17,6 +17,11 @@ All notable changes to OneKeyFishing are listed here. The format follows
   each trophy you caught, on any character, has a check mark on its icon.
 - The first catch of a trophy on your account gives its own notification, "New trophy: ... (13/36)", also with catch
   notifications off, and the rare loot sound when the fishing sounds play (fishing mode on, no fight).
+
+### Changed
+
+- The bundled catch database now knows 987 fishing places (40 new) and 8 more items, from the catches players
+  shared.
 
 ## [1.5.1] - 2026-11-22
 
