@@ -19,9 +19,9 @@ to the bobber by itself.
 
 ## Planned
 
-- **A helper for the Stranglethorn Fishing Extravaganza** (spec 024): notices before and during the contest, the
-  Tastyfish counter, rare fish notices, a settings page, a tab next to the catalog, minimap menu entries for the
-  catalog and the contest, `/okf event`. Research and the agreed decisions:
+- **A helper for the Stranglethorn Fishing Extravaganza** (spec 025, after 024): notices before and during the
+  contest, the Tastyfish counter, rare fish notices, a settings page, its own tab and minimap menu entry (the
+  window's fourth tab and the "Catalog" entry come with spec 024), `/okf event`. Research and the agreed decisions:
   [extravaganza-research.md](extravaganza-research.md), section 11.
 
 The ideas below are not decided.

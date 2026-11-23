@@ -26,16 +26,14 @@ local FILTER_TOP = TOP - 56 -- row A: Skill, Source
 local SORT_TOP = TOP - 82 -- row B: Water or Camp bonus, Kinds, Sort
 local LIST_TOP = TOP - 114 -- the item list, below row B
 local ITEM_LIST_TOP = TOP - 46 -- the zone rows, below the item header and the column headers
-local INDENT = 16 -- spot rows under their zone
-local PIN_ATLAS = "Waypoint-MapPin-Untracked"
 local CHECK_ATLAS = "common-icon-checkmark" -- a trophy the account caught (spec 023)
--- The zone and spot rows: x and width inside a row, and the text alignment.
+-- The place rows (UI/PlaceList.lua): x and width inside a row, the text alignment and the header.
 local COLUMNS = {
-    { key = "name", x = 16, width = 230, justify = "LEFT" },
-    { key = "skill", x = 250, width = 70, justify = "LEFT" },
+    { key = "name", x = 16, width = 230, justify = "LEFT", label = function() return L["Place"] end },
+    { key = "skill", x = 250, width = 70, justify = "LEFT", label = function() return L["Skill"] end },
     -- 110 wide: French "Little data" was cut at 70 (seen 2026-11-20), as in "What can be caught here"
-    { key = "chance", x = 320, width = 110, justify = "RIGHT" },
-    { key = "catches", x = 435, width = 60, justify = "RIGHT" },
+    { key = "chance", x = 320, width = 110, justify = "RIGHT", label = function() return L["Chance"] end },
+    { key = "catches", x = 435, width = 60, justify = "RIGHT", label = function() return L["Catches"] end },
 }
 
 local CreateText = ns.CreateText -- UI/Widgets.lua
@@ -45,7 +43,6 @@ local search = ""
 local filter = ns.Catalog.DefaultFilter()
 local chosen -- the item ID of the item page, or nil for the list
 local pending -- what Show was asked for while the index was still building; Tick passes it on once it is ready
-local expanded = {} -- map ID -> true: zones of the chosen item that show their spots
 local drawn -- what the page shows now: { version, state }
 local listed = {} -- item ID -> true: the items of the list as last drawn by price (read only by price)
 local dirty = false
@@ -159,85 +156,29 @@ local function InitItemRow(row, element)
 end
 
 ---------------------------------------------------------------------------
--- The item page: zone rows and their spot rows
+-- The item page: zones, their subzones and spots (UI/PlaceList.lua, spec 024)
 ---------------------------------------------------------------------------
-local function ShowPlaceTooltip(self)
-    local element = self.element
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+local function ShowPlaceTooltip(row)
+    local element = row.element
+    local place = element.place
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     if element.kind == "zone" then
-        GameTooltip:AddLine(element.place.name)
+        GameTooltip:AddLine(place.name)
     else
-        local spot = element.place
-        GameTooltip:AddLine(ns.Catalog.AreaName(spot) or element.zone)
-        if spot.point then
-            GameTooltip:AddLine(ns.Catalog.Coordinates(spot.point), 1, 1, 1)
+        GameTooltip:AddLine(ns.Catalog.AreaName(place) or (element.kind == "group" and place.name) or element.zone)
+        if place.point then
+            GameTooltip:AddLine(ns.Catalog.Coordinates(place.point), 1, 1, 1)
         end
     end
-    GameTooltip:AddLine(ns.Catalog.CatchesText(element.place.catches, element.place.players), 1, 1, 1)
-    ns.AddBonusLines(GameTooltip, element.place.bonus) -- a tagged place's own bonus (spec 020)
+    GameTooltip:AddLine(ns.Catalog.CatchesText(place.catches, place.players), 1, 1, 1)
+    ns.AddBonusLines(GameTooltip, place.bonus) -- a tagged place's own bonus (spec 020)
     GameTooltip:Show()
 end
 
--- The pin button of a spot row: the game's pin icon, or a text button when the client lacks the atlas.
-local function CreatePinButton(row)
-    local button
-    if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(PIN_ATLAS) then
-        button = CreateFrame("Button", nil, row)
-        button:SetSize(16, 16)
-        button:SetNormalAtlas(PIN_ATLAS)
-        button:SetHighlightAtlas(PIN_ATLAS, "ADD")
-    else
-        button = ns.CreateButton(row, L["Pin"], 30, nil)
-        button:SetHeight(16)
-    end
-    button:SetPoint("RIGHT", -2, 0)
-    button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(L["Set a map pin here"])
-        GameTooltip:Show()
-    end)
-    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    button:SetScript("OnClick", function()
-        local element = row.element
-        ns.MapPin.Set(element.place.pin, element.zone .. " - " .. element.place.name) -- Core/MapPin.lua
-    end)
-    return button
-end
-
-local function InitPlaceRow(row, element)
-    if not row.name then
-        row:SetSize(ROW_WIDTH, LINE_HEIGHT)
-        row.toggle = CreateText(row, "GameFontNormal")
-        row.toggle:SetPoint("LEFT", 2, 0)
-        for _, column in ipairs(COLUMNS) do
-            local text = CreateText(row, "GameFontHighlight", column.justify)
-            text:SetPoint("LEFT", column.x, 0)
-            text:SetWidth(column.width)
-            text:SetWordWrap(false)
-            row[column.key] = text
-        end
-        row.pinButton = CreatePinButton(row)
-        row.tag = ns.CreateTagIcon(row, COLUMNS[1].x + COLUMNS[1].width)
-        row:SetScript("OnEnter", ShowPlaceTooltip)
-        row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        row:SetScript("OnClick", function(self)
-            if self.element.kind == "zone" then
-                CatalogTab.Toggle(self.element.place.mapID)
-            end
-        end)
-    end
-    row.element = element
+local function PlaceCells(element)
     local place = element.place
-    local zone = element.kind == "zone"
-    row.toggle:SetText(zone and (expanded[place.mapID] and "-" or "+") or "")
-    row.name:ClearAllPoints()
-    row.name:SetPoint("LEFT", COLUMNS[1].x + (zone and 0 or INDENT), 0)
-    ns.ShowTag(row.tag, row.name, COLUMNS[1].width - (zone and 0 or INDENT), place.bonus)
-    row.name:SetText(place.name)
-    row.skill:SetText(SpanLabel(place.ranges))
-    row.chance:SetText(ns.Catalog.ChanceText(place.chance, place.littleData))
-    row.catches:SetText(tostring(place.catches))
-    row.pinButton:SetShown(not zone and place.pin ~= nil)
+    return { skill = SpanLabel(place.ranges), chance = ns.Catalog.ChanceText(place.chance, place.littleData),
+        catches = tostring(place.catches) }
 end
 
 ---------------------------------------------------------------------------
@@ -342,14 +283,9 @@ function CatalogTab.Create(parent)
     page.title = CreateText(page.itemView, "GameFontNormal")
     page.title:SetPoint("LEFT", page.icon, "RIGHT", 6, 0)
     page.title:SetWidth(400)
-    local headers = { name = L["Place"], skill = L["Skill"], chance = L["Chance"], catches = L["Catches"] }
-    for _, column in ipairs(COLUMNS) do
-        local header = CreateText(page.itemView, "GameFontNormalSmall", column.justify)
-        header:SetPoint("TOPLEFT", LABEL_X + column.x, ITEM_LIST_TOP + LINE_HEIGHT + 4)
-        header:SetWidth(column.width)
-        header:SetText(headers[column.key])
-    end
-    page.places = ns.CreateList(page.itemView, ITEM_LIST_TOP, InitPlaceRow)
+    ns.PlaceList.Headers(page.itemView, ITEM_LIST_TOP, COLUMNS)
+    page.places = ns.PlaceList.Create(page.itemView, ITEM_LIST_TOP, COLUMNS,
+        { cells = PlaceCells, tooltip = ShowPlaceTooltip, changed = function() CatalogTab.Refresh(true) end })
     page.itemView:Hide()
 
     -- One status line: under the search box on the list, where the zones begin on an item's page (Refresh).
@@ -400,17 +336,8 @@ local function ShowItem(retain)
     local text, icon = ns.ItemDisplay(chosen)
     page.icon:SetTexture(icon)
     page.title:SetText(text)
-    local elements = {}
     local places = ns.Catalog.Places(chosen, filter)
-    for _, place in ipairs(places) do
-        table.insert(elements, { kind = "zone", place = place })
-        if expanded[place.mapID] then
-            for _, spot in ipairs(ns.Catalog.Spots(chosen, place.mapID, filter)) do
-                table.insert(elements, { kind = "spot", place = spot, zone = place.name, mapID = place.mapID })
-            end
-        end
-    end
-    page.places.Show(elements, retain)
+    page.places.Show(places, function(zone) return ns.Catalog.SpotGroups(chosen, zone.mapID, filter) end, retain)
     page.status:SetText(#places == 0 and L["No data for this item under these filters."] or "")
 end
 
@@ -455,9 +382,9 @@ function CatalogTab.Tick()
     end
 end
 
--- Expands or folds a zone of the chosen item.
-function CatalogTab.Toggle(mapID)
-    expanded[mapID] = not expanded[mapID] or nil
+-- Expands or folds a zone (by map ID) or a subzone group ("mapID:area") of the chosen item.
+function CatalogTab.Toggle(key)
+    page.places.Toggle(key)
     CatalogTab.Refresh(true)
 end
 
@@ -476,7 +403,8 @@ function CatalogTab.Show(arg)
     end
     if type(arg) == "number" then
         if #ns.Catalog.Places(arg, filter) > 0 then
-            chosen, expanded = arg, {}
+            chosen = arg
+            page.places.Fold()
         else
             chosen = nil
             CatalogTab.SetSearch(C_Item.GetItemNameByID(arg) or tostring(arg))
@@ -493,7 +421,8 @@ function CatalogTab.Show(arg)
             end
         end
         if #shown == 1 then
-            chosen, expanded = shown[1], {}
+            chosen = shown[1]
+            page.places.Fold()
         end
     else
         chosen = nil

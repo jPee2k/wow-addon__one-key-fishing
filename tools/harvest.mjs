@@ -586,7 +586,8 @@ function scaleCell(cell, factor, missFactor = factor) {
   const bonus = cell.q ? scaleBonusCell(cell, factor, missFactor) : null;
   const c = bonus ? bonus.c : Math.round(cell.c * factor);
   const m = bonus ? bonus.m : Math.round(cell.m * missFactor);
-  const scaled = { c, m, t: Math.max(Math.round(cell.t * Math.max(factor, missFactor)), c + m) };
+  // t goes with the catches (the best places' pace is catches over t, spec 024), never below one second a cast.
+  const scaled = { c, m, t: Math.max(Math.round(cell.t * factor), c + m) };
   if (bonus) {
     scaled.i = bonus.i;
     scaled.q = bonus.q;

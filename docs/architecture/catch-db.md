@@ -103,6 +103,12 @@ For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):
   keys (sharing switched, a store rebuilt), a change to an own record, login, and an item new to the own catch move
   the global part. `CatchDB.GetStampVersion()` grows with any move, so a reader skips the comparison while nothing
   moved. QueryMap and QueryCells keep their views until their map's stamp moves; Query keeps its version cache.
+- Casting time (spec 024 research R1): every view of `Query`, `QueryMap` and `QueryCells` carries `seconds` (its raw
+  cells' summed `t`) and `catchesPerHour` (`3600` x their catches over `seconds`; a seed cell the harvest weighted
+  has its `t` scaled with its `c`, so its `c` goes with it, not its raw `r`; nil without time), summed before the water and camp bonus filters (those parts keep no
+  time); another player's time is weighted like its catches (from five contributions on) and counts at least 5 s a
+  cast (`MIN_CAST_SECONDS`), so a forged record cannot set a place's pace. The best places multiply it by the value of
+  one catch.
 - The own items (spec 023): `P.ownItems`, item ID -> true for `shared.mine` and every record of the own ID, built on
   first use (Index.lua `OwnItems`). `CatchDB.IsOwnItem(itemID)` reads it (the catalog's trophy collection). `Settle`
   builds it before it writes a catch, adds each new item and, after the write, fires

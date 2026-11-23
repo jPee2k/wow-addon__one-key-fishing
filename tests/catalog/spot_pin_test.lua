@@ -49,7 +49,7 @@ test("a pin button only on spot rows with a target, with its hover text; a click
     advance(0)
     local tab = _G.OneKeyFishingStatsFrame.catalogPage
     ns.CatalogTab.Show(FISH)
-    ns.CatalogTab.Toggle(1415)
+    ns.CatalogTab.Toggle(1415) -- the zone's only group (no known subzone) opens at once (spec 024)
     local rows = scroll_rows(tab.places.box)
     eq(#rows, 3, "the zone and two spots")
     assert(not rows[1].pinButton:IsShown(), "no button on the zone row")

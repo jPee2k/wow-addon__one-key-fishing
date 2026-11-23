@@ -1,6 +1,6 @@
--- StatsFrame: session / current zone / all-time statistics, top catches and zones, on the first of three tabs;
+-- StatsFrame: session / current zone / all-time statistics, top catches and zones, on the first of four tabs;
 -- the second tab is the "What can be caught here" page (UI/CatchHere.lua), the third the catch catalog
--- (UI/CatalogTab.lua). The last open tab is saved.
+-- (UI/CatalogTab.lua), the fourth the best places (UI/BestPlacesTab.lua, spec 024). The last open tab is saved.
 -- Everything is recomputed when the data changed (catch, miss, cast, zone change, scan, Refresh);
 -- otherwise only the time rows tick.
 local _, ns = ...
@@ -235,13 +235,15 @@ local function Create()
     title:SetPoint("TOP", 0, -6)
     title:SetText(L["OneKeyFishing - Statistics"])
 
-    -- Three pages over the same area, switched by the tabs below the window: today's statistics,
-    -- "What can be caught here" (UI/CatchHere.lua) and the catch catalog (UI/CatalogTab.lua).
+    -- Four pages over the same area, switched by the tabs below the window: today's statistics,
+    -- "What can be caught here" (UI/CatchHere.lua), the catch catalog (UI/CatalogTab.lua) and the best places
+    -- (UI/BestPlacesTab.lua, spec 024).
     local page = CreateFrame("Frame", nil, f)
     page:SetAllPoints()
     f.statsPage = page
     f.herePage = ns.CatchHere.Create(f)
     f.catalogPage = ns.CatalogTab.Create(f)
+    f.bestPage = ns.BestPlacesTab.Create(f)
     pages = {
         { key = "stats", label = L["Statistics"], frame = page,
             refresh = StatsFrame.Refresh, tick = StatsFrame.TickStatistics },
@@ -249,6 +251,8 @@ local function Create()
             refresh = ns.CatchHere.Refresh, tick = ns.CatchHere.Tick },
         { key = "catalog", label = L["Catch catalog"], frame = f.catalogPage,
             refresh = ns.CatalogTab.Refresh, tick = ns.CatalogTab.Tick },
+        { key = "best", label = L["Best places"], frame = f.bestPage,
+            refresh = ns.BestPlacesTab.Refresh, tick = ns.BestPlacesTab.Tick },
     }
 
     f.skill = CreateText(page, "GameFontNormal")
@@ -598,6 +602,14 @@ function StatsFrame.OpenCatalog(arg)
     frame:Raise() -- also when the window was already shown
     SelectTab("catalog")
     ns.CatalogTab.Show(arg)
+end
+
+-- Shows the window on the best places (spec 024).
+function StatsFrame.OpenBest()
+    frame = frame or Create()
+    frame:Show()
+    frame:Raise()
+    SelectTab("best")
 end
 
 -- Statistics changes are seen through the Stats version; these only mark the window dirty, so a burst

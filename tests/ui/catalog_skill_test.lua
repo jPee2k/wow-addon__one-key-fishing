@@ -89,6 +89,7 @@ test("an item's zone and spots sum the same ranges; the Skill column keeps where
     eq(zone.catches.text, "120", "the zone's catches up to 149: 60 + 60, not the 60 of 225-299")
     eq(zone.skill.text, ns.RangeLabel(0, 1), "0-149")
     zone.scripts.OnClick(zone, "LeftButton")
+    -- two spots without a known subzone and nothing else: their one group opens at once (spec 024)
     eq(#rows(tab.places), 3, "the zone and its two spots")
     ns.CatalogTab.Show(nil)
 end)

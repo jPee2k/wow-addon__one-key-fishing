@@ -134,13 +134,15 @@ local function PlaceBefore(a, b)
 end
 
 -- "Bonus catches only" (spec 020) is a list filter over "All catches": its index is the "all" one (Catalog.Items
--- keeps the tagged rows), so it needs no index of its own, and an item's page shows all its zones.
+-- keeps the tagged rows), so it needs no index of its own, and an item's page shows all its zones. The best places
+-- (spec 024) query their views through it too.
 local function IndexFilter(filter)
     if filter.bonus ~= "bonusOnly" then
         return filter
     end
     return { range = filter.range, source = filter.source, water = filter.water, bonus = "all" }
 end
+Catalog.ViewFilter = IndexFilter
 
 local function IndexFor(filter)
     filter = IndexFilter(filter)
@@ -454,7 +456,9 @@ function Catalog.Spots(itemID, mapID, filter)
                 local chance, littleData, catches, players = PlaceNumbers(item, view)
                 local row = { cell = view.cell, point = view.point, area = view.area, chance = chance,
                     catches = catches, itemCatches = item.catches, players = players,
-                    littleData = littleData, ranges = item.ranges, order = view.cell, bonus = item.bonus }
+                    littleData = littleData, ranges = item.ranges, order = view.cell, bonus = item.bonus,
+                    plainChance = item.chance, plainCatches = view.catches, plainPlayers = view.players }
+                -- the plain numbers: a group of mixed tags reads these
                 row.name = Catalog.SpotName(row)
                 -- The game's map pin for the spot (Core/MapPin.lua): none for a cell without a point.
                 row.pin = row.point and ns.MapPin.Target({ mapID }, row.point.x, row.point.y)
@@ -465,6 +469,98 @@ function Catalog.Spots(itemID, mapID, filter)
     table.sort(rows, PlaceBefore)
     spots[key] = { cells = cells, rows = rows }
     return rows
+end
+
+-- The group key of a spot or a cell view: its area when the game names it, else false ("No subzone").
+local function AreaKey(place)
+    return Catalog.AreaName(place) and place.area or false
+end
+
+-- Spot rows grouped by their subzone (spec 024 research R6), for the catalog's places and the best places: one group
+-- per area ID, the spots without a known subzone in one group (area false, "No subzone"); a group of one spot is that
+-- spot's row. A group is sum(spots) with area, order (its first spot's), spots and the pin of its first spot with a
+-- pin: the rows come sorted best first, so that is its best spot. The list is sorted by before.
+function Catalog.GroupSpots(rows, sum, before)
+    local groups, keys = {}, {}
+    for _, row in ipairs(rows) do
+        local key = AreaKey(row)
+        if not groups[key] then
+            groups[key] = {}
+            table.insert(keys, key)
+        end
+        table.insert(groups[key], row)
+    end
+    local list = {}
+    for _, key in ipairs(keys) do
+        local spots = groups[key]
+        if #spots == 1 then
+            table.insert(list, spots[1])
+        else
+            local group = sum(spots)
+            group.area, group.order, group.spots = key, spots[1].order, spots
+            for _, spot in ipairs(spots) do
+                if not group.pin and spot.pin then
+                    group.pin, group.pinName = spot.pin, spot.name -- the pin's label names the spot it marks
+                end
+            end
+            table.insert(list, group)
+        end
+    end
+    table.sort(list, before)
+    -- One group only (every spot in one subzone, or none in a known one): its spots straight away, no extra click.
+    if #list == 1 and list[1].spots then
+        return list[1].spots
+    end
+    return list
+end
+
+-- A group's name: its subzone in the client's language, or "No subzone".
+function Catalog.GroupName(group)
+    return Catalog.AreaName(group) or L["No subzone"]
+end
+
+-- The camp bonus tag every spot of a group shares (spec 020), or nil when one has none, a plain one or another.
+local function SharedTag(spots)
+    local key = spots[1].bonus and not spots[1].bonus.plain and spots[1].bonus.key
+    for _, spot in ipairs(spots) do
+        if not (key and spot.bonus and not spot.bonus.plain and spot.bonus.key == key) then
+            return nil
+        end
+    end
+    return spots[1].bonus
+end
+
+-- The item's spots on a map grouped by subzone (the catalog's three levels, spec 024 US4): a group sums its spots, the
+-- item's chance weighted by their catches (the same scope as a lone spot's row, so the two sort together); its players
+-- are its largest spot's (a lower bound, as every count of players). When all its spots share a camp bonus tag it
+-- sums their numbers under the bonus and carries the tag with the group's own numbers; otherwise it sums the plain
+-- numbers, never the bonus numbers of some spots with the plain ones of others.
+local function SumItemSpots(spots)
+    local catches, itemCatches, players, ranges, weighted = 0, 0, 0, nil, 0
+    local tag = SharedTag(spots)
+    for _, spot in ipairs(spots) do
+        local spotCatches = tag and spot.catches or spot.plainCatches or spot.catches
+        local spotChance = tag and spot.chance or spot.plainChance or spot.chance
+        local spotPlayers = tag and spot.players or spot.plainPlayers or spot.players
+        catches, itemCatches = catches + spotCatches, itemCatches + spot.itemCatches
+        weighted = weighted + (spotChance or 0) * spotCatches
+        players = math.max(players, spotPlayers)
+        if spot.ranges then
+            ranges = ranges or { min = spot.ranges.min, max = spot.ranges.max }
+            ranges.min, ranges.max = math.min(ranges.min, spot.ranges.min), math.max(ranges.max, spot.ranges.max)
+        end
+    end
+    local group = { catches = catches, itemCatches = itemCatches, players = players, ranges = ranges,
+        chance = catches > 0 and weighted / catches or 0, littleData = catches < ns.CatchDB.LITTLE_DATA }
+    if tag then
+        group.bonus = { key = tag.key, several = tag.several, plain = false, chance = group.chance,
+            littleData = group.littleData, players = players, catches = catches }
+    end
+    return group
+end
+
+function Catalog.SpotGroups(itemID, mapID, filter)
+    return Catalog.GroupSpots(Catalog.Spots(itemID, mapID, filter), SumItemSpots, PlaceBefore)
 end
 
 -- "45, 72": a spot's point in whole percent of the map, as the game's map coordinates read.

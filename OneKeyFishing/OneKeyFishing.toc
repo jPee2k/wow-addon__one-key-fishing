@@ -57,6 +57,8 @@ GameData\ItemKinds.lua
 GameData\FishingPoles.lua
 GameData\EquipSlots.lua
 GameData\Icons.lua
+GameData\Continents.lua
+GameData\ZoneLevels.lua
 # Core: events, the message bus, saved variables, shared data
 Core\Core.lua
 Core\Data.lua
@@ -93,13 +95,16 @@ Exchange\ShareProtocol.lua
 Exchange\ShareGame.lua
 # Catch catalog
 Catalog\Catalog.lua
+Catalog\BestPlaces.lua
 # UI
 UI\Widgets.lua
 UI\CopyWindow.lua
 UI\Indicator.lua
 UI\Toast.lua
 UI\CatchHere.lua
+UI\PlaceList.lua
 UI\CatalogTab.lua
+UI\BestPlacesTab.lua
 UI\StatsFrame.lua
 UI\AuctionButton.lua
 UI\ShareNotice.lua
