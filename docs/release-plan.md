@@ -44,7 +44,11 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/item-kinds.md](checklists/item-kinds.md): a new trophy (steps 5-7: the gold notice, the rare sound, the
   count), accepted on 2026-11-23 until a weighed fish new to the account bites.
 
-## 1.6.0 (prepared 2026-11-23)
+## 1.6.0 (released 2026-11-23)
+
+**Released 2026-11-23**: pull request #20 merged into `main` (`279adc3`), tag `1.6.0`, GitHub release and CurseForge
+upload (`OneKeyFishing-1.6.0-forever.zip`). No `VERIFY` marker.
+
 
 - Spec 024 (`specs/024-best-places`): the Best places tab (gold per hour, the top 10 zones, Safe for me, Continent),
   the three-level place list of both tabs, the minimap menu entries, `/okf best`, the zone level table. Pull request
