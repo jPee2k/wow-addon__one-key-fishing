@@ -169,6 +169,7 @@ GameData.ItemKinds = {
         [13466] = "reagents", -- Plaguebloom (7 / 9)
         [14047] = "reagents", -- Runecloth (7 / 5)
         [16204] = "reagents", -- Illusion Dust (7 / 12; seed of epoch 9, 2026-11-23)
+        [11137] = "reagents", -- Vision Dust (7 / 12; seed of epoch 10, 2026-11-23)
         -- Reagents of the seed of epoch 7 (2026-11-20): ore, bars, hides, cloth, herbs, dust and elemental water; some
         -- are the Fishing Hut's bonus catches
         [2772] = "reagents", -- Iron Ore
@@ -245,6 +246,9 @@ GameData.ItemKinds = {
         [2966] = "other", -- Warrior's Pants (4 / 3, read in game)
         [3207] = "other", -- Hunting Bracers (4 / 2)
         [9785] = "other", -- Raider's Bracers (4 / 3, read in game)
+        -- Other of the seed of epoch 10 (2026-11-23; names and classes from the game's item tables, build 1.60.1.71037)
+        [3641] = "other", -- Journeyman's Bracers (4 / 1)
+        [4659] = "other", -- Warrior's Girdle (4 / 3)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {
