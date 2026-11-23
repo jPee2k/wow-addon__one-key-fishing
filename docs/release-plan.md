@@ -44,7 +44,23 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/item-kinds.md](checklists/item-kinds.md): a new trophy (steps 5-7: the gold notice, the rare sound, the
   count), accepted on 2026-11-23 until a weighed fish new to the account bites.
 
-## 1.5.2 (prepared 2026-11-23)
+## 1.6.0 (prepared 2026-11-23)
+
+- Spec 024 (`specs/024-best-places`): the Best places tab (gold per hour, the top 10 zones, Safe for me, Continent),
+  the three-level place list of both tabs, the minimap menu entries, `/okf best`, the zone level table. Pull request
+  #19 merged into `develop` (`e2c8de7`). Checked in game on 2026-11-23: `docs/checklists/best-places.md` 10/10; V75
+  (the zone level table: `C_Map.GetMapLevels` gives 0 in Forever) and V76 (continents) confirmed, no `VERIFY` marker.
+- Prepared on 2026-11-23: `package.json` and `CHANGELOG.md` at 1.6.0; the harvest made seed epoch 10 with 1021 places
+  (34 new) and 5 new items from 113 contributions, eleven outliers reported (single items nobody else reports, two
+  with unlike item shares), none blocked; the first seed whose weighted cells carry their time scaled with their
+  catches. The 3 seed items without a kind are in `GameData/ItemKinds.lua` (2 other, 1 reagent; names and classes
+  from the game's item tables, build 1.60.1.71037).
+
+## 1.5.2 (released 2026-11-23)
+
+**Released 2026-11-23**: pull request #18 merged into `main` (`496eb75`), tag `1.5.2`, GitHub release and CurseForge
+upload (`OneKeyFishing-1.5.2-forever.zip`). No `VERIFY` marker.
+
 
 - Spec 023 (`specs/023-item-kinds`): the item kinds Trophies and Quest, the trophy collection in the catalog, the
   notice for a new trophy. Pull request #17 merged into `develop` (`cda627e`). Checked in game on 2026-11-23: steps 1-4
@@ -54,6 +70,8 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
   with unlike item shares), none blocked. The 5 seed items without a kind are in `GameData/ItemKinds.lua` (1
   reagent, 4 other; classes from the game's item tables, build 1.60.1.71037); three of them have no name row there
   and were read in game on 2026-11-23: 2073 Dwarven Hatchet, 2966 Warrior's Pants, 9785 Raider's Bracers.
+- Next harvest: the seed of epoch 9 keeps a weighted cell's time scaled by its casts' factor; `tools/harvest.mjs` now
+  scales it with its catches (spec 024: the best places' pace): done by the harvest of 1.6.0 (epoch 10).
 - Open after the release: `FishedQuestItems` lists 19806 but not 19803 and 19805, the other Extravaganza fish; check
   at the contest of 2026-11-29 whether they come as an extra loot slot (spec 024).
 

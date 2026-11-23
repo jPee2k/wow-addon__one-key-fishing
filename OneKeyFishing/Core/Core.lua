@@ -256,7 +256,7 @@ local DB_DEFAULTS = {
     indicatorPos = nil, -- { point, relativePoint, x, y }
     fishedItems = {}, -- itemID -> true for everything ever looted from fishing
     errors = {}, -- the error log, ordered by last occurrence (ns.Safe above; data-model in specs/006-error-log)
-    statsTab = "stats", -- the last open tab of the statistics window: "stats" | "here" | "catalog"
+    statsTab = "stats", -- the last open tab of the statistics window: "stats" | "here" | "catalog" | "best"
     shared = { -- the catch database (CatchDB.lua); myID is created there
         mine = {}, -- place key -> cell: this account's catches, never reset
         records = {}, -- contribution ID (own) or "<id>@<epoch>" (others) -> record
@@ -269,6 +269,8 @@ local CHAR_DB_DEFAULTS = {
         pole = nil, -- itemID chosen in settings; nil = best pole in bags
         items = {}, -- extra fishing item IDs
     },
+    -- The best places' choices of this character (Catalog/BestPlaces.lua, spec 024): Safe for me, the continent.
+    bestPlaces = { safe = true, continent = "all" },
     -- pin: { mapID, x, y } of the map pin as the addon last set it (Core/MapPin.lua, UI/CatalogTab.lua), nil until it
     -- sets one; tells it apart from a pin the player set. The game's navigation setting (showInGameNavigation) is
     -- never touched.

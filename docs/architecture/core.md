@@ -117,7 +117,7 @@ new field only needs a default.
 | `fishedItems` | itemID -> true for everything ever looted from fishing | Fishing/Bags.lua |
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
 | `errors` | the error log: `{ context, message, stack, version, first, last, count }`, at most 30, ordered by last occurrence | Core.lua |
-| `statsTab` | the last open tab of the statistics window (`"stats"`, `"here"`, `"catalog"`) | UI/StatsFrame.lua |
+| `statsTab` | the last open tab of the statistics window (`"stats"`, `"here"`, `"catalog"`, `"best"`) | UI/StatsFrame.lua |
 | `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset; a cell may carry `q`, its camp bonus parts by mask, spec 020), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent) | CatchDB.lua, Share.lua |
 
 `OneKeyFishingCharDB` (per character):
@@ -130,6 +130,7 @@ new field only needs a default.
 | `savedCameraZoom` | the zoom before fishing mode; survives a `/reload`, dropped on a real login | Camera.lua |
 | `stats`, `countedCast` | the statistics buckets (`session`, `total`, `zones[key]`; since spec 020 also `bonusCasts` and `bonusCatches`, read as 0 when missing) and the cast running across a `/reload` | Stats.lua |
 | `session` | the current fishing session (its counts and times; `skillStart`, the Fishing rank it began with, read by Fishing/Skill.lua) | Catch/Stats.lua, Fishing/Skill.lua (`skillStart`) |
+| `bestPlaces` | `{ safe, continent }`: the best places' Safe for me (true by default) and continent (`"all"`, `"kalimdor"`, `"eastern"`), spec 024; written only by `BestPlaces.SetSafe` / `SetContinent` | Catalog/BestPlaces.lua |
 | `pin` | `{ mapID, x, y }` of the map pin as the addon last set it (nil by default), to tell it from a pin the player set | Core/MapPin.lua |
 | `channelSession` | the hidden channel's state across a `/reload` (joined by the addon, left by hand, locks, `generalOwed`: the comparison of its number with General's is still owed, `known`: the channel names and numbers that are not new to the repair of the numbers, spec 022) | Channel.lua |
 
@@ -137,7 +138,7 @@ new field only needs a default.
 
 `ns.COMMANDS`: every slash command in one place, sorted by name, with its English description and a `run`
 function that calls the module at runtime (constitution, Principles II and VI). Modules register no commands; the
-names, descriptions and `/okf` help are English on every client. `sound` opens the "Sound effects" page (`SettingsUI.OpenSounds`). `catalog` passes the rest of the line through
+names, descriptions and `/okf` help are English on every client. `sound` opens the "Sound effects" page (`SettingsUI.OpenSounds`). `best` opens the best places (`StatsFrame.OpenBest`, spec 024). `catalog` passes the rest of the line through
 `Catalog.CommandArg` (an item link becomes its ID) to `StatsFrame.OpenCatalog`. Every command is documented in the
 player manual `OneKeyFishing/README.md` (`npm run check`), except a temporary one whose declaration carries a
 `VERIFY` marker.

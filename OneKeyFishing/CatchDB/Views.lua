@@ -28,9 +28,17 @@ local NEW_ITEM_REPORTERS = 3 -- other contributions that must report an item nei
 -- x: the catches weighted by casts, for the miss rate (a seed cell's own x, else its catches).
 -- px, py, n: the summed positions of the cells that have one and their casts, for a spot's point; ranges: item ID ->
 -- { min, max }, the skill ranges the item was caught in. These three are never weighted.
+-- t, tc: the cells' casting seconds and catches before the water and camp bonus filters (those parts keep no time),
+-- for the catches per hour of the best places (spec 024 research R1). Another player's are kept in its part and
+-- weighted by its catches before the filters (from WEIGHT_FROM contributions on), and its time (and a seed cell's)
+-- counts at least MIN_CAST_SECONDS a cast,
+-- so a record claiming a cast a second cannot set a place's pace (a real cast and bite take longer). A seed cell the
+-- harvest weighted has its t scaled with its c (tools/harvest.mjs scaleCell, from the seed after epoch 9; epoch 9
+-- scaled it by its casts' factor, a slightly slower pace), so its c, not its raw r, goes with it.
+local MIN_CAST_SECONDS = 5
 local function NewSum()
     return { c = 0, m = 0, x = 0, i = {}, a = {}, ids = {}, seedK = 0, seedUnweighted = 0, parts = {}, px = 0,
-        py = 0, n = 0, ranges = {}, water = "all", bonus = "all" }
+        py = 0, n = 0, ranges = {}, water = "all", bonus = "all", t = 0, tc = 0 }
 end
 
 local function AddRanges(sum, cell, range)
@@ -232,6 +240,11 @@ local function AddCell(sum, cell, source, range)
             end
         end
     end
+    local seconds, counted = tonumber(cell.t) or 0, tonumber(cell.c) or 0 -- before the water and bonus filters
+    -- the seed too: a weighted cell's time may be pushed down to a second a cast; a cell without time keeps none
+    if seconds > 0 and (source.other or source.seed) then
+        seconds = math.max(seconds, MIN_CAST_SECONDS * (counted + (tonumber(cell.m) or 0)))
+    end
     if tonumber(cell.px) and tonumber(cell.py) then
         sum.px, sum.py = sum.px + cell.px, sum.py + cell.py
         sum.n = sum.n + (tonumber(cell.c) or 0) + (tonumber(cell.m) or 0)
@@ -254,10 +267,11 @@ local function AddCell(sum, cell, source, range)
     if source.other then
         target = sum.parts[source.id]
         if not target then
-            target = { c = 0, m = 0, x = 0, i = {}, a = {} }
+            target = { c = 0, m = 0, x = 0, i = {}, a = {}, t = 0, tc = 0 }
             sum.parts[source.id] = target
         end
     end
+    target.t, target.tc = target.t + seconds, target.tc + counted
     AddCounts(target, cell)
     if type(cell.a) == "table" then
         for areaID, n in pairs(cell.a) do
@@ -647,9 +661,18 @@ function BuildView(scope, sum, rules, missSum)
         others = others or sum.parts[id] ~= nil
     end
     local catches = RawCatches(sum)
+    -- The pace's weights come from the catches before the water and bonus filters, as its time does: a record with
+    -- no catch under a filter is capped all the same.
+    local timeFactors = WeightFactors(sum, players, function(part) return part.tc end)
+    local seconds, counted = sum.t, sum.tc
+    for id, part in pairs(sum.parts) do
+        local factor = timeFactors[id] or 1
+        seconds, counted = seconds + part.t * factor, counted + part.tc * factor
+    end
     local view = { scope = scope, area = area, littleData = catches < LITTLE_DATA, catches = catches,
         misses = raw.m, items = items, players = players, others = others,
-        point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil }
+        point = sum.n > 0 and { x = sum.px / sum.n / 1000, y = sum.py / sum.n / 1000 } or nil,
+        seconds = seconds, catchesPerHour = seconds > 0 and 3600 * counted / seconds or nil }
     -- No miss rate under a water filter: a miss has no loot source (FR-022). A camp bonus part has its misses, so the
     -- miss rate stays under a bonus filter (spec 020): missSum passed the same filter.
     if missSum and (sum.water or "all") == "all" then

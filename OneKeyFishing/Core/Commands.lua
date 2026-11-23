@@ -4,6 +4,7 @@
 local _, ns = ...
 
 ns.COMMANDS = {
+    { name = "best", description = "open the best places to fish", run = function() ns.StatsFrame.OpenBest() end },
     { name = "catalog", description = "open the catch catalog (optionally with an item name or link)",
         run = function(rest) ns.StatsFrame.OpenCatalog(ns.Catalog.CommandArg(rest)) end },
     { name = "config", description = "open the settings", run = function() ns.SettingsUI.Open() end },

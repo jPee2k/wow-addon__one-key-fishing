@@ -4,6 +4,25 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-11-23
+
+### Added
+
+- **Best places**, a fourth tab of the statistics window: the ten zones that bring the most gold per hour of
+  fishing for your skill, with their level (red when above yours), gold per hour and catches. Filters: Skill, Source,
+  Safe for me (hides zones more than 3 levels above you), Water or Camp bonus, Kinds (hidden kinds do not count in
+  the gold) and Continent. Each zone opens into its subzones and spots with map pins; hovering a place lists the
+  items that bring its gold. `/okf best` opens it.
+- The minimap button's menu has **Catalog** and **Best places** next to **Statistics**.
+
+### Changed
+
+- The catch catalog lists each subzone of a zone once: a zone opens into its subzones (their chance and catches
+  summed over their spots, with a map pin on the best one), a subzone into its spots. Spots without a known subzone
+  are grouped under "No subzone".
+- The bundled catch database now knows 1021 fishing places (34 new) and 5 more items, from the catches players
+  shared.
+
 ## [1.5.2] - 2026-11-23
 
 ### Added

@@ -123,6 +123,39 @@ grouped by kind, and the player may hide kinds.
   filters and hidden kinds do not change it. The tab draws it on the Trophies header and as a check mark on a caught
   trophy's icon; a new item moves every stamp (`BumpAll` in Settle), so the tab redraws at its next tick.
 
+## Subzone groups
+
+`specs/024-best-places`: `Catalog.GroupSpots(rows, sum, before)` groups a zone's spot rows by their subzone (the
+area ID with the most casts, `Catalog.AreaName`); spots without a known subzone form one group (`area = false`,
+`Catalog.GroupName` "No subzone"); a group of one spot is that spot's row. A group is `sum(spots)` with `area`,
+`order`, `spots` and the pin of its first spot with one (the rows come sorted best first); the list is sorted by
+`before`. `Catalog.SpotGroups(itemID, mapID, filter)` is the catalog's: the item's chance weighted by the spots'
+catches, `PlaceBefore` order. `Catalog.ViewFilter(filter)` is the view filter of a list filter ("Bonus catches
+only" reads "all").
+
+## Best places
+
+`Catalog/BestPlaces.lua` (`ns.BestPlaces`, spec 024), no frames:
+
+- A place's numbers (`Numbers(view, bonus)`): the value of one catch over the shown kinds' items (and those the camp
+  bonus value lists, `Catalog.BonusShown`), `chance x pieces x Prices.Get`; `goldPerHour` = that x the view's
+  `catchesPerHour`; `unpriced`, the share of the catch's pieces without a price (`UNPRICED_MARK` 0.25 shows a "*");
+  `top`, up to five items by the gold they bring with their share; the skill span of its items.
+- `BestPlaces.Zones(filter)`: per view filter and bonus value a ranking of every map of `CatchDB.Maps` but a continent
+  (`IsContinent`: old records kept a cave's catch on the continent, spec 011), recomputed for
+  the maps whose stamp or the generation (the kinds and the prices) moved, more
+  than four in frame steps of 3 ms; the top 10 with gold, at least 50 catches, passing Safe for me (the lowest level
+  above the character's plus 3 hides) and the continent; best first, ties by catches, then map ID.
+- `BestPlaces.Spots(mapID, filter)`: the zone's spots from `CatchDB.QueryCells`, grouped by `Catalog.GroupSpots`; a
+  group's gold is its spots' summed value over their summed time; cached per map and filter until the cells or the
+  generation change.
+- `ZoneLevels(mapID)` from `GameData.ZoneLevels` (Forever's client has no zone levels: `C_Map.GetMapLevels` gives 0;
+  the table's ranges confirmed in game, V75), `Continent(mapID)` by the map's parents up to the continent
+  type (confirmed in game, V76; cached for the session); a continent map itself is never ranked (`IsContinent`); a map the table does not list takes its first listed parent's range; `GameData.Continents` names Kalimdor and the Eastern Kingdoms;
+  `ContinentText` gives the game's own name of the continent map.
+- The character's choices (`ns.charDB.bestPlaces`): `GetSafe` / `SetSafe`, `GetContinent` / `SetContinent`, each
+  setter firing `SETTINGS_CHANGED("bestPlaces")`; `GetVersion()` for the tab's tick; `Describe()` for `/okf debug`.
+
 ## List order
 
 `specs/017-catalog-sort`: the catalog's item list in one of three orders, chosen with the tab's Sort button.
