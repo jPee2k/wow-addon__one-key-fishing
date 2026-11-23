@@ -1,9 +1,9 @@
 -- GameData/ItemKinds: the kind of each item the addon knows, and class rules for the rest (specs/014-catch-filters,
 -- docs/architecture/game-data.md). Data only: no logic and no L lookup; Catalog.ItemKind reads it.
--- Kinds: "fish", "containers", "potions", "reagents", "other". The classes in brackets were read in game on
--- 2026-11-16 (class / subclass of C_Item.GetItemInfoInstant): the class cannot tell a fish from a clam (both 7 / 11)
--- nor a junk fish from a chest (both 15 / 0), so every item of the bundled seed and every fished container is listed
--- here by ID (a test fails for a missing one).
+-- Kinds: "fish", "containers", "trophies", "potions", "reagents", "quest", "other" (specs 014 and 023). The classes in
+-- brackets were read in game on 2026-11-16 (class / subclass of C_Item.GetItemInfoInstant): the class cannot tell a
+-- fish from a clam (both 7 / 11) nor a weighed fish from a chest (both 15 / 0), so every item of the bundled seed and
+-- every fished container is listed here by ID (a test fails for a missing one).
 local _, ns = ...
 local GameData = ns.GameData or {}
 ns.GameData = GameData
@@ -11,14 +11,12 @@ ns.GameData = GameData
 GameData.ItemKinds = {
     -- itemID -> kind
     byItem = {
-        -- Fish (the junk-named ones too: the player sees a fish)
+        -- Fish (the weighed "N Pound" fish are trophies and the quest fish are quest items since spec 023)
         [4603] = "fish", -- Raw Spotted Yellowtail
         [6289] = "fish", -- Raw Longjaw Mud Snapper
         [6291] = "fish", -- Raw Brilliant Smallfish (7 / 8)
-        [6292] = "fish", -- 10 Pound Mud Snapper (15 / 0)
         [6303] = "fish", -- Raw Slitherskin Mackerel
         [6308] = "fish", -- Raw Bristle Whisker Catfish
-        [6309] = "fish", -- 17 Pound Catfish
         [6358] = "fish", -- Oily Blackmouth (7 / 11)
         [6359] = "fish", -- Firefin Snapper
         [6361] = "fish", -- Raw Rainbow Fin Albacore
@@ -29,54 +27,78 @@ GameData.ItemKinds = {
         [21071] = "fish", -- Raw Sagefish
         [13422] = "fish", -- Stonescale Eel (not in the seed yet: a fish the class rule would call a reagent)
         -- Fish of the seed of epoch 2 (names and classes read in game on 2026-11-17)
-        [6310] = "fish", -- 19 Pound Catfish (15 / 0)
         [13754] = "fish", -- Raw Glossy Mightfish (7 / 8)
         [13755] = "fish", -- Winter Squid (0 / 5: the class rule would call it a drink)
         [13757] = "fish", -- Lightning Eel (7 / 11)
         [13758] = "fish", -- Raw Redgill
         [13759] = "fish", -- Raw Nightfin Snapper
         [13760] = "fish", -- Raw Sunscale Salmon
-        [13876] = "fish", -- 40 Pound Yellowtail (15 / 0)
-        [13877] = "fish", -- 47 Pound Yellowtail
-        [13885] = "fish", -- 34 Pound Redgill (15 / 0)
-        [13886] = "fish", -- 37 Pound Redgill
-        [19806] = "fish", -- Dezian Queenfish (15 / 0)
-        [19807] = "fish", -- Speckled Tastyfish (15 / 4)
         [21153] = "fish", -- Raw Greater Sagefish (7 / 8)
         -- Fish of the seed of epoch 4 (names and classes read in game on 2026-11-17 with /okf debug)
-        [6294] = "fish", -- 12 Pound Mud Snapper (15 / 0)
-        [6295] = "fish", -- 15 Pound Mud Snapper (15 / 0)
         [6299] = "fish", -- Sickly Looking Fish (0 / 5: the class rule would call it a drink)
-        [6311] = "fish", -- 22 Pound Catfish (15 / 0)
         [12238] = "fish", -- Darkshore Grouper (0 / 5)
-        [13878] = "fish", -- 53 Pound Yellowtail (15 / 0)
-        [16967] = "fish", -- Feralas Ahi (15 / 0)
-        [16968] = "fish", -- Sar'theris Striker (12 / 0)
-        [16969] = "fish", -- Savage Coast Blue Sailfin (12 / 0)
-        [16970] = "fish", -- Misty Reed Mahi Mahi (12 / 0)
         [251524] = "fish", -- Whimsyfin (7 / 11: a fish of Forever; the class rule would call it a reagent)
         -- Fish of the seed of epoch 5 (names and classes read in game on 2026-11-18 with /okf debug)
         [6317] = "fish", -- Raw Loch Frenzy (7 / 8)
-        [6363] = "fish", -- 26 Pound Catfish (15 / 0)
-        [13879] = "fish", -- 59 Pound Yellowtail (15 / 0)
         [13889] = "fish", -- Raw Whitescale Salmon (7 / 8)
         [13890] = "fish", -- Raw Plated Armorfish (12 / 0)
-        [13901] = "fish", -- 15 Pound Salmon (15 / 0)
-        [19805] = "fish", -- Keefer's Angelfish (15 / 0)
         -- Fish of the seed of epoch 7 (2026-11-20; the names of this epoch's items are read from Wowhead's classic
         -- database, and the eight with a class in brackets were checked in game the same day)
-        [1467] = "fish", -- Spotted Sunfish (12 / 0: a quest fish of Redridge)
-        [13882] = "fish", -- 42 Pound Redgill (15 / 0)
-        [13883] = "fish", -- 45 Pound Redgill
         [13888] = "fish", -- Darkclaw Lobster (7 / 8)
         [13893] = "fish", -- Large Raw Mightfish
-        [13908] = "fish", -- 9 Pound Lobster (15 / 0)
-        -- Fish of the seed of epoch 8 (2026-11-22; names and classes from the game's item tables, build 1.60.1.71037)
-        [13907] = "fish", -- 7 Pound Lobster (15 / 0)
-        [13909] = "fish", -- 12 Pound Lobster
-        [13910] = "fish", -- 15 Pound Lobster
-        [13914] = "fish", -- 70 Pound Mightfish (15 / 0)
-        [13915] = "fish", -- 85 Pound Mightfish
+        -- Trophies (spec 023): the 36 weighed "N Pound" fish, all 15 / 0 like the chests, so listed by ID; the
+        -- names and classes are from the game's item tables (build 1.60.1.71037). Lobster and Yellowtail cannot be
+        -- held in the off hand, the others can; all are trophies.
+        [6292] = "trophies", -- 10 Pound Mud Snapper (15 / 0)
+        [6294] = "trophies", -- 12 Pound Mud Snapper (15 / 0)
+        [6295] = "trophies", -- 15 Pound Mud Snapper (15 / 0)
+        [6309] = "trophies", -- 17 Pound Catfish
+        [6310] = "trophies", -- 19 Pound Catfish (15 / 0)
+        [6311] = "trophies", -- 22 Pound Catfish (15 / 0)
+        [6363] = "trophies", -- 26 Pound Catfish (15 / 0)
+        [6364] = "trophies", -- 32 Pound Catfish
+        [13876] = "trophies", -- 40 Pound Yellowtail (15 / 0)
+        [13877] = "trophies", -- 47 Pound Yellowtail
+        [13878] = "trophies", -- 53 Pound Yellowtail (15 / 0)
+        [13879] = "trophies", -- 59 Pound Yellowtail (15 / 0)
+        [13880] = "trophies", -- 68 Pound Yellowtail
+        [13882] = "trophies", -- 42 Pound Redgill (15 / 0)
+        [13883] = "trophies", -- 45 Pound Redgill
+        [13884] = "trophies", -- 49 Pound Redgill
+        [13885] = "trophies", -- 34 Pound Redgill (15 / 0)
+        [13886] = "trophies", -- 37 Pound Redgill
+        [13887] = "trophies", -- 52 Pound Redgill
+        [13901] = "trophies", -- 15 Pound Salmon (15 / 0)
+        [13902] = "trophies", -- 18 Pound Salmon
+        [13903] = "trophies", -- 22 Pound Salmon
+        [13904] = "trophies", -- 25 Pound Salmon
+        [13905] = "trophies", -- 29 Pound Salmon
+        [13906] = "trophies", -- 32 Pound Salmon
+        [13907] = "trophies", -- 7 Pound Lobster (15 / 0)
+        [13908] = "trophies", -- 9 Pound Lobster (15 / 0)
+        [13909] = "trophies", -- 12 Pound Lobster
+        [13910] = "trophies", -- 15 Pound Lobster
+        [13911] = "trophies", -- 19 Pound Lobster
+        [13912] = "trophies", -- 21 Pound Lobster
+        [13913] = "trophies", -- 22 Pound Lobster
+        [13914] = "trophies", -- 70 Pound Mightfish (15 / 0)
+        [13915] = "trophies", -- 85 Pound Mightfish
+        [13916] = "trophies", -- 92 Pound Mightfish
+        [13917] = "trophies", -- 103 Pound Mightfish
+        -- Quest items (spec 023): handed in for a quest or the Stranglethorn Fishing Extravaganza; any other item
+        -- of the quest class gets the kind by byClass
+        [1467] = "quest", -- Spotted Sunfish (12 / 0: a quest fish of Redridge)
+        [6717] = "quest", -- Gaffer Jack (12 / 0: a quest item fished in Darkshore)
+        [6718] = "quest", -- Electropeller
+        [16967] = "quest", -- Feralas Ahi (15 / 0)
+        [16968] = "quest", -- Sar'theris Striker (12 / 0)
+        [16969] = "quest", -- Savage Coast Blue Sailfin (12 / 0)
+        [16970] = "quest", -- Misty Reed Mahi Mahi (12 / 0)
+        [19803] = "quest", -- Brownell's Blue Striped Racer
+        [19804] = "quest", -- Pale Ghoulfish
+        [19805] = "quest", -- Keefer's Angelfish (15 / 0)
+        [19806] = "quest", -- Dezian Queenfish (15 / 0)
+        [19807] = "quest", -- Speckled Tastyfish (15 / 4)
         -- Containers: chests, crates, trunks, clams
         [5523] = "containers", -- Small Barnacled Clam (7 / 11)
         [5524] = "containers", -- Thick-shelled Clam
@@ -172,7 +194,6 @@ GameData.ItemKinds = {
         [6456] = "other", -- Acidic Slime (15 / 0)
         -- Other of the seed of epoch 6 (2026-11-18)
         [3873] = "other", -- Plans: Golden Scale Cuirass (a recipe, like 3870)
-        [6718] = "other", -- Electropeller (a quest item fished in Darkshore)
         -- Other of the seed of epoch 5 (2026-11-18)
         [766] = "other", -- Flanged Mace (2 / 4)
         [768] = "other", -- Lumberjack Axe (2 / 0)
@@ -180,7 +201,6 @@ GameData.ItemKinds = {
         [4666] = "other", -- Burnt Leather Belt (4 / 2)
         [6539] = "other", -- Willow Belt (4 / 1)
         [6541] = "other", -- Willow Gloves (4 / 1)
-        [6717] = "other", -- Gaffer Jack (12 / 0)
         [8350] = "other", -- The 1 Ring (4 / 0)
         -- Other of the seed of epoch 7 (2026-11-20): gear, bags and recipes
         [767] = "other", -- Long Bo Staff
@@ -224,5 +244,6 @@ GameData.ItemKinds = {
         ["7:8"] = "fish", -- Trade Goods / Cooking: raw fish (Forever uses the Mainline classes)
         ["7"] = "reagents", -- every other Trade Goods: herbs, leather, parts
         ["0"] = "potions", -- Consumable: potions, food and drink
+        ["12"] = "quest", -- Questitem (spec 023)
     },
 }

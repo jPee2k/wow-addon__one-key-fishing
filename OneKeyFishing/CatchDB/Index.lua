@@ -172,6 +172,12 @@ local function OwnItems()
     return P.ownItems
 end
 
+-- Whether the account's own catch (every character, every game version) holds the item: the trophy collection of
+-- spec 023 reads it.
+function CatchDB.IsOwnItem(itemID)
+    return ns.db ~= nil and OwnItems()[itemID] == true
+end
+
 -- Shared with CatchDB/Views.lua and CatchDB/Events.lua through CatchDB.private.
 P.SeedIndex, P.Others, P.Frozen, P.OwnIndex = SeedIndex, Others, Frozen, OwnIndex
 P.SeedItems, P.OwnItems = SeedItems, OwnItems

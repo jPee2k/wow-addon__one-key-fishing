@@ -28,6 +28,7 @@ local LIST_TOP = TOP - 114 -- the item list, below row B
 local ITEM_LIST_TOP = TOP - 46 -- the zone rows, below the item header and the column headers
 local INDENT = 16 -- spot rows under their zone
 local PIN_ATLAS = "Waypoint-MapPin-Untracked"
+local CHECK_ATLAS = "common-icon-checkmark" -- a trophy the account caught (spec 023)
 -- The zone and spot rows: x and width inside a row, and the text alignment.
 local COLUMNS = {
     { key = "name", x = 16, width = 230, justify = "LEFT" },
@@ -88,6 +89,16 @@ local function InitItemRow(row, element)
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(16, 16)
         row.icon:SetPoint("LEFT")
+        -- A trophy the account caught (spec 023): a check mark on the icon's corner, which costs the row no width.
+        row.caught = row:CreateTexture(nil, "OVERLAY")
+        row.caught:SetSize(12, 12)
+        row.caught:SetPoint("CENTER", row.icon, "BOTTOMRIGHT", -2, 2)
+        -- SetAtlas answers nothing: ask for the atlas first, as the pin button does.
+        if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(CHECK_ATLAS) then
+            row.caught:SetAtlas(CHECK_ATLAS)
+        else
+            row.caught:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+        end
         row.name = CreateText(row, "GameFontHighlight")
         row.name:SetPoint("LEFT", 22, 0)
         row.name:SetWidth(ITEM_NAME_WIDTH)
@@ -115,11 +126,16 @@ local function InitItemRow(row, element)
     if element.header then
         row.itemID, row.bonus = nil, nil
         row.icon:Hide()
+        row.caught:Hide()
         row.tag:Hide()
         row.name:SetPoint("LEFT", 2, 0)
         row.name:SetWidth(ITEM_NAME_WIDTH)
         row.name:SetTextColor(1, 0.82, 0) -- the game's header gold
-        row.name:SetText(ns.Catalog.KindText(element.header))
+        if element.header == "trophies" then
+            row.name:SetText(L["%s (%d/%d)"]:format(ns.Catalog.KindText("trophies"), ns.Catalog.TrophyCount()))
+        else
+            row.name:SetText(ns.Catalog.KindText(element.header))
+        end
         row.zones:SetText("")
         return
     end
@@ -127,6 +143,7 @@ local function InitItemRow(row, element)
     local text, icon = ns.ItemDisplay(element.itemID)
     row.icon:SetTexture(icon)
     row.icon:Show()
+    row.caught:SetShown(ns.Catalog.ItemKind(element.itemID) == "trophies" and ns.CatchDB.IsOwnItem(element.itemID))
     ns.ShowTag(row.tag, row.name, ITEM_NAME_WIDTH, element.bonus)
     row.name:SetPoint("LEFT", 22, 0)
     row.name:SetTextColor(1, 1, 1)

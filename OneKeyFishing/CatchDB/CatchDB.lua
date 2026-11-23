@@ -695,7 +695,10 @@ end
 -- (cast.mask > 0, from Camp.CastMask) also adds to the part of that mask: parts are inclusive (already in c, m, i)
 -- and disjoint (a cast is in one part only), spec 020.
 -- No catch writes a pool part: the source is not known (V3); a received pool part is still read.
-local function Settle(cast, caught)
+-- An item new to the account's own catch fires ITEM_FIRST_CAUGHT(itemID, castID) once the cast is written (spec 023);
+-- the own items are read before the write, so the first catch is seen even before any view built them.
+local function Settle(cast, caught, castID)
+    local own = caught and P.OwnItems()
     local seconds = math.max(1, math.floor((cast.stop or GetTime()) - cast.start + 0.5))
     local cells, build = TargetCells(cast.key)
     for _, cell in ipairs(cells) do
@@ -718,20 +721,26 @@ local function Settle(cast, caught)
             end
         end
     end
-    if P.ownItems and caught then
-        for itemID in pairs(caught) do
-            if not P.ownItems[itemID] then
-                -- An item new to the own catch may now show on other maps too (BuildView's rule for new items).
-                BumpAll()
-            end
-            P.ownItems[itemID] = true
+    local first = {}
+    for itemID in pairs(caught or {}) do
+        if not own[itemID] then
+            own[itemID] = true
+            table.insert(first, itemID)
         end
+    end
+    if #first > 0 then
+        -- An item new to the own catch may now show on other maps too (BuildView's rule for new items).
+        BumpAll()
+        table.sort(first)
     end
     if P.ownIndex then
         AddToOwnIndex(cast.key)
     end
     BumpMap(KeyMapID(cast.key))
     Changed(CatchDB.IsBuild(build))
+    for _, itemID in ipairs(first) do
+        ns.Fire("ITEM_FIRST_CAUGHT", itemID, castID)
+    end
 end
 
 -- Shared with the other CatchDB/*.lua files through CatchDB.private; the names a later file re-binds are never
