@@ -24,12 +24,12 @@ test("the saved choice is kept and hides containers at the first draw of both ta
         elements[#elements + 1] = element.header and ("H:" .. element.header) or tostring(element.itemID)
     end
     eq(table.concat(elements, ","), "H:fish,6291", "catalog")
-    eq(window.catalogPage.kindButton.text, (L["Kinds: %d of %d"]):format(4, 5), "catalog button")
+    eq(window.catalogPage.kindButton.text, (L["Kinds: %d of %d"]):format(6, 7), "catalog button")
     click(L["What can be caught here"], window)
     tick(window)
     local here = window.herePage
     eq(list_rows(here.list)[1].header.text, L["Fish"], "the fish header")
     eq(list_rows(here.list)[2].itemID, 6291, "the fish")
     assert(list_rows(here.list)[3] == nil, "no container")
-    eq(here.kindButton.text, (L["Kinds: %d of %d"]):format(4, 5), "catch tab button")
+    eq(here.kindButton.text, (L["Kinds: %d of %d"]):format(6, 7), "catch tab button")
 end)

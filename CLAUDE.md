@@ -170,6 +170,9 @@ Messages (`ns.Fire` -> `ns.On`; a new one must be listed here):
 - `FISH_ESCAPED` (castID: the game's "fish got away" / "no fish hooked" line while the line is out or just after it,
   once per cast; the answer of a hook press without a catch, for the hook sound; the cast still settles by
   `FISH_MISSED`)
+- `ITEM_FIRST_CAUGHT` (itemID, castID: an item new to the account's own catch, `CatchDB.IsOwnItem`; fired by CatchDB's
+  Settle inside that cast's `FISH_CAUGHT`, after the write (TOC order: `UI/Toast.lua` hears it before its own
+  `FISH_CAUGHT` of the cast, `Fishing/Sound.lua` after its own); spec 023)
 - `LURE_READY`, `SETTINGS_CHANGED` (the key that changed), `GEAR_LIST_CHANGED`
 - `CAMP_BONUS_WARNING` (text: a camp bonus ends in 5 minutes or has ended, `Fishing/Camp.lua`; the toast shows it even
   with catch notifications off)

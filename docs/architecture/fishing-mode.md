@@ -74,7 +74,9 @@ The fishing sounds of the "Sound effects" page (spec 013), `ns.Sound`, loaded af
 - Plays the author's files from `Media/Sounds/` through `PlaySoundFile(path, "Master")` in `pcall`, one handle per
   event, the event's previous sound stopped first: `bell` on `FISHING_CAST_START` (once per cast), `hook` on the
   result of the hook press (`FISH_CAUGHT` or `FISH_ESCAPED` of the cast, Catch.lua, once per cast), `rare` 0.4 s
-  after the hook sound when an item of the loot has `quality >= Enum.ItemQuality.Uncommon`. The fishing key runs the game's
+  after the hook sound when an item of the loot has `quality >= Enum.ItemQuality.Uncommon` or when
+  `ITEM_FIRST_CAUGHT` names a trophy (`GameData.ItemKinds`, spec 023; it comes after Sound's own `FISH_CAUGHT`), at
+  most once per cast. The fishing key runs the game's
   interact action while the line is out, so no addon code sees the press; its result is what the addon hears.
 - Only while `settings.fishingSounds` is on, fishing mode is on and no fight is running (`Mode.InFight()`);
   `MODE_CHANGED(false)`, `Sound.SetEnabled(false)` and `PLAYER_REGEN_DISABLED` stop every sound (a delayed rare sound

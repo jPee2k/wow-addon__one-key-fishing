@@ -71,13 +71,40 @@ function ns.Toast(text, r, g, b, always)
     container:SetScript("OnUpdate", OnUpdate)
 end
 
-ns.On("FISH_CAUGHT", function(items)
-    local parts = {}
+-- A trophy new to the account (spec 023): CatchDB settles the cast first (TOC order), so ITEM_FIRST_CAUGHT of a cast
+-- comes before this module's FISH_CAUGHT of it. The trophy gets its own loud notice in place of the catch line.
+local firstTrophies, firstCast = {}, nil
+
+ns.On("ITEM_FIRST_CAUGHT", function(itemID, castID)
+    if ns.Catalog.ItemKind(itemID) == "trophies" then
+        if firstCast ~= castID then
+            firstTrophies, firstCast = {}, castID
+        end
+        firstTrophies[itemID] = true
+    end
+end)
+
+ns.On("FISH_CAUGHT", function(items, castID)
+    local trophies = firstCast == castID and firstTrophies or {}
+    firstTrophies, firstCast = {}, nil
+    local parts, new = {}, {}
     for _, item in ipairs(items) do
-        table.insert(parts, item.quantity > 1 and ("%s x%d"):format(item.link, item.quantity) or item.link)
+        if trophies[item.itemID] == true then
+            trophies[item.itemID] = "shown" -- one notice for a trophy in two loot slots
+            table.insert(new, item.link)
+        elseif not trophies[item.itemID] then
+            table.insert(parts, item.quantity > 1 and ("%s x%d"):format(item.link, item.quantity) or item.link)
+        end
     end
     if #parts > 0 then
         ns.Toast(L["Caught: %s"]:format(table.concat(parts, ", ")), 1, 1, 1)
+    end
+    if #new > 0 then
+        -- The count already holds every new trophy of the cast: each notice shows the count after its own catch.
+        local caught, total = ns.Catalog.TrophyCount()
+        for index, link in ipairs(new) do
+            ns.Toast(L["New trophy: %s (%d/%d)"]:format(link, caught - #new + index, total), 1, 0.82, 0, true)
+        end
     end
 end)
 

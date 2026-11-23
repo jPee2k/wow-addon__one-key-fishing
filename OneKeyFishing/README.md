@@ -51,7 +51,8 @@ One fishing round:
   it changed are restored.
 - **Indicator**: what the key will do next (`Cast`, `Hook!`, `Apply lure`, `Open`), a cast bar, the session timer
   and a warning when the bobber is in the water but not targeted.
-- **Catch notifications** for every catch and every miss.
+- **Catch notifications** for every catch and every miss; the first catch of a
+  [trophy](#catch-catalog) on your account gets its own notification, also with catch notifications off.
 - **Statistics**: casts, catches, misses, fishing time and the value of the catch, per session, per zone and in
   total.
 - **What can be caught here**: the items of the spot you stand at, with their chance, pieces per catch and price,
@@ -134,9 +135,10 @@ The second tab of the statistics window lists what the spot you stand at gives:
 - **Source**: **All** (your catches, the catch database bundled with the addon and what other players shared with
   you) or **Only mine**. Under **All** the tab says how many players the numbers come from ("60 catches from 3
   players");
-- the items are grouped by kind, under **Fish**, **Containers** (chests, crates, trunks, clams), **Potions &
-  drinks**, **Reagents & herbs** and **Other**; **Kinds** hides the kinds you do not want to see: tick and untick
-  them in its menu ("Kinds: 2 of 5" says a filter is on). The choice is the same in the catch catalog and is kept
+- the items are grouped by kind, under **Fish**, **Containers** (chests, crates, trunks, clams), **Trophies** (the
+  weighed fish such as "10 Pound Mud Snapper"), **Potions & drinks**, **Reagents & herbs**, **Quest** (items handed in
+  for a quest or the fishing contest) and **Other**; **Kinds** hides the kinds you do not want to see: tick and
+  untick them in its menu ("Kinds: 2 of 7" says a filter is on). The choice is the same in the catch catalog and is kept
   between sessions. Hiding a kind does not change the chances of the others; with every kind hidden the tab says
   "The kind filter hides every item.";
 - WoW Forever does not tell a catch from a fish pool apart from open water, so the numbers count both together;
@@ -170,6 +172,11 @@ and, with the shared catch database on, what other players reported.
   button's place), **Kinds** and **Sort**. The list is grouped under the same kind headers as on the other tab, and
   a kind you hide there is hidden here too. A search whose matches are all hidden says "The kind filter hides the
   matches."; an item opened by its link or from the other tab always shows, whatever its kind.
+- **Trophies**: the Trophies header shows how many of the 36 weighed fish your account has caught ("Trophies
+  (12/36)"), and each one you caught, on any character, has a check mark on its icon. A catch the addon does not
+  record (in an instance, or without a map position) does not count. The first catch of a trophy gives a
+  notification "New trophy: ... (13/36)", with the rare loot sound when the fishing sounds play (fishing mode on,
+  no fight).
 - **Sort**: **Name** (alphabetical, the default), **Price** (the dearest first) or **Chance** (the highest chance
   first), inside each kind. The right end of each row shows what the list is sorted by: the number of zones, the
   price per piece (the same value the statistics use: the vendor price or your last auction scan, whichever is
@@ -359,7 +366,7 @@ page says so and the addon's own scan is used until you log in again.
 
 - **Play fishing sounds**: while fishing mode is on, a bell rings when you cast, a sound plays
   when you hook (on the game's answer: the loot, or "Your fish got away!" / "No fish are hooked."), and a
-  notification follows when the loot holds an Uncommon (green) or better item. Walking away with the line out plays
+  notification follows when the loot holds an Uncommon (green) or better item or a trophy new to your account. Walking away with the line out plays
   no hook sound. The minimap button's menu has the same switch: **Turn fishing sounds on** / **off**.
 - **Volume**: how loud these sounds are, from 0 to 100 % in steps of 10; moving the slider plays a sample. It
   changes only the addon's sounds, never a game volume; the game's master volume and its "Enable Sound" switch still

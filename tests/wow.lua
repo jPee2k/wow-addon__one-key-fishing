@@ -636,9 +636,14 @@ function anchor(frame, point)
     end
 end
 
--- A texture (CreateTexture makes a frame here): the file or file ID it shows.
+-- A texture (CreateTexture makes a frame here): the file or file ID it shows, or its atlas. The game's SetAtlas
+-- answers nothing (the client export, SimpleTextureBaseAPIDocumentation.lua).
 function Frame:SetTexture(texture)
     self.texture = texture
+end
+
+function Frame:SetAtlas(atlas)
+    self.atlas = atlas
 end
 
 local NewFrame

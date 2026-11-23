@@ -90,7 +90,7 @@ end
 ns.On("FISH_CAUGHT", function(items, castID)
     local cast = TakeCast(castID)
     if cast then
-        Settle(cast, CatchItems(items))
+        Settle(cast, CatchItems(items), castID)
     end
 end)
 

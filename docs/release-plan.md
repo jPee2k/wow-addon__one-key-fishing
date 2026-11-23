@@ -41,10 +41,29 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
   bags; the toast at a capped rank and the popup on a fresh account.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
+- [checklists/item-kinds.md](checklists/item-kinds.md): a new trophy (steps 5-7: the gold notice, the rare sound, the
+  count), accepted on 2026-11-23 until a weighed fish new to the account bites.
 
-## 1.5.1 (next patch)
+## 1.5.2 (prepared 2026-11-23)
 
-- Spec 022 (`specs/022-channel-order`, branch `022-channel-order` off `develop`): the hidden channel no longer takes
+- Spec 023 (`specs/023-item-kinds`): the item kinds Trophies and Quest, the trophy collection in the catalog, the
+  notice for a new trophy. Pull request #17 merged into `develop` (`cda627e`). Checked in game on 2026-11-23: steps 1-4
+  of [checklists/item-kinds.md](checklists/item-kinds.md); steps 5-7 accepted. No `VERIFY` marker.
+- Prepared on 2026-11-23: `package.json` and `CHANGELOG.md` at 1.5.2; the harvest made seed epoch 9 with 987 places
+  (40 new) and 8 new items from 155 contributions, eleven outliers reported (single items nobody else reports, one
+  with unlike item shares), none blocked. The 5 seed items without a kind are in `GameData/ItemKinds.lua` (1
+  reagent, 4 other; classes from the game's item tables, build 1.60.1.71037); three of them have no name row there
+  and were read in game on 2026-11-23: 2073 Dwarven Hatchet, 2966 Warrior's Pants, 9785 Raider's Bracers.
+- Open after the release: `FishedQuestItems` lists 19806 but not 19803 and 19805, the other Extravaganza fish; check
+  at the contest of 2026-11-29 whether they come as an extra loot slot (spec 024).
+
+## 1.5.1 (released 2026-11-22)
+
+**Released 2026-11-22**: spec 022 committed on `develop` (`016696f`, `ff99079`, `d181386`), pull request #16 merged
+into `main` (`993cd6a`), tag `1.5.1`, GitHub release and CurseForge upload (`OneKeyFishing-1.5.1-forever.zip`). No
+`VERIFY` marker; `npm run build` passed without `--force` (102 files). To see later: V74 in a capital (accepted).
+
+- Spec 022 (`specs/022-channel-order`, built on `develop`): the hidden channel no longer takes
   the number of a channel of the game (it took 1 from General on 2026-11-22) and repairs an order already broken.
   Merged into `develop` (`016696f`, `ff99079`).
 - Checked in game on 2026-11-22: V70, V71, V72, V73 confirmed, V74 accepted (to see in a capital later); step 12
