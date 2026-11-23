@@ -29,7 +29,7 @@ author's quiz of 2026-11-23.
   2026-11-23; the client has no zone levels at all), so the levels come from a table, `GameData/ZoneLevels.lua`. Before
   that check: `C_Map.GetMapLevels(uiMapID)` returns `playerMinLevel, playerMaxLevel` (client
   export, `MapDocumentation.lua`, `MayReturnNothing`); `C_Map.GetMapInfo` walks up to the continent (`mapType`
-  Continent), as `Catalog.ZoneName` already does for Micro maps. Both need a `VERIFY` until seen in game.
+  Continent), as `Catalog.ZoneName` already does for Micro maps. Confirmed in game on 2026-11-23 (V76).
 
 ## 2. Decisions agreed with the author (2026-11-23)
 
@@ -89,9 +89,9 @@ author's quiz of 2026-11-23.
 
 ## 3. Open, to settle in the spec or check in game
 
-1. Zone levels: `C_Map.GetMapLevels` gives 0 in Forever (2026-11-23); the table's ranges are V75.
-2. The continent of a zone through `C_Map.GetMapInfo`'s parents on Forever's maps (Kalimdor 1414, Eastern Kingdoms
-   1415); `VERIFY`.
+1. Zone levels: `C_Map.GetMapLevels` gives 0 in Forever (2026-11-23); the table's ranges were confirmed in game (V75).
+2. The continent of a zone through `C_Map.GetMapInfo`'s parents (Kalimdor 1414, Eastern Kingdoms 1415): confirmed
+   in game on 2026-11-23 (V76).
 3. The subzone of a spot comes from its area counts `a`; a cell fished in two subzones goes to the one with the most
    casts (as the catalog names it today).
 4. How the gold per hour of a zone and of a subzone is summed: the value of all their cells over all their casting

@@ -237,8 +237,10 @@ opens "Best places".
 
 ## Assumptions
 
-- The game's map data gives a zone's level range and its continent on Forever's maps; both are checked in game
-  (`VERIFY`) before the release. Without a level range a zone is never hidden.
+- The game's map data gives a zone's continent (confirmed in game, V76). Forever's client has no zone levels
+  (`C_Map.GetMapLevels` gives 0, seen 2026-11-23): the ranges come from `GameData/ZoneLevels.lua` (confirmed in game,
+  V75); the capitals and Moonglade read 1-60; a cave or building map takes its zone's range; a map without a range is
+  never hidden.
 - The data needed (catches, casting time, items, subzones, positions) is already in the catch database; no saved data
   changes shape except two new per-character settings.
 - Prices are those of the statistics; their quality (an old scan) is the player's concern, as for the catch value.

@@ -125,7 +125,7 @@ local continents = {}
 -- read 1-60); a cave, a building or a dungeon map inside a zone takes its zone's range (the first listed parent); nil
 -- when none is listed: such a place is never hidden.
 function BestPlaces.ZoneLevels(mapID)
-    -- VERIFY(V75): the ranges of GameData.ZoneLevels match Forever's zones
+    -- V75, confirmed in game 2026-11-23: the table's ranges show as the game's map does (Riverglades 35-45)
     local current = mapID
     for _ = 1, 8 do
         local range = ns.GameData.ZoneLevels[current]
@@ -152,7 +152,7 @@ end
 -- The UiMap ID of the zone's continent (its first parent of type Continent), or nil when it cannot be told.
 function BestPlaces.Continent(mapID)
     if continents[mapID] == nil then
-        -- VERIFY(V76): Forever's zone maps have Kalimdor (1414) or the Eastern Kingdoms (1415) as their continent
+        -- V76, confirmed in game 2026-11-23: Forever's zones have Kalimdor (1414) or the Eastern Kingdoms (1415) above
         local found, current = false, mapID
         for _ = 1, 8 do
             local info = current and current ~= 0 and C_Map.GetMapInfo(current)

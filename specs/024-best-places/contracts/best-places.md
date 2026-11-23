@@ -18,8 +18,9 @@
 |---|---|
 | `BestPlaces.Zones(filter)` | `zones, state`: up to 10 zone place numbers (data-model.md), ranked; `state` `"building"` / `"ready"` |
 | `BestPlaces.Spots(mapID, filter)` | the zone's elements from `Catalog.GroupSpots` with Best places numbers |
-| `BestPlaces.ZoneLevels(mapID)` | `min, max` or nil (`-- VERIFY(V75)`) |
-| `BestPlaces.Continent(mapID)` | continent UiMap ID or nil (`-- VERIFY(V76)`) |
+| `BestPlaces.ZoneLevels(mapID)` | `min, max` from `GameData.ZoneLevels` (or its first listed parent's), or nil (V75, confirmed) |
+| `BestPlaces.Continent(mapID)` | continent UiMap ID or nil (V76, confirmed) |
+| `BestPlaces.IsContinent(mapID)` | a continent map or above: never ranked |
 | `BestPlaces.GetSafe()`, `SetSafe(on)` | per character; the setter fires `SETTINGS_CHANGED("bestPlaces")` |
 | `BestPlaces.GetContinent()`, `SetContinent(value)` | `"all"`, `"kalimdor"`, `"eastern"`; same message |
 | `BestPlaces.GetVersion()` | grows when a ranking changes; the tab polls it |

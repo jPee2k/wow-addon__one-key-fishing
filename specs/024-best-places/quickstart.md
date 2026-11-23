@@ -20,7 +20,7 @@ npm test
 
 ## In game (checklist `docs/checklists/best-places.md`)
 
-1. V75: the ranges of `GameData/ZoneLevels.lua` match the game (the API gives 0 in Forever, seen 2026-11-23).
-2. V76: the continents of Kalimdor and Eastern Kingdoms zones.
+1. V75: the ranges of `GameData/ZoneLevels.lua` match the game (the API gives 0 in Forever): confirmed 2026-11-23.
+2. V76: the continents of Kalimdor and Eastern Kingdoms zones: confirmed 2026-11-23.
 3. The tab, its ten zones, a zone's subzones and spots with pins; the catalog's Wetlands for Oily Blackmouth without
    duplicate subzones.

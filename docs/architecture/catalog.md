@@ -150,8 +150,8 @@ only" reads "all").
   group's gold is its spots' summed value over their summed time; cached per map and filter until the cells or the
   generation change.
 - `ZoneLevels(mapID)` from `GameData.ZoneLevels` (Forever's client has no zone levels: `C_Map.GetMapLevels` gives 0;
-  V75 checks the table), `Continent(mapID)` by the map's parents up to the continent
-  type (V76, cached for the session); a map the table does not list takes its first listed parent's range; `GameData.Continents` names Kalimdor and the Eastern Kingdoms;
+  the table's ranges confirmed in game, V75), `Continent(mapID)` by the map's parents up to the continent
+  type (confirmed in game, V76; cached for the session); a continent map itself is never ranked (`IsContinent`); a map the table does not list takes its first listed parent's range; `GameData.Continents` names Kalimdor and the Eastern Kingdoms;
   `ContinentText` gives the game's own name of the continent map.
 - The character's choices (`ns.charDB.bestPlaces`): `GetSafe` / `SetSafe`, `GetContinent` / `SetContinent`, each
   setter firing `SETTINGS_CHANGED("bestPlaces")`; `GetVersion()` for the tab's tick; `Describe()` for `/okf debug`.

@@ -110,3 +110,20 @@ module of its own so the catalog file does not grow further.
 ## Complexity Tracking
 
 No violations.
+
+## Revisions after the reviews and the in-game check (2026-11-23)
+
+- Zone levels: `C_Map.GetMapLevels` gives 0 in Forever, the client has no zone levels; `GameData/ZoneLevels.lua`
+  (ranges from LibTouristClassicEra, the capitals and Moonglade 1-60) replaced it; a cave or building map takes its
+  zone's range; a continent map is never ranked. V75 and V76 confirmed in game, their markers removed; the test stub
+  `map_levels` / `GetMapLevels` was removed again.
+- The pace: a weighted seed cell's time goes with its counted `c` (not `r`); another player's time is weighted by its
+  catches before the filters and, like a seed cell's, counts at least 5 s a cast; the harvest scales `t` with the
+  catch factor.
+- Rankings: a copy of the filter per ranking, a build fills a table swapped in at its end, a dropped ranking stops its
+  steps, only the latest two rankings are kept; recounts on the price switches and on an unpriced item's info, not on
+  Safe for me, the continent or a level-up (they only redraw, the level a second later).
+- Groups: one group in a zone opens straight into its spots; a group carries its spots' shared camp bonus tag with
+  its own numbers, mixed tags sum the plain numbers; the unpriced share counts pieces; spots under a subzone show only
+  their coordinates; a group's pin label names its spot.
+- Bonus catches only: an item's chance under the bonus (`Catalog.ItemNumbers`), and little data from those numbers.
