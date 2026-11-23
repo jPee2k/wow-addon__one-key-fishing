@@ -101,7 +101,7 @@ local function Numbers()
 end
 
 
-test("the kind button reads 'Kinds: all' and opens five checkboxes, all checked", function()
+test("the kind button reads 'Kinds: all' and opens seven checkboxes, all checked", function()
     eq(here.kindButton.text, L["Kinds: All"], "button")
     assert(anchor(here.kindButton, "TOPLEFT"), "in row B, at the slot's place without pool or bonus data (spec 020)")
     here.kindButton.scripts.OnClick(here.kindButton)
@@ -111,8 +111,8 @@ test("the kind button reads 'Kinds: all' and opens five checkboxes, all checked"
         eq(entry.isSelected(), true, "checked: " .. tostring(entry.text))
         table.insert(texts, entry.text)
     end
-    eq(table.concat(texts, ","), table.concat({ L["Fish"], L["Containers"], L["Potions & drinks"],
-        L["Reagents & herbs"], L["Other"] }, ","), "the five kinds in order")
+    eq(table.concat(texts, ","), table.concat({ L["Fish"], L["Containers"], L["Trophies"], L["Potions & drinks"],
+        L["Reagents & herbs"], L["Quest"], L["Other"] }, ","), "the seven kinds in order (spec 023)")
 end)
 
 test("unticking Containers hides them at once; the other numbers stay (FR-007, FR-010, SC-004)", function()
@@ -124,7 +124,7 @@ test("unticking Containers hides them at once; the other numbers stay (FR-007, F
     -- No tick: the page follows the click itself.
     assert(not Shown():find("H:" .. L["Containers"], 1, true), "no Containers header: " .. Shown())
     eq(RowOf(CHEST), nil, "no chest row")
-    eq(here.kindButton.text, (L["Kinds: %d of %d"]):format(4, 5), "button")
+    eq(here.kindButton.text, (L["Kinds: %d of %d"]):format(6, 7), "button")
     local after = {}
     for _, line in ipairs(numbers) do
         if not line:find("^" .. CHEST .. "=") then
@@ -145,7 +145,7 @@ test("every kind hidden: no rows, and the page says the filter hides them (FR-01
     tick(window)
     eq(Shown(), "", "no rows")
     eq(here.message.text, L["The kind filter hides every item."], "the filter's text")
-    eq(here.kindButton.text, (L["Kinds: %d of %d"]):format(0, 5), "button")
+    eq(here.kindButton.text, (L["Kinds: %d of %d"]):format(0, 7), "button")
     assert(not here.hint.text:find(L["Click an item to see where else it is caught."], 1, true),
         "no click hint without an item: " .. here.hint.text)
     for _, kind in ipairs(ns.Catalog.KINDS) do

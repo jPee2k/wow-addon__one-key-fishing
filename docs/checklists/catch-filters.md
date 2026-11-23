@@ -25,10 +25,10 @@ or `ukUA`) for step 7.
    row after Sort: [catalog-sort.md](catalog-sort.md)), overlaps nothing and reads "Kinds: all". ____
 3. [ ] **The menu stays open** (FR-007, research R6, SC-003): click Kinds and untick Containers, Potions & drinks,
    Reagents & herbs and Other one after another. Expected: the menu stays open between the clicks, the list follows
-   each click at once, the button ends at "Kinds: 1 of 5", and only fish are listed; the chance and price of each
+   each click at once, the button ends at "Kinds: 1 of 7" (before spec 023: "of 5"), and only fish are listed; the chance and price of each
    fish are the same as before. Clicks used, the menu's included: ____ (at most five). ____
 4. [ ] **Both tabs** (FR-007): open the "Catch catalog" tab. Expected: the list shows only the Fish header and fish, its
-   Kinds button reads "Kinds: 1 of 5"; the scroll list scrolls with the header rows the same height as the items.
+   Kinds button reads "Kinds: 1 of 7" (before spec 023: "of 5"); the scroll list scrolls with the header rows the same height as the items.
    Tick Containers back from the catalog's own button: containers come back in both tabs. ____
 5. [ ] **Remembered** (FR-008, SC-003): with some kinds hidden, `/reload`; then log out and back in. Expected: the same
    kinds hidden both times, in both tabs. ____

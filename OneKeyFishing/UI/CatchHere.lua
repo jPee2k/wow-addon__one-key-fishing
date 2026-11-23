@@ -217,7 +217,7 @@ function CatchHere.OpenKindMenu(owner)
     end)
 end
 
--- "Kinds: All" or "Kinds: N of 5" (FR-009).
+-- "Kinds: All" or "Kinds: N of 7" (FR-009 of specs 014 and 023).
 function CatchHere.KindLabel()
     local count, total = ns.Catalog.ShownKinds()
     return count == total and L["Kinds: All"] or (L["Kinds: %d of %d"]):format(count, total)

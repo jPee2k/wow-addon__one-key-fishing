@@ -98,10 +98,10 @@ parts" builds `item.bonus` in each view).
 
 ## Item kinds
 
-`specs/014-catch-filters`: both lists ("What can be caught here" and the catalog's) are grouped by kind, and the
-player may hide kinds.
+`specs/014-catch-filters` and `specs/023-item-kinds`: both lists ("What can be caught here" and the catalog's) are
+grouped by kind, and the player may hide kinds.
 
-- `Catalog.KINDS` = `fish`, `containers`, `potions`, `reagents`, `other`, in display order; `Catalog.KindText(kind)`
+- `Catalog.KINDS` = `fish`, `containers`, `trophies`, `potions`, `reagents`, `quest`, `other`, in display order; `Catalog.KindText(kind)`
   is the translated name, looked up when drawn.
 - `Catalog.ItemKind(itemID)`: `GameData.ItemKinds.byItem` by ID, else `byClass` by the class numbers of
   `C_Item.GetItemInfoInstant` (`"<class>:<subclass>"`, then `"<class>"`), else `"other"` (also for an item the
@@ -117,6 +117,11 @@ player may hide kinds.
   indexes never see it, so a shown item's chance, pieces, price and players are the same whatever is hidden, and a
   click costs no index rebuild (research R2 of spec 014). `Places`, `Spots`, `TooltipLines` and `MinimapLines`
   ignore it; `Describe` ends with `kinds hidden: ...`.
+- The trophy collection (spec 023): `Catalog.TrophyIDs()` is the items `GameData.ItemKinds` lists as `trophies` (36),
+  ascending, built once; `Catalog.TrophyCount()` gives `caught, total`, caught being those `CatchDB.IsOwnItem` holds
+  (the account's own catch, every character and game version). It counts the collection, not the rows shown: search,
+  filters and hidden kinds do not change it. The tab draws it on the Trophies header and as a check mark on a caught
+  trophy's icon; a new item moves every stamp (`BumpAll` in Settle), so the tab redraws at its next tick.
 
 ## List order
 

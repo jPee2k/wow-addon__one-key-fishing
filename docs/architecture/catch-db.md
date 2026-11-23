@@ -103,6 +103,11 @@ For the catch catalog ([catalog.md](catalog.md), `specs/005-catch-catalog`):
   keys (sharing switched, a store rebuilt), a change to an own record, login, and an item new to the own catch move
   the global part. `CatchDB.GetStampVersion()` grows with any move, so a reader skips the comparison while nothing
   moved. QueryMap and QueryCells keep their views until their map's stamp moves; Query keeps its version cache.
+- The own items (spec 023): `P.ownItems`, item ID -> true for `shared.mine` and every record of the own ID, built on
+  first use (Index.lua `OwnItems`). `CatchDB.IsOwnItem(itemID)` reads it (the catalog's trophy collection). `Settle`
+  builds it before it writes a catch, adds each new item and, after the write, fires
+  `ITEM_FIRST_CAUGHT(itemID, castID)` once per new item (ascending by ID), so the first catch is seen even when no
+  view built the set yet. A cast without a place is not settled, so it brings no new item.
 - The own-cells index: the keys of `mine`, the own record and the frozen own records by `"<mapID>:<range>"`, built
   on first use and grown by `Settle`, so a map's sum no longer walks every own cell. Dropped on a roll, at login and
   on a `SHARED_DATA_CHANGED` without keys or naming an own record (data written past `Settle` needs one).

@@ -138,18 +138,36 @@ end
 -- The hook press has no event of its own; its answer is a catch (FISH_CAUGHT) or the game's line for a fish that got
 -- away or was not hooked (FISH_ESCAPED, Catch.lua). A green or better item adds the rare sound a moment later.
 -- Seen in game 2026-11-16 (V47): the loot and the game's fish line come at once after the hook press.
+local rareCast -- the cast whose rare sound is scheduled: one per cast
+
+local function PlayRare(castID)
+    if castID ~= nil and rareCast == castID then
+        return
+    end
+    rareCast = castID
+    local scheduled = token
+    C_Timer.After(RARE_DELAY, function()
+        if scheduled == token and Allowed() then
+            Play("rare")
+        end
+    end)
+end
+
 ns.On("FISH_CAUGHT", function(items, castID)
     if not Allowed() then
         return
     end
     PlayHook(castID)
     if IsRare(items) then
-        local scheduled = token
-        C_Timer.After(RARE_DELAY, function()
-            if scheduled == token and Allowed() then
-                Play("rare")
-            end
-        end)
+        PlayRare(castID)
+    end
+end)
+
+-- A trophy new to the account (spec 023, CatchDB settles after this module's FISH_CAUGHT) gets the rare sound too,
+-- once per cast. Its kind is read from the game data: this layer knows no Catalog.
+ns.On("ITEM_FIRST_CAUGHT", function(itemID, castID)
+    if Allowed() and ns.GameData.ItemKinds.byItem[itemID] == "trophies" then
+        PlayRare(castID)
     end
 end)
 

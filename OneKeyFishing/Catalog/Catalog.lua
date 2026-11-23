@@ -515,11 +515,12 @@ function Catalog.ZoneName(mapID)
 end
 
 ---------------------------------------------------------------------------
--- Item kinds (specs/014-catch-filters): the lists of both tabs are grouped by kind, and the player may hide kinds.
+-- Item kinds (specs/014-catch-filters, 023-item-kinds): the lists of both tabs are grouped by kind, and the player may
+-- hide kinds.
 -- The kind filter applies to finished item lists only: the views, their sums and the indexes never see it, so a
 -- shown item's numbers are the same whatever is hidden (FR-010, research R2).
 ---------------------------------------------------------------------------
-Catalog.KINDS = { "fish", "containers", "potions", "reagents", "other" }
+Catalog.KINDS = { "fish", "containers", "trophies", "potions", "reagents", "quest", "other" }
 
 local KNOWN_KIND = {}
 for _, kind in ipairs(Catalog.KINDS) do
@@ -549,16 +550,48 @@ function Catalog.KindText(kind)
         return L["Fish"]
     elseif kind == "containers" then
         return L["Containers"]
+    elseif kind == "trophies" then
+        return L["Trophies"]
     elseif kind == "potions" then
         return L["Potions & drinks"]
     elseif kind == "reagents" then
         return L["Reagents & herbs"]
+    elseif kind == "quest" then
+        return L["Quest"]
     end
     return L["Other"]
 end
 
 local function HiddenKinds()
     return ns.db and ns.db.settings.hiddenKinds or {}
+end
+
+-- The trophy collection (spec 023): the items listed as trophies, ascending, built once; how many of them the
+-- account's own catch holds. The total is the list's size.
+local trophyIDs
+
+function Catalog.TrophyIDs()
+    if not trophyIDs then
+        trophyIDs = {}
+        for itemID, kind in pairs(ns.GameData.ItemKinds.byItem) do
+            if kind == "trophies" then
+                table.insert(trophyIDs, itemID)
+            end
+        end
+        table.sort(trophyIDs)
+    end
+    return trophyIDs
+end
+
+-- caught, total
+function Catalog.TrophyCount()
+    local ids, caught = Catalog.TrophyIDs(), 0
+    for _, itemID in ipairs(ids) do
+        if ns.CatchDB.IsOwnItem(itemID) then
+            caught = caught + 1
+        end
+    end
+    return caught, #ids
 end
 
 function Catalog.IsKindShown(kind)

@@ -386,6 +386,11 @@ L["Containers"] = true
 L["Potions & drinks"] = true
 L["Reagents & herbs"] = true
 L["Other"] = true
+-- Catalog.lua, UI/CatalogTab.lua, UI/Toast.lua: the kinds Trophies and Quest, the trophy collection (spec 023)
+L["Trophies"] = true
+L["Quest"] = true
+L["%s (%d/%d)"] = true
+L["New trophy: %s (%d/%d)"] = true
 L["Kinds: All"] = true
 L["Kinds: %d of %d"] = true
 L["The kind filter hides every item."] = true

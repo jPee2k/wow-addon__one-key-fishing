@@ -171,7 +171,7 @@ release.
   `blocked`); `-- --unblock <id>` takes it back. The outlier report of a run says which IDs to look at.
 - `-- --synthetic 3000` writes a random seed for a load test (never commit it).
 - A seed with an item that `OneKeyFishing/GameData/ItemKinds.lua` does not list fails `tests/catalog/kinds_test.lua`:
-  give the new item its kind there (fish, containers, potions, reagents, other) in the same change (spec 014).
+  give the new item its kind there (fish, containers, trophies, potions, reagents, quest, other) in the same change (specs 014 and 023).
 - Format and rules: `specs/002-local-catch-db/contracts/`.
 
 ## Packaging

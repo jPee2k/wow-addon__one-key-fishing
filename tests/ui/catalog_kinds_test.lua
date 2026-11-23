@@ -85,7 +85,7 @@ test("a toggle from the catalog's own button updates its list at once (FR-007)",
     menu_entry(L["Containers"]).onClick()
     -- No tick.
     eq(Elements(), table.concat({ "H:fish", FISH, TROUT, "H:potions", POTION }, ","), "containers gone")
-    eq(tab.kindButton.text, (L["Kinds: %d of %d"]):format(4, 5), "button")
+    eq(tab.kindButton.text, (L["Kinds: %d of %d"]):format(6, 7), "button")
     menu_entry(L["Containers"]).onClick()
     eq(Elements(), table.concat({ "H:fish", FISH, TROUT, "H:containers", CHEST, TRUNK, "H:potions", POTION }, ","),
         "back")

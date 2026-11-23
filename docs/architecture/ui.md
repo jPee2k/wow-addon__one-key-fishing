@@ -118,7 +118,7 @@ The "What can be caught here" page ([catch-db.md](catch-db.md)):
 - the items are grouped under kind headers (`Catalog.Group`, spec 014): a header is a row in header mode (the kind's
   text only, no item, so its hover and click do nothing), elements of the scroll list like the items; the Kinds
   button is the second of row B (spec 020 decision 22; before it stood at the top right, beside the place's name);
-- the Kinds button reads "Kinds: All" or "Kinds: N of 5" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
+- the Kinds button reads "Kinds: All" or "Kinds: N of 7" and opens `CatchHere.OpenKindMenu`: `ns.OpenCheckboxMenu`
   (`UI/Widgets.lua`, which shares its body with `ns.OpenRadioMenu`) with one checkbox per kind; a click goes
   through `Catalog.SetKindShown`, and each tab redraws itself at once on `SETTINGS_CHANGED("hiddenKinds")` (a hidden
   one when shown again); the menu stays open (the game's checkbox answers `MenuResponse.Refresh`); the choice is saved
@@ -205,9 +205,15 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   catch pages are `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`), the map pin answers (`MAP_PIN_SET`) and the camp bonus notices
-  (`CAMP_BONUS_WARNING`, spec 020: always, in gold `1, 0.82, 0`).
+  (`CAMP_BONUS_WARNING`, spec 020: always, in gold `1, 0.82, 0`), and a trophy new to the account (spec 023):
+  `ITEM_FIRST_CAUGHT` of a trophy (`Catalog.ItemKind`) is remembered for its cast, and the cast's `FISH_CAUGHT`
+  then leaves it out of the catch line and shows "New trophy: <link> (n/36)" always, in gold, n being the count after
+  that trophy (`Catalog.TrophyCount` already holds the cast's new ones).
   `ns.Toast(text, r, g, b, always)`: `always` shows it with catch notifications off, for an answer to the player's
   click and the rank reminders, which have their own setting.
+- The catalog tab's trophies (spec 023): the Trophies header reads "Trophies (n/36)" (`Catalog.TrophyCount`), and an
+  item row of a trophy the account caught (`CatchDB.IsOwnItem`) shows the atlas `common-icon-checkmark` (12 px; the
+  texture `ReadyCheck-Ready` on a client without it) on its icon's bottom right corner; header rows and other items hide it.
 - AuctionButton: the "Scan fish prices" button above the auction house window, made when it first opens; it
   follows `AUCTION_STATE` through `Auction.GetState()` and `GetProgress()`: "Scanning n/m" while a scan runs,
   "Auction house not answering" (disabled, the reason on hover) while stalled; clicks run `Auction.Scan`. The
