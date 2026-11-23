@@ -156,6 +156,13 @@ local function BuildReport()
         end
     end)
 
+    -- The best places (spec 024): each ranking's state and size, the character's choices; never a place's name.
+    Section(lines, "Best places", function()
+        for _, line in ipairs(ns.BestPlaces.Describe()) do
+            add("%s", line)
+        end
+    end)
+
     -- The items of the bundled seed that GameData/ItemKinds.lua does not list (a harvest brought them), with their
     -- names and classes, so each gets its kind by ID (spec 014). A release has none (tests/catalog/kinds_test.lua);
     -- after a harvest, a dev build lists them. An item the client does not know yet is asked for, once per report.

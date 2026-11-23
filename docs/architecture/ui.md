@@ -203,6 +203,18 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   `ns.ShowReasonOnHover(button)` (a button's `reason` in the tooltip, also while disabled; `ns.SetReason(button,
   reason)` sets it and updates a tooltip the button shows). The skill, source and water menus of the two
   catch pages are `CatchHere.OpenSkillMenu`, `OpenSourceMenu` and `OpenWaterMenu`; the catalog tab uses them too.
+- PlaceList (`UI/PlaceList.lua`, spec 024): the three-level list of the catalog's item page and of the best places:
+  zone rows open into subzone groups and spots, groups into spots (`Catalog.GroupSpots`), an indent per level, a
+  "+"/"-" mark on zones and groups, the pin button (the atlas or a text button) on groups and spots; the caller gives
+  the columns with their headers (`PlaceList.Headers`), each row's cells and the tooltip. Expanded zones and groups
+  live in memory (`Toggle(key)`, `Fold()`).
+- Best places tab (`UI/BestPlacesTab.lua`, the window's fourth page `best`, spec 024): row A Skill, Source, Safe for
+  me; row B Water or Camp bonus, Kinds, Continent; the columns Place, Skill, Level (red above the character's level),
+  Gold per hour ("*" when much of the catch has no price, "Little data"), Catches; the tooltip of a row lists the
+  items that bring the gold, the players and the unpriced share. Skill, Source, Water and Camp bonus live in memory;
+  it redraws on `SETTINGS_CHANGED` of `hiddenKinds` and `bestPlaces` and polls `BestPlaces.GetVersion()`. The minimap
+  menu opens it ("Best places") and the catalog ("Catalog") next to "Statistics" (`StatsFrame.OpenBest`,
+  `OpenCatalog`).
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`), the map pin answers (`MAP_PIN_SET`) and the camp bonus notices
   (`CAMP_BONUS_WARNING`, spec 020: always, in gold `1, 0.82, 0`), and a trophy new to the account (spec 023):

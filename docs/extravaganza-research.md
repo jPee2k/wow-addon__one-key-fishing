@@ -3,7 +3,7 @@
 Pre-spec research (2026-11-23) for two roadmap items taken together: the helper for the Stranglethorn Fishing
 Extravaganza (the Booty Bay fishing contest) and new item kinds in the catch lists (a group for quest fish, a kind for
 the weighed "N Pound" fish). No code is written yet. The design quiz with the author's decisions is
-[section 11](#11-decisions-agreed-with-the-author-2026-11-23); the two specs (023 kinds, 024 the helper) are listed in
+[section 11](#11-decisions-agreed-with-the-author-2026-11-23); the specs (023 kinds, released in 1.5.2; 025 the helper, after 024 the best places) are listed in
 [ROADMAP.md](ROADMAP.md), "Planned".
 
 Sources and tags used below:
@@ -216,7 +216,7 @@ two specs; anything not listed here is decided in the spec.
 
 ### Scope
 
-- Two specs: **023**, the new item kinds (small, released first), and **024**, the Extravaganza helper (it uses the
+- Two specs: **023**, the new item kinds (small, released first), and the Extravaganza helper (now **025**; it uses the
   kinds of 023).
 
 ### 023: item kinds
@@ -232,7 +232,12 @@ two specs; anything not listed here is decided in the spec.
 - **Trophy notice**: the first catch of a trophy gives a loud toast "New trophy (13/36)" with the rare loot sound, also
   with catch notifications off; a trophy caught again gives the ordinary catch toast, by the settings.
 
-### 024: the Extravaganza helper
+### 025: the Extravaganza helper
+
+Renumbered on 2026-11-23: the best places to farm became spec 024 and go first
+([best-places-research.md](best-places-research.md)); they bring the window's fourth tab, the minimap menu's
+"Catalog" entry and the three-level place list, so this helper adds only its own tab, its own menu entry and its
+command.
 
 - **Schedule**: Sunday 14:00-16:00 from the realm's time through the API (`GetServerTime`,
   `C_DateAndTime.GetCurrentCalendarTime`), independent of the clock's "Use Local Time" display setting, so a notice is

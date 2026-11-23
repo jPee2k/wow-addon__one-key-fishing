@@ -38,3 +38,14 @@ test("in combat the menu opens without a title, and the game refuses nothing", f
     eq(texts(), outside, "the same entries as out of combat")
     assert(menu_entry(L["Statistics"]), "the statistics entry")
 end)
+
+test("the menu has Catalog and Best places after Statistics, each opening its tab (spec 024)", function()
+    OpenMenu()
+    local list = texts()
+    assert(list:find(L["Statistics"] .. "|" .. L["Catalog"] .. "|" .. L["Best places"], 1, true), list)
+    menu_entry(L["Best places"]).onClick()
+    local window = _G.OneKeyFishingStatsFrame
+    assert(window.bestPage:IsShown(), "the best places")
+    menu_entry(L["Catalog"]).onClick()
+    assert(window.catalogPage:IsShown(), "the catalog")
+end)

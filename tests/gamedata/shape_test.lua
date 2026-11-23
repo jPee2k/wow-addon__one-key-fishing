@@ -133,3 +133,19 @@ test("item kinds: every value a known kind, byItem keyed by item ID, byClass by 
         assert(known[kind], "kind of class " .. key .. ": " .. tostring(kind))
     end
 end)
+
+test("continents: UiMap IDs by key (spec 024)", function()
+    eq(GameData.Continents.kalimdor, 1414, "Kalimdor")
+    eq(GameData.Continents.eastern, 1415, "Eastern Kingdoms")
+end)
+
+test("zone levels: { lowest, highest } by UiMap ID (spec 024)", function()
+    local count = 0
+    for mapID, range in pairs(GameData.ZoneLevels) do
+        count = count + 1
+        assert(IsID(mapID), "map ID " .. tostring(mapID))
+        assert(IsWhole(range[1], 1) and IsWhole(range[2], 1) and range[1] <= range[2], "range of " .. mapID)
+    end
+    assert(count >= 40, "every zone of both continents")
+    eq(GameData.ZoneLevels[2548][1], 35, "Riverglades 35-45, as the game's map shows")
+end)

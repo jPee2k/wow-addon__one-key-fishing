@@ -44,7 +44,11 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/item-kinds.md](checklists/item-kinds.md): a new trophy (steps 5-7: the gold notice, the rare sound, the
   count), accepted on 2026-11-23 until a weighed fish new to the account bites.
 
-## 1.5.2 (prepared 2026-11-23)
+## 1.5.2 (released 2026-11-23)
+
+**Released 2026-11-23**: pull request #18 merged into `main` (`496eb75`), tag `1.5.2`, GitHub release and CurseForge
+upload (`OneKeyFishing-1.5.2-forever.zip`). No `VERIFY` marker.
+
 
 - Spec 023 (`specs/023-item-kinds`): the item kinds Trophies and Quest, the trophy collection in the catalog, the
   notice for a new trophy. Pull request #17 merged into `develop` (`cda627e`). Checked in game on 2026-11-23: steps 1-4
@@ -54,6 +58,9 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
   with unlike item shares), none blocked. The 5 seed items without a kind are in `GameData/ItemKinds.lua` (1
   reagent, 4 other; classes from the game's item tables, build 1.60.1.71037); three of them have no name row there
   and were read in game on 2026-11-23: 2073 Dwarven Hatchet, 2966 Warrior's Pants, 9785 Raider's Bracers.
+- Next harvest: the seed of epoch 9 keeps a weighted cell's time scaled by its casts' factor; `tools/harvest.mjs` now
+  scales it with its catches (spec 024: the best places' pace), so the next harvest gives every weighted cell the
+  new time.
 - Open after the release: `FishedQuestItems` lists 19806 but not 19803 and 19805, the other Extravaganza fish; check
   at the contest of 2026-11-29 whether they come as an extra loot slot (spec 024).
 

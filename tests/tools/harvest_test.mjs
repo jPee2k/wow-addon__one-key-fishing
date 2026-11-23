@@ -694,6 +694,8 @@ export const tests = [
       assert.equal(c.m, 1000 + 4 * 1900, "nobody is over a fifth of the casts: every miss stays");
       assert.equal(c.x, 1000 + 400, "the catches weighted by casts");
       assert.equal(c.m / (c.x + c.m), 0.86, "the views' miss rate is the real one here");
+      // spec 024: the time goes with the catches, so the big one keeps its pace (1000 in 20000 s -> 100 in 2000 s)
+      assert.equal(c.t, 2000 + 4 * 20000, "its time scaled by its catches' factor, not its casts'");
     },
   },
   {

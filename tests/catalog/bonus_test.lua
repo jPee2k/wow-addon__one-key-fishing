@@ -169,3 +169,106 @@ test("MinimapLines: a tagged item's chance in the bonus form", function()
     eq(found.right, Catalog.ChanceText(0.2, false, nil, true), "20% with the bonus")
     ns.Mode.IsActive = active
 end)
+
+test("best places under Bonus catches only count a tagged item with its chance under the bonus (spec 024)", function()
+    item_prices[BLOATED] = 100
+    local filter = { range = "all", source = "all", water = "all", bonus = "bonusOnly" }
+    ns.BestPlaces.SetSafe(false)
+    ns.BestPlaces.Zones(filter)
+    flush_timers()
+    local spot = ns.BestPlaces.Spots(3001, filter)[1]
+    -- 20 % under the Rack (10 % over every cast), 100 copper, 100 catches in 1000 s
+    near(spot.goldPerHour, 0.20 * 100 * 3600 * 100 / 1000, "the chance under the bonus")
+    item_prices[BLOATED] = nil
+end)
+
+test("under Bonus catches only an item without data under its bonus earns nothing (spec 024)", function()
+    item_prices[BLOATED] = 100
+    local filter = { range = "all", source = "all", water = "all", bonus = "bonusOnly" }
+    ns.BestPlaces.Zones(filter)
+    flush_timers()
+    -- 3002: BLOATED is known to the Rack but was never caught under it here
+    local spot = ns.BestPlaces.Spots(3002, filter)[1]
+    eq(spot.goldPerHour, 0, "no plain chance stands in for the missing bonus chance")
+    item_prices[BLOATED] = nil
+end)
+
+test("a tagged item's subzone sums the chances under the bonus and carries the tag with its numbers", function()
+    area_names[101] = "Baradin Bay"
+    local mine = ns.db.shared.mine
+    local function tagged(x)
+        return { c = 100, m = 0, t = 1000, px = x * 1000, py = 30000, a = { [101] = 100 },
+            i = { [FISH] = { 90, 90 }, [BLOATED] = { 10, 10 } },
+            q = { ["1"] = { c = 50, m = 0, i = { [FISH] = { 40, 40 }, [BLOATED] = { 10, 10 } } } } }
+    end
+    mine["3009:3:11"], mine["3009:3:21"] = tagged(15), tagged(25)
+    mine["3009:3:31"] = { c = 800, m = 0, t = 8000, px = 35 * 800, py = 30 * 800, a = { [101] = 800 },
+        i = { [FISH] = { 800, 800 } } } -- the same subzone, no bonus, no BLOATED
+    area_names[102] = "Menethil Harbor"
+    mine["3009:3:51"] = { c = 100, m = 0, t = 1000, px = 55 * 100, py = 3000, a = { [102] = 100 },
+        i = { [FISH] = { 99, 99 }, [BLOATED] = { 1, 1 } } } -- another subzone: two groups, none folded away
+    ns.Fire("SHARED_DATA_CHANGED")
+    local own = { range = "all", source = "mine", water = "all", bonus = "all" }
+    Catalog.Items(own)
+    flush_timers()
+    local group
+    for _, element in ipairs(Catalog.SpotGroups(BLOATED, 3009, own)) do
+        group = group or (element.spots and element)
+    end
+    assert(group, "one group of the two tagged spots")
+    near(group.chance, group.spots[1].chance, "the chance under the bonus, as its spots")
+    eq(group.bonus.key, group.spots[1].bonus.key, "the spots' tag")
+    eq(group.bonus.chance, group.chance, "the tooltip's chance is the group's")
+    eq(group.bonus.players, group.players, "and its players")
+    -- one more spot of the same subzone that caught BLOATED without the bonus: BLOATED is a bonus item there too
+    -- (no data under the bonus), so it adds no catch under the bonus and the group's chance stays its tagged spots'
+    mine["3009:3:41"] = { c = 100, m = 0, t = 1000, px = 45 * 100, py = 3000, a = { [101] = 100 },
+        i = { [FISH] = { 90, 90 }, [BLOATED] = { 10, 10 } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    Catalog.Items(own)
+    flush_timers()
+    local whole
+    for _, element in ipairs(Catalog.SpotGroups(BLOATED, 3009, own)) do
+        whole = whole or (element.spots and element)
+    end
+    eq(#whole.spots, 3, "three spots")
+    near(whole.chance, group.chance, "the chance under the bonus, not blended with a plain one")
+end)
+
+test("under Bonus catches only a place whose numbers under the bonus are little data is not ranked", function()
+    local mine = ns.db.shared.mine
+    item_prices[BLOATED] = 100
+    -- 2000 ordinary catches, 3 casts under the Rack, one BLOATED
+    mine["3010:3:11"] = { c = 2000, m = 0, t = 20000, px = 1500 * 2000, py = 0, i = { [FISH] = { 2000, 2000 } },
+        q = { ["1"] = { c = 3, m = 0, i = { [BLOATED] = { 1, 1 }, [FISH] = { 2, 2 } } } } }
+    ns.Fire("SHARED_DATA_CHANGED")
+    local filter = { range = "all", source = "mine", water = "all", bonus = "bonusOnly" }
+    ns.BestPlaces.Zones(filter)
+    flush_timers()
+    for _, zone in ipairs(ns.BestPlaces.Zones(filter)) do
+        assert(zone.mapID ~= 3010, "three casts under the bonus carry no zone into the top 10")
+    end
+    item_prices[BLOATED] = nil
+end)
+
+test("under Bonus catches only a group of spots without reliable bonus numbers is little data too", function()
+    local mine = ns.db.shared.mine
+    item_prices[BLOATED] = 100
+    area_names[103] = "Bay"
+    for n, x in ipairs({ 15, 25, 35 }) do
+        mine["3011:3:" .. n .. "1"] = { c = 20, m = 0, t = 200, px = x * 200, py = 0, a = { [103] = 20 },
+            i = { [FISH] = { 20, 20 } },
+            q = { ["1"] = { c = 2, m = 0, i = { [BLOATED] = { 1, 1 }, [FISH] = { 1, 1 } } } } }
+    end
+    mine["3011:3:91"] = { c = 20, m = 0, t = 200, px = 95 * 200, py = 0, i = { [FISH] = { 20, 20 } } } -- elsewhere
+    ns.Fire("SHARED_DATA_CHANGED")
+    local filter = { range = "all", source = "mine", water = "all", bonus = "bonusOnly" }
+    local group
+    for _, element in ipairs(ns.BestPlaces.Spots(3011, filter)) do
+        group = group or (element.spots and element)
+    end
+    assert(group, "the three spots of the Bay")
+    eq(group.catches >= 50, true, "60 catches in all")
+    eq(group.littleData, true, "but no reliable number under the bonus")
+    item_prices[BLOATED] = nil
+end)

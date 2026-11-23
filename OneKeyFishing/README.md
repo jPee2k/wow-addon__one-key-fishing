@@ -184,9 +184,12 @@ and, with the shared catch database on, what other players reported.
   last). Your choice is kept between sessions, for all your characters.
 - **An item**: click it to see the zones it was caught in, with its chance there, the zone's catches and the span
   of skill it was caught with, the best zones first; zones with fewer than 50 catches come last with **Little
-  data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its spots: each is
-  named after its subzone in your language (or shows its coordinates), with its own chance and catches.
-- **Map pin**: the pin button of a spot sets the game's own map pin there: it shows on the world map and the minimap
+  data**. Hover a zone for how many players the numbers come from. Click a zone's **+** to see its subzones, each
+  listed once in your language with its chance and catches summed over its spots; click a subzone's **+** to see its
+  spots (their coordinates), each with its own chance and catches. A subzone with a single spot shows as that spot;
+  spots without a known subzone are grouped under **No subzone**.
+- **Map pin**: the pin button of a spot sets the game's own map pin there (a subzone's pin button marks its spot
+  with the best chance): it shows on the world map and the minimap
   (with the minimap's arrow). A short message says so and tells you to open the world map to see it (even with catch
   notifications off); the addon does not open the map itself. If you already have a pin that the addon did not set,
   it asks before replacing it. The arrow on screen depends on the game's navigation setting. Instances and spots
@@ -198,6 +201,26 @@ and, with the shared catch database on, what other players reported.
 **Catch chances in tooltips**: the tooltip of any item in the database adds **Caught in:** with its three best
 zones and its chance there, also for chat links. In fishing mode, the minimap button's tooltip adds the three most
 likely catches of the place you stand at. **Show catch chances in tooltips** in the settings turns both off.
+
+## Best places
+
+The fourth tab of the statistics window lists the ten zones that bring the most gold per hour of fishing: the value
+of a catch there (each item's chance, pieces and price, the price as the statistics count it: the higher of the
+vendor price and your auction prices) times the catches an hour of casting brings there.
+
+- **Columns**: the place, the skill span it was fished with, the zone's level (red when it is above your level),
+  the gold per hour and the catches. A zone with fewer than 50 catches is not ranked. A "*" after the gold means
+  that a quarter or more of the catch there has no price: the real gold may be higher.
+- **Filters**: **Skill** (your range by default; pick another to see what you will earn later), **Source**, **Safe
+  for me** (on: zones more than 3 levels above you are hidden), **Water** or **Camp bonus** as on the other tabs,
+  **Kinds** (hidden kinds do not count in the gold, so hiding Containers shows what fish alone earn) and
+  **Continent** (all, Kalimdor or the Eastern Kingdoms). Safe for me and Continent are kept for each character,
+  the kinds for the account, the others start over at every login.
+- **Subzones and spots**: click a zone's **+** to see its subzones and spots, as in the catalog; each subzone and
+  spot has its own gold and its map pin, and a subzone's pin marks its best spot.
+- **Tooltip**: hover a row for the items that bring the most gold there, with their chance, price and share of the
+  gold, and how many players the numbers come from.
+- `/okf best` opens the tab; the minimap button's menu has **Catalog** and **Best places** next to **Statistics**.
 
 ## Camp bonus
 
@@ -387,7 +410,7 @@ fishing mode is still on. Every game setting the page changes is put back when f
 
 - **Left-click**: toggle fishing mode.
 - **Shift+Left-click**: statistics.
-- **Right-click**: a menu with every action (mode, statistics, settings, the fishing sounds on or off, auction scan,
+- **Right-click**: a menu with every action (mode, statistics, the catch catalog, the best places, settings, the fishing sounds on or off, auction scan,
   a map pin for the next Fishing rank when it has a place, reset indicator position, debug report).
 - **Drag**: move the button around the minimap.
 - The tooltip shows the mode, your Fishing skill and the next rank, the session time, your key bindings and short
@@ -445,6 +468,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf toggle` | enter or leave fishing mode |
 | `/okf stats` | show the statistics |
 | `/okf config` | open the settings |
+| `/okf best` | open the best places to fish |
 | `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
 | `/okf scan` | scan auction prices of the catch catalog's items (the auction house must be open; not while the prices come from Auctionator) |
 | `/okf share` | show the state of the shared catch database |

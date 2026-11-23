@@ -497,3 +497,7 @@ Answered on 2026-11-08 (`/run`, see "Verified in game"): the subzone's area ID i
 among the `C_Map.GetAreaInfo` names (V34), and a cave's continent map gives the zone under the point (V2, V33).
 Answered on 2026-11-06/07 (see "Verified in game"): pool loot is not told apart (V3); one `YOU_LEFT` per leave, and
 in one macro only the first `/join` or `/leave` of a channel takes effect (V41).
+
+- `C_Map.GetMapLevels(uiMapID)` gives `0 0 0 0` for every zone in Forever (seen 2026-11-23 with a `/run` on Elwynn,
+  Westfall, Durotar, the Barrens, Ashenvale, Stranglethorn); the client has no zone levels (`UiMap.ContentTuningID` and
+  `AreaTable.ExplorationLevel` are 0 in build 1.60.1.71037). The addon keeps its own table (`GameData/ZoneLevels.lua`).

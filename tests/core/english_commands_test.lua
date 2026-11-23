@@ -68,3 +68,13 @@ test("/okf catalog opens the list, fills the search, chooses a single match or a
     assert(tab.listView:IsShown(), "not in the index: the list")
     eq(tab.search:GetText(), "Item 9999", "its name in the search")
 end)
+
+test("/okf best is listed with its English description and opens the best places (spec 024)", function()
+    wipe(chat)
+    SlashCmdList.ONEKEYFISHING("")
+    assert(chat_contains("/okf best - open the best places to fish"), "listed")
+    SlashCmdList.ONEKEYFISHING("best")
+    local window = _G.OneKeyFishingStatsFrame
+    assert(window and window:IsShown(), "the window")
+    assert(window.bestPage:IsShown(), "on the best places")
+end)
