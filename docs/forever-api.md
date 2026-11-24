@@ -409,6 +409,22 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   nothing either; `GetChannelList()` lists the channels (number, name, disabled). A level 4 character
   (Showtime Holyhell) sends and receives in `OkfTest42` the same way: no limit by level (V19 closed). Both
   players were of one faction (one faction per account on a PvE realm): the other faction is not checked (V20).
+- The other faction (2026-11-24, `/run` tests and addon 1.6.0, client 1.60.1.71037, PvP mode, two accounts: Drog
+  Earthshaker, Horde, level 40, and Rare John, Alliance, level 1; V20 closed):
+  - A custom channel is one per faction. Both were in `OneKeyFishingShare`; `SendAddonMessage(..., "CHANNEL", n)`
+    returned `0` on each side and the sender got its echo, the other faction nothing. Each heard only its own
+    faction's addon users there (`/okf share`: channel 6 on one, 1 on the other at the same minute).
+  - An addon whisper to a character of the other faction returns `0`, nothing arrives, and the sender gets "No
+    player named '<First Last>' is currently playing." (both ways): the same as an offline player, so the addon
+    hides the line and counts no refusal.
+  - Battle.net crosses the factions: as Battle.net friends, with the public channel off on both, each `/okf share`
+    said "Battle.net 1, channel 0, exchanged with 1" a few minutes after a login, and both held more records
+    (63 to 75, 135 to 146: a session carries at most 25 records or 8 KB each way). `send results` only `0`, no
+    path with refusals, no Lua error.
+  - A level 1 character without Fishing sends and receives in the channel and takes part in sessions.
+  - The session cooldown with a peer is kept in memory only: a login on both sides lets the next session start at
+    the first HELLO.
+  - Not checked: another layer.
 - Channel password and owner (`/run` test, 2026-11-16, two players in `OkfTest42`): the first to join owns it.
   `/password OkfTest42 x` by the owner gives every member `CHAT_MSG_CHANNEL_NOTICE_USER` `PASSWORD_CHANGED` with
   the owner's "First Last". A join without the password fires `CHANNEL_PASSWORD_REQUEST` (the channel name), then

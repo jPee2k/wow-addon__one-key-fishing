@@ -4,6 +4,14 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The manual says who the public channel reaches: the addon users of your own faction. The game keeps the channel
+  and whispers inside a faction; catches cross to the other faction through Battle.net friends and the data
+  bundled with each release.
+
 ## [1.6.0] - 2026-11-23
 
 ### Added

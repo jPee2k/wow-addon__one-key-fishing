@@ -268,8 +268,10 @@ Players who fish together see each other's catches right away, without waiting f
   (below). Data also travels further: what a guild mate got from their friends reaches you too, and each release
   bundles the shared data gathered so far.
 - **The public channel**: about a minute after you log in, the addon joins a hidden chat channel,
-  `OneKeyFishingShare`, shared by every addon user, and announces itself there now and then; strangers who run the
-  addon then exchange with you by whisper, unseen. The channel is listed in the **Chat Channels** window and in
+  `OneKeyFishingShare`, shared by every addon user of your faction, and announces itself there now and then;
+  strangers who run the addon then exchange with you by whisper, unseen. The game keeps the channel and whispers
+  inside a faction: catches cross to the other faction through Battle.net friends and the data bundled with each
+  release. The channel is listed in the **Chat Channels** window and in
   **Chat Settings**, but it is taken out of every chat window: none of its lines show, and General, Trade and your
   own channels keep their numbers: the addon waits for General before it joins (up to two minutes), and if a channel
   of the game still ends up behind the hidden one, the two trade places by themselves. Anyone who joins that channel by its name can see which characters in it use the

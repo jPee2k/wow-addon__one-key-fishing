@@ -43,6 +43,8 @@ for step 7. Steps marked "B" are done on the second client.
      exchanged 1); the friend's record (10 places on maps 1413, 1421, 1434, 1445, 1456, build 1.60.1) is held with
      `seen` at the session's time, and the catalog shows the friend's catch where only the friend fished: Raw Bristle
      Whisker Catfish in Dustwallow Marsh, "Brackenwall Village (38, 30)", 3 catches, with its pin button.
+     2026-11-24 (1.6.0, PvP mode): a Battle.net friend of the other faction, the public channel off on both:
+     "Battle.net 1, channel 0, exchanged with 1" on both sides (`docs/forever-api.md` "The other faction").
 4. [x] **Status** (V17): the status line in the tab and on the settings page shows the exchange ("Exchange:
    1 players, ... ago"). `/okf share` shows the peers heard, the last exchange and the traffic. 2026-11-10 (a
    Battle.net friend): "Exchange: 1 players, 0m ago" on "What can be caught here" (with "51 catches from 2 players"),
