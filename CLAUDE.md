@@ -219,7 +219,9 @@ go there.
 - Addon messages in a custom chat channel were refused on 2026-11-06 (`NOT_ALLOWED_IN_CHANNEL`, though the send
   returns 0) and pass again since 2026-11-16 (between players, from level 4 up, also in `OneKeyFishingShare`);
   `PARTY`, `WHISPER` and Battle.net game data (`SendGameData`) arrive. The addon's channel uses them (spec 016);
-  two `NOT_ALLOWED_IN_CHANNEL` on one join stop it for the session.
+  two `NOT_ALLOWED_IN_CHANNEL` on one join stop it for the session. A custom channel and addon whispers stay inside
+  a faction (a whisper across answers "No player named ...", like an offline player); Battle.net game data crosses
+  the factions (seen 2026-11-24).
 - Character names are "First Last" with a space. `UnitName` / `UnitFullName` return the first and the last name as
   two values (not a realm); the full name is `GetUnitName(unit, true)`. A whisper goes to "First Last" (no realm);
   `CHAT_MSG_ADDON` names the sender that way; `GetNormalizedRealmName()` is an internal name. The addon keeps names

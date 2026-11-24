@@ -4,6 +4,16 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] - 2026-11-24
+
+### Changed
+
+- The bundled catch database now knows 1130 fishing places (109 new) and 18 more items, from the catches players
+  shared on both factions of the PvE and PvP game modes.
+- The manual says who the public channel reaches: the addon users of your own faction. The game keeps the channel
+  and whispers inside a faction; catches cross to the other faction through Battle.net friends and the data
+  bundled with each release.
+
 ## [1.6.0] - 2026-11-23
 
 ### Added

@@ -249,6 +249,22 @@ GameData.ItemKinds = {
         -- Other of the seed of epoch 10 (2026-11-23; names and classes from the game's item tables, build 1.60.1.71037)
         [3641] = "other", -- Journeyman's Bracers (4 / 1)
         [4659] = "other", -- Warrior's Girdle (4 / 3)
+        -- Other of the seed of epoch 11 (2026-11-24; classes from the game's item tables, build 1.60.1.71037; the
+        -- ten without a name row there were read in game the same day)
+        [2406] = "other", -- Pattern: Fine Leather Boots (9 / 1)
+        [7363] = "other", -- Pattern: Pilferer's Gloves (9 / 1)
+        [8390] = "other", -- Pattern: Big Voodoo Cloak (9 / 1)
+        [4662] = "other", -- Journeyman's Cloak (4 / 1)
+        [2970] = "other", -- Spellbinder Pants (4 / 1)
+        [4738] = "other", -- Imperial Leather Belt (4 / 2)
+        [9949] = "other", -- Chieftain's Bracers (4 / 2)
+        [10068] = "other", -- Righteous Boots (4 / 2)
+        [9789] = "other", -- Raider's Legguards (4 / 3)
+        [9810] = "other", -- Fortified Boots (4 / 3)
+        [9968] = "other", -- Embossed Plate Girdle (4 / 4)
+        [7108] = "other", -- Infantry Shield (4 / 6)
+        [5071] = "other", -- Shadow Wand (2 / 19)
+        [8180] = "other", -- Hunting Bow (2 / 2)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {

@@ -81,7 +81,9 @@ section "Proof steps (V26)" now.
 - [x] **C6. Reach** (V20): B (and, if possible, a character of the other faction, and one on another layer) joins
   the test channel name the report prints and runs `/okf spike` too; note which echoes arrive. Closed: not shipped
   (V19, spec 010). 2026-11-16 (`/run`): two players of one faction reach each other; the other faction is not
-  checked (one faction per account on a PvE realm), nor another layer.
+  checked (one faction per account on a PvE realm), nor another layer. 2026-11-24 (`/run`, PvP mode, Horde and
+  Alliance): the other faction receives nothing from the channel, and no addon whisper (`docs/forever-api.md` "The
+  other faction").
 - [x] **C7. Lock** (V24, V21): B sets a password on the test channel (`/password OKFSpikeNNNN x`); note the notices
   A gets. A leaves and joins it again: the password prompt came and was closed (note any flash). Closed: not shipped
   (V19, spec 010). 2026-11-16 (`/run`): see `docs/forever-api.md` "Verified in game", "Channel password and owner".

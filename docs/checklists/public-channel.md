@@ -27,6 +27,9 @@ Spec 016 switches the channel on: all steps apply again. Step 2 needs two accoun
 (Battle.net carries the exchange too and would hide whether the channel did); the other faction (V20) cannot be
 checked on a PvE realm and stays open.
 
+**Status 2026-11-24**: V20 is answered on a PvP mode with a Horde and an Alliance account: the channel is one per
+faction (Results below).
+
 ## Setup
 
 1. Install the build on every client (`npm run install-addon`), or link the working folder once (`npm run link`);
@@ -139,6 +142,14 @@ checked on a PvE realm and stays open.
   below Services and TradeLocal moved nothing (V73). With 1.5.0 before it: V70, V71, V72 by `/run`
   (`specs/022-channel-order/verification.md`). Found: the chat edit box left on General's old number opens the
   hidden channel after a swap (left as it is, `docs/tech-debt.md`).
+
+- 2026-11-24, 1.6.0 (client 1.60.1.71037), PvP mode, two accounts: Drog Earthshaker (Horde, level 40) and Rare John
+  (Alliance, level 1, no Fishing), enUS clients. The other faction (V20, step 2): the channel is one per faction, so
+  the two never heard each other in it (`/okf share` "channel 6" on one and "channel 1" on the other at the same
+  minute, each exchanging with its own faction); an addon whisper across the factions gives "No player named ...",
+  as for an offline player. As Battle.net friends with the channel off on both: "Battle.net 1, channel 0, exchanged
+  with 1" on both, records 63 to 75 and 135 to 146. No chat line from the addon, no refusal, no Lua error. V20 is
+  closed (`docs/forever-api.md` "The other faction"); another layer is not checked.
 
 - Date, build, accounts used:
 - Problems found:

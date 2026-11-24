@@ -44,7 +44,11 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/item-kinds.md](checklists/item-kinds.md): a new trophy (steps 5-7: the gold notice, the rare sound, the
   count), accepted on 2026-11-23 until a weighed fish new to the account bites.
 
-## 1.6.0 (prepared 2026-11-23)
+## 1.6.0 (released 2026-11-23)
+
+**Released 2026-11-23**: pull request #20 merged into `main` (`279adc3`), tag `1.6.0`, GitHub release and CurseForge
+upload (`OneKeyFishing-1.6.0-forever.zip`). No `VERIFY` marker.
+
 
 - Spec 024 (`specs/024-best-places`): the Best places tab (gold per hour, the top 10 zones, Safe for me, Continent),
   the three-level place list of both tabs, the minimap menu entries, `/okf best`, the zone level table. Pull request
@@ -196,7 +200,7 @@ Decided by the author on 2026-11-16 (it replaces a 1.2.1 patch): the fishing sou
 - Prepared on 2026-11-17: `016-public-channel-return` merged into `develop`; the harvest (`checklists/public-channel.md`
   step 11) made seed epoch 3 with 72 places from 6 contributions (outliers reported, none blocked); 21 new items got their kind in `GameData/ItemKinds.lua` (names and classes read in game); version 1.3.0.
   The in-game checks it waited for were done or accepted (status above); V20, the other faction, stays open on a
-  PvE realm.
+  PvE realm (answered on 2026-11-24 on a PvP mode: the channel is one per faction, Battle.net crosses them).
 - `npm run build` passed without `--force`; the release package was checked against its TOC (98 files: 63 listed,
   5 at the root, 30 sounds; nothing else).
 - Already checked for spec 016 (2026-11-16, `/run`, not repeated): addon messages between players in a custom
