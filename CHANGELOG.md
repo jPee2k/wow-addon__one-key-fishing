@@ -4,6 +4,14 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Best places: **Safe for me** also hides the zones and capitals of the other faction, on every game mode (an
+  Alliance character sees Alliance and contested zones, a Horde character Horde and contested zones). With Safe for
+  me off they are listed with their level in red.
+
 ## [1.6.1] - 2026-11-24
 
 ### Changed

@@ -135,7 +135,7 @@ only" reads "all").
 
 ## Best places
 
-`Catalog/BestPlaces.lua` (`ns.BestPlaces`, spec 024), no frames:
+`Catalog/BestPlaces.lua` (`ns.BestPlaces`, specs 024 and 026), no frames:
 
 - A place's numbers (`Numbers(view, bonus)`): the value of one catch over the shown kinds' items (and those the camp
   bonus value lists, `Catalog.BonusShown`), `chance x pieces x Prices.Get`; `goldPerHour` = that x the view's
@@ -144,17 +144,28 @@ only" reads "all").
 - `BestPlaces.Zones(filter)`: per view filter and bonus value a ranking of every map of `CatchDB.Maps` but a continent
   (`IsContinent`: old records kept a cave's catch on the continent, spec 011), recomputed for
   the maps whose stamp or the generation (the kinds and the prices) moved, more
-  than four in frame steps of 3 ms; the top 10 with gold, at least 50 catches, passing Safe for me (the lowest level
-  above the character's plus 3 hides) and the continent; best first, ties by catches, then map ID.
+  than four in frame steps of 3 ms; the top 10 with gold, at least 50 catches, passing Safe for me (a zone of the
+  other faction hides, spec 026; the lowest level above the character's plus 3 hides; a contested zone only by its
+  level) and the continent; best first, ties by catches, then map ID. The character's level and faction are read
+  when the list is read, so Safe for me, the continent, a level-up and the faction only redraw, never recount.
 - `BestPlaces.Spots(mapID, filter)`: the zone's spots from `CatchDB.QueryCells`, grouped by `Catalog.GroupSpots`; a
   group's gold is its spots' summed value over their summed time; cached per map and filter until the cells or the
   generation change.
 - `ZoneLevels(mapID)` from `GameData.ZoneLevels` (Forever's client has no zone levels: `C_Map.GetMapLevels` gives 0;
   the table's ranges confirmed in game, V75), `Continent(mapID)` by the map's parents up to the continent
-  type (confirmed in game, V76; cached for the session); a continent map itself is never ranked (`IsContinent`); a map the table does not list takes its first listed parent's range; `GameData.Continents` names Kalimdor and the Eastern Kingdoms;
-  `ContinentText` gives the game's own name of the continent map.
+  type (confirmed in game, V76; cached for the session); a continent map itself is never ranked (`IsContinent`); a
+  map the table does not list takes its first listed parent's range (`FirstListed`, shared with the factions; one
+  parent walk, `MapAndParents`, serves the levels, the factions and the continents); `GameData.Continents` names Kalimdor and the Eastern Kingdoms; `ContinentText` gives the game's own name
+  of the continent map.
+- The factions (spec 026): `ZoneFaction(mapID)` from `GameData.ZoneFactions` or its first listed parent's
+  (`"Alliance"`, `"Horde"`, nil for contested; V77, confirmed in game 2026-11-24), stored on a zone's numbers as `faction`;
+  `PlayerFaction()` the character's from `UnitFactionGroup("player")` (nil while unknown or neutral: then only the
+  level rule applies); `Hostile(zone)` both known and different. `Unsafe(zone)` (the Level column in red) is a
+  hostile zone or one whose lowest level is above the character's. Subzones and spots are never filtered by faction;
+  hostile towns inside a contested zone are a known limit ([ROADMAP](../ROADMAP.md)).
 - The character's choices (`ns.charDB.bestPlaces`): `GetSafe` / `SetSafe`, `GetContinent` / `SetContinent`, each
-  setter firing `SETTINGS_CHANGED("bestPlaces")`; `GetVersion()` for the tab's tick; `Describe()` for `/okf debug`.
+  setter firing `SETTINGS_CHANGED("bestPlaces")`; `GetVersion()` for the tab's tick; `Describe()` for `/okf debug`
+  (its last line: Safe for me, the continent and the character's faction).
 
 ## List order
 

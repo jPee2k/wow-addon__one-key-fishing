@@ -208,11 +208,13 @@ The fourth tab of the statistics window lists the ten zones that bring the most 
 of a catch there (each item's chance, pieces and price, the price as the statistics count it: the higher of the
 vendor price and your auction prices) times the catches an hour of casting brings there.
 
-- **Columns**: the place, the skill span it was fished with, the zone's level (red when it is above your level),
+- **Columns**: the place, the skill span it was fished with, the zone's level (red when it is above your level or
+  the zone belongs to the other faction),
   the gold per hour and the catches. A zone with fewer than 50 catches is not ranked. A "*" after the gold means
   that a quarter or more of the catch there has no price: the real gold may be higher.
 - **Filters**: **Skill** (your range by default; pick another to see what you will earn later), **Source**, **Safe
-  for me** (on: zones more than 3 levels above you are hidden), **Water** or **Camp bonus** as on the other tabs,
+  for me** (on: the zones and capitals of the other faction are hidden, and any zone more than 3 levels above you,
+  contested zones only by their level; off: they show, their level in red), **Water** or **Camp bonus** as on the other tabs,
   **Kinds** (hidden kinds do not count in the gold, so hiding Containers shows what fish alone earn) and
   **Continent** (all, Kalimdor or the Eastern Kingdoms). Safe for me and Continent are kept for each character,
   the kinds for the account, the others start over at every login.

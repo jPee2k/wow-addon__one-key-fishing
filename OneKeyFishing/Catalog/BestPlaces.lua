@@ -1,9 +1,10 @@
 -- BestPlaces: the zones worth fishing for gold (specs/024-best-places). Gold per hour is the value of one catch (the
 -- shown kinds' items, chance x pieces x price) times the catches per hour of the place's raw cells (research R1); a
 -- group sums its value and time, never averages rates (R2). The top 10 zones with at least 50 catches that pass the
--- filters; a zone opens into its subzones and spots (Catalog.GroupSpots). Levels and continents come from the game's
--- map data (V75, V76). No frames: the tab polls GetVersion on the window's tick. Its one message is a setting's:
--- SETTINGS_CHANGED("bestPlaces") from SetSafe and SetContinent.
+-- filters; a zone opens into its subzones and spots (Catalog.GroupSpots). Levels (GameData.ZoneLevels, V75) and
+-- factions (GameData.ZoneFactions, spec 026) come from tables, continents from the game's map data (V76); Safe for me
+-- hides zones too high and the other faction's zones. No frames: the tab polls GetVersion on the window's tick. Its
+-- one message is a setting's: SETTINGS_CHANGED("bestPlaces") from SetSafe and SetContinent.
 local _, ns = ...
 
 local BestPlaces = {}
@@ -36,9 +37,9 @@ local function Invalidate()
 end
 
 -- What changes every zone's numbers: the prices (a scan, Auctionator, the two price switches of the settings, which
--- fire only their SETTINGS_CHANGED) and the kinds. Safe for me, the continent and the character's level only filter
--- the list when it is read: they redraw without a recount (the level a second later: UnitLevel may still give the old
--- one during PLAYER_LEVEL_UP, as Fishing/Skill.lua notes).
+-- fire only their SETTINGS_CHANGED) and the kinds. Safe for me, the continent and the character's level and faction
+-- only filter the list when it is read: they redraw without a recount (the level a second later: UnitLevel may still
+-- give the old one during PLAYER_LEVEL_UP, as Fishing/Skill.lua notes).
 local INVALIDATING = { hiddenKinds = true, auctionPrices = true, auctionatorPrices = true }
 
 ns.On("PRICES_CHANGED", Invalidate)
@@ -117,27 +118,68 @@ function BestPlaces.ContinentText(value)
 end
 
 ---------------------------------------------------------------------------
--- The zones' levels (GameData.ZoneLevels) and continents (the map data, cached for the session)
+-- The zones' levels (GameData.ZoneLevels), factions (GameData.ZoneFactions) and continents (the map data, cached for
+-- the session)
 ---------------------------------------------------------------------------
 local continents = {}
 
--- min, max: the zone's level range from GameData.ZoneLevels (Forever's client has none, V75; the capitals and Moonglade
--- read 1-60); a cave, a building or a dungeon map inside a zone takes its zone's range (the first listed parent); nil
--- when none is listed: such a place is never hidden.
-function BestPlaces.ZoneLevels(mapID)
-    -- V75, confirmed in game 2026-11-23: the table's ranges show as the game's map does (Riverglades 35-45)
-    local current = mapID
-    for _ = 1, 8 do
-        local range = ns.GameData.ZoneLevels[current]
-        if range then
-            return range[1], range[2]
-        end
-        local info = current and current ~= 0 and C_Map.GetMapInfo(current)
-        if not info then
+-- The map and its parents, nearest first: for id, info in MapAndParents(mapID). At most 8; info is nil for a map the
+-- game gives no info about, which ends the walk after it (its own ID still counts in a table). The one parent walk of
+-- the levels, the factions and the continents.
+local function MapAndParents(mapID)
+    local current, steps = mapID, 0
+    return function()
+        steps = steps + 1
+        if steps > 8 or not current or current == 0 then
             return nil
         end
-        current = info.parentMapID
+        local id, info = current, C_Map.GetMapInfo(current)
+        current = info and info.parentMapID
+        return id, info
     end
+end
+
+-- The map's own entry in a GameData table by UiMap ID, else its first listed parent's: a cave, a building or a dungeon
+-- map inside a zone takes its zone's. Nil when none is listed.
+local function FirstListed(data, mapID)
+    for id in MapAndParents(mapID) do
+        if data[id] then
+            return data[id]
+        end
+    end
+end
+
+-- min, max: the zone's level range from GameData.ZoneLevels (Forever's client has none, V75; the capitals and Moonglade
+-- read 1-60), or its first listed parent's; nil when none is listed: such a place is never hidden by its level.
+function BestPlaces.ZoneLevels(mapID)
+    -- V75, confirmed in game 2026-11-23: the table's ranges show as the game's map does (Riverglades 35-45)
+    local range = FirstListed(ns.GameData.ZoneLevels, mapID)
+    if range then
+        return range[1], range[2]
+    end
+end
+
+-- "Alliance" or "Horde": the faction whose territory the zone is (GameData.ZoneFactions, or its first listed
+-- parent's); nil for a contested zone (every zone not listed).
+function BestPlaces.ZoneFaction(mapID)
+    return FirstListed(ns.GameData.ZoneFactions, mapID)
+end
+
+-- "Alliance" or "Horde": the character's faction (UnitFactionGroup's untranslated tag); nil while the game does not
+-- tell it, or for a neutral character: then only the level rule applies.
+function BestPlaces.PlayerFaction()
+    local faction = UnitFactionGroup and UnitFactionGroup("player")
+    return (faction == "Alliance" or faction == "Horde") and faction or nil
+end
+
+-- Whether a zone of zoneFaction is hostile to a character of faction: both known and different.
+local function IsHostile(zoneFaction, faction)
+    return zoneFaction ~= nil and faction ~= nil and zoneFaction ~= faction
+end
+
+-- Whether the zone is the other faction's territory for this character.
+function BestPlaces.Hostile(zone)
+    return IsHostile(zone.faction, BestPlaces.PlayerFaction())
 end
 
 local CONTINENT_TYPE = Enum and Enum.UIMapType and Enum.UIMapType.Continent or 2
@@ -153,16 +195,12 @@ end
 function BestPlaces.Continent(mapID)
     if continents[mapID] == nil then
         -- V76, confirmed in game 2026-11-23: Forever's zones have Kalimdor (1414) or the Eastern Kingdoms (1415) above
-        local found, current = false, mapID
-        for _ = 1, 8 do
-            local info = current and current ~= 0 and C_Map.GetMapInfo(current)
-            if not info then
-                break
-            elseif info.mapType == CONTINENT_TYPE then
-                found = current
+        local found = false
+        for id, info in MapAndParents(mapID) do
+            if info and info.mapType == CONTINENT_TYPE then
+                found = id
                 break
             end
-            current = info.parentMapID
         end
         continents[mapID] = found
     end
@@ -297,7 +335,7 @@ local function Compute(ranking, mapID, into)
     local view = ns.CatchDB.QueryMap(mapID, ranking.filter)
     local zone = Numbers(view, ranking.bonus)
     zone.mapID, zone.order, zone.stamp, zone.generation = mapID, mapID, ns.CatchDB.MapStamp(mapID), generation
-    zone.continent = BestPlaces.Continent(mapID)
+    zone.continent, zone.faction = BestPlaces.Continent(mapID), BestPlaces.ZoneFaction(mapID)
     local min, max = BestPlaces.ZoneLevels(mapID)
     zone.levels = min and { min = min, max = max } or nil
     (into or ranking.maps)[mapID] = zone
@@ -379,8 +417,13 @@ local function Freshen(ranking)
     ranking.state = "ready"
 end
 
-local function Passes(zone, safe, continent, level)
+-- Safe for me hides the other faction's zones (spec 026) and the zones whose lowest level is above the character's
+-- plus LEVEL_MARGIN; contested zones only by their level.
+local function Passes(zone, safe, continent, level, faction)
     if not zone.goldPerHour or zone.goldPerHour <= 0 or zone.littleData then
+        return false
+    end
+    if safe and IsHostile(zone.faction, faction) then
         return false
     end
     if safe and zone.levels and zone.levels.min > level + LEVEL_MARGIN then
@@ -390,18 +433,18 @@ local function Passes(zone, safe, continent, level)
 end
 
 -- zones, state: the top zones of the filter ({ mapID, goldPerHour, unpriced, top, catches, players, ranges, levels,
--- continent }), best first; state "building" while no complete ranking exists, else "ready".
+-- continent, faction }), best first; state "building" while no complete ranking exists, else "ready".
 function BestPlaces.Zones(filter)
     local ranking = Ranking(filter)
     Freshen(ranking)
     if ranking.state ~= "ready" then
         return {}, "building" -- no complete ranking yet: nothing half-sorted to draw
     end
-    local safe, level = BestPlaces.GetSafe(), UnitLevel("player") or 0
+    local safe, level, faction = BestPlaces.GetSafe(), UnitLevel("player") or 0, BestPlaces.PlayerFaction()
     local continent = ns.GameData.Continents[BestPlaces.GetContinent()]
     local list = {}
     for _, zone in pairs(ranking.maps) do
-        if Passes(zone, safe, continent, level) then
+        if Passes(zone, safe, continent, level, faction) then
             table.insert(list, zone)
         end
     end
@@ -412,9 +455,9 @@ function BestPlaces.Zones(filter)
     return list, "ready"
 end
 
--- Whether a zone's lowest level is above the character's (the Level column in red).
+-- Whether a zone is the other faction's or its lowest level is above the character's (the Level column in red).
 function BestPlaces.Unsafe(zone)
-    return zone.levels ~= nil and zone.levels.min > (UnitLevel("player") or 0)
+    return BestPlaces.Hostile(zone) or (zone.levels ~= nil and zone.levels.min > (UnitLevel("player") or 0))
 end
 
 ---------------------------------------------------------------------------
@@ -493,6 +536,7 @@ function BestPlaces.Describe()
         table.insert(lines, ("best places %s: %s, %d maps"):format(key, ranking.state, ns.CountKeys(ranking.maps)))
     end
     table.sort(lines)
-    table.insert(lines, ("safe %s, continent %s"):format(tostring(BestPlaces.GetSafe()), BestPlaces.GetContinent()))
+    table.insert(lines, ("safe %s, continent %s, faction %s"):format(tostring(BestPlaces.GetSafe()),
+        BestPlaces.GetContinent(), BestPlaces.PlayerFaction() or "none"))
     return lines
 end

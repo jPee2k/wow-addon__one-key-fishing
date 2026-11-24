@@ -93,6 +93,45 @@ test("hovering a zone lists the items that bring the gold, the players and no un
     eq(tooltip_lines[4], nil, "no unpriced line")
 end)
 
+test("the other faction's zone shows its Level in red with Safe for me off, and is hidden with it on (spec 026)",
+    function()
+    ns.GameData.ZoneFactions[3302] = "Alliance" -- Badlands plays an Alliance zone; the character is of the Horde
+    ns.GameData.ZoneFactions[3301] = "Horde"
+    ns.GameData.ZoneLevels[3301] = { 20, 30 }
+    ns.Fire("PRICES_CHANGED") -- a recount, so the zones take their new factions
+    player_faction = "Horde"
+    ns.BestPlaces.SetSafe(false)
+    player_level = 40 -- Badlands (35-45) within the level: only its faction makes it red
+    local tab = open()
+    local list = rows(tab)
+    eq(list[1].name.text, "Badlands", "listed with Safe for me off")
+    eq(list[1].level.textColor[2], 0.3, "the enemy zone's Level is red")
+    eq(list[2].level.textColor[2], 1, "the own zone within the level is not")
+    local function names()
+        local found = {}
+        for _, row in ipairs(rows(open())) do
+            found[row.name.text] = true
+        end
+        return found
+    end
+    ns.BestPlaces.SetSafe(true)
+    local shown = names()
+    assert(shown.Wetlands and not shown.Badlands, "Safe for me on: the Horde zone stays, the Alliance zone is hidden")
+    player_faction = "Alliance" -- read when the list is read; a filter change redraws
+    ns.BestPlaces.SetContinent("eastern")
+    ns.BestPlaces.SetContinent("all")
+    shown = names()
+    assert(shown.Badlands and not shown.Wetlands, "for the Alliance only Badlands")
+    ns.GameData.ZoneFactions[3302] = "Horde" -- now every zone with data is the Horde's
+    ns.Fire("PRICES_CHANGED")
+    tab = open()
+    eq(#rows(tab), 0, "only enemy zones hold data")
+    eq(tab.status.text, L["Nothing matches the filters."], "the empty text (US1 scenario 5)")
+    ns.GameData.ZoneFactions[3301], ns.GameData.ZoneFactions[3302], ns.GameData.ZoneLevels[3301] = nil, nil, nil
+    ns.Fire("PRICES_CHANGED")
+    player_faction, player_level = "Horde", 33 -- Safe for me stays on, as the tests before left it
+end)
+
 test("hiding Containers changes the gold at once; Skill, Source and the rest reset at a login", function()
     local tab = open()
     ns.Catalog.SetKindShown("containers", false)
