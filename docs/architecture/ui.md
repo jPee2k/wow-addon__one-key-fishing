@@ -41,9 +41,11 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
 
 ## StatsFrame
 
-- Three tabs below the window (statistics, "What can be caught here", the catch catalog): the game's
+- Four tabs below the window (statistics, "What can be caught here", the catch catalog, the best places): the game's
   `PanelTabButtonTemplate` or plain buttons, the last one saved in `OneKeyFishingDB.statsTab`.
-  `StatsFrame.OpenCatalog(arg)` shows the window on the catalog.
+  `StatsFrame.OpenCatalog(arg)` shows the window on the catalog, `OpenStats` on the statistics (the minimap
+  menu, the settings' "Open statistics"; `Toggle` keeps the last tab), `OpenBest` on the best places; a closed
+  window opens straight on that tab.
 - The window is set up by `ns.SetupWindow` (Widgets, below) and raised whenever it is shown or opened on the
   catalog.
 - The statistics page has rows in `ROWS`, cells keyed by row key. The last two rows of the "Results" block (spec
@@ -214,7 +216,7 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   items that bring the gold, the players and the unpriced share. Skill, Source, Water and Camp bonus live in memory;
   it redraws on `SETTINGS_CHANGED` of `hiddenKinds` and `bestPlaces` and polls `BestPlaces.GetVersion()`. The minimap
   menu opens it ("Best places") and the catalog ("Catalog") next to "Statistics" (`StatsFrame.OpenBest`,
-  `OpenCatalog`).
+  `OpenCatalog`); its "Statistics" opens the statistics tab (`OpenStats`).
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`), the map pin answers (`MAP_PIN_SET`) and the camp bonus notices
   (`CAMP_BONUS_WARNING`, spec 020: always, in gold `1, 0.82, 0`), and a trophy new to the account (spec 023):

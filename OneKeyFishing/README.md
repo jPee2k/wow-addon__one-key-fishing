@@ -94,8 +94,10 @@ The previous items are saved right away, so a `/reload`, a disconnect or a crash
 
 ## Statistics
 
-Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has three tabs at the
-bottom, **Statistics**, **What can be caught here** and **Catch catalog**; it opens on the one you used last.
+Open them with `/okf stats`, Shift+Click on the minimap button or from its menu. The window has four tabs at the
+bottom, **Statistics**, **What can be caught here**, **Catch catalog** and **Best places**; `/okf stats` and
+Shift+Click open it on the one you used last, the menu's **Statistics** and the settings' **Open statistics** on the
+Statistics tab.
 
 - **Session**, **This zone** and **All time** columns in three sections: **Time** (time fishing, time casting),
   **Results** (casts, catches, nothing caught, catches per hour; and, once you fished with a [camp

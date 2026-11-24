@@ -12,6 +12,12 @@ All notable changes to OneKeyFishing are listed here. The format follows
   Alliance character sees Alliance and contested zones, a Horde character Horde and contested zones). With Safe for
   me off they are listed with their level in red.
 
+### Fixed
+
+- The minimap button's menu: **Statistics** opens the Statistics tab, like **Catalog** and **Best places** open
+  theirs (it opened the tab used last). The settings' **Open statistics** button does the same, and no longer closes
+  an open window.
+
 ## [1.6.1] - 2026-11-24
 
 ### Changed

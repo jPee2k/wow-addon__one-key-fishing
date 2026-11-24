@@ -595,21 +595,33 @@ function StatsFrame.Toggle()
     frame:SetShown(not frame:IsShown())
 end
 
+-- Shows the window on the tab with this key; a closed window opens on it at once (OnShow selects the saved tab), so
+-- the tab used last is never built on the way.
+local function Open(key)
+    frame = frame or Create()
+    ns.db.statsTab = key
+    if frame:IsShown() then
+        SelectTab(key)
+    else
+        frame:Show()
+    end
+    frame:Raise() -- also when the window was already shown
+end
+
+-- Shows the window on the statistics (the minimap menu's entry; Toggle keeps the last tab).
+function StatsFrame.OpenStats()
+    Open("stats")
+end
+
 -- Shows the window on the catch catalog; arg as CatalogTab.Show takes it (an item ID, a search text or nil).
 function StatsFrame.OpenCatalog(arg)
-    frame = frame or Create()
-    frame:Show()
-    frame:Raise() -- also when the window was already shown
-    SelectTab("catalog")
+    Open("catalog")
     ns.CatalogTab.Show(arg)
 end
 
 -- Shows the window on the best places (spec 024).
 function StatsFrame.OpenBest()
-    frame = frame or Create()
-    frame:Show()
-    frame:Raise()
-    SelectTab("best")
+    Open("best")
 end
 
 -- Statistics changes are seen through the Stats version; these only mark the window dirty, so a burst
