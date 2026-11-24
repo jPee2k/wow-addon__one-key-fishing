@@ -1,6 +1,6 @@
 # Research: the best places to farm, and the three-level place list
 
-Pre-spec research (2026-11-23) for spec **024**: the places worth fishing for a character, ranked by the gold an
+Pre-spec research (2026-11-23) for spec **024**, and (section 4, 2026-11-24) for the faction rule of "Safe for me": the places worth fishing for a character, ranked by the gold an
 hour of fishing brings there, and a place list in three levels (zone, subzone, spot) for this tab and the catalog. It
 takes over part of the UI first planned for the Stranglethorn Fishing Extravaganza helper (now spec 025,
 [extravaganza-research.md](extravaganza-research.md)). No code is written yet; the decisions below come from the
@@ -97,3 +97,100 @@ author's quiz of 2026-11-23.
 4. How the gold per hour of a zone and of a subzone is summed: the value of all their cells over all their casting
    time (not an average of the spots' rates), so a busy spot weighs more.
 5. The tab's performance: one view per map with data (as the catalog index), built in frame steps.
+
+## 4. Faction territory for "Safe for me" (research of 2026-11-24, no code yet)
+
+The author plays on a PvP mode: "Safe for me" looks only at the zone's level today and keeps the other faction's
+home zones and capitals in the list. The wish: an Alliance character sees Alliance and contested zones, a Horde
+character Horde and contested zones. This section is what the code, the client and the web say; the details are
+settled with the author after it.
+
+### What the code does today
+
+- `BestPlaces.Passes` (`Catalog/BestPlaces.lua`) hides a zone when Safe for me is on and the zone's lowest level
+  (`GameData.ZoneLevels`) is above the character's level plus `LEVEL_MARGIN` (3). Nothing else; a zone with no listed
+  range is never hidden. `ZoneLevels(mapID)` walks up the map parents, so a cave or a building takes its zone's range.
+- `Safe for me` is saved per character (`charDB.bestPlaces.safe`, default on) and switched by `BestPlaces.SetSafe`,
+  which fires `SETTINGS_CHANGED("bestPlaces")`; the list is filtered when read, without a recount (only `Bump`).
+- The Level column is red when the zone's minimum is above the character's level (`BestPlaces.Unsafe`).
+- The research above already noted that Safe for me and Continent are per character "(level and faction differ)",
+  but faction was never part of the rule.
+
+### The client: what tells a zone's faction
+
+- **No map API gives the faction of an arbitrary zone.** `UiMapDetails` (`C_Map.GetMapInfo`) has `mapID`, `name`,
+  `mapType`, `parentMapID`, flags; nothing about territory. `C_Map.GetMapLevels` is 0 in Forever (V75).
+- `C_PvP.GetZonePVPInfo()` (client export, `PvpInfoDocumentation.lua`, `MayReturnNothing`) returns `pvpType`,
+  `isSubZonePvP`, `factionName` for **the zone the player stands in only**: `"friendly"`, `"hostile"`,
+  `"contested"`, `"sanctuary"`, `"arena"`, `"combat"` (Blizzard's `ZoneText.lua` colours the zone text by it). Usable
+  as an in-game check of the table below, not as the source of a list of zones.
+- `UnitFactionGroup("player")` gives `"Alliance"`, `"Horde"` or `"Neutral"` (`UnitDocumentation.lua`). The Skyborne,
+  Forever's new race, choose a faction at character creation (High Order: Alliance, Windshaper: Horde), so a Forever
+  character should never be `"Neutral"` in play; the code must still treat `"Neutral"` and nil as "no faction".
+- The game mode: Auctionator 347 tells it by `C_GameRules.IsGameRuleActive(Enum.GameRule.PvPRuleset)` (also
+  `RPRuleset`, `HardcoreRuleset`), and gave `PvP` on the author's character (forever-api.md, Auctionator). The
+  `GameRule` enum itself is not in the export's documentation; the call works in game through Auctionator.
+  `GetNormalizedRealmName()` gives `CAMWOWEU4Realm4PvP` there too. Forever has no War Mode.
+
+### The game data: `AreaTable.FactionGroupMask`
+
+Read from wago.tools, product `wowf`, build 1.60.1.71037 (the author's client; 71091 is the latest on 2026-11-24),
+tables `AreaTable`, `UiMapAssignment` (UiMap -> area) and `UiMap`:
+
+- Every zone of `GameData.ZoneLevels` maps to exactly one top-level area (`ParentAreaID` 0), and its
+  `FactionGroupMask` is **2 = Alliance, 4 = Horde, 0 = contested** (the classic bits: 2 Alliance, 4 Horde).
+- **Alliance (2)**: Elwynn Forest 1429, Westfall 1436, Dun Morogh 1426, Loch Modan 1432, Teldrassil 1438,
+  Darkshore 1439; capitals Stormwind 1453, Ironforge 1455, Darnassus 1457.
+- **Horde (4)**: Durotar 1411, Mulgore 1412, The Barrens 1413, Tirisfal Glades 1420, Silverpine Forest 1421;
+  capitals Orgrimmar 1454, Thunder Bluff 1456, Undercity 1458.
+- **Contested (0)**: every other zone of the table, Forever's new ones too: Riverglades 2548, Shen'dralas 2652,
+  Mount Hyjal 2482, Zephras Isle 2521 (2665 has no area assignment; same isle). Also Redridge, Duskwood, Wetlands,
+  Ashenvale, Stonetalon, Hillsbrad (contested in vanilla; Alliance or Horde only since Cataclysm). Moonglade is 0
+  without a sanctuary flag.
+- **Subzones** mostly inherit (mask 0 under a faction zone means "the zone's"). The only top-level zones' subzone with
+  its own mask is **Dalaran in Alterac Mountains (2, Alliance)**. The faction towns inside contested zones (Southshore
+  and Tarren Mill, Astranaar and Splintertree Post, Theramore and Brackenwall, Menethil Harbor) are 0: the data does
+  not mark them; their guards do. Booty Bay, Ratchet, Gadgetzan, Everlook are 0 too (neutral towns, no sanctuary flag).
+- **Sanctuary** (`Flags_0` bit `0x800`): Zephras Isle and all its subzones, the City of Dalaran (a separate map). No
+  classic zone has it.
+
+### The web (community guides, not Blizzard)
+
+- On the **PvP** ruleset (and RP-PvP) a character is flagged on entering contested or enemy territory; friendly
+  territory keeps it unflagged. On **Normal and RP**, only enemy territory flags automatically
+  ([wowforevertierlist](https://wowforevertierlist.com/rulesets/pvp),
+  [world PvP](https://wowforevertierlist.com/pvp/world-pvp),
+  [wow4ever](https://wow4ever.quest/en/articles/jcj-mundo-abierto-wow-forever)). So the other faction's home zone is
+  a danger on every mode (flag and guards), contested zones only on PvP.
+- "Contested zones start above roughly level 15" (Icy Veins, quoted by the guides): this matches the classic bands
+  (the home zones are 1-25, the first contested ones Redridge and Stonetalon 15-25), not a new rule.
+- Blizzard has published no list of contested zones; the guides call Riverglades and Shen'dralas contested, Zephras
+  Isle faction-phased with no world PvP. All match the DB2 above.
+- The game prints the territory under the zone name ("(Alliance Territory)", "(Contested Territory)",
+  "(Sanctuary)"), from `GetZonePVPInfo`.
+
+### Decisions agreed with the author (quiz of 2026-11-24)
+
+Built by spec 026 ([specs/026-safe-faction](../specs/026-safe-faction/spec.md)); the in-game check V77 passed on 2026-11-24 (a Horde and an Alliance character, the tab with Safe for me on and off).
+
+1. **Part of "Safe for me"**: one switch hides both the zones too high for the character and the other faction's
+   zones. No new button, no new text.
+2. **Every game mode**: the other faction's home zones flag the character and have hostile guards on Normal too; no
+   mode check (`C_GameRules`) is needed. Contested zones stay listed on every mode.
+3. **The other faction's capitals are hidden** like its zones (their 1-60 range only means "safe by level").
+4. **Zones only**: the hostile towns inside contested zones (Tarren Mill, Southshore, Astranaar, Dalaran...) are not
+   filtered; the game data marks only Dalaran, and a hand-made list by name would break Principle II. Noted as a
+   known limit.
+5. **The data**: a new `GameData/ZoneFactions.lua`, `[UiMapID] = "Alliance" | "Horde"`, the 17 zones and capitals
+   above, written by hand with its source in the header comment (`AreaTable.FactionGroupMask` through
+   `UiMapAssignment`, build 1.60.1.71037), as `ZoneLevels` cites its own. A zone not listed is contested. A cave or a
+   building takes its zone's faction by the same parent walk as `BestPlaces.ZoneLevels`.
+6. **With "Safe for me" off** an enemy zone stays in the list with its Level column red, as a zone too high is (no
+   new text).
+7. **No faction** (`UnitFactionGroup("player")` gives `"Neutral"` or nil, e.g. for a moment at login): only the level
+   rule applies; the list is filtered when read, so it follows when the tab is next opened or a filter changes (the
+   game knows the faction before the world loads).
+8. **Spec 026** (025 stays reserved for the Extravaganza helper): spec, plan, tasks and a `verification.md` with one
+   V row, checked in game (not accepted): standing in a few zones, `/run print(C_PvP.GetZonePVPInfo())` and the zone
+   text agree with the table, and the tab's list on a Horde and an Alliance character hides the other side's zones
+   and capitals.

@@ -17,6 +17,21 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
 
 ## Open items
 
+Reviews of the faction rule of Safe for me (spec 026, three `/code-review high` rounds, 2026-11-24): the low items
+left; the others were fixed with tests or ruled out (no contested map lies under a faction zone in the game's UiMap
+data; the faction is known before the world loads).
+
+- **The faction tests restore their state only at the end of their block** (low, test hygiene).
+  `tests/catalog/best_places_test.lua` (the spec 026 block: `GameData.ZoneFactions[3010]`/`[3009]`, the test maps
+  3991 and 3992, `player_faction`) and `tests/ui/best_tab_test.lua` (`ZoneFactions[3301]`/`[3302]`,
+  `ZoneLevels[3301]`) put the tables back in their last test, so one failing assertion leaves them set and the later
+  tests of the file fail for no reason of their own. Direction: restore in each test (a small `with(state, fn)`
+  helper in `tests/wow.lua`).
+- **A hostile zone without a level range would show no red Level** (low, guarded). `UI/BestPlacesTab.lua` colours
+  the Level cell only for a zone with levels; `BestPlaces.Unsafe` is true for a hostile zone either way. Today
+  `tests/gamedata/shape_test.lua` requires a `ZoneLevels` row for every `ZoneFactions` entry, so it cannot happen;
+  a new faction zone must keep that rule (or the cell shows a red mark without levels).
+
 Reviews of the channel number fix (spec 022, five `/code-review high` rounds and an independent review, 2026-11-22):
 the low items left, none seen in game.
 

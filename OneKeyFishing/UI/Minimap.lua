@@ -22,7 +22,7 @@ local function OpenMenu(owner)
             root:CreateTitle("OneKeyFishing")
         end
         root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
-        root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
+        root:CreateButton(L["Statistics"], ns.StatsFrame.OpenStats)
         root:CreateButton(L["Catalog"], function() ns.StatsFrame.OpenCatalog() end)
         root:CreateButton(L["Best places"], ns.StatsFrame.OpenBest)
         root:CreateButton(L["Settings"], ns.SettingsUI.Open)

@@ -149,3 +149,18 @@ test("zone levels: { lowest, highest } by UiMap ID (spec 024)", function()
     assert(count >= 40, "every zone of both continents")
     eq(GameData.ZoneLevels[2548][1], 35, "Riverglades 35-45, as the game's map shows")
 end)
+
+test("zone factions: Alliance or Horde by UiMap ID (spec 026)", function()
+    local counts = { Alliance = 0, Horde = 0 }
+    for mapID, faction in pairs(GameData.ZoneFactions) do
+        assert(IsID(mapID), "map ID " .. tostring(mapID))
+        assert(counts[faction], "faction of " .. mapID .. ": " .. tostring(faction))
+        counts[faction] = counts[faction] + 1
+        assert(GameData.ZoneLevels[mapID], "a zone of ZoneLevels: " .. mapID)
+    end
+    eq(counts.Alliance, 9, "six Alliance zones and three capitals")
+    eq(counts.Horde, 8, "five Horde zones and three capitals")
+    eq(GameData.ZoneFactions[1429], "Alliance", "Elwynn Forest")
+    eq(GameData.ZoneFactions[1411], "Horde", "Durotar")
+    eq(GameData.ZoneFactions[1440], nil, "Ashenvale is contested")
+end)

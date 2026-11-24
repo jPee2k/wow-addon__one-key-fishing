@@ -2,10 +2,14 @@
 
 **Feature**: the "Best places" tab (the top 10 zones by gold per hour, its filters, the zones opening into subzones
 and spots with pins), the catalog's three levels, the minimap menu entries "Catalog" and "Best places", `/okf best`
-(`specs/024-best-places`).
-**Closes**: V75 and V76 ([verification.md](../../specs/024-best-places/verification.md)).
+(`specs/024-best-places`); "Safe for me" and the factions (`specs/026-safe-faction`, steps 11 to 13).
+**Closes**: V75 and V76 ([verification.md](../../specs/024-best-places/verification.md)); V77
+([verification.md](../../specs/026-safe-faction/verification.md)).
 **Needs**: one character with Fishing and the bundled data, at level 30 or below for step 4; an auction scan or
-Auctionator for real prices (else vendor prices only).
+Auctionator for real prices (else vendor prices only); for steps 11 to 13 a Horde and an Alliance character (any
+level, any game mode).
+
+**Status 2026-11-24**: steps 1 to 10 done (2026-11-23); steps 11 to 13 done (2026-11-24, V77 confirmed).
 
 ## Setup
 
@@ -41,8 +45,29 @@ Auctionator for real prices (else vendor prices only).
 10. [x] `/okf catalog`, Oily Blackmouth, Wetlands: Baradin Bay and Menethil Harbor once each, opening into their
     spots with pins (no subzone repeated).
 
+### The factions (spec 026, V77)
+
+11. [x] V77, the territory by `/run print(C_PvP.GetZonePVPInfo())` (2026-11-24): not usable in Forever. The call
+    names only the capitals (Undercity, Thunder Bluff: `friendly false Horde`) and gives nothing in open land,
+    contested or enemy zones, on a PvP realm too ([forever-api.md](../forever-api.md), "Zone territory"). The table
+    stands on the client's data; steps 12 and 13 check it in the tab.
+12. [x] (2026-11-24, Drog Earthshaker, Horde, level 40; Skill up to 74, Eastern Kingdoms: Off listed Dun Morogh,
+    Westfall, Elwynn Forest, Loch Modan, Stormwind City and Ironforge in red, Tirisfal Glades, Silverpine Forest and
+    Undercity in white; On left only the three Horde ones; all continents with On: contested and Horde zones only)
+    The Horde character, **Safe for me: On**: no Alliance zone (Elwynn Forest, Westfall, Dun Morogh, Loch Modan,
+    Teldrassil, Darkshore) and no Alliance capital in the list; Horde and contested zones are listed as their level
+    allows. **Off**: the Alliance zones with data show, their Level in red.
+13. [x] (2026-11-24, Rare John, Alliance, level 1; Skill up to 74, all continents: Off showed Tirisfal Glades,
+    Mulgore and Orgrimmar in red beside white Dun Morogh, Teldrassil, Elwynn Forest and Ironforge; On left the
+    Alliance zones, its three capitals and Zephras Isle)
+    The same on the Alliance character, mirrored (no Durotar, Mulgore, The Barrens, Tirisfal Glades, Silverpine
+    Forest or Horde capital with Safe for me on).
+
 ## Results
 
+- Date: 2026-11-24 Client language: enUS client, ukUA and enUS interface Build: 1.6.1 + spec 026 (uncommitted,
+  linked folder); steps 11 to 13. `C_PvP.GetZonePVPInfo()` names only the capitals in Forever, so the territory
+  was checked in the tab. Problems found: none.
 - Date: 2026-11-23 Client language: enUS client, ukUA interface Build: 1.5.2 + spec 024 (`7512b90`, linked folder)
 - Found in game and fixed before this run: `C_Map.GetMapLevels` gives 0 in Forever (V75): the levels moved to
   `GameData/ZoneLevels.lua`; the capitals and Moonglade read 1-60; the continent map Kalimdor (old records) is no

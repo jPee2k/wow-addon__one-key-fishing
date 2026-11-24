@@ -49,3 +49,30 @@ test("the menu has Catalog and Best places after Statistics, each opening its ta
     menu_entry(L["Catalog"]).onClick()
     assert(window.catalogPage:IsShown(), "the catalog")
 end)
+
+test("the menu's Statistics opens the statistics tab, not the last one used", function()
+    OpenMenu()
+    menu_entry(L["Best places"]).onClick()
+    menu_entry(L["Statistics"]).onClick()
+    local window = _G.OneKeyFishingStatsFrame
+    assert(window:IsShown(), "the window stays open")
+    assert(not window.bestPage:IsShown(), "not the best places")
+    eq(ns.db.statsTab, "stats", "the statistics tab")
+end)
+
+test("a closed window opens straight on the statistics, the best places never shown on the way", function()
+    local window = _G.OneKeyFishingStatsFrame
+    ns.StatsFrame.OpenBest()
+    window:Hide()
+    local shown, setShown = false, window.bestPage.SetShown
+    window.bestPage.SetShown = function(self, on)
+        shown = shown or on
+        return setShown(self, on)
+    end
+    OpenMenu()
+    menu_entry(L["Statistics"]).onClick()
+    window.bestPage.SetShown = setShown
+    assert(window:IsShown(), "the window opened")
+    assert(not shown, "the best places were not shown")
+    eq(ns.db.statsTab, "stats", "the statistics tab")
+end)

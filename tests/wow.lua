@@ -1245,6 +1245,8 @@ C_TooltipInfo = {
 fishing_skill = nil
 fishing_rank = nil
 player_level = 60
+-- player_faction = "Alliance" | "Horde" | "Neutral" | nil: UnitFactionGroup("player")'s tag (spec 026)
+player_faction = "Horde"
 
 -- The current skill as { rank, maxRank }, or nil.
 local function FishingSkill()
@@ -1268,6 +1270,13 @@ end
 
 function UnitLevel()
     return player_level
+end
+
+-- factionGroupTag, localized (the tests use the tag for both)
+function UnitFactionGroup(unit)
+    if unit == "player" and player_faction then
+        return player_faction, player_faction
+    end
 end
 
 -- Raid-warning style messages (RaidNotice_AddMessage), oldest first.

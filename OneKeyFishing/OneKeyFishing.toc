@@ -59,6 +59,7 @@ GameData\EquipSlots.lua
 GameData\Icons.lua
 GameData\Continents.lua
 GameData\ZoneLevels.lua
+GameData\ZoneFactions.lua
 # Core: events, the message bus, saved variables, shared data
 Core\Core.lua
 Core\Data.lua
