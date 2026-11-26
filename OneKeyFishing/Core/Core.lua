@@ -260,6 +260,7 @@ local DB_DEFAULTS = {
     shared = { -- the catch database (CatchDB.lua); myID is created there
         mine = {}, -- place key -> cell: this account's catches, never reset
         records = {}, -- contribution ID (own) or "<id>@<epoch>" (others) -> record
+        imported = {}, -- "<id>@<epoch>" -> true: came in by an import (ShareTransfer.lua); counts with sharing off
     },
 }
 

@@ -8,8 +8,8 @@ This is the design the shared catch database was built from (release 1.2.0, `spe
 
 - The release order: 1.1.0 (the interface languages) ships first, on its own; the four parts of this plan ship
   together as 1.2.0 afterwards. The live procedure is `docs/release-plan.md`, not the "Release 1.2.0" section below.
-- The open questions moved to `docs/forever-api.md` "Open questions"; the ideas that were not built (the harvest
-  patch-diff report, `/okf share collect`) to `docs/ROADMAP.md`.
+- The open questions moved to `docs/forever-api.md` "Open questions"; the idea that was not built (the harvest
+  patch-diff report) to `docs/ROADMAP.md`.
 - The seed's block list is `blocked`, not `banned`; shared auction prices were dropped from phase 6 (part 4
   decisions) and wait in `docs/ROADMAP.md`.
 - `docs/ROADMAP.md` no longer describes a manual export; item 1 there was replaced by this feature.

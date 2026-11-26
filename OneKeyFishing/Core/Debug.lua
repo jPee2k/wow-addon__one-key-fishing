@@ -9,6 +9,15 @@ ns.Debug = Debug
 
 local STAMP = "%Y-%m-%d %H:%M:%S" -- the times of the Errors section
 
+-- Sections added by files loaded later (specs/027-import-export, contracts/extension-points.md): { title, fn }.
+Debug.added = {}
+
+-- fn(add) writes its lines with add(format, ...), as the report's own sections do; an error becomes a "!! failed"
+-- line.
+function Debug.AddSection(title, fn)
+    table.insert(Debug.added, { title = tostring(title), fn = fn })
+end
+
 local function Section(lines, title, fn)
     table.insert(lines, "")
     table.insert(lines, "-- " .. title .. " --")
@@ -243,6 +252,11 @@ local function BuildReport()
             add("%s = %s", name, tostring(value))
         end
     end)
+
+    -- Sections added by other files (Debug.AddSection), before the errors, which stay last.
+    for _, added in ipairs(Debug.added) do
+        Section(lines, added.title, function() added.fn(add) end)
+    end
 
     -- The addon's recent errors (Core.lua, ns.Safe), the newest first; the last section, as README.md says.
     Section(lines, "Errors", function()

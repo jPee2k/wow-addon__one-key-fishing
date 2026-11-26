@@ -17,9 +17,6 @@ to the bobber by itself.
   towns inside contested zones (Tarren Mill and Southshore, Astranaar and Splintertree Post, Theramore and
   Brackenwall Village, Dalaran). The game's area data marks only Dalaran, so this needs a list of area IDs and their
   side (by ID, never by name), and a rule for the spots and subzone groups there.
-- **A collection mode for the author** (`/okf share collect`): exchange sessions more often within the same
-  traffic budget on the day before a release, so the harvest sees more of the network. An idea from the design of
-  the shared database, not built.
 
 ## Planned
 

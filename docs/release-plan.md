@@ -24,6 +24,7 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 | V33 | A Micro map converts to its parent zone for a pin | Fish in a place whose map is Micro (`/okf debug` current place), press its pin button | `specs/005-catch-catalog/verification.md` |
 | V36 | Search folds accents on deDE / frFR clients | Search a name with an accent typed without it on such a client | `specs/005-catch-catalog/verification.md` |
 | V44 | Lure and pole requirements read the base Fishing skill | A character whose base skill is below a lure's requirement but above it with the pole's bonus | `specs/008-architecture-alignment/verification.md` |
+| V78 | An export near 256 KB shows, copies and pastes whole in the settings page's edit box (149 KB seen) | Export from a store that gives a string above 200 KB (the hint says its size), paste and import it on another account: every record counted, no "incomplete" | `specs/027-import-export/verification.md` |
 | R11 | Journeyman from skill 50; Artisan from skill 225 and level 35 | At Nat Pagle with skill 225 and level 35: the quest is offered | `specs/001-interface-language/verification.md` |
 | R12 | The German name of Old Man Heming | A deDE client at Heming before his tooltip loaded | `specs/001-interface-language/verification.md` |
 

@@ -116,6 +116,17 @@ local storeVersions = setmetatable({}, { __mode = "k" })
 
 -- keys: the record keys of `store` that came, changed or went (CatchDB updates its index of them).
 local function Changed(store, keys)
+    -- An import mark (ShareTransfer.lua) belongs to its stored record: it goes when the record goes, whoever deletes
+    -- it (eviction, cleanup, a chain that failed, a damaged copy), so a record received again later is not counted
+    -- with sharing off unless it is imported again.
+    local marks = store.imported
+    if type(marks) == "table" then
+        for _, key in ipairs(keys or {}) do
+            if store.records[key] == nil then
+                marks[key] = nil
+            end
+        end
+    end
     storeVersions[store] = (storeVersions[store] or 0) + 1
     ns.Fire("SHARED_DATA_CHANGED", keys, store)
 end
@@ -279,6 +290,14 @@ function Store.CleanUp(store, absorbed)
     if #removed > 0 then
         Changed(store, removed)
     end
+    -- The import marks (ShareTransfer.lua) of units no longer stored go too: a mark belongs to its stored record.
+    if type(store.imported) == "table" then
+        for unit in pairs(store.imported) do
+            if store.records[unit] == nil then
+                store.imported[unit] = nil
+            end
+        end
+    end
     return #removed
 end
 
@@ -397,8 +416,9 @@ local function EvictionClass(record, now)
     return 3
 end
 
--- Above MAX_OTHER_PLACES, deletes other records until they fit: by class (EvictionClass), the one seen longest ago
--- first within a class; never one of the own ID (the live record, or one frozen by a roll: maybe the only copy left).
+-- Above MAX_OTHER_PLACES, deletes other records until they fit: those the player did not import first (an imported
+-- record counts also with sharing off, spec 027), then by class (EvictionClass), the one seen longest ago first within
+-- a class; never one of the own ID (the live record, or one frozen by a roll: maybe the only copy left).
 function Store.Evict(store)
     local total = 0
     for key, record in pairs(store.records) do
@@ -416,7 +436,9 @@ function Store.Evict(store)
         local pick, pickClass, pickSeen
         for key, record in pairs(store.records) do
             if IsOther(key) and record.id ~= store.myID then
-                local class, seen = EvictionClass(record, now), tonumber(record.seen) or 0
+                local marks = store.imported
+                local class = EvictionClass(record, now) + ((type(marks) == "table" and marks[key]) and 10 or 0)
+                local seen = tonumber(record.seen) or 0
                 if not pick or class < pickClass or (class == pickClass
                     and (seen < pickSeen or (seen == pickSeen and key < pick))) then
                     pick, pickClass, pickSeen = key, class, seen
@@ -484,12 +506,17 @@ end
 -- Hashes (research R5)
 ---------------------------------------------------------------------------
 -- Plain arithmetic, no bit library: the hash must agree between the game (Lua 5.1) and the tests (fengari).
-function Share.Hash(text)
-    local hash = 5381
-    for i = 1, #text do
+-- HashSlice continues the hash over text[from..to], so a long text can be hashed in frame steps (ShareTransfer.lua).
+local HASH_START = 5381
+local function HashSlice(hash, text, from, to)
+    for i = from, to do
         hash = (hash * 31 + text:byte(i)) % HASH_PRIME
     end
     return hash
+end
+
+function Share.Hash(text)
+    return HashSlice(HASH_START, text, 1, #text)
 end
 
 local function BucketIndex(id)
@@ -569,3 +596,10 @@ P.CHANNEL_ROUND_MAX, P.CHANNEL_MOVE_MIN, P.CHANNEL_MOVE_MAX = CHANNEL_ROUND_MAX,
 P.MESSAGE_UNIT, P.UnitOf, P.Absorbed, P.OtherPlaces = MESSAGE_UNIT, UnitOf, Absorbed, OtherPlaces
 P.storeVersions, P.Changed, P.WasEvicted, P.Pending = storeVersions, Changed, WasEvicted, Pending
 P.OwnRecord, P.BucketIndex = OwnRecord, BucketIndex
+P.HashSlice, P.HASH_START = HashSlice, HASH_START
+-- A node's session rules (specs/027-import-export research R7, contracts/extension-points.md): the defaults are the
+-- constants above; Share.SetSessionRules (ShareGame.lua) changes the game node's, within these clamps.
+P.MIN_SESSION_GAP = 15 -- the floor of a session rule's gap; one session at a time and the pause per peer still hold
+function P.DefaultRules()
+    return { gap = SESSION_GAP, strangerChance = nil, offerOthers = true }
+end

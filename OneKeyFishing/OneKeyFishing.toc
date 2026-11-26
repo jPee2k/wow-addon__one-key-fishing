@@ -94,6 +94,7 @@ Exchange\Share.lua
 Exchange\ShareNode.lua
 Exchange\ShareProtocol.lua
 Exchange\ShareGame.lua
+Exchange\ShareTransfer.lua
 # Catch catalog
 Catalog\Catalog.lua
 Catalog\BestPlaces.lua
@@ -111,6 +112,7 @@ UI\AuctionButton.lua
 UI\ShareNotice.lua
 Core\Debug.lua
 UI\Settings.lua
+UI\TransferPage.lua
 UI\ItemHooks.lua
 UI\Minimap.lua
 # Commands: last, every slash command in one place
