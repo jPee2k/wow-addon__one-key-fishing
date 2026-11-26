@@ -29,7 +29,7 @@ read_globals = {
 
     -- Frames and UI
     "CreateFrame", "UIParent", "DEFAULT_CHAT_FRAME", "ChatFontNormal", "GameTooltip", "Minimap",
-    "AddonCompartmentFrame", "AuctionHouseFrame", "RaidWarningFrame", "Settings", "MenuUtil", "Enum",
+    "AddonCompartmentFrame", "AuctionHouseFrame", "RaidWarningFrame", "Settings", "Enum",
     "StaticPopupDialogs", "StaticPopup_Show", "StaticPopup_Hide", "ReloadUI", "RaidNotice_AddMessage",
     "ChatTypeInfo", "ChatFrameUtil",
     "TooltipDataProcessor", "ItemLocation", "ItemRefTooltip",
@@ -51,7 +51,7 @@ read_globals = {
     "GetAddOnMetadata", "GetBuildInfo", "GetLocale", "InCombatLockdown", "UnitAffectingCombat", "IsPlayerSpell",
     "GetProfessions", "GetProfessionInfo", "GetTime", "GetMoneyString",
     "GetBindingKey", "GetBindingText", "SetOverrideBinding", "SetOverrideBindingClick", "ClearOverrideBindings",
-    "RegisterStateDriver", "hooksecurefunc", "HandleModifiedItemClick",
+    "RegisterStateDriver", "hooksecurefunc", "DisplayInterfaceActionBlockedMessage", "HandleModifiedItemClick",
     "IsAltKeyDown", "IsShiftKeyDown", "IsControlKeyDown", "GetCursorPosition",
     "GetInventoryItemID", "GetInventoryItemLink", "GetWeaponEnchantInfo", "GetItemCount", "GetItemCooldown",
     "PickupInventoryItem", "PutItemInBackpack", "PutItemInBag",

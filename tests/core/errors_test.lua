@@ -213,7 +213,7 @@ local function ErrorsSection()
         if inside and line ~= "" then
             table.insert(lines, line)
         end
-        inside = inside or line == "-- Errors --"
+        inside = inside or line == "-- Errors and blocked actions --"
     end
     assert(inside, "the report has an Errors section")
     return lines

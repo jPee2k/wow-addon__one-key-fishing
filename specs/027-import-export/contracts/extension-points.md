@@ -48,8 +48,11 @@ ns.MinimapMenu.AddEntries(function(root) root:CreateButton("Text", onClick) end)
 ```
 
 It is called while the menu is built, after "Debug report", in the minimap button's menu and the Addon
-Compartment's. It runs in `pcall`, so an error leaves the addon's own entries. A menu built in combat has no title,
-divider or spacer (see `CLAUDE.md`); added entries follow the same rule.
+Compartment's. It runs in `pcall`, so an error leaves the addon's own entries. Since spec 029 the menu is the addon's
+own (`ns.OpenMenu`), not the game's: `root` offers `CreateButton(text, onClick, data)`,
+`CreateRadio(text, isSelected, onClick, data)` and `CreateCheckbox(text, isSelected, onClick, data)` only (no title,
+divider or spacer); an element offers `SetEnabled(enabled)` only, with a boolean (the game's also takes a function),
+and no tooltip or submenu.
 
 ## Settings pages (`UI/Settings.lua`)
 

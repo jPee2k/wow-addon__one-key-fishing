@@ -102,31 +102,14 @@ local function CreatePage()
         end
     end
     frame.Choose = Choose
-    -- The selector: the game's dropdown (WowStyle1DropdownTemplate, a radio per choice, the chosen one's text on the
-    -- button); a client without it gets a button that opens the same choices as a menu.
-    -- The dropdown shows the chosen radio's text, and GenerateMenu() from a radio's own callback updates it (V79, seen
-    -- in game 2026-11-26).
-    local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, frame, "WowStyle1DropdownTemplate")
-    local choiceButton
-    if ok and dropdown and dropdown.SetupMenu then
-        choiceButton = dropdown
-        choiceButton:SetWidth(200)
-        choiceButton:SetupMenu(function(_, root)
-            for _, value in ipairs({ "import", "export" }) do
-                root:CreateRadio(ChoiceText(value), IsChosen, Choose, value)
-            end
-        end)
-        function frame.ShowChoice()
-            choiceButton:GenerateMenu() -- the button's text follows the chosen radio
-        end
-    else
-        choiceButton = ns.CreateButton(frame, ChoiceText(choice), 160, function(self)
-            ns.OpenRadioMenu(self, { { value = "import", text = ChoiceText("import") },
-                { value = "export", text = ChoiceText("export") } }, IsChosen, Choose)
-        end)
-        function frame.ShowChoice()
-            choiceButton:SetText(ChoiceText(choice))
-        end
+    -- The selector: a button with the chosen text that opens the choices in the addon's own menu. Not the game's
+    -- dropdown: its menu rows come from the game's shared pool and would stay tainted (specs/029-blocked-actions).
+    local choiceButton = ns.CreateButton(frame, ChoiceText(choice), 160, function(self)
+        ns.OpenRadioMenu(self, { { value = "import", text = ChoiceText("import") },
+            { value = "export", text = ChoiceText("export") } }, IsChosen, Choose, "import and export choice")
+    end)
+    function frame.ShowChoice()
+        choiceButton:SetText(ChoiceText(choice))
     end
     choiceButton:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -12)
     frame.choiceButton = choiceButton

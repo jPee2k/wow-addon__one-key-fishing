@@ -42,7 +42,11 @@ Signatures (not behaviour) can be checked without the game, in this order:
 
 The game's yellow chat line "Interface action failed because of an AddOn" (`INTERFACE_ACTION_BLOCKED`) names no
 addon and no function, shows once per session, and has two kinds of cause, which the usual tools tell apart only
-in part (found 2026-11-18, fixes of the statistics, debug and minimap windows):
+in part (found 2026-11-18, fixes of the statistics, debug and minimap windows). Since 1.7.1 the addon records part
+of it itself in the error log of `/okf debug` (spec 029): the two events when they name OneKeyFishing, and the calls
+of `DisplayInterfaceActionBlockedMessage` whose stack has the addon's code as the closest addon, each with the fight
+and the addon's last menu. Ask the author for `/okf debug` first. A block of a value the addon wrote earlier, with no
+addon code on the stack at the block, leaves nothing there: the steps below remain for it.
 
 - **A protected call refused.** The game fires `ADDON_ACTION_BLOCKED` or `ADDON_ACTION_FORBIDDEN` with the addon
   and the function, and the taint log records it.
@@ -137,7 +141,30 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   refused in combat with the "Interface action failed because of an AddOn" line and no `ADDON_ACTION_BLOCKED`
   event (found by a `hooksecurefunc` on `DisplayInterfaceActionBlockedMessage` printing `debugstack`; the taint
   log at level 2 recorded nothing). Buttons, checkboxes and radios do not. The minimap menu leaves its title out
-  in combat; the addon's other menus have none of the three.
+  in combat; the addon's other menus have none of the three. Superseded on 2026-11-26 (below): the addon uses no
+  game menu at all.
+- **The game's menu pool taints a later game menu** (2026-11-26, build 71139, spec 029). The game's menus
+  (`MenuUtil.CreateContextMenu`, `DropdownButton` / `WowStyle1DropdownTemplate`, every `Blizzard_Menu` menu) take
+  their row buttons from frame pools shared by every menu of the game. When addon code opens such a menu and the
+  pool has to create a row, that row is created by addon code and stays tainted for the session. A game menu that
+  reuses it later runs its click tainted: a unit's menu (the target frame's right click) then cannot set a raid
+  marker in a fight, `ADDON_ACTION_FORBIDDEN` naming the addon and its popup "has been blocked from an action only
+  available to the Blizzard UI" (`SetRaidTarget` is `HasRestrictions`, `AllowedWhenUntainted`). Reproduced as an
+  A/B test: `/reload`, the addon's minimap menu first, then a marker in a fight: refused; `/reload`, a game menu
+  first (the own portrait's right click), then the addon's menu, then a marker in a fight: set. Removing the menu's
+  title did not help: it is the rows, not one element. The stack of the refusal (recorded by the addon itself):
+  `Blizzard_Menu/MenuTemplates.lua:137` (the row's `OnButtonClick`) -> `Menu.lua:934` (`Pick`, through
+  `securecallfunction`) -> `UnitPopupSharedButtonMixins.lua:2589` -> `TargetFrame.lua:701` (`SetRaidTargetIcon`) ->
+  `SetRaidTarget`. Rule: **the addon never opens a game menu**; its menus are its own frames (`ns.OpenMenu`,
+  `UI/Widgets.lua`). It did not happen when a game menu had created the rows earlier in the session, which is why it
+  was hard to reproduce.
+- The Escape chain (from the export, build 71139): `RegisterGameMenuEscHandler(priority, handler)`
+  (`Blizzard_GameMenuEsc.lua`) inserts and sorts the handler into the game's own local table, and
+  `TryHandleGameMenuEsc` walks it without a secure wrapper around the loop. Called from addon code, it would write
+  tainted slots that every later Escape reads, up to the World handler's protected `ClearTarget()`: the addon never
+  registers there. `UIMenus` holds only the legacy `DropDownList1/2`, closed without taking the Escape.
+- `ADDON_ACTION_FORBIDDEN` fires inside the refused call (2026-11-26): the stack a handler reads with `debugstack`
+  holds the refused call's callers (above), not only the event's delivery.
 - The fishing sounds' settings page (spec 013, 2026-11-16, enUS): `MinimalSliderWithSteppersTemplate` in a canvas
   settings page works as in the export (`Init(value, min, max, steps, formatters)`, the `Label.Right` formatter,
   `RegisterCallback(Event.OnValueChanged)`, the value on the child `.Slider`) (V50). An addon `.ogg` played with

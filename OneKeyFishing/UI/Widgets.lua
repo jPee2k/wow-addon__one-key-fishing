@@ -226,37 +226,228 @@ function ns.CreateList(parent, top, initialize)
     return list
 end
 
-local CHECK_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t "
+---------------------------------------------------------------------------
+-- The addon's own menu (specs/029-blocked-actions). The game's menus (MenuUtil, dropdowns) take their rows from
+-- frame pools shared with every menu of the game; rows the pool first creates while addon code opens a menu stay
+-- tainted, and a game menu that later reuses one is refused its protected call (a raid marker from a unit's menu,
+-- reproduced in game 2026-11-26). This menu has its own frame and rows, so no game menu ever runs on them.
+---------------------------------------------------------------------------
+local MENU_ROW_HEIGHT = 18
+local MENU_PADDING = 8
+local MENU_MIN_WIDTH = 120
+-- A disabled entry's highlight, as the game's menus dim it (MenuVariants.DisabledHighlightOpacity, Blizzard_Menu).
+local MENU_DISABLED_HIGHLIGHT = 0.4
+-- VERIFY(V82): the radio's two states are the second and first quarter of UI-RadioButton (64 x 16).
+local RADIO_ON = "|TInterface\\Buttons\\UI-RadioButton:14:14:0:0:64:16:16:32:0:16|t "
+local RADIO_OFF = "|TInterface\\Buttons\\UI-RadioButton:14:14:0:0:64:16:0:16:0:16|t "
+local CHECK_ON = "|TInterface\\Buttons\\UI-CheckBox-Check:14:14|t "
+local CHECK_OFF = "|TInterface\\Buttons\\UI-CheckBox-Up:14:14|t "
 
--- A menu of choices ({ value, text }) built with the game's element `method` ("CreateRadio" or "CreateCheckbox"):
--- isMarked(value) marks a choice, onClick(value) runs on a click. Without that element: buttons with the check mark.
-local function OpenMarkedMenu(owner, choices, isMarked, onClick, method)
-    if not (MenuUtil and MenuUtil.CreateContextMenu) then
+-- The entries a menu's generator adds: the methods of the game's menu root that the addon uses (an extension of the
+-- minimap menu may call them too, specs/027 contracts/extension-points.md). The functions get the entry's data, as
+-- the game's do; an entry keeps them bound to it (entry.isSelected(), entry.onClick()).
+local function MenuRoot(entries)
+    local root = {}
+    local function Bind(fn, data)
+        return fn and function() return fn(data) end
+    end
+    local function Add(kind, text, a, b, data)
+        -- enabled: nil (as the game) or the boolean SetEnabled set (the game's also takes a function; not this one)
+        local entry = { kind = kind, text = text }
+        if kind == "radio" or kind == "checkbox" then
+            entry.isSelected, entry.onClick = Bind(a, data), Bind(b, data)
+        else
+            entry.onClick = Bind(a, data)
+        end
+        table.insert(entries, entry)
+        return { SetEnabled = function(_, enabled) entry.enabled = enabled and true or false end }
+    end
+    function root:CreateButton(text, onClick, data) return Add("button", text, onClick, nil, data) end
+    function root:CreateRadio(text, isSelected, onClick, data) return Add("radio", text, isSelected, onClick, data) end
+    function root:CreateCheckbox(text, isSelected, onClick, data)
+        return Add("checkbox", text, isSelected, onClick, data)
+    end
+    return root
+end
+
+local menu -- the menu frame, built on first use
+local RenderMenu
+
+local function EntryText(entry)
+    if entry.kind == "radio" then
+        return (entry.isSelected() and RADIO_ON or RADIO_OFF) .. entry.text
+    elseif entry.kind == "checkbox" then
+        return (entry.isSelected() and CHECK_ON or CHECK_OFF) .. entry.text
+    end
+    return entry.text or ""
+end
+
+-- A click: a checkbox keeps the menu open and redraws its marks (as the game's checkbox does), anything else closes.
+local function ClickEntry(entry)
+    if not (entry and entry.enabled ~= false and entry.onClick) then
         return
     end
-    MenuUtil.CreateContextMenu(owner, function(_, root)
-        for _, choice in ipairs(choices) do
-            local function IsMarked() return isMarked(choice.value) end
-            local function Click() onClick(choice.value) end
-            if root[method] then
-                root[method](root, choice.text, IsMarked, Click)
-            else
-                root:CreateButton((IsMarked() and CHECK_MARK or "") .. choice.text, Click)
-            end
+    if entry.kind ~= "checkbox" then
+        menu:Hide()
+    end
+    ns.Safe("menu " .. tostring(menu.name), entry.onClick) -- a failing entry is logged (/okf debug)
+    if entry.kind == "checkbox" and menu:IsShown() and not ns.Safe("menu " .. tostring(menu.name), RenderMenu) then
+        menu:Hide()
+    end
+end
+
+local function MenuRow(index)
+    local row = menu.rows[index]
+    if not row then
+        row = CreateFrame("Button", nil, menu)
+        row:SetHeight(MENU_ROW_HEIGHT)
+        row:EnableMouse(true)
+        row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        row.text:SetPoint("LEFT", 2, 0)
+        row.text:SetJustifyH("LEFT")
+        row.highlight = row:CreateTexture(nil, "HIGHLIGHT")
+        row.highlight:SetAllPoints()
+        row.highlight:SetColorTexture(1, 1, 1, 0.15)
+        row:SetScript("OnClick", function(self) ClickEntry(self.entry) end)
+        menu.rows[index] = row
+    end
+    return row
+end
+
+function RenderMenu()
+    local width, top = MENU_MIN_WIDTH, -MENU_PADDING
+    for index, entry in ipairs(menu.entries) do
+        local row = MenuRow(index)
+        row.entry = entry
+        local enabled = entry.enabled ~= false
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", MENU_PADDING, top)
+        row:SetPoint("TOPRIGHT", -MENU_PADDING, top) -- both points on the row's own top: its height is its own
+        row.text:SetText(EntryText(entry))
+        row.text:SetFontObject(enabled and "GameFontHighlightSmall" or "GameFontDisableSmall")
+        row.highlight:SetAlpha(enabled and 1 or MENU_DISABLED_HIGHLIGHT) -- set on every render: rows are reused
+        row:Show()
+        top = top - row:GetHeight()
+        width = math.max(width, (row.text:GetStringWidth() or 0) + 2 * MENU_PADDING + 4)
+    end
+    for index = #menu.entries + 1, #menu.rows do
+        menu.rows[index]:Hide()
+        menu.rows[index].entry = nil
+    end
+    menu:SetSize(width, -top + MENU_PADDING)
+end
+
+local function CreateMenuFrame()
+    menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    _G.OneKeyFishingMenu = menu
+    -- Escape closes it with the special frames, as the addon's windows (so also the window behind it). Not through
+    -- the game's RegisterGameMenuEscHandler: addon code would write into the game's own table of Escape handlers,
+    -- and every Escape after it would run tainted (docs/forever-api.md).
+    table.insert(UISpecialFrames, "OneKeyFishingMenu")
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:SetClampedToScreen(true)
+    menu:EnableMouse(true)
+    if menu.SetBackdrop then
+        menu:SetBackdrop({
+            bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 16,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 },
+        })
+        menu:SetBackdropColor(0, 0, 0, 0.92)
+    end
+    menu.rows, menu.entries = {}, {}
+    -- A press anywhere but on the menu closes it, as a game menu closes. A press on its owner also notes the owner:
+    -- the owner's click that follows (with the release, however late) does not open it again, so a second click on
+    -- the owner closes it. Any press while it is closed forgets that note.
+    -- VERIFY(V81): GLOBAL_MOUSE_DOWN reaches the menu before the owner's OnClick (which comes with the release).
+    menu:RegisterEvent("GLOBAL_MOUSE_DOWN")
+    menu:SetScript("OnEvent", function(self)
+        if not self:IsShown() then
+            self.closedBy = nil
+        elseif not self:IsMouseOver() then
+            self.closedBy = self.owner and self.owner:IsMouseOver() and self.owner or nil
+            self:Hide()
         end
     end)
+    menu:SetScript("OnHide", function(self) self.owner = nil end)
+    -- It closes with its owner (a window hidden by a key, a command or Escape), as a game menu does.
+    menu:SetScript("OnUpdate", function(self)
+        if self.owner and not self.owner:IsVisible() then
+            self:Hide()
+        end
+    end)
+    menu:Hide()
+end
+
+-- Opens the addon's menu under `owner`; generator(owner, root) adds the entries (the signature of the game's
+-- MenuUtil.CreateContextMenu). A click on the owner of the open menu closes it (the press closed it just before).
+function ns.OpenMenu(owner, generator, name)
+    if not menu then
+        CreateMenuFrame()
+    end
+    if owner and menu.closedBy == owner then -- the click of the press that closed it
+        menu.closedBy = nil
+        return
+    end
+    name = name or "menu"
+    ns.NoteMenu(name)
+    local entries = {}
+    -- A failing generator is logged and leaves the menu as it was.
+    if not ns.Safe("menu " .. name, generator, owner, MenuRoot(entries)) then
+        return
+    end
+    menu.entries, menu.name = entries, name
+    menu.owner = owner
+    if not ns.Safe("menu " .. name, RenderMenu) then -- a failing mark (isSelected) is logged; no menu
+        menu:Hide()
+        return
+    end
+    menu:ClearAllPoints()
+    if not owner then -- no owner frame: at the cursor
+        local x, y = GetCursorPosition()
+        local cursorScale = UIParent:GetEffectiveScale() or 1
+        menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", (x or 0) / cursorScale, (y or 0) / cursorScale)
+        menu:Show()
+        return
+    end
+    -- Below its owner, or above it when the screen ends first (clamped, it would cover the owner, and a second click
+    -- there would pick a row).
+    local bottom = owner:GetBottom()
+    local scale = (owner:GetEffectiveScale() or 1) / (menu:GetEffectiveScale() or 1)
+    if bottom and bottom * scale < menu:GetHeight() + 4 then
+        menu:SetPoint("BOTTOMLEFT", owner, "TOPLEFT", 0, 2)
+    else
+        menu:SetPoint("TOPLEFT", owner, "BOTTOMLEFT", 0, -2)
+    end
+    menu:Show()
+end
+
+-- The entries of the menu built last (for the tests); read only.
+function ns.MenuEntries()
+    return menu and menu.entries or {}
+end
+
+-- A menu of choices ({ value, text }) of the kind "radio" or "checkbox": isMarked(value) marks a choice,
+-- onClick(value) runs on a click; `name` names it in a blocked action's state line (ns.NoteMenu).
+local function OpenMarkedMenu(owner, choices, isMarked, onClick, kind, name)
+    ns.OpenMenu(owner, function(_, root)
+        local create = kind == "radio" and root.CreateRadio or root.CreateCheckbox
+        for _, choice in ipairs(choices) do
+            create(root, choice.text, isMarked, onClick, choice.value)
+        end
+    end, name or (kind .. " menu"))
 end
 
 -- A menu of choices with the selected one marked; choose(value) runs on a click.
-function ns.OpenRadioMenu(owner, choices, isSelected, choose)
-    OpenMarkedMenu(owner, choices, isSelected, choose, "CreateRadio")
+function ns.OpenRadioMenu(owner, choices, isSelected, choose, name)
+    OpenMarkedMenu(owner, choices, isSelected, choose, "radio", name)
 end
 
--- A menu of checkboxes; toggle(value) runs on a click. The game's checkbox keeps the menu open and redraws its marks
--- (MenuResponse.Refresh in Blizzard_Menu/MenuTemplates.lua); the fallback buttons close it after a click
--- (specs/014-catch-filters, research R6).
-function ns.OpenCheckboxMenu(owner, choices, isChecked, toggle)
-    OpenMarkedMenu(owner, choices, isChecked, toggle, "CreateCheckbox")
+-- A menu of checkboxes; toggle(value) runs on a click. A checkbox keeps the menu open and redraws its marks, as the
+-- game's does (specs/014-catch-filters, research R6).
+function ns.OpenCheckboxMenu(owner, choices, isChecked, toggle, name)
+    OpenMarkedMenu(owner, choices, isChecked, toggle, "checkbox", name)
 end
 
 -- Every key bound to a binding, readable, joined with " / " (players bind a punctuation key once per keyboard
