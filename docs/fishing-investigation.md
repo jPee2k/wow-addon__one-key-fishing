@@ -330,7 +330,7 @@ item; using the item casts a placing spell; the placing spell puts an object nex
 | Hat with a lure | Wide-Brimmed Fishing Hat 259846, use spell 1265220 (+25 for 10 minutes) | skill |
 | Food | "Well Fed" 1249521 (15 minutes): Loch Frenzy Delight +3, Fillet of Frenzy +5, Bristle Whisker Catfish +8, Rockscale Cod +12, Filet of Redgill and Spinefin Halibut +18 | skill |
 | Legacy talents | 1225468 Master Forager (+25 Fishing), 1225451 Working Overtime (+10 % chance of a skill-up) | skill |
-| Legacy talent | 1225455 Luremaster: a chance of an extra fish while a lure is active (the client's value is 50; the wiki says 25 % or 50 %) | quantity |
+| Legacy talent | 1225455 Luremaster: a chance of an extra fish while a lure is active, 25 % at rank 1 and 50 % at rank 2 (trait curve 97516; the client's value 50 is the base points; [luremaster-research.md](luremaster-research.md)) | quantity |
 | Coin | 1321323 "Shiny Silver Coin": +30 Fishing for 30 minutes; no item in the data casts it (about 60 named fountain coins, 286263 to 286328, exist; the link is an inference) | skill |
 | Gear | poles, Lucky Fishing Hat 19972, Nat Pagle's Extreme Anglin' Boots 19969, High Test Eternium Fishing Line 19971, the glove enchant 13620 | skill |
 
@@ -341,8 +341,11 @@ item; using the item casts a placing spell; the placing spell puts an object nex
   Raw Winter Squid (161) with no Raw Summer Bass in the November seed. So "the catch depends on a condition" is
   wider than the two auras (season, quest, tournament, probably time of day).
 - **Guide.** Ranks: Apprentice 75, Journeyman 150, Expert 225 from a book, Artisan 300 from Nat Pagle's quest.
-- **Unknown.** Whether Nightfin Snapper and Sunscale Salmon keep their time-of-day rule; where Whimsyfin (251524,
-  a new fish that cooks into Savory Whimsyfin Delight 251525) is caught; what the Extravaganza coin (274026) buys;
+- **Data.** Whimsyfin (251524, a new fish that cooks into Savory Whimsyfin Delight 251525) is caught in Redridge
+  Mountains (uiMapID 1433), by the falls and the valley east of Lake Everstill, not in the lake itself ("Profit",
+  "Whimsyfin in Redridge").
+- **Unknown.** Whether Nightfin Snapper and Sunscale Salmon keep their time-of-day rule; whether Whimsyfin is caught
+  anywhere besides Redridge; what the Extravaganza coin (274026) buys;
   whether Find Fish (43308) can be learned (it is in the skill line, but no item that teaches it has an
   `ItemSparse` row).
 
@@ -373,6 +376,40 @@ Findings that touch `GameData/`, not checked in game unless said:
 - **Inference.** Since the hotfix of 2026-11-16 the Rack is probably the main profit lever from Fishing 140 on: an
   hour of the buff costs 2 Simple Wood, 1 Crystal Vial and 2 Raw Mithril Head Trout, and the contents of a Bloated
   fish after the change are published nowhere. The addon could measure it once it records the aura with a catch.
+
+### Whimsyfin in Redridge (2026-11-25)
+
+Found while reading the best places tab: Redridge Mountains showed 4 gold 25 silver per hour for the zone, but 33 to
+36 gold for spots of the subzone the tab names Stonewatch Falls and 31 gold for Render's Valley (the author's
+screenshot, Horde character, Safe for me on).
+
+- **Data.** The bundled seed (epoch 11) holds 16 cells of Redridge. The rich ones are the cells where Whimsyfin is
+  most of the catch:
+
+  | Cell | Area ID | Catches | Whimsyfin | Catches per hour |
+  |---|---|---|---|---|
+  | `1433:3:67` | 997 | 163 | 137 (84 %) | 184 |
+  | `1433:3:76` | 71 | 87 | 72 (83 %) | 179 |
+  | `1433:1:66` | 71 | 22 | 6 | 186 |
+  | `1433:1:75` | 71 | 13 | 9 | 109 |
+
+  The same cells give Stranglekelp (3820, 4 to 12 pieces), Rumsey Rum Light (20709), Tightly Sealed Trunk (20708)
+  and Bloated Oily Blackmouth (21162). Whimsyfin shows in skill ranges 1 (75-149) and 3 (225-299), so it is not a
+  high-skill catch only.
+- **Data.** Lake Everstill (area 68, cells such as `1433:2:14` with 550 catches) gives only Bristle Whisker Catfish
+  (6308) and Longjaw Mud Snapper (6289), with a little Oily Blackmouth (1467): no Whimsyfin there.
+- **Data.** The author's own auction scan (Horde, 2026-11-20): Whimsyfin 13 silver 1 copper each (659 on sale in 4
+  lots), Stranglekelp 3 silver 13 copper, Rumsey Rum Light 5 silver, Bristle Whisker Catfish 37 copper, Longjaw Mud
+  Snapper 7 copper.
+- **Inference.** The numbers of the tab are right. 184 catches an hour, 84 % of them Whimsyfin at 13 silver, are
+  about 20 gold an hour from the fish alone; Stranglekelp, the rum, the trunks and the data of the own and other
+  players' records add the rest. Lake Everstill makes 41 silver an hour, and it holds 5935 of the zone's 6713
+  catches; the zone's gold per hour is weighted by casting time, so the lake brings it down to 4 gold 25 silver.
+  The catch rate is normal everywhere (180 to 270 casts an hour), so no cell has too little casting time.
+- **Consequence.** The ranking of zones by their weighted gold per hour hides a rich spot inside a poor zone:
+  Redridge's best spots earn more than any zone of the top 10, but the zone is listed by its lake. The spots are
+  seen only when the zone is opened. Whimsyfin's price is one scan of one auction house and drives these spots
+  alone; a fresh scan moves them.
 
 ## Telling a catch under a buff from the addon
 

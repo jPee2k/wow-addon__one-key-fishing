@@ -32,7 +32,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   `/dump`) is at most 255 characters, the chat line's limit (a longer one is cut and fails): count it with a tool
   before giving it, and split a longer one into several. Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013, 016, 018, 019, 020, 022 and 024 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016, 018, 019, 020, 022, 024, 026 and 027 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -99,7 +99,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 |---|---|---|
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
-| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `CampBonuses`, `FishedQuestItems`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`, `Continents`, `ZoneLevels`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
+| `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `CampBonuses`, `FishedQuestItems`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`, `Continents`, `ZoneLevels`, `ZoneFactions`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
 | `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names and the own name, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
@@ -113,12 +113,12 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Catch/Stats.lua` | statistics | [catch-and-stats.md](docs/architecture/catch-and-stats.md) |
 | `Fishing/Sound.lua` | the fishing sounds (bell, hook, rare loot) of the "Sound effects" page, their volume (files under `Media/Sounds/`), silent in fights; the page's game audio settings are rows of `Fishing/Mode.lua` | [fishing-mode.md](docs/architecture/fishing-mode.md) |
 | `CatchDB/SeedData.lua`, `CatchDB/CatchDB.lua`, `CatchDB/Checks.lua`, `CatchDB/Index.lua`, `CatchDB/Views.lua`, `CatchDB/Events.lua` | the catch database (one module, `ns.CatchDB`): the seed; places, the own record and its chain; checks of others' records; the indexes; sums and queries; the game's events | [catch-db.md](docs/architecture/catch-db.md) |
-| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (`Channel.AVAILABLE`, the kill switch; on since spec 016); one module `ns.Share` in four files: the store and codec, the protocol node, the messages and merges, the game node and state | [exchange.md](docs/architecture/exchange.md) |
+| `Exchange/Comm.lua`, `Exchange/CommReceive.lua`, `Exchange/Channel.lua`, `Exchange/Share.lua`, `Exchange/ShareNode.lua`, `Exchange/ShareProtocol.lua`, `Exchange/ShareGame.lua`, `Exchange/ShareTransfer.lua` | the catch exchange: transport (`ns.Comm`: sending, receiving); the hidden public channel (`Channel.AVAILABLE`, the kill switch; on since spec 016); one module `ns.Share` in five files: the store and codec, the protocol node, the messages and merges, the game node and state (with the session rules), the import and export (spec 027) | [exchange.md](docs/architecture/exchange.md) |
 | `Catalog/Catalog.lua` | the catch catalog: the index across every map in frame steps, item names and search, places, spots (their pin through `Core/MapPin.lua`) and their subzone groups (`GroupSpots`), tooltip lines, the item kinds and the kind choice, the list's order | [catalog.md](docs/architecture/catalog.md) |
-| `Catalog/BestPlaces.lua` | the best places (`ns.BestPlaces`, spec 024): gold per hour, the top 10 zones in frame steps, a zone's subzones and spots, zone levels and continents from the map data, the character's Safe for me and continent | [catalog.md](docs/architecture/catalog.md) |
+| `Catalog/BestPlaces.lua` | the best places (`ns.BestPlaces`, specs 024 and 026): gold per hour, the top 10 zones in frame steps, a zone's subzones and spots, zone levels and factions from `GameData`, continents from the map data, the character's Safe for me (level and faction) and continent | [catalog.md](docs/architecture/catalog.md) |
 | `UI/Widgets.lua`, `UI/CopyWindow.lua`, `UI/Indicator.lua`, `UI/Toast.lua`, `UI/CatchHere.lua`, `UI/PlaceList.lua`, `UI/CatalogTab.lua`, `UI/BestPlacesTab.lua`, `UI/StatsFrame.lua`, `UI/AuctionButton.lua`, `UI/ShareNotice.lua` | the frame helpers (also the radio and checkbox menus, the skill range label and the scan button state), copy window, indicator, toast, the three-level place list with pins (both place tabs), the statistics window's tabs (what can be caught here, the catalog, the best places) and the window, the auction scan button, the one-time notice about the exchange | [ui.md](docs/architecture/ui.md) |
 | `Core/Debug.lua` | the `/okf debug` report | [core.md](docs/architecture/core.md) |
-| `UI/Settings.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages, item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
+| `UI/Settings.lua`, `UI/TransferPage.lua`, `UI/ItemHooks.lua`, `UI/Minimap.lua` | settings pages (`SettingsUI.AddPage` for pages of other files), the "Import and export" page (spec 027), item hooks and tooltips, the minimap button | [ui.md](docs/architecture/ui.md) |
 | `Core/Commands.lua` (last) | `ns.COMMANDS`: every slash command, sorted, English descriptions | [core.md](docs/architecture/core.md) |
 
 Cross-module rules:
@@ -157,6 +157,13 @@ Cross-module rules:
   cell's bonus parts `q` are inclusive (already in its `c`, `m`, `i`), disjoint (a cast is in one part) and keyed by
   the mask as a string (`q["1"]`, never `q[1]`); no total changes because of them. A view never fetches another view:
   an item's camp bonus tag and its numbers are summed in the pass over the view's own scope (spec 020).
+- Import marks (`shared.imported`, spec 027) are set only by `Share.Import` and go with their record (the store's
+  `Changed`); the views read other players' cells only through `CountedOthers()` (`CatchDB/Index.lua`: every record
+  with sharing on, the imported ones with it off). The one walk over the stored records themselves,
+  `EachHeldCells` (`CatchDB/Views.lua`), applies the same rule through `Share.IsImported`.
+- Extension points for code loaded after the addon (spec 027, `contracts/extension-points.md`): `Share.SetSessionRules`
+  / `ResetSessionRules` / `SessionRules`, `Share.AddStatusLine`, `Debug.AddSection`, `ns.MinimapMenu.AddEntries`,
+  `SettingsUI.AddPage`. The addon itself sets no session rule; with none used, nothing changes.
 - The auction scan's items beyond the own catches come from `CatchDB.ScanItems` through `Auction.SetItemSource`
   (set by `CatchDB/Views.lua`); `Catch/Auction.lua` names no module of layer 2.
 - The catalog follows the data through `CatchDB.MapStamp` (and `GetStampVersion`), not through a message; it sends

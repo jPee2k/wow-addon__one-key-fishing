@@ -1056,3 +1056,55 @@ test("a relog does not move another name that announced the client's old tag", f
     eq(a.node:ClientKey("w:M"), "TvTv", "the other name keeps its own tag")
     eq(a.node:SameClient("w:V", "w:M"), false, "no longer one client")
 end)
+
+---------------------------------------------------------------------------
+-- Session rules (specs/027-import-export, research R7, contracts/extension-points.md)
+---------------------------------------------------------------------------
+test("a node's rules default to today's constants", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { guild = "g" })
+    eq(a.node.rules.gap, 120, "gap")
+    eq(a.node.rules.strangerChance, nil, "the default chance formula")
+    eq(a.node.rules.offerOthers, true, "others' records offered")
+end)
+
+test("the gap rule decides when the next session may start; the pause per peer holds", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { guild = "g" })
+    local peer = { via = "guild" }
+    a.node.lastStart = GetTime()
+    advance(31)
+    eq(a.node:CanStart("w:X", peer, GetTime()), false, "120 s by default")
+    a.node.rules.gap = 30
+    eq(a.node:CanStart("w:X", peer, GetTime()), true, "30 s by the rule")
+    peer.lastSession = GetTime() - 60
+    eq(a.node:CanStart("w:X", peer, GetTime()), false, "the 30 min with the same peer still hold")
+end)
+
+test("offerOthers false: a session gives the own record only, never another player's", function()
+    NewNet()
+    local a = NewNode("A", A_ID, { guild = "g", group = "p" })
+    local b = NewNode("B", B_ID, { guild = "g" })
+    NewNode("C", C_ID, { group = "p" })
+    a.node.rules.offerOthers = false
+    Rounds(12)
+    assert(a.store.records[C_ID .. "@0"], "A has C's record")
+    assert(b.store.records[A_ID .. "@0"], "B got A's own record")
+    eq(b.store.records[C_ID .. "@0"], nil, "B did not get C's record from A")
+end)
+
+test("Share.SetSessionRules clamps, ResetSessionRules restores", function()
+    ns.Share.SetSessionRules({ gap = 5, strangerChance = 2, offerOthers = false })
+    local rules = ns.Share.SessionRules()
+    eq(rules.gap, 15, "gap raised to the minimum")
+    eq(rules.strangerChance, 1, "chance at most 1")
+    eq(rules.offerOthers, false, "offers")
+    ns.Share.SetSessionRules({ strangerChance = false })
+    eq(ns.Share.SessionRules().strangerChance, nil, "false: the default formula")
+    ns.Share.ResetSessionRules()
+    rules = ns.Share.SessionRules()
+    eq(rules.gap, 120, "gap")
+    eq(rules.offerOthers, true, "offers")
+    rules.gap = 1
+    eq(ns.Share.SessionRules().gap, 120, "SessionRules returns a copy")
+end)

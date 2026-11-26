@@ -257,3 +257,93 @@ test("a ranking dropped while it builds stops its steps", function()
     eq(kept, 2, "only the latest two built")
     check_no_errors()
 end)
+
+-- Spec 026: Safe for me keeps the other faction's zones out (FR-001 to FR-007). 3010 plays an Alliance zone, 3009 a
+-- Horde one, 3008 a contested one; none of them has levels, so only the faction rule can hide them.
+ns.GameData.ZoneFactions[3010] = "Alliance"
+ns.GameData.ZoneFactions[3009] = "Horde"
+ns.Fire("PRICES_CHANGED") -- a recount: the rankings built above keep each zone's faction from when it was computed
+
+local function listed(ids, mapID)
+    for id in ids:gmatch("%d+") do
+        if tonumber(id) == mapID then
+            return true
+        end
+    end
+    return false
+end
+
+test("a zone's faction is its own entry or its zone's, else contested; the character's is Alliance or Horde", function()
+    eq(BestPlaces.ZoneFaction(3010), "Alliance", "a listed map")
+    map_types[3991], map_parents[3991] = 4, 3010 -- a Micro map inside the Alliance test zone
+    eq(BestPlaces.ZoneFaction(3991), "Alliance", "a cave takes its zone's faction")
+    eq(BestPlaces.ZoneFaction(3008), nil, "not listed: contested")
+    map_types[3992], map_parents[3992], map_info_missing[3010] = 4, 3010, true
+    eq(BestPlaces.ZoneFaction(3992), "Alliance", "a listed parent counts even when the game gives no info about it")
+    map_info_missing[3010] = nil
+    eq(BestPlaces.ZoneFaction(1429), "Alliance", "Elwynn Forest")
+    eq(BestPlaces.ZoneFaction(1454), "Horde", "Orgrimmar")
+    player_faction = "Alliance"
+    eq(BestPlaces.PlayerFaction(), "Alliance", "Alliance")
+    player_faction = "Neutral"
+    eq(BestPlaces.PlayerFaction(), nil, "neutral: no faction")
+    player_faction = nil
+    eq(BestPlaces.PlayerFaction(), nil, "unknown: no faction")
+    player_faction = "Horde"
+    eq(BestPlaces.PlayerFaction(), "Horde", "Horde")
+end)
+
+test("Safe for me hides the other faction's zones and keeps the own and the contested ones (SC-001, SC-002)", function()
+    BestPlaces.SetSafe(true)
+    player_faction = "Horde"
+    local _, ids = zones()
+    assert(not listed(ids, 3010), "the Alliance zone is hidden for the Horde: " .. ids)
+    assert(listed(ids, 3009) and listed(ids, 3008), "the Horde and the contested zones stay: " .. ids)
+    assert(listed(ids, 3001), "the next zone takes the hidden one's place in the top 10: " .. ids)
+    player_faction = "Alliance"
+    _, ids = zones()
+    assert(listed(ids, 3010) and listed(ids, 3008), "the Alliance and the contested zones: " .. ids)
+    assert(not listed(ids, 3009), "the Horde zone is hidden for the Alliance: " .. ids)
+    assert(not listed(ids, 3012), "the level rule still hides 3012 (50-60): " .. ids)
+    player_faction = "Horde"
+end)
+
+test("without a faction only the level rule applies; with Safe for me off both sides are ranked", function()
+    BestPlaces.SetSafe(true)
+    for _, faction in ipairs({ "Neutral", false }) do
+        player_faction = faction or nil
+        local _, ids = zones()
+        assert(listed(ids, 3010) and listed(ids, 3009), "both faction zones: " .. ids)
+    end
+    player_faction = "Horde"
+    BestPlaces.SetSafe(false)
+    local _, ids = zones()
+    assert(listed(ids, 3010) and listed(ids, 3009), "Safe for me off: both sides " .. ids)
+end)
+
+test("a listed zone's spots are never filtered by faction (FR-007); the report names the faction", function()
+    eq(#BestPlaces.Spots(3009, FILTER), #ns.CatchDB.QueryCells(3009, FILTER), "every spot of the Horde zone")
+    local lines = BestPlaces.Describe()
+    assert(lines[#lines]:find(", faction Horde$"), lines[#lines])
+    player_faction = nil
+    lines = BestPlaces.Describe()
+    assert(lines[#lines]:find(", faction none$"), lines[#lines])
+    player_faction = "Horde"
+end)
+
+test("the other faction's zone is unsafe (Level red); a contested or own zone keeps the level rule (FR-006)", function()
+    player_level = 10
+    eq(BestPlaces.Unsafe({ faction = "Alliance", levels = { min = 1 } }), true, "Alliance zone for the Horde")
+    eq(BestPlaces.Unsafe({ faction = "Alliance" }), true, "also without levels (a capital reads 1-60 anyway)")
+    eq(BestPlaces.Unsafe({ faction = "Horde", levels = { min = 1 } }), false, "own zone within the level")
+    eq(BestPlaces.Unsafe({ levels = { min = 1 } }), false, "contested within the level")
+    eq(BestPlaces.Unsafe({ faction = "Horde", levels = { min = 13 } }), true, "own zone above the level")
+    player_faction = "Alliance"
+    eq(BestPlaces.Unsafe({ faction = "Alliance", levels = { min = 1 } }), false, "own zone for the Alliance")
+    player_faction = nil
+    eq(BestPlaces.Unsafe({ faction = "Alliance", levels = { min = 1 } }), false, "no faction: the level decides")
+    player_faction = "Horde"
+    ns.GameData.ZoneFactions[3010], ns.GameData.ZoneFactions[3009] = nil, nil -- leave the table as the game has it
+    map_types[3991], map_parents[3991], map_types[3992], map_parents[3992] = nil, nil, nil, nil
+    ns.Fire("PRICES_CHANGED")
+end)

@@ -93,7 +93,8 @@ function Handlers.H(self, address, peer, via, text)
     -- A stranger from the channel: only by chance (about CHANNEL_TARGET of all hearers start), and not while a near
     -- peer could start a session now (research R5 of part 3).
     if peer.via == "channel" then -- only when this HELLO came by the channel (SetVia never makes a peer one otherwise)
-        if self.env.random() >= math.min(1, CHANNEL_TARGET / math.max(1, heard or 0)) or self:NearWaiting(now) then
+        local chance = self.rules.strangerChance or math.min(1, CHANNEL_TARGET / math.max(1, heard or 0))
+        if self.env.random() >= chance or self:NearWaiting(now) then
             return
         end
     end
@@ -278,6 +279,16 @@ function Node:SendRecords(session)
     local own = OwnRecord(self.store)
     local ownUnit = own and UnitOf(own)
     local wants, seen = session.theirWants, {}
+    if self.rules.offerOthers == false then -- the session rules offer only the own units (research R7 of spec 027)
+        local mine = {}
+        for _, unit in ipairs(wants) do
+            local record = Store.Get(self.store, unit)
+            if record and record.id == self.store.myID then
+                table.insert(mine, unit)
+            end
+        end
+        wants = mine
+    end
     for _, unit in ipairs(wants) do
         local record = self.store.records[unit]
         seen[unit] = unit == ownUnit and math.huge or (record and tonumber(record.seen) or 0)

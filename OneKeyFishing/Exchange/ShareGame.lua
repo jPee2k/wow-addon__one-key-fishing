@@ -22,6 +22,8 @@ local L = ns.L
 local NOTICE_POPUP = "ONEKEYFISHING_SHARE_NOTICE"
 Share.NOTICE_POPUP = NOTICE_POPUP -- shown by UI/ShareNotice.lua
 local node
+local rules = P.DefaultRules() -- the game node's session rules (Share.SetSessionRules)
+local statusLines = {} -- functions added by Share.AddStatusLine
 local commPause -- the last SHARE_PAUSE reason
 local lastExtraHello
 local groupSize = 0
@@ -102,6 +104,7 @@ local function Start()
         decode = Share.Decode,
         prepare = ns.CatchDB.FlushSeq,
         clock = DebugClock,
+        rules = rules,
     })
     ns.Comm.OnReceive(function(address, via, text) node:Receive(address, via, text) end)
     ns.Comm.OnActivity(function(address) node:Heard(address) end)
@@ -154,6 +157,45 @@ function Share.SetEnabled(on)
     end
     ns.Fire("SHARED_DATA_CHANGED")
     ns.Fire("SETTINGS_CHANGED", "shareDB")
+end
+
+---------------------------------------------------------------------------
+-- Extension points (specs/027-import-export, contracts/extension-points.md)
+---------------------------------------------------------------------------
+-- Sets any of the game node's session rules: gap (seconds between session starts, at least P.MIN_SESSION_GAP),
+-- strangerChance (0..1 for a stranger's channel HELLO; false for the default formula) and offerOthers (false: a
+-- WANT is answered with the own units only). The pause per peer, the session size, the budget and the flood limits
+-- stay as they are.
+function Share.SetSessionRules(changes)
+    if type(changes) ~= "table" then
+        return
+    end
+    if type(changes.gap) == "number" then
+        rules.gap = math.max(P.MIN_SESSION_GAP, math.floor(changes.gap)) -- whole seconds (%d in the report, Lua 5.3)
+    end
+    if changes.strangerChance == false then
+        rules.strangerChance = nil
+    elseif type(changes.strangerChance) == "number" then
+        rules.strangerChance = math.min(1, math.max(0, changes.strangerChance))
+    end
+    if type(changes.offerOthers) == "boolean" then
+        rules.offerOthers = changes.offerOthers
+    end
+end
+
+function Share.ResetSessionRules()
+    local defaults = P.DefaultRules()
+    rules.gap, rules.strangerChance, rules.offerOthers = defaults.gap, defaults.strangerChance, defaults.offerOthers
+end
+
+-- A copy of the game node's session rules.
+function Share.SessionRules()
+    return { gap = rules.gap, strangerChance = rules.strangerChance, offerOthers = rules.offerOthers }
+end
+
+-- fn() returns a line for /okf share (after the addon's own lines) or nil.
+function Share.AddStatusLine(fn)
+    table.insert(statusLines, fn)
 end
 
 ns.On("SHARE_PAUSE", function(reason)
@@ -356,6 +398,12 @@ function Share.PrintStatus()
     if channel then
         table.insert(lines, channel)
     end
+    for _, add in ipairs(statusLines) do
+        local ok, line = ns.Safe("Share.AddStatusLine", add) -- an error goes to the error log, the rest still prints
+        if ok and type(line) == "string" then
+            table.insert(lines, line)
+        end
+    end
     ns.Print(L["Shared database"])
     for _, line in ipairs(lines) do
         DEFAULT_CHAT_FRAME:AddMessage("  " .. line)
@@ -374,6 +422,13 @@ local function OwnOffered()
         return "no, " .. problem
     end
     return ("yes, %d bytes encoded for %d places"):format(#data, ns.CatchDB.CountPlaces(own))
+end
+
+-- The session rules in force, for /okf debug.
+local function RulesLine()
+    local rules = Share.SessionRules()
+    return ("session rules: gap %d s, stranger chance %s, offer others %s"):format(rules.gap,
+        rules.strangerChance and ("%.2f"):format(rules.strangerChance) or "default", tostring(rules.offerOthers))
 end
 
 -- English lines for /okf debug (FR-023): no anonymous ID, no names.
@@ -396,5 +451,7 @@ function Share.Describe()
         ("rejected senders %d, session running %s, merges queued %d, longest merge step %.2f ms"):format(
             status.rejected, tostring(status.session), status.merges, status.longestStep),
         "own record offered: " .. OwnOffered(),
+        RulesLine(),
+        Share.TransferLine(),
     }
 end

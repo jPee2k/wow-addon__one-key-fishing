@@ -462,3 +462,25 @@ L["Camp bonus: Rack"] = true
 L["Camp bonus: Hut"] = true
 L["No bonus catch has been recorded here yet."] = true
 L["No bonus catch has been recorded yet."] = true
+
+-- Import and export (specs/027-import-export): UI/TransferPage.lua
+L["Import and export"] = true
+L["Import"] = true
+L["Import a string"] = true
+L["Export my data"] = true
+L["Move catch data between players without both being online: export it, send the text, import it."] = true
+L["Imported data counts even with the shared database off."] = true
+L["Data you imported still counts."] = true
+L["Preparing..."] = true
+L["Nothing to export yet: catch some fish first."] = true
+L["Your own data is still being prepared: choose Export my data again in a minute."] = true
+L["%d records, %d KB. Press Ctrl+C to copy, then paste it where the other player can read it."] = true
+L["It holds anonymous IDs and catch counts per place, no names."] = true
+L["Importing: %d of %d records checked..."] = true
+L["Paste a string with Ctrl+V, then press Import."] = true
+L["Pasted %d KB. Press Import."] = true
+L["No catch data found in the text."] = true
+L["The text is incomplete: copy the whole string again."] = true
+L["This string comes from a newer version of the addon: update OneKeyFishing."] = true
+L["The text is damaged: copy the whole string again."] = true
+L["Imported: %d new, %d already known, %d your own, %d refused."] = true

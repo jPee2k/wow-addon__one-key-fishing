@@ -21,8 +21,8 @@ test("a Shared database page with the setting, the explanation and a status line
     local label = assert(find_frame(L["Use the shared catch database"], page), "checkbox label")
     local checkbox = label.parent
     assert(checkbox.scripts.OnClick, "a checkbox")
-    assert(find_frame(L["Turned off: nothing is sent or received, and other players' data is not counted."], page),
-        "explanation")
+    assert(find_frame(L["Turned off: nothing is sent or received, and other players' data is not counted."] .. " "
+        .. L["Data you imported still counts."], page), "explanation, with the imported data's exception")
     page:Hide()
     page:Show()
     eq(page.status.text, ns.Share.StatusLine(), "status line on show")

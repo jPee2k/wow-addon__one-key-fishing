@@ -13,12 +13,21 @@ to the bobber by itself.
 - **A harvest report after a game patch**: compare item shares before and after the patch in every zone and print
   the zones with a notable difference or new items, so the author knows where `npm run harvest -- --reset <mapID>`
   is due. Today the reset is a manual judgement.
-- **A collection mode for the author** (`/okf share collect`): exchange sessions more often within the same
-  traffic budget on the day before a release, so the harvest sees more of the network. An idea from the design of
-  the shared database, not built.
+- **The Wide-Brimmed Fishing Hat as a lure** (259846, use spell 1265220, enchant 263, +25 for 10 minutes): the
+  fishing key applies only the lures of `GameData/Lures.lua`, which lacks the hat (and Camper's Lure 291005 and
+  "Secret" Bait 268880). The hat is worn, not in the bags: a use of an equipped item with its cooldown. Left out of
+  spec 028 ([luremaster-research.md](luremaster-research.md), decision L18).
+- **Hostile towns in the best places** (after spec 026): "Safe for me" hides the other faction's zones but not its
+  towns inside contested zones (Tarren Mill and Southshore, Astranaar and Splintertree Post, Theramore and
+  Brackenwall Village, Dalaran). The game's area data marks only Dalaran, so this needs a list of area IDs and their
+  side (by ID, never by name), and a rule for the spots and subzone groups there.
 
 ## Planned
 
+- **The Luremaster talent** (spec 028, after 027 and before 025): the extra fish of the Legacy talent kept out of
+  the shared chances, pieces and gold per hour, a "Luremaster" bonus filter and tag, its statistics line, a toast
+  when no lure is at hand, and the camp bonus count fixed. An in-game spike comes first. Research and the agreed
+  decisions: [luremaster-research.md](luremaster-research.md), section 4.
 - **A helper for the Stranglethorn Fishing Extravaganza** (spec 025, after 024): notices before and during the
   contest, the Tastyfish counter, rare fish notices, a settings page, its own tab and minimap menu entry (the
   window's fourth tab and the "Catalog" entry come with spec 024), `/okf event`. Research and the agreed decisions:

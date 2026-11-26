@@ -527,4 +527,33 @@ ns.AddTranslation("ukUA", "Українська", function(L)
     L["Camp bonus: Hut"] = "Табірний бонус: Хижка"
     L["No bonus catch has been recorded here yet."] = "Бонусних уловів тут ще не було."
     L["No bonus catch has been recorded yet."] = "Бонусних уловів ще не було."
+
+    -- Import and export (specs/027-import-export): UI/TransferPage.lua
+    L["Import and export"] = "Імпорт і експорт"
+    L["Import"] = "Імпортувати"
+    L["Import a string"] = "Імпорт рядка"
+    L["Export my data"] = "Експорт моїх даних"
+    L["Move catch data between players without both being online: export it, send the text, import it."] =
+        "Обмін даними улову між гравцями без одночасного онлайну: експортуйте, надішліть текст, імпортуйте."
+    L["Imported data counts even with the shared database off."] =
+        "Імпортовані дані враховуються навіть із вимкненою спільною базою."
+    L["Data you imported still counts."] = "Імпортовані дані все одно враховуються."
+    L["Preparing..."] = "Підготовка..."
+    L["Nothing to export yet: catch some fish first."] = "Поки нічого експортувати: спершу щось упіймайте."
+    L["Your own data is still being prepared: choose Export my data again in a minute."] =
+        "Ваші власні дані ще готуються: за хвилину знову виберіть «Експорт моїх даних»."
+    L["%d records, %d KB. Press Ctrl+C to copy, then paste it where the other player can read it."] =
+        "Записів: %d, %d КБ. Скопіюйте Ctrl+C і вставте туди, де інший гравець зможе це прочитати."
+    L["It holds anonymous IDs and catch counts per place, no names."] =
+        "Містить лише анонімні ID і кількість улову за місцями, без імен."
+    L["Importing: %d of %d records checked..."] = "Імпорт: перевірено %d з %d записів..."
+    L["Paste a string with Ctrl+V, then press Import."] = "Вставте текст через Ctrl+V і натисніть «Імпортувати»."
+    L["Pasted %d KB. Press Import."] = "Вставлено %d КБ. Натисніть «Імпортувати»."
+    L["No catch data found in the text."] = "У тексті немає даних улову."
+    L["The text is incomplete: copy the whole string again."] = "Текст неповний: скопіюйте весь рядок ще раз."
+    L["This string comes from a newer version of the addon: update OneKeyFishing."] =
+        "Цей рядок із новішої версії аддона: оновіть OneKeyFishing."
+    L["The text is damaged: copy the whole string again."] = "Текст пошкоджено: скопіюйте весь рядок ще раз."
+    L["Imported: %d new, %d already known, %d your own, %d refused."] =
+        "Імпортовано: нових %d, уже відомих %d, ваших %d, відхилено %d."
 end)

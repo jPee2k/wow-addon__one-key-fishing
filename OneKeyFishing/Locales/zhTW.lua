@@ -490,4 +490,29 @@ ns.AddTranslation("zhTW", "繁體中文", function(L)
     L["Camp bonus: Hut"] = "營地加成：小屋"
     L["No bonus catch has been recorded here yet."] = "這裡尚未記錄加成漁獲。"
     L["No bonus catch has been recorded yet."] = "尚未記錄加成漁獲。"
+
+    -- Import and export (specs/027-import-export): UI/TransferPage.lua
+    L["Import and export"] = "匯入和匯出"
+    L["Import"] = "匯入"
+    L["Import a string"] = "匯入字串"
+    L["Export my data"] = "匯出我的資料"
+    L["Move catch data between players without both being online: export it, send the text, import it."] =
+        "不需雙方同時在線即可交換釣魚資料：匯出、傳送文字、再匯入。"
+    L["Imported data counts even with the shared database off."] = "即使關閉共享資料庫，匯入的資料也會計入。"
+    L["Data you imported still counts."] = "匯入的資料仍會計入。"
+    L["Preparing..."] = "正在準備..."
+    L["Nothing to export yet: catch some fish first."] = "還沒有可匯出的資料：先釣幾條魚吧。"
+    L["Your own data is still being prepared: choose Export my data again in a minute."] =
+        "你自己的資料仍在準備中：請一分鐘後再次選擇匯出我的資料。"
+    L["%d records, %d KB. Press Ctrl+C to copy, then paste it where the other player can read it."] =
+        "%d 筆紀錄，%d KB。按 Ctrl+C 複製，然後貼到其他玩家看得到的地方。"
+    L["It holds anonymous IDs and catch counts per place, no names."] = "只包含匿名 ID 和各地點的漁獲數，不含名字。"
+    L["Importing: %d of %d records checked..."] = "正在匯入：已檢查 %d / %d 筆紀錄..."
+    L["Paste a string with Ctrl+V, then press Import."] = "用 Ctrl+V 貼上文字，然後點擊匯入。"
+    L["Pasted %d KB. Press Import."] = "已貼上 %d KB。請點擊匯入。"
+    L["No catch data found in the text."] = "文字中找不到釣魚資料。"
+    L["The text is incomplete: copy the whole string again."] = "文字不完整：請重新複製整段文字。"
+    L["This string comes from a newer version of the addon: update OneKeyFishing."] = "此文字來自較新版本的插件：請更新 OneKeyFishing。"
+    L["The text is damaged: copy the whole string again."] = "文字已損壞：請重新複製整段文字。"
+    L["Imported: %d new, %d already known, %d your own, %d refused."] = "已匯入：新 %d 筆，已有 %d 筆，自己的 %d 筆，拒絕 %d 筆。"
 end)

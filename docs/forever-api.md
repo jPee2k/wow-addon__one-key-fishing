@@ -425,6 +425,13 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   - The session cooldown with a peer is kept in memory only: a login on both sides lets the next session start at
     the first HELLO.
   - Not checked: another layer.
+- Zone territory (2026-11-24, `/run` tests on a Horde character, PvP mode,
+  `C_GameRules.IsGameRuleActive(Enum.GameRule.PvPRuleset)` is `true`): `C_PvP.GetZonePVPInfo()` names only the
+  capitals: Undercity and Thunder Bluff give `friendly false Horde`. Everywhere else it gives nothing: Durotar's
+  open land (Jaggedswine Farm), Grom'gol and Ratchet, The Dagger Hills in Westfall (Alliance land), and in flight;
+  the zone text shows no territory line under the zone name either. The game's territory of a zone can therefore
+  not be read in play; the addon's `GameData.ZoneFactions` comes from the client's `AreaTable.FactionGroupMask`
+  (spec 026), and V77 was confirmed in the Best places tab on 2026-11-24 instead.
 - Channel password and owner (`/run` test, 2026-11-16, two players in `OkfTest42`): the first to join owns it.
   `/password OkfTest42 x` by the owner gives every member `CHAT_MSG_CHANNEL_NOTICE_USER` `PASSWORD_CHANGED` with
   the owner's "First Last". A join without the password fires `CHANNEL_PASSWORD_REQUEST` (the channel name), then

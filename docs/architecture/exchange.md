@@ -7,12 +7,12 @@ are in `specs/003-guild-group-sync/` (`data-model.md`, `contracts/sync-protocol.
 `specs/004-public-channel-sync/`; the in-game checklists are [catch-exchange.md](../checklists/catch-exchange.md) and
 [public-channel.md](../checklists/public-channel.md).
 
-The exchange is one module, `ns.Share`, in four files (TOC order, after `Comm.lua`, `CommReceive.lua` and
+The exchange is one module, `ns.Share`, in five files (TOC order, after `Comm.lua`, `CommReceive.lua` and
 `Channel.lua`): `Share.lua` (the module table, the limits and timings, the store of other players' records, the bucket
 hashes, the Base64/CBOR codec), `ShareNode.lua` (the protocol node: its summary, peers and sessions),
 `ShareProtocol.lua` (the messages HELLO, SUM, DIFF, WANT, BYE, REC, the records sent and merged, the hello rounds, a
 node's activity and status) and `ShareGame.lua` (the one node bound to Comm, its pauses and rounds, the setting, the
-state). The files share their internals through `Share.private` (not an API); none of those names is ever reassigned,
+state, the session rules) and `ShareTransfer.lua` (the import and export of spec 027). The files share their internals through `Share.private` (not an API); none of those names is ever reassigned,
 the one reassigned counter (`dataVersion`) lives with its only reader in `ShareNode.lua`. The one-time popup is the
 view's (`UI/ShareNotice.lua`).
 
@@ -241,3 +241,39 @@ and the settings page, and `GetStatus` carries the channel fields (`channel`, `c
 that did not name the channel sees it once more. The popup itself is the view's (`UI/ShareNotice.lua`): Share says
 whether one is owed (`Share.NoticeOwed()`), what closing it means (`Share.NoticeRead()`: the exchange starts) and
 hides it by `Share.NOTICE_POPUP` when a setting on the page counts as reading it (`Share.CloseNotice()`).
+
+### Session rules and status lines (spec 027, extension points)
+
+- Each node has `rules` (`P.DefaultRules()`: `gap` 120 s = `SESSION_GAP`, `strangerChance` nil = the formula
+  `min(1, CHANNEL_TARGET / H)`, `offerOthers` true). `ShareNode.lua` reads `self.rules.gap` where it read `SESSION_GAP`;
+  `ShareProtocol.lua` reads the chance for a stranger's channel `HELLO`, and with `offerOthers == false` answers a
+  `WANT` with the own units only (the summary still lists every unit, so peers send nothing back that is held).
+- `Share.SetSessionRules(changes)` sets the game node's rules (`gap` at least `P.MIN_SESSION_GAP`, 15 s;
+  `strangerChance` 0..1, `false` for the formula; `offerOthers`), `ResetSessionRules()` and `SessionRules()` (a copy).
+  The pause per peer, the session size, the budget and the flood limits are not rules. `Share.Describe()` lists the
+  rules in force.
+- `Share.AddStatusLine(fn)`: each `fn()` (through `ns.Safe`) adds a line after the addon's own in `/okf share`.
+- Nothing in the addon calls these; they are for code loaded after it (contracts/extension-points.md of spec 027).
+
+## Exchange/ShareTransfer.lua: import and export
+
+Spec `specs/027-import-export/` (format in `contracts/export-string.md`, research R1-R6).
+
+- The string: `OKF:1:<count>:<check>:<token>,...:END`; a token is one record as the exchange sends it
+  (`Share.Encode(Store.ForSending(record))`), `<check>` = `ns.Base32(Share.Hash(tokens joined by ","), 7)`. Whitespace
+  and text around the markers are ignored.
+- `Share.Export(store)`: `CatchDB.FlushSeq()`, then the own units (proof ready, cells of a game version,
+  `CheckRecord`, at most 32 KB), then others' by `seen`, newest first, each checked again (with sharing off only the
+  imported ones), until `EXPORT_LIMIT` (256 KB; V78 accepted 2026-11-26, strings up to 149 KB seen in the edit box). In frame steps within `P.WithinBudget`.
+- `Share.Import(text, store)`: the parse (`empty`, `cut`, `format`), the checksum in slices of 16 KB per step
+  (`damaged`); then one record per step: `Decode`, the own ID (`own`), `IsBlocked` and `CheckRecord`, a newer version's
+  chain walk by `CheckVersion` in `PROOF_CHUNK`s within the budget, then `Store.Accept(..., true)` and `Store.Evict`.
+  The tally: `new`, `known` (`same`, `older`, held whole by the seed), `own`, `refused`. A second call while one runs
+  answers `busy`. No message: the store's change fires `SHARED_DATA_CHANGED` as for a merge.
+- The marks `shared.imported[unit] = true` are set before `Store.Accept` (the index update inside it sees them) and
+  taken back when the record did not stay; a record already held is marked and gets a `Changed` of its own.
+  `Share.IsImported(unit)` reads them; `Store.CleanUp` drops the marks of units no longer stored. Import works
+  whatever `settings.shareDB` says.
+- `Share.TransferState()` (a copy: `state`, `export`, `result`, `progress`) is polled by `UI/TransferPage.lua`;
+  `Share.TransferLine()` is the debug report's line.
+

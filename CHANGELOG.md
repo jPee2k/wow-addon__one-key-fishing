@@ -4,6 +4,29 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-11-26
+
+### Added
+
+- **Import and export** of catch data: a new settings page (also `/okf share export` and `/okf share import`)
+  turns your catch data into one string to copy, and reads a string another player pasted in. Data then travels
+  without both players being online, across the factions too. Every imported record passes the exchange's checks, a
+  damaged or cut string is refused whole, and imported data counts even with the shared catch database off.
+
+### Changed
+
+- The bundled catch database now knows 1250 fishing places (121 new) and 30 more items, from the catches players
+  shared on both factions of the PvE and PvP game modes.
+- Best places: **Safe for me** also hides the zones and capitals of the other faction, on every game mode (an
+  Alliance character sees Alliance and contested zones, a Horde character Horde and contested zones). With Safe for
+  me off they are listed with their level in red.
+
+### Fixed
+
+- The minimap button's menu: **Statistics** opens the Statistics tab, like **Catalog** and **Best places** open
+  theirs (it opened the tab used last). The settings' **Open statistics** button does the same, and no longer closes
+  an open window.
+
 ## [1.6.1] - 2026-11-24
 
 ### Changed

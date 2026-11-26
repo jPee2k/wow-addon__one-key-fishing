@@ -41,9 +41,11 @@ it shows "Paused in combat" instead of the next action, with no pulse, bar or ke
 
 ## StatsFrame
 
-- Three tabs below the window (statistics, "What can be caught here", the catch catalog): the game's
+- Four tabs below the window (statistics, "What can be caught here", the catch catalog, the best places): the game's
   `PanelTabButtonTemplate` or plain buttons, the last one saved in `OneKeyFishingDB.statsTab`.
-  `StatsFrame.OpenCatalog(arg)` shows the window on the catalog.
+  `StatsFrame.OpenCatalog(arg)` shows the window on the catalog, `OpenStats` on the statistics (the minimap
+  menu, the settings' "Open statistics"; `Toggle` keeps the last tab), `OpenBest` on the best places; a closed
+  window opens straight on that tab.
 - The window is set up by `ns.SetupWindow` (Widgets, below) and raised whenever it is shown or opened on the
   catalog.
 - The statistics page has rows in `ROWS`, cells keyed by row key. The last two rows of the "Results" block (spec
@@ -169,7 +171,20 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   comes through `MAP_PIN_SET` as a toast that names the place and says to open the world map (`UI/Toast.lua`, also with catch notifications off: an answer to a
   click). The navigation CVar is never touched.
 
+- The "Import and export" subcategory (spec 027, `UI/TransferPage.lua`), registered through
+  `SettingsUI.AddPage(frame, title)` (pages of other files: subcategories after the addon's own; one added before the
+  `PLAYER_LOGIN` registration waits for it, one added later, as this page from its own `PLAYER_LOGIN` handler, is
+  registered at once; it returns the page's opener). A choice button (`ns.OpenRadioMenu`: Import,
+  the default, or Export), a scroll frame with one multi-line edit box (`SetMaxLetters(0)`), the hint under it and,
+  on Import, an Import button (disabled while a transfer runs). Export calls `Share.Export()` and shows the string
+  selected and focused, read-only (typing restores it); Import empties the box and focuses it, the button calls
+  `Share.Import`. An `OnUpdate` while shown polls `Share.TransferState()` for the hint (instructions, progress, the
+  counts or the error). `SettingsUI.OpenTransfer(choice)` opens the page on a choice (`/okf share import|export`).
+
 ## Other frames
+
+- The minimap button's menu takes entries added at runtime: `ns.MinimapMenu.AddEntries(fn)`, each `fn(root)` run
+  through `ns.Safe` after "Debug report" (spec 027, an extension point for code loaded after the addon).
 
 - The minimap button's menu has a button "Turn fishing sounds on" / "Turn fishing sounds off" (its text follows
   `Sound.IsEnabled()`, a click calls `Sound.SetEnabled`), like the fishing mode entry; spec 013.
@@ -214,7 +229,7 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   items that bring the gold, the players and the unpriced share. Skill, Source, Water and Camp bonus live in memory;
   it redraws on `SETTINGS_CHANGED` of `hiddenKinds` and `bestPlaces` and polls `BestPlaces.GetVersion()`. The minimap
   menu opens it ("Best places") and the catalog ("Catalog") next to "Statistics" (`StatsFrame.OpenBest`,
-  `OpenCatalog`).
+  `OpenCatalog`); its "Statistics" opens the statistics tab (`OpenStats`).
 - Toast: short messages that rise and fade above the indicator (`ns.Toast`): catches and misses (`FISH_CAUGHT` /
   `FISH_MISSED`), the next-rank notices (`SKILL_WARNING`), the map pin answers (`MAP_PIN_SET`) and the camp bonus notices
   (`CAMP_BONUS_WARNING`, spec 020: always, in gold `1, 0.82, 0`), and a trophy new to the account (spec 023):

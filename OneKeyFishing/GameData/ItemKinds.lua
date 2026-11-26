@@ -185,6 +185,26 @@ GameData.ItemKinds = {
         [11176] = "reagents", -- Dream Dust
         [13465] = "reagents", -- Mountain Silversage
         [13467] = "reagents", -- Icecap
+        -- Reagents of the seed of epoch 12 (2026-11-26; names and classes from the game's item tables, build
+        -- 1.60.1.71139)
+        [774] = "reagents", -- Malachite (7 / 11)
+        [1705] = "reagents", -- Lesser Moonstone (7 / 11)
+        [3372] = "reagents", -- Leaded Vial (7 / 11)
+        [3577] = "reagents", -- Gold Bar (7 / 7)
+        [3821] = "reagents", -- Goldthorn (7 / 9)
+        [4364] = "reagents", -- Coarse Blasting Powder (7 / 1)
+        [6037] = "reagents", -- Truesilver Bar (7 / 7)
+        [6370] = "reagents", -- Blackmouth Oil (7 / 11)
+        [7067] = "reagents", -- Elemental Earth (7 / 10)
+        [7068] = "reagents", -- Elemental Fire (7 / 10)
+        [7912] = "reagents", -- Solid Stone (7 / 7)
+        [8836] = "reagents", -- Arthas' Tears (7 / 9)
+        [8845] = "reagents", -- Ghost Mushroom (7 / 9)
+        [11134] = "reagents", -- Lesser Mystic Essence (7 / 12)
+        [12359] = "reagents", -- Thorium Bar (7 / 7)
+        [12365] = "reagents", -- Dense Stone (7 / 7)
+        [13463] = "reagents", -- Dreamfoil (7 / 9)
+        [13464] = "reagents", -- Golden Sansam (7 / 9)
         -- Other
         [6457] = "other", -- Rusted Engineering Parts (15 / 0)
         [9754] = "other", -- Nomad Cloak (4 / 1)
@@ -265,6 +285,17 @@ GameData.ItemKinds = {
         [7108] = "other", -- Infantry Shield (4 / 6)
         [5071] = "other", -- Shadow Wand (2 / 19)
         [8180] = "other", -- Hunting Bow (2 / 2)
+        -- Other of the seed of epoch 12 (2026-11-26; classes from the game's item tables, build 1.60.1.71139; the
+        -- eight without a name row there were read in game the same day)
+        [6455] = "other", -- Old Wagonwheel (15 / 0)
+        [2987] = "other", -- Inscribed Leather Boots (4 / 2, read in game)
+        [3058] = "other", -- Forest Leather Gloves (4 / 2, read in game)
+        [4059] = "other", -- Glyphed Bracers (4 / 2, read in game)
+        [6556] = "other", -- Bard's Bracers (4 / 2, read in game)
+        [10069] = "other", -- Righteous Bracers (4 / 2, read in game)
+        [4998] = "other", -- Blood Ring (4 / 0, read in game)
+        [3037] = "other", -- Whipwood Recurve Bow (2 / 2, read in game)
+        [288206] = "other", -- Recipe: Draught of Water Walking (9 / 6, read in game)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {

@@ -9,6 +9,15 @@ local ICON = "Interface\\Icons\\Trade_Fishing"
 
 local button
 
+-- Entries added by files loaded later (specs/027-import-export, contracts/extension-points.md): fn(root) adds its
+-- buttons after the addon's own; each runs protected, so one that fails leaves the menu whole.
+local addedEntries = {}
+ns.MinimapMenu = {
+    AddEntries = function(fn)
+        table.insert(addedEntries, fn)
+    end,
+}
+
 local function OpenMenu(owner)
     if not (MenuUtil and MenuUtil.CreateContextMenu) then
         ns.SettingsUI.Open()
@@ -22,7 +31,7 @@ local function OpenMenu(owner)
             root:CreateTitle("OneKeyFishing")
         end
         root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
-        root:CreateButton(L["Statistics"], ns.StatsFrame.Toggle)
+        root:CreateButton(L["Statistics"], ns.StatsFrame.OpenStats)
         root:CreateButton(L["Catalog"], function() ns.StatsFrame.OpenCatalog() end)
         root:CreateButton(L["Best places"], ns.StatsFrame.OpenBest)
         root:CreateButton(L["Settings"], ns.SettingsUI.Open)
@@ -44,6 +53,9 @@ local function OpenMenu(owner)
         end
         root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)
         root:CreateButton(L["Debug report"], ns.ShowDebugReport)
+        for _, add in ipairs(addedEntries) do
+            ns.Safe("MinimapMenu.AddEntries", add, root)
+        end
     end)
 end
 

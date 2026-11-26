@@ -4,6 +4,8 @@
 --   Fishing gear   - chosen pole and the list of extra fishing items
 --   Shared database - the exchange of catch data with other players (Share.lua) and its state
 --   Sound effects  - the fishing sounds, their volume, game sound in the background, the splash focus (spec 013)
+--   Auction prices - the price source of the catch value (spec 019)
+--   Import and export - UI/TransferPage.lua, through SettingsUI.AddPage (spec 027); later pages the same way
 local _, ns = ...
 local L = ns.L
 
@@ -239,7 +241,7 @@ local function CreateMainPage()
     toggleButton:SetPoint("TOPLEFT", actionsHeader, "BOTTOMLEFT", 0, -8)
     local reportButton = CreateButton(page, L["Debug report"], 140, function() ns.ShowDebugReport() end)
     reportButton:SetPoint("LEFT", toggleButton, "RIGHT", 8, 0)
-    local statsButton = CreateButton(page, L["Open statistics"], 140, function() ns.StatsFrame.Toggle() end)
+    local statsButton = CreateButton(page, L["Open statistics"], 140, function() ns.StatsFrame.OpenStats() end)
     statsButton:SetPoint("LEFT", reportButton, "RIGHT", 8, 0)
     local resetButton = CreateButton(page, L["Reset indicator position"], 190, function()
         ns.Indicator.ResetPosition()
@@ -453,7 +455,8 @@ local function CreateSharePage()
     about:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 2, channelLine and -24 or -12)
     about:SetWidth(560)
     local offText = CreateText(page, "GameFontHighlightSmall",
-        L["Turned off: nothing is sent or received, and other players' data is not counted."])
+        L["Turned off: nothing is sent or received, and other players' data is not counted."] .. " "
+        .. L["Data you imported still counts."])
     offText:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -6)
     offText:SetWidth(560)
     local hint = CreateText(page, "GameFontDisableSmall", "/okf share")
@@ -714,6 +717,33 @@ function SettingsUI.OpenSounds()
     OpenCategory(soundCategory)
 end
 
+-- Pages added by other files (specs/027-import-export, contracts/extension-points.md): registered after the addon's
+-- own pages at the PLAYER_LOGIN registration, queued until then. Returns a function that opens the page.
+local addedPages = {} -- { frame, title, category }
+local registered = false
+
+local function RegisterAdded(entry)
+    entry.frame:Hide()
+    entry.category = Settings.RegisterCanvasLayoutSubcategory(mainCategory, entry.frame, entry.title)
+end
+
+function SettingsUI.AddPage(frame, title)
+    local entry = { frame = frame, title = title }
+    table.insert(addedPages, entry)
+    if registered then
+        RegisterAdded(entry)
+    end
+    return function() OpenCategory(entry.category) end
+end
+
+-- The "Import and export" page on a choice ("import" or "export"; /okf share import|export). Set by
+-- UI/TransferPage.lua.
+function SettingsUI.OpenTransfer(choice)
+    if SettingsUI.transferOpener then
+        SettingsUI.transferOpener(choice)
+    end
+end
+
 ns.RegisterEvent("PLAYER_LOGIN", function()
     if not (Settings and Settings.RegisterCanvasLayoutCategory) then
         ns.Print(L["Settings panel is not available in this client."])
@@ -734,5 +764,9 @@ ns.RegisterEvent("PLAYER_LOGIN", function()
     shareCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, sharePage, L["Shared database"])
     soundCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, soundPage, L["Sound effects"])
     Settings.RegisterCanvasLayoutSubcategory(mainCategory, auctionPage, L["Auction prices"])
+    registered = true
+    for _, entry in ipairs(addedPages) do
+        RegisterAdded(entry)
+    end
     Settings.RegisterAddOnCategory(mainCategory)
 end)

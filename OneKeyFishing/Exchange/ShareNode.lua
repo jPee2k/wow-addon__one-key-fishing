@@ -6,7 +6,7 @@ local P = Share.private
 local IsOther, IsProof = ns.CatchDB.IsOtherKey, ns.CatchDB.IsProof
 local Store = Share.Store
 local MAX_RECORD_BYTES, SESSION_TIMEOUT, SESSION_MAX_LIFE = P.MAX_RECORD_BYTES, P.SESSION_TIMEOUT, P.SESSION_MAX_LIFE
-local PEER_PAUSE, SESSION_GAP, GROUP_COOLDOWN = P.PEER_PAUSE, P.SESSION_GAP, P.GROUP_COOLDOWN
+local PEER_PAUSE, GROUP_COOLDOWN = P.PEER_PAUSE, P.GROUP_COOLDOWN
 local OTHER_COOLDOWN, START_DELAY_MIN, START_DELAY_MAX = P.OTHER_COOLDOWN, P.START_DELAY_MIN, P.START_DELAY_MAX
 local FULL_REFRESH_GAP, MAX_CHANNEL_PEERS, MAX_ANNOUNCERS = P.FULL_REFRESH_GAP, P.MAX_CHANNEL_PEERS, P.MAX_ANNOUNCERS
 local UnitOf, OtherPlaces, storeVersions, OwnRecord = P.UnitOf, P.OtherPlaces, P.storeVersions, P.OwnRecord
@@ -39,7 +39,7 @@ function Share.NewNode(store, env)
     local node = setmetatable({ store = store, env = env, tag = ns.RandomBase32(4, env.random), peers = {},
         byTag = {}, cursor = 1, merges = {}, rejected = 0, longestStep = 0, cache = {}, ownData = {},
         channelHeard = {}, skippedNear = {}, channelCount = 0, ignored = {}, announcers = {}, announcerCount = 0,
-        chainRefused = setmetatable({}, { __mode = "v" }) }, Node)
+        chainRefused = setmetatable({}, { __mode = "v" }), rules = env.rules or P.DefaultRules() }, Node)
     return node
 end
 
@@ -236,11 +236,11 @@ function Node:Reconsider()
         return -- kept until the session or the pause is over
     end
     local now = self.env.now()
-    if self.lastStart and now - self.lastStart < SESSION_GAP then
+    if self.lastStart and now - self.lastStart < self.rules.gap then
         if not self.reconsidering then
             self.reconsidering = true
             -- At least 1 s: a clock that stops exactly at the gap may read a hair under it and wait again forever.
-            self.env.after(math.max(1, SESSION_GAP - (now - self.lastStart)), function()
+            self.env.after(math.max(1, self.rules.gap - (now - self.lastStart)), function()
                 self.reconsidering = nil
                 self:Reconsider()
             end)
@@ -286,10 +286,28 @@ function Node:Confirmed(peer)
     self.lastExchange = now
 end
 
--- A record of the own ID as sent, or false and why when a peer would not take it: its proof not ready yet (the
--- chain's marks are still being built), without cells of a game version (a build the game gave no version for is
--- left out), refused by the check (over the place limit) or over MAX_RECORD_BYTES encoded. Encoded once per version
--- of each unit.
+-- A record of the own ID encoded as a peer would take it, or false and why not: its proof not ready yet (the chain's
+-- marks are still being built), without cells of a game version (a build the game gave no version for is left out),
+-- refused by the check (over the place limit) or over MAX_RECORD_BYTES encoded. Node:OwnData and the export of
+-- ShareTransfer.lua both send it this way.
+local function OwnSendable(record, encode)
+    local outgoing = Store.ForSending(record)
+    if not IsProof(record.proof) then
+        return false, "proof not ready"
+    elseif not ns.CatchDB.HasCells(outgoing) then
+        return false, "no cells to send"
+    elseif not ns.CatchDB.CheckRecord(outgoing) then
+        return false, "a peer's check would refuse it"
+    end
+    local data = encode(outgoing)
+    if not data or #data > MAX_RECORD_BYTES then
+        return false, "too large for a peer"
+    end
+    return data
+end
+P.OwnSendable = OwnSendable
+
+-- The own record as sent (OwnSendable), encoded once per version of each unit; never while the seed blocks it.
 function Node:OwnData(record)
     if ns.CatchDB.IsBlocked(record.id) then
         return false, "blocked by the bundled data" -- peers refuse it (FR-020); it still counts for this player
@@ -297,19 +315,7 @@ function Node:OwnData(record)
     local unit = UnitOf(record)
     local cached = self.ownData[unit]
     if not cached or cached.seq ~= record.seq or cached.proof ~= record.proof then
-        local outgoing, data, problem = Store.ForSending(record), false, nil
-        if not IsProof(record.proof) then
-            problem = "proof not ready"
-        elseif not ns.CatchDB.HasCells(outgoing) then
-            problem = "no cells to send"
-        elseif not ns.CatchDB.CheckRecord(outgoing) then
-            problem = "a peer's check would refuse it"
-        else
-            data = self.env.encode(outgoing) or false
-            if not data or #data > MAX_RECORD_BYTES then
-                data, problem = false, "too large for a peer"
-            end
-        end
+        local data, problem = OwnSendable(record, self.env.encode)
         cached = { seq = record.seq, proof = record.proof, data = data, problem = problem }
         self.ownData[unit] = cached
     end
@@ -401,7 +407,7 @@ function Node:WaitsForOther(address, peer, now)
     if self.session then
         return not self:SameClient(self.session.peer, address)
     end
-    return self.lastStart ~= nil and now - self.lastStart < SESSION_GAP
+    return self.lastStart ~= nil and now - self.lastStart < self.rules.gap
         and not self:SameClient(self.lastStartWith, address)
 end
 
@@ -417,7 +423,7 @@ function Node:CanStart(address, peer, now)
     if self.paused or self.session or peer.ignored or not self.env.canSend() then
         return false
     end
-    if (self.lastStart and now - self.lastStart < SESSION_GAP) or (peer.pausedUntil and now < peer.pausedUntil) then
+    if (self.lastStart and now - self.lastStart < self.rules.gap) or (peer.pausedUntil and now < peer.pausedUntil) then
         return false
     end
     if self:Idle(peer) then
