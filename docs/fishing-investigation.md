@@ -330,7 +330,7 @@ item; using the item casts a placing spell; the placing spell puts an object nex
 | Hat with a lure | Wide-Brimmed Fishing Hat 259846, use spell 1265220 (+25 for 10 minutes) | skill |
 | Food | "Well Fed" 1249521 (15 minutes): Loch Frenzy Delight +3, Fillet of Frenzy +5, Bristle Whisker Catfish +8, Rockscale Cod +12, Filet of Redgill and Spinefin Halibut +18 | skill |
 | Legacy talents | 1225468 Master Forager (+25 Fishing), 1225451 Working Overtime (+10 % chance of a skill-up) | skill |
-| Legacy talent | 1225455 Luremaster: a chance of an extra fish while a lure is active (the client's value is 50; the wiki says 25 % or 50 %) | quantity |
+| Legacy talent | 1225455 Luremaster: a chance of an extra fish while a lure is active, 25 % at rank 1 and 50 % at rank 2 (trait curve 97516; the client's value 50 is the base points; [luremaster-research.md](luremaster-research.md)) | quantity |
 | Coin | 1321323 "Shiny Silver Coin": +30 Fishing for 30 minutes; no item in the data casts it (about 60 named fountain coins, 286263 to 286328, exist; the link is an inference) | skill |
 | Gear | poles, Lucky Fishing Hat 19972, Nat Pagle's Extreme Anglin' Boots 19969, High Test Eternium Fishing Line 19971, the glove enchant 13620 | skill |
 
