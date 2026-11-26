@@ -294,7 +294,7 @@ Players who fish together see each other's catches right away, without waiting f
   budget (at most 50 KB per hour). Nothing appears in chat.
 - **Off**: **Options → AddOns → OneKeyFishing → Shared database**, **Use the shared catch database**. Off means
   nothing is sent and nothing is received; data received earlier is kept but not counted, and counts again as soon
-  as you turn it back on. **Use the public channel** below it leaves the channel and keeps the guild, group and
+  as you turn it back on. Data you [imported](#import-and-export) still counts. **Use the public channel** below it leaves the channel and keeps the guild, group and
   friends exchange; what came through the channel before still counts. A popup at the first login says the same once
   (and once more after the update that brings the public channel).
 - **State**: the line above the catch counts of **What can be caught here**, the settings page and `/okf share` (the
@@ -310,6 +310,31 @@ Players who fish together see each other's catches right away, without waiting f
   bound to its owner: nobody else can make up a newer version of it. The author can block a contributor in the
   bundled data, and every client with that release drops it.
 - **Trial and Veteran accounts** cannot send addon data; the state then says the exchange is unavailable.
+- **Battle.net friends** carry catches across the factions: a friend of the other faction who runs the addon
+  exchanges with you directly, and brings along what their side gathered.
+
+### Import and export
+
+Catch data can also travel by copy and paste, without both players being online at once: to a friend of the other
+faction, to a player you never meet in game, or into a forum post.
+
+- **Where**: **Options → AddOns → OneKeyFishing → Import and export**, or `/okf share export` and
+  `/okf share import`, which open the page on that choice.
+- **Export**: choose **Export my data** in the list at the top. The text area fills with one string (it starts with `OKF:`
+  and ends with `:END`), already selected: press **Ctrl+C** and paste it wherever the other player reads it. It holds
+  your own record first, then the freshest data you got from others, up to about 256 KB. Like the exchange, it
+  holds random IDs and catch counts per place, **no names**.
+- **Import**: the page opens on **Import a string** (later it keeps your last choice and what you pasted until you
+  `/reload`). Paste a string with **Ctrl+V** and press **Import**. Under the area the
+  addon tells how many records were new, already known, your own and refused. A string pasted twice brings nothing
+  new the second time.
+- Every imported record passes the same checks as data from the exchange, so a forged or impossible record is
+  refused. A string damaged or cut on the way (by a chat that shortens long messages, for example) is refused whole,
+  and nothing of it is stored: copy it again.
+- Imported data **counts even with the shared catch database off**, and so do newer versions of the same records
+  that come later through the exchange (a player's data that starts a new record later, once it grew large, counts
+  with sharing off only when imported again). With the shared database off, an export holds only your own data and
+  what you imported.
 
 ## The next Fishing rank
 
@@ -462,6 +487,7 @@ The same entry is in the Addon Compartment (the addons button next to the minima
 - **Sound effects**: a page of its own, see [Sound effects](#sound-effects).
 - **Auction prices**: a page of its own: **Use scanned auction prices for catch value**, **Take prices from
   Auctionator**, the price source in use and the counts of your catches; see [Auction prices](#auction-prices).
+- **Import and export**: a page of its own, see [Import and export](#import-and-export).
 
 ## Commands
 
@@ -477,7 +503,7 @@ Typing commands is optional: everything is also available from the menus. `/onek
 | `/okf best` | open the best places to fish |
 | `/okf catalog` | open the catch catalog; `/okf catalog <name or item link>` searches or opens that item |
 | `/okf scan` | scan auction prices of the catch catalog's items (the auction house must be open; not while the prices come from Auctionator) |
-| `/okf share` | show the state of the shared catch database |
+| `/okf share` | show the state of the shared catch database; `/okf share export` and `/okf share import` open the Import and export page |
 | `/okf sound` | open the Sound effects settings |
 | `/okf debug` | show a report to copy into a bug report |
 

@@ -9,6 +9,15 @@ local ICON = "Interface\\Icons\\Trade_Fishing"
 
 local button
 
+-- Entries added by files loaded later (specs/027-import-export, contracts/extension-points.md): fn(root) adds its
+-- buttons after the addon's own; each runs protected, so one that fails leaves the menu whole.
+local addedEntries = {}
+ns.MinimapMenu = {
+    AddEntries = function(fn)
+        table.insert(addedEntries, fn)
+    end,
+}
+
 local function OpenMenu(owner)
     if not (MenuUtil and MenuUtil.CreateContextMenu) then
         ns.SettingsUI.Open()
@@ -44,6 +53,9 @@ local function OpenMenu(owner)
         end
         root:CreateButton(L["Reset indicator position"], ns.Indicator.ResetPosition)
         root:CreateButton(L["Debug report"], ns.ShowDebugReport)
+        for _, add in ipairs(addedEntries) do
+            ns.Safe("MinimapMenu.AddEntries", add, root)
+        end
     end)
 end
 

@@ -534,4 +534,35 @@ ns.AddTranslation("ptBR", "Português", function(L)
     L["Camp bonus: Hut"] = "Acampamento: Cabana"
     L["No bonus catch has been recorded here yet."] = "Ainda não há capturas bônus aqui."
     L["No bonus catch has been recorded yet."] = "Ainda não há capturas bônus."
+
+    -- Import and export (specs/027-import-export): UI/TransferPage.lua
+    L["Import and export"] = "Importar e exportar"
+    L["Import"] = "Importar"
+    L["Import a string"] = "Importar um texto"
+    L["Export my data"] = "Exportar meus dados"
+    L["Move catch data between players without both being online: export it, send the text, import it."] =
+        "Passe dados de pesca entre jogadores sem que ambos estejam on-line: exporte, envie o texto e importe."
+    L["Imported data counts even with the shared database off."] =
+        "Os dados importados contam mesmo com o banco de dados compartilhado desligado."
+    L["Data you imported still counts."] = "Os dados que você importou continuam contando."
+    L["Preparing..."] = "Preparando..."
+    L["Nothing to export yet: catch some fish first."] =
+        "Ainda não há nada para exportar: pesque alguns peixes primeiro."
+    L["Your own data is still being prepared: choose Export my data again in a minute."] =
+        "Seus próprios dados ainda estão sendo preparados: escolha Exportar meus dados de novo em um minuto."
+    L["%d records, %d KB. Press Ctrl+C to copy, then paste it where the other player can read it."] =
+        "%d registros, %d KB. Pressione Ctrl+C para copiar e cole onde o outro jogador possa ler."
+    L["It holds anonymous IDs and catch counts per place, no names."] =
+        "Contém IDs anônimos e capturas por local, sem nomes."
+    L["Importing: %d of %d records checked..."] = "Importando: %d de %d registros verificados..."
+    L["Paste a string with Ctrl+V, then press Import."] = "Cole um texto com Ctrl+V e clique em Importar."
+    L["Pasted %d KB. Press Import."] = "%d KB colados. Clique em Importar."
+    L["No catch data found in the text."] = "Nenhum dado de pesca encontrado no texto."
+    L["The text is incomplete: copy the whole string again."] =
+        "O texto está incompleto: copie o texto inteiro de novo."
+    L["This string comes from a newer version of the addon: update OneKeyFishing."] =
+        "Este texto vem de uma versão mais recente do addon: atualize o OneKeyFishing."
+    L["The text is damaged: copy the whole string again."] = "O texto está danificado: copie o texto inteiro de novo."
+    L["Imported: %d new, %d already known, %d your own, %d refused."] =
+        "Importado: %d novos, %d já conhecidos, %d seus, %d recusados."
 end)

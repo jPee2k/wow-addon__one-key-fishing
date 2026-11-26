@@ -6,6 +6,13 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Import and export** of catch data: a new settings page (also `/okf share export` and `/okf share import`)
+  turns your catch data into one string to copy, and reads a string another player pasted in. Data then travels
+  without both players being online, across the factions too. Every imported record passes the exchange's checks, a
+  damaged or cut string is refused whole, and imported data counts even with the shared catch database off.
+
 ### Changed
 
 - Best places: **Safe for me** also hides the zones and capitals of the other faction, on every game mode (an

@@ -118,7 +118,7 @@ new field only needs a default.
 | `minimapAngle`, `indicatorPos` | the positions of the minimap button and the indicator | UI/Minimap.lua, UI/Indicator.lua |
 | `errors` | the error log: `{ context, message, stack, version, first, last, count }`, at most 30, ordered by last occurrence | Core.lua |
 | `statsTab` | the last open tab of the statistics window (`"stats"`, `"here"`, `"catalog"`, `"best"`) | UI/StatsFrame.lua |
-| `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset; a cell may carry `q`, its camp bonus parts by mask, spec 020), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent) | CatchDB.lua, Share.lua |
+| `shared` | the catch database ([catch-db.md](catch-db.md)): `myID` (8 random base32 characters, never in the debug report), `mine` (place key -> cell, this account's catches, never reset; a cell may carry `q`, its camp bonus parts by mask, spec 020), `records` (the own record under `myID`, frozen own records under `"<myID>@<epoch>"`, other players' records under `"<id>@<epoch>"` with `seen`), `chain` (the version chain's secret and marks, never sent), `imported` (`"<id>@<epoch>"` -> `true`: the units an import brought or confirmed, which count with sharing off; dropped with their record by `Store.CleanUp`; spec 027) | CatchDB.lua, Share.lua, ShareTransfer.lua |
 
 `OneKeyFishingCharDB` (per character):
 
@@ -188,6 +188,7 @@ counts, the list's groups, the remembered items, the coverage of the last result
 names) and the catch catalog (`Catalog.Describe()`: the state of each index, its maps and items, the build times
 and the name queue, never an item name), "Seed items without a kind" (the bundled seed's items that
 `GameData/ItemKinds.lua` does not list, by ID with name and class, an unloaded one asked for; "none" in a release, a
-dev build after a harvest lists them), then "Errors" (the error log, the newest first: count, context, times,
-version, message and stack). `Debug.Report()` returns the window title and the text; `/okf debug`
+dev build after a harvest lists them), the sections other files added through `Debug.AddSection(title, fn)` (spec 027, an
+extension point: `fn(add)` writes lines like the report's own sections, an error becomes a `!! failed` line), then
+"Errors" (the error log, the newest first: count, context, times, version, message and stack). `Debug.Report()` returns the window title and the text; `/okf debug`
 (`Commands.lua`) shows them in the copy window.

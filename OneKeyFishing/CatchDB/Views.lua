@@ -9,7 +9,9 @@ local CountKeys = ns.CountKeys -- Data.lua
 local mapCache, MapRange, KeyMapID = P.mapCache, P.MapRange, P.KeyMapID
 local BuildKey, Seed, SeedField = P.BuildKey, P.Seed, P.SeedField
 local OlderBuild, OwnRecord = P.OlderBuild, P.OwnRecord
-local SeedIndex, Others, Frozen, OwnIndex = P.SeedIndex, P.Others, P.Frozen, P.OwnIndex -- CatchDB/Index.lua
+local SeedIndex, Frozen, OwnIndex = P.SeedIndex, P.Frozen, P.OwnIndex -- CatchDB/Index.lua
+-- Other players' cells that count: all while sharing is on, the imported ones while it is off (spec 027).
+local CountedOthers = P.CountedOthers
 local SeedItems, OwnItems = P.SeedItems, P.OwnItems
 
 ---------------------------------------------------------------------------
@@ -299,7 +301,7 @@ local function Sources(filter, mapID)
     local reset = SeedField("resets")[mapID]
     local own = OwnRecord()
     local sources = { seed = { cells = Seed().cells, seed = true }, tables = {}, reset = reset,
-        others = ns.Share.IsEnabled() and Others() or nil, water = water, bonus = bonus }
+        others = CountedOthers(), water = water, bonus = bonus }
     local records = { own }
     for _, record in ipairs(Frozen()) do
         table.insert(records, record)
@@ -838,10 +840,8 @@ function CatchDB.Maps(filter)
         for prefix in pairs(OwnIndex()) do
             Add(prefix)
         end
-        if ns.Share.IsEnabled() then
-            for prefix in pairs(Others().byPrefix) do
-                Add(prefix)
-            end
+        for prefix in pairs(CountedOthers().byPrefix) do
+            Add(prefix)
         end
     end
     for mapID in pairs(set) do
@@ -852,14 +852,16 @@ function CatchDB.Maps(filter)
 end
 
 -- Calls fn(cells) for every held cell table until it returns true: the seed, the own counts and every record's builds
--- (with sharingOnly, other players' records only while sharing is on: the views read them only then).
+-- (with sharingOnly, other players' records only while sharing is on or when imported, spec 027: the views read them
+-- only then; the own records, the live one and those a roll kept, always).
 local function EachHeldCells(fn, sharingOnly)
     if fn(Seed().cells) or fn(ns.db.shared.mine) then
         return
     end
     local myID, sharing = ns.db.shared.myID, ns.Share.IsEnabled()
     for unit, record in pairs(ns.db.shared.records) do
-        if (sharing or unit == myID or not sharingOnly) and type(record) == "table"
+        if (sharing or not sharingOnly or unit == myID or P.IsOwnKey(unit) or ns.Share.IsImported(unit))
+            and type(record) == "table"
             and type(record.builds) == "table" then
             for _, cells in pairs(record.builds) do
                 if fn(cells) then
@@ -894,7 +896,8 @@ function CatchDB.HasPoolData()
 end
 
 -- True once a held cell has a camp bonus part of the bonus `key` (any bonus without one; specs/020-camp-buffs,
--- FR-024): the seed, the own counts, the own record and, while sharing is on, other players' records; a part of a bit
+-- FR-024): the seed, the own counts, the own records and, while sharing is on or when imported, other players'
+-- records; a part of a bit
 -- this version does not know counts for nothing. The "Camp bonus" button shows only then. P.bonusData keeps the union
 -- of every held part's mask; dropped at ADDON_LOADED, on every SHARED_DATA_CHANGED (a record with the only part may
 -- leave: FR-027) and when the own catch makes a new part (CatchDB.lua).
@@ -973,16 +976,16 @@ function CatchDB.Describe()
 end
 
 -- The items the auction scan searches beyond the own catches (Catch/Auction.lua, specs/018-auction-scan): the
--- bundled database's items and, while sharing is on, the items of other players' counted records that the catalog
+-- bundled database's items and the items of other players' counted records (CountedOthers) that the catalog
 -- shows: one the own catch has, or one NEW_ITEM_REPORTERS other contributions report on one map (FR-014), so a
 -- single forged record cannot add an item. A report counts as in Reporters (AddReports). Two sets itemID -> true;
 -- the first is the seed's own table: callers never write.
 function CatchDB.ScanItems()
     local others = {}
-    if ns.Share.IsEnabled() then
+    do
         local own, byMap = OwnItems(), {} -- byMap: mapID -> itemID -> { record ID -> true }
         local resets = SeedField("resets")
-        for _, entries in pairs(Others().byRecord) do
+        for _, entries in pairs(CountedOthers().byRecord) do
             for _, entry in ipairs(entries) do
                 byMap[entry.mapID] = byMap[entry.mapID] or {}
                 AddReports(byMap[entry.mapID], entry, resets[entry.mapID])

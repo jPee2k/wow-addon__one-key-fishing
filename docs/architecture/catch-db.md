@@ -60,7 +60,10 @@ or before a 501st place:
 - `CatchDB.Query(mapID, cell, filter)` sums the seed and the own record (or `mine`) for a spot, or for the whole
   map when the spot has fewer than 50 catches.
 - With `settings.shareDB` on, source "all" also sums every other player's record
-  (`shared.records["<id>@<epoch>"]`, the reset rule per build; not one the seed holds in part).
+  (`shared.records["<id>@<epoch>"]`, the reset rule per build; not one the seed holds in part). With it off, only
+  the imported ones (spec 027): the views read others' cells only through `CountedOthers()` (`CatchDB/Index.lua`),
+  which gives the whole index with sharing on and its `imported` sets (the entries of units `Share.IsImported`
+  marks, the same entry tables) with sharing off. A newer version of a marked unit stays marked.
 - A view has `players`: records with a summed cell plus the seed's largest `k`, an ID the seed absorbed only above
   that `k` (a lower bound, never an overcount); and `others`: another player's record has a catch in the sum
   (spec 012: the no-bundled-data hint of "What can be caught here").

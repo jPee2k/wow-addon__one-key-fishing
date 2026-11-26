@@ -503,4 +503,30 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["Camp bonus: Hut"] = "야영 보너스: 오두막"
     L["No bonus catch has been recorded here yet."] = "이곳에서는 아직 보너스 어획이 기록되지 않았습니다."
     L["No bonus catch has been recorded yet."] = "아직 보너스 어획이 기록되지 않았습니다."
+
+    -- Import and export (specs/027-import-export): UI/TransferPage.lua
+    L["Import and export"] = "가져오기 및 내보내기"
+    L["Import"] = "가져오기"
+    L["Import a string"] = "문자열 가져오기"
+    L["Export my data"] = "내 데이터 내보내기"
+    L["Move catch data between players without both being online: export it, send the text, import it."] =
+        "둘 다 접속하지 않아도 낚시 데이터를 주고받습니다: 내보내고, 텍스트를 보내고, 가져오세요."
+    L["Imported data counts even with the shared database off."] = "가져온 데이터는 공유 데이터베이스가 꺼져 있어도 반영됩니다."
+    L["Data you imported still counts."] = "가져온 데이터는 계속 반영됩니다."
+    L["Preparing..."] = "준비 중..."
+    L["Nothing to export yet: catch some fish first."] = "아직 내보낼 데이터가 없습니다: 먼저 물고기를 낚으세요."
+    L["Your own data is still being prepared: choose Export my data again in a minute."] =
+        "내 데이터를 아직 준비하는 중입니다: 1분 뒤에 내 데이터 내보내기를 다시 선택하세요."
+    L["%d records, %d KB. Press Ctrl+C to copy, then paste it where the other player can read it."] =
+        "기록 %d개, %d KB. Ctrl+C로 복사한 뒤 다른 플레이어가 읽을 수 있는 곳에 붙여 넣으세요."
+    L["It holds anonymous IDs and catch counts per place, no names."] = "익명 ID와 장소별 낚시 횟수만 담기며, 이름은 없습니다."
+    L["Importing: %d of %d records checked..."] = "가져오는 중: 기록 %d/%d개 확인..."
+    L["Paste a string with Ctrl+V, then press Import."] = "Ctrl+V로 텍스트를 붙여 넣은 뒤 가져오기를 누르세요."
+    L["Pasted %d KB. Press Import."] = "%d KB를 붙여 넣었습니다. 가져오기를 누르세요."
+    L["No catch data found in the text."] = "텍스트에서 낚시 데이터를 찾지 못했습니다."
+    L["The text is incomplete: copy the whole string again."] = "텍스트가 불완전합니다: 전체 텍스트를 다시 복사하세요."
+    L["This string comes from a newer version of the addon: update OneKeyFishing."] =
+        "이 텍스트는 더 새로운 버전의 애드온에서 왔습니다: OneKeyFishing을 업데이트하세요."
+    L["The text is damaged: copy the whole string again."] = "텍스트가 손상되었습니다: 전체 텍스트를 다시 복사하세요."
+    L["Imported: %d new, %d already known, %d your own, %d refused."] = "가져옴: 새 기록 %d개, 이미 있음 %d개, 내 기록 %d개, 거부 %d개."
 end)

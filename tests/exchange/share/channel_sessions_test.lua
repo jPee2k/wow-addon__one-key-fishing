@@ -543,3 +543,23 @@ test("parts are taken from the session's peer, and from the one that just ended 
     eq(c.node:ExpectsParts("w:A"), false, "after the session timeout")
     c.node:DropSession()
 end)
+
+---------------------------------------------------------------------------
+-- The session rule strangerChance (specs/027-import-export, research R7)
+---------------------------------------------------------------------------
+test("strangerChance 1 starts with every differing channel HELLO whatever H is; 0 with none", function()
+    for _, case in ipairs({ { 1, 100, 0.999, true }, { 0, 1, 0.0, false } }) do
+        local chance, heard, value, starts = case[1], case[2], case[3], case[4]
+        NewNet()
+        local dice = Dice()
+        local c = NewNode("C", "caaaaaa2", { channel = true, random = dice.fn })
+        c.node.rules.strangerChance = chance
+        local same = c.node:HashText()
+        for i = 1, heard - 1 do
+            c.node:Receive("w:Same" .. i, "channel", StrangerHello(same))
+        end
+        dice.value = value
+        c.node:Receive("w:Stranger", "channel", StrangerHello(("z"):rep(#same)))
+        eq(c.node.peers["w:Stranger"].starting == true, starts, ("chance %d, H = %d"):format(chance, heard))
+    end
+end)

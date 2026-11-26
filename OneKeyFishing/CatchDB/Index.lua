@@ -50,6 +50,11 @@ local function IndexRecord(key)
     if CountedUnit(key, record) ~= "other" then
         return
     end
+    -- An imported record (ShareTransfer.lua) is filed in the imported sets too: they count with sharing off.
+    local sets = { P.others }
+    if ns.Share.IsImported(key) then
+        table.insert(sets, P.others.imported)
+    end
     local entries = {}
     for build, cells in pairs(record.builds) do
         for place, cell in pairs(type(cells) == "table" and cells or {}) do
@@ -57,13 +62,17 @@ local function IndexRecord(key)
             if prefix then
                 local entry = { cell = cell, id = record.id, build = build, place = place, prefix = prefix,
                     other = true, mapID = KeyMapID(prefix), range = tonumber(prefix:match(":(%d)$")) }
-                AddToSet(P.others.byKey, place, entry)
-                AddToSet(P.others.byPrefix, prefix, entry)
+                for _, set in ipairs(sets) do
+                    AddToSet(set.byKey, place, entry)
+                    AddToSet(set.byPrefix, prefix, entry)
+                end
                 table.insert(entries, entry)
             end
         end
     end
-    P.others.byRecord[key] = entries
+    for _, set in ipairs(sets) do
+        set.byRecord[key] = entries
+    end
 end
 
 local function RemoveFromSet(sets, name, entry)
@@ -75,11 +84,13 @@ local function RemoveFromSet(sets, name, entry)
 end
 
 local function UnindexRecord(key)
-    for _, entry in ipairs(P.others.byRecord[key] or {}) do
-        RemoveFromSet(P.others.byKey, entry.place, entry)
-        RemoveFromSet(P.others.byPrefix, entry.prefix, entry)
+    for _, set in ipairs({ P.others, P.others.imported }) do
+        for _, entry in ipairs(set.byRecord[key] or {}) do
+            RemoveFromSet(set.byKey, entry.place, entry)
+            RemoveFromSet(set.byPrefix, entry.prefix, entry)
+        end
+        set.byRecord[key] = nil
     end
-    P.others.byRecord[key] = nil
 end
 
 -- The own records frozen by a roll that the seed does not hold yet: they count like the live one.
@@ -98,12 +109,20 @@ end
 
 local function Others()
     if not P.others then
-        P.others = { byKey = {}, byPrefix = {}, byRecord = {} }
+        P.others = { byKey = {}, byPrefix = {}, byRecord = {},
+            imported = { byKey = {}, byPrefix = {}, byRecord = {} } }
         for key in pairs(ns.db.shared.records) do
             IndexRecord(key)
         end
     end
     return P.others
+end
+
+-- The other players' cells that count (specs/027-import-export, research R5): every record while sharing is on,
+-- only the imported ones while it is off. The views read others' cells only through this.
+local function CountedOthers()
+    local others = Others()
+    return ns.Share.IsEnabled() and others or others.imported
 end
 
 -- True for a record key of the own ID: the live record, or one a roll froze under "<myID>@<epoch>".
@@ -180,5 +199,6 @@ end
 
 -- Shared with CatchDB/Views.lua and CatchDB/Events.lua through CatchDB.private.
 P.SeedIndex, P.Others, P.Frozen, P.OwnIndex = SeedIndex, Others, Frozen, OwnIndex
+P.CountedOthers = CountedOthers
 P.SeedItems, P.OwnItems = SeedItems, OwnItems
 P.IsOwnKey, P.IndexRecord, P.UnindexRecord = IsOwnKey, IndexRecord, UnindexRecord

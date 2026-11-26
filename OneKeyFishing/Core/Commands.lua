@@ -13,8 +13,16 @@ ns.COMMANDS = {
     { name = "scan", description = "scan auction prices of the catch catalog's items (auction house must be open; " ..
         "not while prices come from Auctionator)",
         run = function() ns.Auction.Scan() end },
-    { name = "share", description = "show the state of the shared catch database",
-        run = function() ns.Share.PrintStatus() end },
+    { name = "share", description = "show the state of the shared catch database; \"share import\" or " ..
+        "\"share export\" opens the import and export page",
+        run = function(rest)
+            local word = (rest or ""):lower():match("^%s*(%a+)")
+            if word == "import" or word == "export" then
+                ns.SettingsUI.OpenTransfer(word)
+            else
+                ns.Share.PrintStatus()
+            end
+        end },
     { name = "sound", description = "open the sound effects settings",
         run = function() ns.SettingsUI.OpenSounds() end },
     { name = "stats", description = "show the fishing statistics", run = function() ns.StatsFrame.Toggle() end },
