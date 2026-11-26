@@ -4,7 +4,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.7.0] - 2026-11-26
 
 ### Added
 
@@ -15,6 +15,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 
 ### Changed
 
+- The bundled catch database now knows 1250 fishing places (121 new) and 30 more items, from the catches players
+  shared on both factions of the PvE and PvP game modes.
 - Best places: **Safe for me** also hides the zones and capitals of the other faction, on every game mode (an
   Alliance character sees Alliance and contested zones, a Horde character Horde and contested zones). With Safe for
   me off they are listed with their level in red.
