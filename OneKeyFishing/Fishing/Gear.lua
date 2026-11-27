@@ -250,6 +250,124 @@ function Gear.GetSlotName(itemID)
 end
 
 ---------------------------------------------------------------------------
+-- Swaps on their way to the server (specs/030-gear-in-flight)
+---------------------------------------------------------------------------
+-- The server answers a swap 150 to 250 ms after the call, and until then the slot still shows the old item (seen in
+-- game on 2026-11-27): a restore judged in that window took the old weapon for the player's own choice and forgot
+-- the records, leaving the pole in hand and the weapons in the bags. A slot the addon asked to change waits for its
+-- PLAYER_EQUIPMENT_CHANGED, or SWAP_WAIT seconds when the game refused the swap (no event then). While one waits,
+-- Equip and the restore neither judge nor change a slot; the last one asked for runs after the answers.
+local SWAP_WAIT = 5
+local waiting = {} -- slot -> GetTime() at which its wait ends
+local queued -- nil, { kind = "equip" } or { kind = "restore", slots = nil (all) or a set of slots }
+local runScheduled = false
+local RestoreSlots, RunQueued -- defined below
+
+-- True while a slot of `slots` (a set; nil: any slot) waits for the game's answer; a wait past its time (a refused
+-- swap) ends here. A restore of the weapons waits only for the weapons: a hat the game refused must not keep them in
+-- the bags as a fight starts.
+local function IsWaiting(slots)
+    local now = GetTime()
+    local any = false
+    for slot, untilTime in pairs(waiting) do
+        if untilTime <= now then
+            waiting[slot] = nil
+        elseif not slots or slots[slot] then
+            any = true
+        end
+    end
+    return any
+end
+
+-- The slots the queued action judges: a restore its own, an equip every slot.
+local function QueuedScope()
+    return queued and queued.kind == "restore" and queued.slots or nil
+end
+
+-- Runs the queued action on the next frame once none of its slots waits: the answers for the main hand and the off
+-- hand come in one frame, and the off hand's must land before anything is judged.
+local function Settle()
+    if queued and not runScheduled and not IsWaiting(QueuedScope()) then
+        runScheduled = true
+        C_Timer.After(0, RunQueued)
+    end
+end
+
+local function Wait(slot)
+    waiting[slot] = GetTime() + SWAP_WAIT
+    -- A little past the wait's end: a timer that fires a hair before it would find the slot still waiting, and no
+    -- other timer would run the queued action.
+    C_Timer.After(SWAP_WAIT + 0.1, Settle)
+end
+
+local function Ask(item, slot)
+    Wait(slot)
+    C_Item.EquipItemByName(item, slot)
+end
+
+-- The last action asked for wins, except that a restore of the weapons keeps a full restore full: a fight that starts
+-- while the exit's restore waits must not shrink it to the weapons.
+local function Queue(kind, slots)
+    if kind == "restore" and slots and queued and queued.kind == "restore" and not queued.slots then
+        return
+    end
+    queued = { kind = kind, slots = slots }
+end
+
+-- Fishing mode on and not leaving: the gear it wants is the fishing gear.
+local function Staying()
+    return ns.Mode.IsActive() and not ns.Mode.IsExiting()
+end
+
+local function IsCasting()
+    return UnitChannelInfo("player") ~= nil or UnitCastingInfo("player") ~= nil
+end
+
+RunQueued = function()
+    runScheduled = false
+    if not queued or IsWaiting(QueuedScope()) then
+        return
+    end
+    -- Equipping is protected in the lockdown: a queued equip stays queued until the fight ends (PLAYER_REGEN_ENABLED
+    -- below). A queued restore runs, and RestoreSlots keeps it for the fight's end. Equipping also fails silently
+    -- while casting (a fishing key pressed before the answers): the equip stays queued until the cast ends (OnCastEnd).
+    if queued.kind == "equip" and (InCombatLockdown() or IsCasting()) then
+        return
+    end
+    local action = queued
+    queued = nil
+    if action.kind == "equip" then
+        if Staying() and ns.db.settings.gear then
+            -- The room check of Mode.Enter read the slots before this wait (and maybe a fight) ended: ask again. The
+            -- mode stays on (only a key press ends it), without the pole, and says why.
+            local room, offhand = Gear.HasRoomForPole()
+            if room then
+                Gear.Equip()
+            else
+                ns.Print(L["Fishing mode needs a free bag slot for %s."], offhand or L["an item"])
+            end
+        end
+    elseif not Staying() then
+        RestoreSlots(action.slots)
+    end
+end
+
+-- For /okf debug: the waiting slots (sorted) and the queued action.
+function Gear.DebugState()
+    IsWaiting()
+    local slots = {}
+    for slot in pairs(waiting) do
+        table.insert(slots, slot)
+    end
+    table.sort(slots)
+    local action
+    if queued then
+        action = queued.kind == "equip" and "equip" or (queued.slots and "restore weapons" or "restore all")
+    end
+    return slots, action
+end
+
+---------------------------------------------------------------------------
 -- Equip / restore
 ---------------------------------------------------------------------------
 
@@ -291,6 +409,13 @@ local function BuildPlan()
 end
 
 function Gear.Equip()
+    -- A swap still on its way (a quick enter after an exit): the slots would show the old items. Equipping also
+    -- fails silently while casting (an entry during a mount's cast): the equip waits for the cast's end (OnCastEnd).
+    if IsWaiting() or IsCasting() then
+        Queue("equip")
+        return
+    end
+    queued = nil
     local plan, missing = BuildPlan()
     if not plan[MAINHAND_SLOT] then
         ns.Print(L["No fishing pole found in your bags."])
@@ -317,8 +442,11 @@ function Gear.Equip()
                     -- A two-handed pole pushes the off hand into the bags.
                     swap[OFFHAND_SLOT] = { previous = offhand, equipped = false }
                 end
+                if offhand then
+                    Wait(OFFHAND_SLOT) -- the game empties it in the same answer
+                end
             end
-            C_Item.EquipItemByName(itemID, slot)
+            Ask(itemID, slot)
         end
     end
     ns.charDB.gearSwap = next(swap) and swap or nil
@@ -331,6 +459,8 @@ local function UnequipToBags(slot, reserved)
         local free, bagType = C_Container.GetContainerNumFreeSlots(bag)
         if free - (reserved[bag] or 0) > 0 and bagType == 0 then
             reserved[bag] = (reserved[bag] or 0) + 1
+            -- Before the move, as in Ask: an entry right after must not see the item still in the slot.
+            Wait(slot)
             PickupInventoryItem(slot)
             if bag == 0 then
                 PutItemInBackpack()
@@ -350,12 +480,8 @@ local deferredSlots
 -- (full bags, an item gone) waits for the next exit or login, not for every fight (spec 009 review).
 local restoreAfterCombat = false
 
-local function IsCasting()
-    return UnitChannelInfo("player") ~= nil or UnitCastingInfo("player") ~= nil
-end
-
 -- `onlySlots` limits restoring to a subset (the weapons as a fight starts).
-local function RestoreSlots(onlySlots)
+function RestoreSlots(onlySlots)
     local swap = ns.charDB.gearSwap
     -- Equipping is protected in combat, weapons too (constitution III): in the lockdown nothing is equipped, and the
     -- whole restore waits for the fight's end. Only the moment the fight starts (PLAYER_REGEN_DISABLED) comes before
@@ -368,8 +494,22 @@ local function RestoreSlots(onlySlots)
     if not onlySlots then
         restoreAfterCombat = false
     end
+    -- Leaving cancels a put-on still waiting for the answers (spec 030 FR-004), also with nothing recorded to put back.
+    if queued and queued.kind == "equip" then
+        queued = nil
+    end
     if not swap then
         return
+    end
+    -- A swap still on its way (a quick exit after an entry): the slots would show the old items, and the records
+    -- would be dropped as "not ours" (spec 030, B1). The restore runs after the answers of its own slots.
+    if IsWaiting(onlySlots) then
+        Queue("restore", onlySlots)
+        return
+    end
+    -- This run replaces a queued action, unless that one is a full restore and this one only the weapons.
+    if not (queued and queued.kind == "restore" and not queued.slots and onlySlots) then
+        queued = nil
     end
     -- Equipping fails while casting (e.g. leaving the mode with the bobber still out): retry after the cast.
     if IsCasting() then
@@ -395,7 +535,7 @@ local function RestoreSlots(onlySlots)
             elseif entry.previous then
                 -- Keep the entry until the swap lands (PLAYER_EQUIPMENT_CHANGED): equipping can fail silently.
                 entry.restoring = true
-                C_Item.EquipItemByName(entry.previous, slot)
+                Ask(entry.previous, slot)
             elseif not current then
                 swap[slot] = nil
             elseif UnequipToBags(slot, reserved) then
@@ -418,6 +558,29 @@ function Gear.HasPendingRestore()
     return ns.charDB.gearSwap ~= nil
 end
 
+-- False (and the off-hand item's link) when the gear swap cannot work: the two-handed pole to equip would push the
+-- off-hand item into bags with no free regular slot, and the game refuses the whole swap ("Inventory is full.", seen
+-- 2026-11-27; one free slot is enough). Fishing mode then stays off (spec 030, B3).
+function Gear.HasRoomForPole()
+    if not ns.db.settings.gear then
+        return true
+    end
+    local pole = Gear.GetPole()
+    if not pole or GetEquipLoc(pole) ~= "INVTYPE_2HWEAPON" or GetInventoryItemID("player", MAINHAND_SLOT) == pole
+        or not GetInventoryItemID("player", OFFHAND_SLOT) then
+        return true
+    end
+    -- With the main hand empty the game would take the pole (the off-hand item goes into the pole's freed bag slot,
+    -- V83); the rule stays this strict on purpose: the way back would first find no bag slot for the pole.
+    for bag = 0, NUM_BAG_SLOTS or 4 do
+        local free, bagType = C_Container.GetContainerNumFreeSlots(bag)
+        if (free or 0) > 0 and bagType == 0 then
+            return true
+        end
+    end
+    return false, GetInventoryItemLink("player", OFFHAND_SLOT)
+end
+
 ns.RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function(_, slot)
     local swap = ns.charDB.gearSwap
     local entry = swap and swap[slot]
@@ -426,18 +589,25 @@ ns.RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function(_, slot)
         swap[slot] = nil
         ns.charDB.gearSwap = next(swap) and swap or nil
     end
+    -- The game's answer: the slot no longer waits (spec 030).
+    waiting[slot] = nil
+    Settle()
 end)
 
 -- Finish a restore that waited for the cast to end.
 local function OnCastEnd(_, unit)
-    if unit ~= "player" or not deferredSlots then
+    if unit ~= "player" then
+        return
+    end
+    -- An equip that waited for the cast (RunQueued): the cast is still finishing on this frame.
+    if queued and queued.kind == "equip" then
+        C_Timer.After(0.2, Settle)
+    end
+    if not deferredSlots then
         return
     end
     local slots = deferredSlots
     deferredSlots = nil
-    local function Staying()
-        return ns.Mode.IsActive() and not ns.Mode.IsExiting()
-    end
     if Staying() then
         return -- back in fishing mode: nothing to restore
     end
@@ -453,12 +623,23 @@ ns.RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP", OnCastEnd)
 ns.RegisterEvent("UNIT_SPELLCAST_STOP", OnCastEnd)
 ns.RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", OnCastEnd)
 
+-- A fight that starts while fishing mode is off and a full restore waits only for slots other than the weapons (a
+-- refused hat): the weapons come back now, before the lockdown (constitution III); the rest after the answers. With
+-- the mode on, Mode's own PLAYER_REGEN_DISABLED handler (it runs after this one) owns the weapons.
+ns.RegisterEvent("PLAYER_REGEN_DISABLED", function()
+    if queued and queued.kind == "restore" and not ns.Mode.IsActive() and not IsWaiting(WEAPON_SLOTS) then
+        RestoreSlots(WEAPON_SLOTS)
+    end
+end)
+
 -- The end of a fight finishes a restore the lockdown refused, unless fishing mode is on or leaving: then Mode's own
 -- PLAYER_REGEN_ENABLED handler owns it (Mode.Exit, or the mode keeps its gear).
 ns.RegisterEvent("PLAYER_REGEN_ENABLED", function()
     if restoreAfterCombat and not ns.Mode.IsActive() then
         RestoreSlots(nil)
     end
+    -- An equip queued through the fight runs now (on the next frame, after Mode's own handler).
+    Settle()
 end)
 
 -- Parses a link, an item ID or an item name typed by the player.

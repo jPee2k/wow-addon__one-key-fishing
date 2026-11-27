@@ -91,6 +91,11 @@ puts on the pole, the boots and the hat. On exit it puts back your weapons, your
 helmet. If you had no helmet, the hat goes to your bags. Slots it did not touch stay as they are.
 
 The previous items are saved right away, so a `/reload`, a disconnect or a crash will not leave you in fishing gear.
+The game takes a moment to answer each swap, and the addon waits for that answer: leaving fishing mode right after
+entering it (or the other way round) still ends with the right gear in your hands.
+
+Fishing poles take both hands, so the pole pushes an off-hand item (a shield, a second weapon) into your bags. Keep
+one bag slot free for it: with full bags fishing mode does not turn on and says so.
 
 ## Statistics
 
@@ -533,6 +538,9 @@ Typing commands is optional: everything is also available from the menus. `/onek
 - **"Not enough bag space to loot ..."**: a container was opened but its loot did not fit. Free a bag slot and the
   key opens it again.
 - **"No free bag space to take off ..."**: free a bag slot, then leave fishing mode again.
+- **"Fishing mode needs a free bag slot for ..."**: the two-handed pole pushes your off-hand item into the bags, and
+  they are full. Free one bag slot and turn fishing mode on again (if it stayed on without the pole, because the
+  bags filled while a swap was on its way, turn it off and on).
 - **Something else**: see [Reporting bugs](#reporting-bugs).
 
 ## Reporting bugs

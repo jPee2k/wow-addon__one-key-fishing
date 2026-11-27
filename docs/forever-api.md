@@ -500,6 +500,30 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   `C_Item`, `C_Item.EquipItemByName` and `C_AuctionHouse` instead.
 - `C_Item.EquipItemByName` fails silently while casting or channeling, so a gear swap entry is only cleared on
   `PLAYER_EQUIPMENT_CHANGED`, and a restore during a cast waits for the cast to end.
+- Equip swaps on their way to the server (2026-11-27, build 71139, a one-handed mace, a shield and the two-handed
+  Fishing Pole 6256, an event logger; spec 030, [research](../specs/030-gear-in-flight/research.md)):
+  - The server answers a swap 150 to 250 ms after `C_Item.EquipItemByName`. Until then `GetInventoryItemID` still
+    gives the old item, and `IsInventoryItemLocked` on the equipment slots stays false; only the source bag slot is
+    locked (`ITEM_LOCK_CHANGED bag slot` at the call). A swap judged in that window sees the old state.
+  - The main hand and the off hand asked for in the same frame are both done: the answer brings, in one frame and in
+    order, `ITEM_LOCK_CHANGED` / `ITEM_UNLOCKED` / `PLAYER_EQUIPMENT_CHANGED` for slot 16, then the same for 17.
+  - A two-handed item pushing out the off hand brings `PLAYER_EQUIPMENT_CHANGED 17 true`: the second value is true
+    when the slot became empty, false when it was filled.
+  - A refused swap (the off hand of a two-handed pole with 0 free bag slots) brings `UI_ERROR_MESSAGE` type 3
+    "Inventory is full." and the bag slot's `ITEM_UNLOCKED`, no `PLAYER_EQUIPMENT_CHANGED`, and changes nothing. One
+    free regular slot is enough: the main hand takes the pole's bag slot, the off hand the free one.
+  - The weapons swapped in the `PLAYER_REGEN_DISABLED` handler are both answered and in hand in the fight; a restore
+    after the Fishing channel's end (+0.2 s) is answered like any other.
+  - With the main hand empty, an off-hand item worn and 0 free bag slots, the two-handed pole dragged onto the main
+    hand by hand is taken: the off-hand item goes into the pole's freed bag slot (V83; the addon's room rule stays
+    stricter there on purpose).
+  - An item above the character's level is refused with `UI_ERROR_MESSAGE` type 5 ("You must reach level 36 to use
+    that item."), no `PLAYER_EQUIPMENT_CHANGED`.
+  - `ReloadUI()` from a `C_Timer.After` callback is blocked ("Interface action failed because of an AddOn"); from a
+    typed `/run` it works in the same frame as an equip call, and the swap still lands (the mode resumes with the
+    pole and the records).
+  - A Fishing channel goes on through a `/reload`: the resumed mode sees `UnitChannelInfo` and its equip waits for
+    the channel's end.
 - Bags cannot be opened while the Settings panel is open, so items are added through Alt+Click in bags, not from
   the panel.
 - Key bindings on punctuation keys (`'` `;` `[` ...) are named by the character the current Windows keyboard

@@ -6,10 +6,17 @@
 
 The addon MUST stay within Blizzard's UI Add-On Development Policy at all times.
 
-- Every game action (cast, hook, apply lure, use or open an item, equip) MUST happen on a real
-  key press, through secure action buttons and override bindings.
+- Every game action (cast, hook, apply lure, use or open an item) MUST happen on a real key
+  press, through secure action buttons and override bindings.
+- Equipping and unequipping the player's own gear belongs to fishing mode, which MUST start and
+  end only on a real key press or by Principle III (the exit at a fight's start, a fight's end,
+  a logout, the resume after a `/reload`, the login after a crash). The swap MAY finish later,
+  once the game answered an earlier swap or the wait for that answer ran out, a cast ended, a
+  fight ended or the player logged in; nothing else MAY start a swap, and no gear change reacts
+  to the bobber, a catch or any other game event by itself.
 - The addon MUST NOT react by itself to game events that would replace a player decision: no
-  automatic hook on the bobber splash, no sound monitoring, no timed or chained actions.
+  automatic hook on the bobber splash, no sound monitoring, no timed or chained actions (the
+  finishing of a fishing mode swap above is not one).
 - No external tools, no traffic outside the game, no collection of personal data, no
   advertising, no paid or locked features, no obfuscated code.
 - Server-facing work MUST stay light. Auction searches run one request at a time, respect the
@@ -160,4 +167,4 @@ development guidance and MUST stay consistent with it.
 - Every spec, plan and review MUST check compliance with the principles above; a deviation
   MUST be justified in the plan's complexity tracking, and Principle I allows no deviation.
 
-**Version**: 1.5.4 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-16
+**Version**: 1.5.5 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-27

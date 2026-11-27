@@ -21,6 +21,7 @@ ns.AddTranslation("zhCN", "简体中文", function(L)
     L["No fishing pole found in your bags."] = "背包中没有找到鱼竿。"
     L["%d fishing item(s) are not in your bags."] = "有%d件钓鱼装备不在背包中。"
     L["No free bag space to take off %s."] = "背包没有空位，无法卸下%s。"
+    L["Fishing mode needs a free bag slot for %s."] = "钓鱼模式需要一个背包空位来放%s。"
     L["an item"] = "一件物品"
 
     -- Bags.lua

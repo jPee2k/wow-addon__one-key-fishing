@@ -21,6 +21,7 @@ ns.AddTranslation("koKR", "한국어", function(L)
     L["No fishing pole found in your bags."] = "가방에 낚싯대가 없습니다."
     L["%d fishing item(s) are not in your bags."] = "낚시 장비 %d개가 가방에 없습니다."
     L["No free bag space to take off %s."] = "가방에 빈 칸이 없어 벗을 수 없습니다: %s."
+    L["Fishing mode needs a free bag slot for %s."] = "낚시 모드를 켜려면 가방에 빈 칸이 필요합니다: %s."
     L["an item"] = "아이템"
 
     -- Bags.lua
