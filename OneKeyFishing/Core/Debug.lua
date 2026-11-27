@@ -124,6 +124,9 @@ local function BuildReport()
             add("pending restore: slot %d %s -> %s%s", slot, tostring(entry.previous), tostring(entry.equipped),
                 entry.restoring and " (restoring)" or "")
         end
+        local inFlight, queuedAction = ns.Gear.DebugState()
+        add("swap in flight: %s, queued: %s", #inFlight > 0 and table.concat(inFlight, " ") or "none",
+            queuedAction or "none")
     end)
 
     Section(lines, "Fished items in bags", function()

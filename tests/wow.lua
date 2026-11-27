@@ -2471,7 +2471,8 @@ function equipped_slots()
 end
 
 -- Gear the addon owes the player: its swap in both weapon slots and the head, each slot still holding what the
--- addon put there. Returns the slots.
+-- addon put there, and the game's answer to each swap (PLAYER_EQUIPMENT_CHANGED: since spec 030 Gear waits for it
+-- before it judges a slot again, as the stub C_Item.EquipItemByName never answers). Returns the slots.
 function owe_gear()
     local slots = ns.GameData.EquipSlots
     local head = slots.byEquipLoc.INVTYPE_HEAD[1]
@@ -2481,6 +2482,9 @@ function owe_gear()
         inventory[slot] = 200 + i
     end
     ns.charDB.gearSwap = swap
+    for _, slot in ipairs({ slots.mainHand, slots.offHand, head }) do
+        fire("PLAYER_EQUIPMENT_CHANGED", slot, false)
+    end
     return { slots.mainHand, slots.offHand, head }
 end
 

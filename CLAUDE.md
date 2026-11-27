@@ -15,7 +15,10 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
 ## Hard rules
 
 - **Blizzard's UI Add-On Policy.** Every game action (cast, hook, use item) happens on a real key press through
-  secure buttons and override bindings. No automatic reaction to the bobber splash, no external tools.
+  secure buttons and override bindings. No automatic reaction to the bobber splash, no external tools. Fishing
+  mode's gear swap starts and ends on a key press (or by constitution III: a fight, a logout, the resume after a
+  `/reload`, a login) and may finish after the game's answer (or the end of the wait for it), a cast, a fight or a
+  login; nothing else starts one.
 - **By ID, never by name.** The game client can run in any language, so game data is matched by ID.
 - **English is the development language.** Code, identifiers, comments, documentation (`README.md`, `docs/`,
   `specs/`, `CHANGELOG.md`, this file), commit messages, branch names and pull requests are in English, whatever
@@ -32,7 +35,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   `/dump`) is at most 255 characters, the chat line's limit (a longer one is cut and fails): count it with a tool
   before giving it, and split a longer one into several. Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013, 016, 018, 019, 020, 022, 024, 026, 027 and 029 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016, 018, 019, 020, 022, 024, 026, 027, 029 and 030 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -239,6 +242,9 @@ go there.
   water; `GetExploredAreaIDsAtPosition` gives map regions, often not the subzone.
 - `C_Item.EquipItemByName` is protected in combat, weapons too (only `PLAYER_REGEN_DISABLED` runs before the
   lockdown).
+- An equip swap is answered 150 to 250 ms after the call (`PLAYER_EQUIPMENT_CHANGED` per slot, the second value true
+  when the slot became empty); until then the slot still shows the old item and `IsInventoryItemLocked` is false. A
+  refused swap sends no `PLAYER_EQUIPMENT_CHANGED` (spec 030: a restore judged in that window lost the weapons).
 - `PlaySoundFile` has no volume argument (only Blizzard sound kits take `volumeOverride`), so the addon ships each
   sound at every 10 % step; "Sound in Background" (`Sound_EnableSoundWhenGameIsInBG`) is one switch for all game
   sound. The sound CVars can be set in a fight's start (`PLAYER_REGEN_DISABLED`) and take effect at once (V48).
