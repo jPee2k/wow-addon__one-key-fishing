@@ -205,6 +205,8 @@ GameData.ItemKinds = {
         [12365] = "reagents", -- Dense Stone (7 / 7)
         [13463] = "reagents", -- Dreamfoil (7 / 9)
         [13464] = "reagents", -- Golden Sansam (7 / 9)
+        -- Reagents of the seed of epoch 13 (2026-11-27; name and class from the game's item tables, build 1.60.1.71139)
+        [818] = "reagents", -- Tigerseye (7 / 11)
         -- Other
         [6457] = "other", -- Rusted Engineering Parts (15 / 0)
         [9754] = "other", -- Nomad Cloak (4 / 1)
@@ -296,6 +298,12 @@ GameData.ItemKinds = {
         [4998] = "other", -- Blood Ring (4 / 0, read in game)
         [3037] = "other", -- Whipwood Recurve Bow (2 / 2, read in game)
         [288206] = "other", -- Recipe: Draught of Water Walking (9 / 6, read in game)
+        -- Other of the seed of epoch 13 (2026-11-27; classes from the game's item tables, build 1.60.1.71139; the
+        -- three without a name row there are named from Wowhead's classic database)
+        [6347] = "other", -- Formula: Enchant Bracer - Minor Strength (9 / 8)
+        [2962] = "other", -- Burnt Leather Breeches (4 / 2)
+        [9848] = "other", -- Conjurer's Gloves (4 / 1)
+        [15212] = "other", -- Fighter Broadsword (2 / 7)
     },
     -- For an item not in byItem: "<classID>:<subClassID>" first, then "<classID>"; anything else is "other".
     byClass = {

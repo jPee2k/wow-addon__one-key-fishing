@@ -19,6 +19,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 - `/okf debug` lists the actions the game blocked because of the addon ("Errors and blocked actions"), with where
   they came from, whether you were in a fight and the addon's last menu. A bug report then shows the cause without
   any preparation.
+- The bundled catch database now knows 1276 fishing places (26 new) and 7 more items, from the catches players
+  shared.
 
 ## [1.7.0] - 2026-11-26
 
