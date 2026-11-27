@@ -206,7 +206,14 @@ The "Catch catalog" page (`specs/005-catch-catalog`, contracts/ui.md), drawn fro
   `GameTooltip` and its owner and item match, so ItemHooks adds no doubled explanation line), `ns.CreateList(parent, top, initialize)`
   (spec 020, moved from `UI/CatalogTab.lua`: the list of both catch pages, a `WowScrollBoxList` with a
   `MinimalScrollBar` from `top` to the window's bottom, or without the templates a fixed pool of rows with "and N
-  more"; `list.Show(elements, retain)`), `ns.OpenRadioMenu` (a `MenuUtil` menu of choices), `ns.KeyText`
+  more"; `list.Show(elements, retain)`), `ns.OpenMenu(owner, generator, name)` (spec 029: the addon's own menu frame
+  `OneKeyFishingMenu`, never the game's: `generator(owner, root)` with `root:CreateButton`, `CreateRadio`,
+  `CreateCheckbox` as the game's root, each function getting the entry's data, and an element's `SetEnabled` with a
+  boolean (a disabled entry's highlight dimmed, as the game's); a checkbox keeps it open and redraws, anything else
+  closes it; a press elsewhere closes it, a second click on its owner too; Escape through `UISpecialFrames` (it
+  closes the window behind it too: never the game's `RegisterGameMenuEscHandler`, which addon code would taint);
+  `ns.MenuEntries()` the last menu's entries, for the tests), `ns.OpenRadioMenu` / `ns.OpenCheckboxMenu`
+  (menus of choices on it), `ns.KeyText`
   (`binding, short, unbound, separator`: every key bound to an action, in the game's order, joined with " / ", or
   a red "not bound"; the minimap tooltip, the settings key line and the indicator use it), `ns.RangeLabel(min, max)`
   (a real skill range's label: "0-74", "75-224", "300+"; the catalog's Skill column, the Skill tooltip's miss range),

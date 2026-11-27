@@ -32,7 +32,7 @@ such as `Core/Core.lua` or `Locales/enUS.lua` are inside `OneKeyFishing/`, which
   `/dump`) is at most 255 characters, the chat line's limit (a longer one is cut and fails): count it with a tool
   before giving it, and split a longer one into several. Code built on an assumption only the game can
   confirm carries `-- VERIFY(<id>): <what>`, explained in the feature's `verification.md` (features 001 to 006,
-  008, 009, 013, 016, 018, 019, 020, 022, 024, 026 and 027 have one); a marker is removed only after the author confirms the behaviour in game, or when the
+  008, 009, 013, 016, 018, 019, 020, 022, 024, 026, 027 and 029 have one); a marker is removed only after the author confirms the behaviour in game, or when the
   author accepts the assumption without a check (its `verification.md` row then says "Accepted" and what happens
   if it is wrong).
 
@@ -100,7 +100,7 @@ folder only for a new area, with its document in `docs/architecture/` and its fo
 | `Core/Localization.lua` (first) | `ns.L`, the translation registry, language resolution | [core.md](docs/architecture/core.md) |
 | `Locales/*.lua` | `enUS.lua` (the keys), then one complete translation per language, before `Core/Core.lua` | [core.md](docs/architecture/core.md) |
 | `GameData/*.lua` (`FishingSpells`, `FishingRanks`, `NpcNames`, `Bobber`, `Lures`, `CampBonuses`, `FishedQuestItems`, `FishedContainers`, `AuctionUnanswered`, `ItemKinds`, `FishingPoles`, `EquipSlots`, `Icons`, `Continents`, `ZoneLevels`, `ZoneFactions`) | the game data model `ns.GameData`, one file per entity, data only, before `Core/Core.lua` | [game-data.md](docs/architecture/game-data.md) |
-| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
+| `Core/Core.lua` | events, the message bus `ns.On` / `ns.Fire`, each handler run through `ns.Safe` (the error log, also the actions the game blocked: `ns.RecordEntry`, `ns.NoteMenu`), chat output and popups, saved variables and migrations, the slash dispatcher | [core.md](docs/architecture/core.md) |
 | `Core/Data.lua` | shared helpers (the Fishing spell and bobber checks, bag iterator, names and the own name, text folding, base32, SHA-256, rolling counts) | [core.md](docs/architecture/core.md) |
 | `Core/MapPin.lua` | the game's map pin with its tracking (the minimap's arrow; the map stays closed), and chat map links: every pin of the addon (the next rank, the catalog) | [core.md](docs/architecture/core.md) |
 | `Fishing/Gear.lua`, `Fishing/Bags.lua`, `Fishing/Camera.lua` | the fishing gear swap; lures and fished containers; the camera zoom | [fishing-mode.md](docs/architecture/fishing-mode.md) |
@@ -250,9 +250,14 @@ go there.
   ([docs/history/auction-plan.md](docs/history/auction-plan.md)).
 - "Interface action failed because of an AddOn" in combat may come with no `ADDON_ACTION_BLOCKED` and nothing in the
   taint log: Blizzard's Lua refuses addon code itself (`HideUIPanel`, so the addon's windows hide their close
-  button's frame with `frame:Hide()`, `ns.SetupWindow`; a `MenuUtil` title, divider or spacer, so menus build none
-  in combat). Find the cause by the steps of [docs/forever-api.md](docs/forever-api.md), "Finding what the game
-  blocked" (a `hooksecurefunc` on `DisplayInterfaceActionBlockedMessage` printing `debugstack`; `taintLog 2`).
+  button's frame with `frame:Hide()`, `ns.SetupWindow`; a `MenuUtil` title, divider or spacer, so the addon's menus
+  build none at all, spec 029). The addon records its own blocks (`ADDON_ACTION_FORBIDDEN` / `BLOCKED` of the addon
+  and a `hooksecurefunc` on `DisplayInterfaceActionBlockedMessage` when its code is on the stack, in the error log of
+  `/okf debug`); the hook and taint log steps of [docs/forever-api.md](docs/forever-api.md), "Finding what the game blocked", remain for the rest.
+- The addon never opens a game menu (`MenuUtil`, `DropdownButton` / `WowStyle1DropdownTemplate`): rows the game's
+  shared menu pool creates while addon code opens a menu stay tainted, and a game menu reusing one is refused its
+  protected call (a unit menu's raid marker in a fight, `ADDON_ACTION_FORBIDDEN`; reproduced 2026-11-26). Menus are
+  the addon's own (`ns.OpenMenu`, `ns.OpenRadioMenu`, `ns.OpenCheckboxMenu` in `UI/Widgets.lua`; spec 029).
 - Player auras read by ID (`C_UnitAuras.GetPlayerAuraBySpellID`) out of combat only: in a fight the call returns
   nothing for an aura that is up, and the `UNIT_AURA` payload is secret tables (`ipairs` over one raises an error;
   check `issecretvalue`). Keep the state read before the fight (seen 2026-11-19;

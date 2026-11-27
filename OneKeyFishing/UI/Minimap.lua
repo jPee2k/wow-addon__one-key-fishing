@@ -18,18 +18,10 @@ ns.MinimapMenu = {
     end,
 }
 
+-- The addon's own menu (ns.OpenMenu, UI/Widgets.lua), never the game's: rows the game's menu pool creates for addon
+-- code stay tainted, and a unit menu reusing one could not set a raid marker in a fight (specs/029-blocked-actions).
 local function OpenMenu(owner)
-    if not (MenuUtil and MenuUtil.CreateContextMenu) then
-        ns.SettingsUI.Open()
-        return
-    end
-    MenuUtil.CreateContextMenu(owner, function(_, root)
-        -- The game's title element marks its row for gamepad navigation through a secure value, which addon code
-        -- may not set in combat: the menu would still open, with the game's "Interface action failed because of an
-        -- AddOn" line (seen in game 2026-11-18). In a fight the menu has no title.
-        if not InCombatLockdown() then
-            root:CreateTitle("OneKeyFishing")
-        end
+    ns.OpenMenu(owner, function(_, root)
         root:CreateButton(ns.Mode.IsActive() and L["Leave fishing mode"] or L["Enter fishing mode"], ns.Mode.Toggle)
         root:CreateButton(L["Statistics"], ns.StatsFrame.OpenStats)
         root:CreateButton(L["Catalog"], function() ns.StatsFrame.OpenCatalog() end)
@@ -56,7 +48,7 @@ local function OpenMenu(owner)
         for _, add in ipairs(addedEntries) do
             ns.Safe("MinimapMenu.AddEntries", add, root)
         end
-    end)
+    end, "minimap")
 end
 
 -- Each coloured line carries its colour as a code in its text as well as in the arguments (ns.ColoredText,

@@ -72,6 +72,19 @@ frame.
   entries ordered by last occurrence, a repeat of the same context and message counted into its entry. Before
   `ADDON_LOADED` the log lives in memory; the load drops saved entries of another addon version and adds the ones in
   memory (specs/006-error-log).
+- Blocked actions in the same log (specs/029-blocked-actions): `ADDON_ACTION_FORBIDDEN` and `ADDON_ACTION_BLOCKED`
+  naming OneKeyFishing (context the event, message the refused function) and every call of the game's
+  `DisplayInterfaceActionBlockedMessage` through a `hooksecurefunc` (context `INTERFACE_ACTION_BLOCKED`, message the
+  first stack line inside the addon's folder when the addon is the closest one on the stack, the stack's first 10
+  lines kept; a block whose closest addon is another, or with none, is not kept). An entry starts with a state line: in a fight or not, and the addon's last
+  menu with its age (`ns.NoteMenu(name)`: `ns.OpenMenu` in `UI/Widgets.lua` notes every
+  menu it opens, named by its caller). The events' entries add the addon's place on the stack to the state line ("addon line", searched past the 10 lines kept) and keep the stack they came with, its first 10 lines
+  after the addon's own event dispatch (the game fires them inside the refused call, so the stack holds its
+  callers: seen in game 2026-11-26). A hook entry means the addon's code was the closest on the way to the block,
+  not that it caused it: the game may blame another addon's taint. `ns.RecordEntry(context, message, stack)` adds an
+  entry without an error: nothing goes to the game's error handler. The report's last section is "Errors and blocked
+  actions". A repeat counts into its entry and its state replaces the entry's (the latest fight and menu). A refused
+  protected call may give two entries (the event and the hook, when Blizzard's handler shows the message).
 - Helpers: `ns.ShowPopup` (two-button popups; the default buttons are the addon's `L["Yes"]` / `L["No"]`, never
   the client's `YES` / `NO`), `ns.Print` (a chat line with the addon prefix). The frame helpers (`ns.CreateButton`,
   `ns.CreateText`, `ns.ItemDisplay`, `ns.ShowItemTooltip`, `ns.OpenRadioMenu`, `ns.KeyText`) are the view's, in
@@ -190,5 +203,5 @@ and the name queue, never an item name), "Seed items without a kind" (the bundle
 `GameData/ItemKinds.lua` does not list, by ID with name and class, an unloaded one asked for; "none" in a release, a
 dev build after a harvest lists them), the sections other files added through `Debug.AddSection(title, fn)` (spec 027, an
 extension point: `fn(add)` writes lines like the report's own sections, an error becomes a `!! failed` line), then
-"Errors" (the error log, the newest first: count, context, times, version, message and stack). `Debug.Report()` returns the window title and the text; `/okf debug`
+"Errors and blocked actions" (the error log with the blocked actions of spec 029, the newest first: count, context, times, version, message and stack). `Debug.Report()` returns the window title and the text; `/okf debug`
 (`Commands.lua`) shows them in the copy window.

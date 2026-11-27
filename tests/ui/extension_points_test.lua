@@ -41,7 +41,7 @@ test("an added report section comes before Errors; a failing one says so", funct
     local extra = assert(report:find("-- Extra section --", 1, true), "the section")
     assert(report:find("  value 7", 1, true), "its line")
     assert(report:find("!! failed", 1, true), "the failing one")
-    assert(extra < report:find("-- Errors --", 1, true), "before Errors")
+    assert(extra < report:find("-- Errors and blocked actions --", 1, true), "before Errors")
 end)
 
 test("a page added after the registration is registered at once and opens", function()

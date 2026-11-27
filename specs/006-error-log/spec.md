@@ -119,7 +119,8 @@ one has a count of 100; load the log under another addon version; it is empty.
   "/okf <command>".
 - **FR-005**: No failure MAY be swallowed: every failure caught by the helper MUST reach the game's error handler
   exactly once.
-- **FR-006**: No other entry point (frame scripts, hooks, timers) is changed by this feature.
+- **FR-006**: No other entry point (frame scripts, hooks, timers) is changed by this feature. (Amended by spec 029:
+  the log also keeps the actions the game blocked, through two events and a hook in `Core/Core.lua`.)
 - **FR-007**: The log MUST be kept in the account-wide saved variables as a new field filled by the existing defaults
   step, with no schema bump.
 - **FR-008**: An entry MUST hold the context, the error message, the stack cut to its first 10 lines, the addon

@@ -1,5 +1,5 @@
--- UI/Minimap.lua: the minimap button's menu in a fight. The game's title element is refused to addon code in combat
--- (the "Interface action failed because of an AddOn" line, seen in game 2026-11-18); the stub counts it.
+-- UI/Minimap.lua: the minimap button's menu, the addon's own (ns.OpenMenu; specs/029-blocked-actions): no title,
+-- the same entries in a fight as out of it.
 
 load_addon()
 local L = ns.L
@@ -18,24 +18,18 @@ local function texts()
     return table.concat(out, "|")
 end
 
-test("out of combat the menu has its title", function()
-    in_combat = false
-    OpenMenu()
-    eq(menu_entries[1].kind, "title", "first entry")
-    eq(menu_entries[1].text, "OneKeyFishing", "the title")
-    eq(menu_blocked, 0, "nothing refused")
-end)
-
-test("in combat the menu opens without a title, and the game refuses nothing", function()
+test("the menu has no title and the same entries in a fight", function()
     in_combat = false
     OpenMenu()
     local outside = texts()
+    for _, entry in ipairs(menu_entries) do
+        assert(entry.kind ~= "title", "no title out of combat")
+    end
     in_combat = true
     OpenMenu()
     in_combat = false
-    eq(menu_blocked, 0, "no title, divider or spacer in combat")
     assert(not menu_entry("OneKeyFishing"), "no title")
-    eq(texts(), outside, "the same entries as out of combat")
+    eq(texts(), outside, "the same entries in combat")
     assert(menu_entry(L["Statistics"]), "the statistics entry")
 end)
 

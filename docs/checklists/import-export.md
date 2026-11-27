@@ -21,8 +21,9 @@ other players' data; account B can have little or none.
    - [ ] Press Escape (the cursor leaves the area), then click anywhere in the empty area: the cursor is back and
      Ctrl+V pastes. Paste something, open another settings page and come back: the pasted text is still there.
 2. **Export**
-   - [ ] Open the list and choose **Export my data** (a dropdown, not a button; its text differs from the **Import**
-     button). The list's button reads **Export my data**, and **Import a string** again after picking it (V79). The hint says "Preparing..." for a moment, then the text area holds a string
+   - [ ] Click the choice button and choose **Export my data** (a button with the addon's own menu since spec 029; its
+     text differs from the **Import** button). The button reads **Export my data**, and **Import a string** again
+     after picking it. The hint says "Preparing..." for a moment, then the text area holds a string
      starting with `OKF:1:` and ending with `:END`, all selected.
    - [ ] The hint gives the number of records and the size in KB, and says no names are in it. Size: ____ KB,
      records: ____.
@@ -64,6 +65,8 @@ other players' data; account B can have little or none.
     takes about half a second.
 - Problems found and fixed in the same session:
   - The selector was a button with the same word as the Import button. It is now the game's dropdown.
+  - 2026-11-26 (spec 029): the selector is again a button, with the addon's own menu; the game's dropdown shared its
+    rows with the game's menus (a raid marker refused after it).
   - The text area had no frame. It now has a dark field with a border.
   - A 110 KB paste froze the game for 4 to 6 seconds. It is now collected by OnChar.
 - Known: typing in the Export area shows the letter for one frame before the string comes back. A game edit box
