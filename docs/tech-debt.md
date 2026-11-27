@@ -17,6 +17,22 @@ spec 011, and batches 5, 7, 8, 9 and 10 by spec 012, on `002-shared-db` (release
 
 ## Open items
 
+- **Escape closes the addon's menu and the window behind it at once** (low, spec 029 review). The addon's own menu
+  (`ns.OpenMenu`, `UI/Widgets.lua`) is in `UISpecialFrames`, and the game hides every shown frame of that list on one
+  Escape, the statistics window or the Settings panel included; the game's menus took the first Escape for
+  themselves. Not fixable through the game's `RegisterGameMenuEscHandler`: it writes the handler into the game's own
+  table, which taints every later Escape (the World handler's protected `ClearTarget`). Catching Escape on the menu
+  needs `SetPropagateKeyboardInput`, which addon code may not call in combat. Direction: a check in game whether a
+  keyboard-enabled menu that hides on ESCAPE and leaves propagation on (set once, out of combat) is enough.
+- **A block recorded before the saved variables load keeps the saved entry's stack** (low, spec 029 review).
+  `ns.RecordEntry` (`Core/Core.lua`) gives a repeated blocked action the latest stack and state line, but
+  `AttachErrorLog` merges the entries recorded before `ADDON_LOADED` through `AddError`, which keeps the saved entry
+  of the same version and adds only the count. It needs a block of the addon while its files load, where it makes no
+  protected call, so no player sees it today. Not changed in 1.7.1: taking the newer stack in `AttachErrorLog` for
+  every entry would also change which stack a repeated Lua error keeps (the first one). Direction: the newer stack only
+  for the blocked-action contexts (`ADDON_ACTION_FORBIDDEN`, `ADDON_ACTION_BLOCKED`, `INTERFACE_ACTION_BLOCKED`), with
+  a test in `tests/core/blocked_test.lua`.
+
 Reviews of the faction rule of Safe for me (spec 026, three `/code-review high` rounds, 2026-11-24): the low items
 left; the others were fixed with tests or ruled out (no contested map lies under a faction zone in the game's UiMap
 data; the faction is known before the world loads).
@@ -65,12 +81,6 @@ Review of the window fixes (`/code-review high`, 2026-11-18): the low items left
   one. Forever has the template (both windows use it in game), so no player sees this today. Direction: the same
   backdrop as the copy window, shared through `ns.SetupWindow` or a helper next to it; extend
   `windows_fallback_test.lua`.
-- **The in-combat menu rule lives in one menu** (low, found by review). A `MenuUtil` title, divider or spacer is
-  refused to addon code in combat (`docs/forever-api.md`); only the minimap menu (`UI/Minimap.lua`) skips its title
-  then. The catalog's kind and sort menus (`ns.OpenRadioMenu`, `ns.OpenCheckboxMenu`) have none of the three
-  today, and no test opens them in combat. Direction: a helper in `UI/Widgets.lua` for these elements that skips
-  them in combat, used by every menu; a test that opens each menu in combat with `menu_blocked` at 0.
-
 Review of the Auctionator prices (spec 019, `/code-review high`, three rounds and an independent tester,
 2026-11-18): the low items left.
 

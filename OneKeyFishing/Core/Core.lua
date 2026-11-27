@@ -66,8 +66,9 @@ function ns.Print(msg, ...)
 end
 
 -- The error log. The dispatchers below run each handler through ns.Safe, so one failing handler does not keep
--- the others from the same event, message or command. A failure is recorded (the debug report's "Errors") and
--- handed on to the game's error handler, which shows it as before (BugSack, the scriptErrors popup) or not at all.
+-- the others from the same event, message or command. A failure is recorded (the debug report's "Errors and blocked
+-- actions") and handed on to the game's error handler, which shows it as before (BugSack, the scriptErrors popup) or
+-- not at all.
 local ERROR_LOG_SIZE = 30
 local ERROR_STACK_LINES = 10
 local errorLog = {} -- in memory until the saved variables load, then db.errors (ADDON_LOADED below)
@@ -195,6 +196,112 @@ function ns.Fire(message, ...)
     for _, fn in ipairs(listeners[message] or NO_LISTENERS) do
         ns.Safe(message, fn, ...)
     end
+end
+
+-- Blocked actions (specs/029-blocked-actions): the game's "Interface action failed because of an AddOn" names no
+-- addon and no function and shows once per session, so the log keeps what the game refused, where it came from and
+-- the state around it, for /okf debug. Nothing here is a Lua error: no entry goes to the game's error handler.
+
+-- An entry of the log without an error (context, message, stack as in RecordError); never fails its caller. A repeat
+-- counts into its entry, as an error does, and its stack replaces the entry's: for a blocked action the latest state
+-- (the fight, the last menu) is the lead.
+function ns.RecordEntry(context, message, stack)
+    pcall(function()
+        stack = stack or ""
+        RecordError(context, message, stack)
+        local entry = errorLog[#errorLog] -- AddError moves the entry it counted into, or the new one, to the end
+        if entry and entry.context == context and entry.message == tostring(message) then
+            entry.stack = stack
+        end
+    end)
+end
+
+-- The last menu the addon opened (its menu helper in the view layer notes it, named by the caller): a lead for a block.
+-- The addon's menus once used the game's, whose rows are shared with the game's own menus (docs/forever-api.md).
+local lastMenu
+function ns.NoteMenu(name)
+    lastMenu = { name = name, at = GetTime(), combat = InCombatLockdown() and true or false }
+end
+
+-- One line of state for a blocked action's entry.
+local function BlockState()
+    local line = "in combat: " .. ((InCombatLockdown() and "yes") or "no")
+    if lastMenu then
+        line = line .. (", last addon menu: %s %d s ago%s"):format(tostring(lastMenu.name),
+            math.floor(GetTime() - lastMenu.at), lastMenu.combat and " (in combat)" or "")
+    end
+    return line
+end
+
+-- The addon closest to the block on its stack decides whose it is: the file and line of the first stack line in an
+-- addon's folder (the game's path, Interface/AddOns/<name>/; Blizzard's own folders skipped) when that addon is this
+-- one, else nil (another addon's block, or the game's own). Only the place, not how the function was named on the way
+-- ("local", "upvalue", "field"), so a cause is always one entry.
+local BLOCK_SEARCH_LINES = 60 -- a menu's layout runs deep in Blizzard_Menu before it reaches the addon
+local function AddonLine(stack)
+    for line in stack:gmatch("[^\n]+") do
+        local folder = line:match("AddOns[/\\]([^/\\]+)[/\\]")
+        if folder and not folder:find("^Blizzard_") then
+            if folder ~= ADDON_NAME then
+                return nil
+            end
+            return line:match("^%s*(.-:%d+):") or line
+        end
+    end
+end
+
+-- The first `count` lines of a stack, the leading ones of the addon's own event dispatch left out (xpcall's `[C]` line
+-- and Core.lua's lines before the handler); the refused game function's own `[C]` line stays.
+local function StackHead(stack, count)
+    local lines = {}
+    for line in stack:gmatch("[^\n]+") do
+        -- only xpcall's own [C] line: a [C] line after it is the refused game function
+        local dispatch = #lines == 0
+            and (line:find("^%s*%[C%]: in function .x?pcall.") or line:find("Core[/\\]Core%.lua"))
+        if #lines == count then
+            break
+        elseif not dispatch then
+            table.insert(lines, line)
+        end
+    end
+    return table.concat(lines, "\n")
+end
+
+-- The game refused a protected call because of this addon (the taint path; other addons' refusals are theirs). The
+-- entry keeps the function, the state and the stack the event came with: when the game fires it inside the refused
+-- call, the stack leads to the caller; when later, it shows only the event's delivery.
+local function OnActionRefused(event, addonName, func)
+    if addonName ~= ADDON_NAME then
+        return
+    end
+    local stack = debugstack(2, BLOCK_SEARCH_LINES, 0)
+    pcall(function()
+        local full = StackHead(stack or "", BLOCK_SEARCH_LINES) -- without the event's own dispatch
+        local lead = AddonLine(full) -- the addon's place on the way, also beyond the 10 lines kept
+        local state = BlockState() .. (lead and (", addon line: " .. lead) or "")
+        ns.RecordEntry(event, tostring(func), state .. "\n" .. StackHead(full, ERROR_STACK_LINES))
+    end)
+end
+ns.RegisterEvent("ADDON_ACTION_FORBIDDEN", OnActionRefused)
+ns.RegisterEvent("ADDON_ACTION_BLOCKED", OnActionRefused)
+
+-- Every block shows the game's message through this function, also the ones Blizzard's own Lua refuses with no event
+-- (HideUIPanel in combat, a menu title in combat). Kept when the addon's code is the closest addon on the stack, the
+-- message being that line, so causes stay apart and a repeat counts into its entry. That is the addon's code on the
+-- way to the block, not proof that it caused it: the game may blame another addon's taint (its ADDON_ACTION_* event,
+-- which Blizzard's handler hears before this addon, names that addon). The hook runs after the game's function,
+-- changes nothing in it and never raises into it.
+if type(DisplayInterfaceActionBlockedMessage) == "function" and hooksecurefunc then
+    hooksecurefunc("DisplayInterfaceActionBlockedMessage", function()
+        local stack = debugstack(2, BLOCK_SEARCH_LINES, 0) -- from the hook's caller: the hook itself is not on it
+        pcall(function()
+            local lead = AddonLine(stack or "")
+            if lead then
+                ns.RecordEntry("INTERFACE_ACTION_BLOCKED", lead,
+                    BlockState() .. "\n" .. StackHead(stack, ERROR_STACK_LINES))
+            end
+        end)
+    end)
 end
 
 -- Key binding labels (Options -> Keybindings -> AddOns). The names are translated in ADDON_LOADED, once the

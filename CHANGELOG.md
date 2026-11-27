@@ -4,6 +4,24 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.1] - 2026-11-27
+
+### Fixed
+
+- A raid marker could not be set from a unit's menu in a fight ("Interface action failed because of an AddOn" and the
+  offer to disable OneKeyFishing) once the addon's minimap menu or a filter menu had been opened first in the session.
+  The game's menus share their rows with every menu of the game, and rows first created for an addon's menu stay
+  marked as the addon's. The addon's menus (the minimap button, the filters, the language, the Import and export
+  choice) are now its own and no longer touch the game's menus.
+
+### Changed
+
+- `/okf debug` lists the actions the game blocked because of the addon ("Errors and blocked actions"), with where
+  they came from, whether you were in a fight and the addon's last menu. A bug report then shows the cause without
+  any preparation.
+- The bundled catch database now knows 1276 fishing places (26 new) and 7 more items, from the catches players
+  shared.
+
 ## [1.7.0] - 2026-11-26
 
 ### Added

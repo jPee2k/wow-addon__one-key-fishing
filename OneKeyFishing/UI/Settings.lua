@@ -134,7 +134,7 @@ local function OpenLanguageMenu(owner, onChosen)
         function(value)
             SettingsUI.ChooseLanguage(value)
             onChosen()
-        end)
+        end, "language")
 end
 
 local function ShowLanguageTooltip(owner)

@@ -258,8 +258,9 @@ local function BuildReport()
         Section(lines, added.title, function() added.fn(add) end)
     end
 
-    -- The addon's recent errors (Core.lua, ns.Safe), the newest first; the last section, as README.md says.
-    Section(lines, "Errors", function()
+    -- The addon's recent errors (Core.lua, ns.Safe) and the actions the game blocked (ns.RecordEntry, spec 029), the
+    -- newest first; the last section, as README.md says.
+    Section(lines, "Errors and blocked actions", function()
         local log = ns.GetErrors()
         if #log == 0 then
             add("none")

@@ -59,13 +59,15 @@
 --   sound_stops                         StopSound calls, { handle, fadeout } (read; emptied by enter_fishing_mode)
 --   sound_play_result = false           PlaySoundFile plays nothing and returns false (default: true, a new handle)
 --   loot.items[i][3] = quality          the 5th value of GetLootSlotInfo (the slot's item quality; nil by default)
---   menu_entries                        the last MenuUtil context menu: { kind, text, isSelected, onClick } (read);
+--   menu_entries                        the addon's last menu (ns.OpenMenu): { kind, text, isSelected, onClick };
 --                                       menu_entry(text) is the entry with that text; CreateCheckbox and CreateRadio
 --                                       entries (kind "checkbox", "radio") keep isSelected
 --   frame.points, frame.textColor       SetPoint calls (raw arguments, one per point; ClearAllPoints empties
 --                                       them) and the last SetTextColor { r, g, b, a } (read); anchor(frame,
 --                                       point) is the recorded point named `point` ("TOPLEFT", "LEFT", ...), or
 --                                       the first one without it
+--   frame.alpha                         the last SetAlpha of a frame or texture (GetAlpha: 1 until set)
+--   texture.texture, texture.texCoord   the last SetTexture and SetTexCoord { left, right, top, bottom }
 --   MinimalSliderWithSteppersTemplate   CreateFrame gives a slider with Init, SetValue (fires OnValueChanged),
 --                                       Slider:GetValue (not on the frame, as in the game), SetEnabled /
 --                                       IsSliderEnabled, RegisterCallback
@@ -640,6 +642,20 @@ end
 -- answers nothing (the client export, SimpleTextureBaseAPIDocumentation.lua).
 function Frame:SetTexture(texture)
     self.texture = texture
+end
+
+-- A frame's or texture's alpha (1 until set).
+function Frame:SetAlpha(alpha)
+    self.alpha = alpha
+end
+
+function Frame:GetAlpha()
+    return self.alpha or 1
+end
+
+-- A texture's coordinates: { left, right, top, bottom } of the last SetTexCoord (nil until set).
+function Frame:SetTexCoord(left, right, top, bottom)
+    self.texCoord = { left, right, top, bottom }
 end
 
 function Frame:SetAtlas(atlas)
@@ -1489,35 +1505,9 @@ function sounds_played()
     return list
 end
 
--- The context menu of MenuUtil (UI/Minimap.lua): the entries of the last menu built. The game's title, divider and
--- spacer set a secure value that addon code may not set in combat (the "Interface action failed" line, 2026-11-18):
--- menu_blocked counts each one added in combat.
+-- The addon's own menu (UI/Widgets.lua, ns.OpenMenu; spec 029): the entries of the last menu built, { kind, text,
+-- isSelected, onClick, enabled } (set by load_files). The game's MenuUtil is not used by the addon.
 menu_entries = {}
-menu_blocked = 0
-local IN_COMBAT_REFUSED = { title = true, divider = true, spacer = true }
-local function MenuRoot()
-    local root = {}
-    local function Add(kind, text, a, b)
-        if IN_COMBAT_REFUSED[kind] and in_combat then
-            menu_blocked = menu_blocked + 1
-        end
-        local entry = { kind = kind, text = text }
-        if kind == "checkbox" or kind == "radio" then
-            entry.isSelected, entry.onClick = a, b
-        else
-            entry.onClick = a
-        end
-        table.insert(menu_entries, entry)
-        return { SetEnabled = function(_, enabled) entry.enabled = enabled end }
-    end
-    function root:CreateTitle(text) return Add("title", text) end
-    function root:CreateButton(text, onClick) return Add("button", text, onClick) end
-    function root:CreateCheckbox(text, isSelected, onClick) return Add("checkbox", text, isSelected, onClick) end
-    function root:CreateRadio(text, isSelected, onClick) return Add("radio", text, isSelected, onClick) end
-    function root:CreateDivider() return Add("divider") end
-    function root:CreateSpacer() return Add("spacer") end
-    return root
-end
 
 -- The entry of the last menu whose text is `text`, or nil.
 function menu_entry(text)
@@ -1527,13 +1517,6 @@ function menu_entry(text)
         end
     end
 end
-
-MenuUtil = {
-    CreateContextMenu = function(owner, generator)
-        menu_entries = {}
-        generator(owner, MenuRoot())
-    end,
-}
 
 MinimalSliderWithSteppersMixin = {
     Event = { OnValueChanged = "OnValueChanged" },
@@ -2358,6 +2341,14 @@ function load_files(files)
         end
         if file:match("[^/]+$") == "Channel.lua" and rawget(_G, "channel_off") then
             ns.Channel.AVAILABLE = false -- a release without the channel (spec 010); it ships on (spec 016)
+        end
+        if file:match("[^/]+$") == "Widgets.lua" and ns.OpenMenu then
+            -- menu_entries: the entries of the addon's menu built last (UI/Widgets.lua, ns.OpenMenu)
+            local open = ns.OpenMenu
+            ns.OpenMenu = function(...)
+                open(...)
+                menu_entries = ns.MenuEntries()
+            end
         end
     end
 end
