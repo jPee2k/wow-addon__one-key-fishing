@@ -67,6 +67,7 @@
 --                                       point) is the recorded point named `point` ("TOPLEFT", "LEFT", ...), or
 --                                       the first one without it
 --   frame.alpha                         the last SetAlpha of a frame or texture (GetAlpha: 1 until set)
+--   texture.texture, texture.texCoord   the last SetTexture and SetTexCoord { left, right, top, bottom }
 --   MinimalSliderWithSteppersTemplate   CreateFrame gives a slider with Init, SetValue (fires OnValueChanged),
 --                                       Slider:GetValue (not on the frame, as in the game), SetEnabled /
 --                                       IsSliderEnabled, RegisterCallback
@@ -650,6 +651,11 @@ end
 
 function Frame:GetAlpha()
     return self.alpha or 1
+end
+
+-- A texture's coordinates: { left, right, top, bottom } of the last SetTexCoord (nil until set).
+function Frame:SetTexCoord(left, right, top, bottom)
+    self.texCoord = { left, right, top, bottom }
 end
 
 function Frame:SetAtlas(atlas)

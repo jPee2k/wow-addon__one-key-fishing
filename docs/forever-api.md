@@ -157,7 +157,16 @@ Facts read from the same export for the catch catalog (`specs/005-catch-catalog`
   `securecallfunction`) -> `UnitPopupSharedButtonMixins.lua:2589` -> `TargetFrame.lua:701` (`SetRaidTargetIcon`) ->
   `SetRaidTarget`. Rule: **the addon never opens a game menu**; its menus are its own frames (`ns.OpenMenu`,
   `UI/Widgets.lua`). It did not happen when a game menu had created the rows earlier in the session, which is why it
-  was hard to reproduce.
+  was hard to reproduce. Checked with the addon's own menus (2026-11-27, build 71139, spec 029): after `/reload` and
+  first the minimap menu, a filter menu or the Import and export choice, a raid marker in a fight is set and nothing
+  is recorded.
+- The addon's own menu (2026-11-27, build 71139, spec 029): `GLOBAL_MOUSE_DOWN` reaches a frame before the `OnClick`
+  of the button pressed, which comes with the release, so a press on the menu's owner can close the menu and its
+  click be swallowed (V81). `Interface\Buttons\UI-RadioButton` (64 x 16) holds the ring in its first quarter and only
+  the dot in its second; the dot is drawn over the ring, as the game's `UIRadioButtonTemplate` does, and
+  `UI-CheckBox-Check` over `UI-CheckBox-Up` (V82: one of them alone showed a dot or a check without its frame).
+  `/run DisplayInterfaceActionBlockedMessage()` from the chat shows the game's line, but the addon's hook records
+  nothing: the addon's code is not on the stack.
 - The Escape chain (from the export, build 71139): `RegisterGameMenuEscHandler(priority, handler)`
   (`Blizzard_GameMenuEsc.lua`) inserts and sorts the handler into the game's own local table, and
   `TryHandleGameMenuEsc` walks it without a secure wrapper around the loop. Called from addon code, it would write

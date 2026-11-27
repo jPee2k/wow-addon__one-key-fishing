@@ -237,11 +237,12 @@ local MENU_PADDING = 8
 local MENU_MIN_WIDTH = 120
 -- A disabled entry's highlight, as the game's menus dim it (MenuVariants.DisabledHighlightOpacity, Blizzard_Menu).
 local MENU_DISABLED_HIGHLIGHT = 0.4
--- VERIFY(V82): the radio's two states are the second and first quarter of UI-RadioButton (64 x 16).
-local RADIO_ON = "|TInterface\\Buttons\\UI-RadioButton:14:14:0:0:64:16:16:32:0:16|t "
-local RADIO_OFF = "|TInterface\\Buttons\\UI-RadioButton:14:14:0:0:64:16:0:16:0:16|t "
-local CHECK_ON = "|TInterface\\Buttons\\UI-CheckBox-Check:14:14|t "
-local CHECK_OFF = "|TInterface\\Buttons\\UI-CheckBox-Up:14:14|t "
+-- A radio or checkbox mark in two layers, as the game's UIRadioButtonTemplate and check buttons draw it: the frame
+-- always (the ring, the first quarter of UI-RadioButton; the box), the dot (its second quarter) or check on top.
+local MENU_MARK_SIZE = 14
+local RADIO_FILE = "Interface\\Buttons\\UI-RadioButton"
+local CHECK_BOX_FILE = "Interface\\Buttons\\UI-CheckBox-Up"
+local CHECK_MARK_FILE = "Interface\\Buttons\\UI-CheckBox-Check"
 
 -- The entries a menu's generator adds: the methods of the game's menu root that the addon uses (an extension of the
 -- minimap menu may call them too, specs/027 contracts/extension-points.md). The functions get the entry's data, as
@@ -273,15 +274,6 @@ end
 local menu -- the menu frame, built on first use
 local RenderMenu
 
-local function EntryText(entry)
-    if entry.kind == "radio" then
-        return (entry.isSelected() and RADIO_ON or RADIO_OFF) .. entry.text
-    elseif entry.kind == "checkbox" then
-        return (entry.isSelected() and CHECK_ON or CHECK_OFF) .. entry.text
-    end
-    return entry.text or ""
-end
-
 -- A click: a checkbox keeps the menu open and redraws its marks (as the game's checkbox does), anything else closes.
 local function ClickEntry(entry)
     if not (entry and entry.enabled ~= false and entry.onClick) then
@@ -303,8 +295,13 @@ local function MenuRow(index)
         row:SetHeight(MENU_ROW_HEIGHT)
         row:EnableMouse(true)
         row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        row.text:SetPoint("LEFT", 2, 0)
         row.text:SetJustifyH("LEFT")
+        row.box = row:CreateTexture(nil, "ARTWORK")
+        row.box:SetSize(MENU_MARK_SIZE, MENU_MARK_SIZE)
+        row.box:SetPoint("LEFT", 2, 0)
+        row.mark = row:CreateTexture(nil, "OVERLAY")
+        row.mark:SetSize(MENU_MARK_SIZE, MENU_MARK_SIZE)
+        row.mark:SetPoint("LEFT", 2, 0)
         row.highlight = row:CreateTexture(nil, "HIGHLIGHT")
         row.highlight:SetAllPoints()
         row.highlight:SetColorTexture(1, 1, 1, 0.15)
@@ -320,15 +317,29 @@ function RenderMenu()
         local row = MenuRow(index)
         row.entry = entry
         local enabled = entry.enabled ~= false
+        local radio = entry.kind == "radio"
+        local marked = radio or entry.kind == "checkbox"
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", MENU_PADDING, top)
         row:SetPoint("TOPRIGHT", -MENU_PADDING, top) -- both points on the row's own top: its height is its own
-        row.text:SetText(EntryText(entry))
+        -- Everything below is set on every render: rows are reused by the next menu (a radio's row for a checkbox).
+        if marked then
+            row.box:SetTexture(radio and RADIO_FILE or CHECK_BOX_FILE)
+            row.box:SetTexCoord(0, radio and 0.25 or 1, 0, 1)
+            row.mark:SetTexture(radio and RADIO_FILE or CHECK_MARK_FILE)
+            row.mark:SetTexCoord(radio and 0.25 or 0, radio and 0.5 or 1, 0, 1)
+        end
+        row.box:SetShown(marked)
+        row.mark:SetShown(marked and entry.isSelected() and true or false)
+        local inset = marked and MENU_MARK_SIZE + 6 or 2
+        row.text:ClearAllPoints()
+        row.text:SetPoint("LEFT", inset, 0)
+        row.text:SetText(entry.text or "")
         row.text:SetFontObject(enabled and "GameFontHighlightSmall" or "GameFontDisableSmall")
-        row.highlight:SetAlpha(enabled and 1 or MENU_DISABLED_HIGHLIGHT) -- set on every render: rows are reused
+        row.highlight:SetAlpha(enabled and 1 or MENU_DISABLED_HIGHLIGHT)
         row:Show()
         top = top - row:GetHeight()
-        width = math.max(width, (row.text:GetStringWidth() or 0) + 2 * MENU_PADDING + 4)
+        width = math.max(width, (row.text:GetStringWidth() or 0) + inset + 2 * MENU_PADDING + 2)
     end
     for index = #menu.entries + 1, #menu.rows do
         menu.rows[index]:Hide()
@@ -359,8 +370,8 @@ local function CreateMenuFrame()
     menu.rows, menu.entries = {}, {}
     -- A press anywhere but on the menu closes it, as a game menu closes. A press on its owner also notes the owner:
     -- the owner's click that follows (with the release, however late) does not open it again, so a second click on
-    -- the owner closes it. Any press while it is closed forgets that note.
-    -- VERIFY(V81): GLOBAL_MOUSE_DOWN reaches the menu before the owner's OnClick (which comes with the release).
+    -- the owner closes it. Any press while it is closed forgets that note. GLOBAL_MOUSE_DOWN reaches the menu before
+    -- the owner's OnClick, which comes with the release (V81, seen in game 2026-11-27).
     menu:RegisterEvent("GLOBAL_MOUSE_DOWN")
     menu:SetScript("OnEvent", function(self)
         if not self:IsShown() then

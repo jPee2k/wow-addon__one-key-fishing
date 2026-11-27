@@ -41,11 +41,24 @@ in game and not repeated here: the recorded `SetRaidTarget` entry and the A/B te
    - [ ] Hide the statistics window with `/okf stats` while a filter menu is open: the menu closes too.
 5. **The marks** (V82)
    - [ ] A filter menu with choices (the water filter: Everywhere, Open water, Pools; the Skill filter): the chosen
-     one shows a filled radio, the others an empty one.
-   - [ ] The Kinds menu: a checkbox click keeps the menu open and its mark changes.
+     one shows a ring with a dot, the others an empty ring; the texts start at the same place.
+   - [ ] The Kinds menu: a shown kind is a box with a check, a hidden one an empty box; a click keeps the menu open
+     and its mark changes.
    - [ ] The language choice and the Import and export choice mark the chosen entry and close on a click.
 
 ## Results
 
-- Date: ____, client language: ____, build: ____
-- Problems found: ____
+- Date: 2026-11-27, client language: enUS (the addon in Ukrainian), build: 1.60.1.71139
+- Step 1 passed: after `/reload` and first the minimap menu, a filter menu or the Import and export choice, a raid
+  marker in a fight was set; `/okf debug` listed no new entry (only the one of 2026-11-26, before the change).
+  SC-004 confirmed.
+- Step 2 passed: the game's line showed, nothing was recorded.
+- Steps 3 and 4 passed: the menu below the button with no title, the grey scan entry lit faintly and stayed open on
+  a click, the Addon Compartment, the toggle on the owner (V81 confirmed), a click elsewhere, Escape, the menu closing
+  with the window.
+- Step 5 passed in function (V82 confirmed: the right states, no other part of the texture), the checkbox kept the
+  menu open, the language and Import and export choices worked. Problem found and fixed in the same session: a
+  selected radio showed only a dot without its ring, a checked checkbox only a check without its box. The marks are
+  now drawn in two layers, as the game's own radio and check buttons. Step 5 again after the fix passed: the camp
+  bonus menu showed a ring with a dot on the chosen choice and empty rings on the others, the Kinds menu boxes with a
+  check on the shown kinds and empty boxes on the hidden ones, every text starting at the same place.
