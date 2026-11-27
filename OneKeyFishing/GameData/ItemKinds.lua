@@ -207,6 +207,13 @@ GameData.ItemKinds = {
         [13464] = "reagents", -- Golden Sansam (7 / 9)
         -- Reagents of the seed of epoch 13 (2026-11-27; name and class from the game's item tables, build 1.60.1.71139)
         [818] = "reagents", -- Tigerseye (7 / 11)
+        -- Reagents of the seed of epoch 14 (2026-11-27; classes from the game's item tables, build 1.60.1.71139; no
+        -- name row there, the names from Wowhead's classic database)
+        [3371] = "reagents", -- Empty Vial (7 / 11)
+        [8170] = "reagents", -- Rugged Leather (7 / 6)
+        [8171] = "reagents", -- Rugged Hide (7 / 6)
+        [8838] = "reagents", -- Sungrass (7 / 9)
+        [16202] = "reagents", -- Lesser Eternal Essence (7 / 12)
         -- Other
         [6457] = "other", -- Rusted Engineering Parts (15 / 0)
         [9754] = "other", -- Nomad Cloak (4 / 1)
@@ -298,6 +305,9 @@ GameData.ItemKinds = {
         [4998] = "other", -- Blood Ring (4 / 0, read in game)
         [3037] = "other", -- Whipwood Recurve Bow (2 / 2, read in game)
         [288206] = "other", -- Recipe: Draught of Water Walking (9 / 6, read in game)
+        -- Other of the seed of epoch 14 (2026-11-27; class from the game's item tables, build 1.60.1.71139; name from
+        -- Wowhead's classic database)
+        [8178] = "other", -- Training Sword (2 / 8)
         -- Other of the seed of epoch 13 (2026-11-27; classes from the game's item tables, build 1.60.1.71139; the
         -- three without a name row there are named from Wowhead's classic database)
         [6347] = "other", -- Formula: Enchant Bracer - Minor Strength (9 / 8)

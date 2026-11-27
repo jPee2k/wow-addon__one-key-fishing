@@ -4,7 +4,7 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.7.2] - 2026-11-27
 
 ### Fixed
 
@@ -19,6 +19,8 @@ All notable changes to OneKeyFishing are listed here. The format follows
 ### Changed
 
 - `/okf debug` shows the gear swaps still waiting for the game's answer ("swap in flight").
+- The bundled catch database now knows 1291 fishing places (15 new) and 6 more items, from the catches players
+  shared.
 
 ## [1.7.1] - 2026-11-27
 
