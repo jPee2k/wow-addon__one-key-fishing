@@ -23,6 +23,7 @@ L["Removed from fishing gear."] = true
 L["No fishing pole found in your bags."] = true
 L["%d fishing item(s) are not in your bags."] = true
 L["No free bag space to take off %s."] = true
+L["Fishing mode needs a free bag slot for %s."] = true
 L["an item"] = true
 
 -- Bags.lua

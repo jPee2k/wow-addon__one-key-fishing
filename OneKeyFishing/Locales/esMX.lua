@@ -22,6 +22,7 @@ ns.AddTranslation("esMX", "Español (AL)", function(L)
     L["No fishing pole found in your bags."] = "No se encontró ninguna caña de pescar en tus bolsas."
     L["%d fishing item(s) are not in your bags."] = "%d objeto(s) de pesca no están en tus bolsas."
     L["No free bag space to take off %s."] = "No hay espacio libre en las bolsas para quitarte %s."
+    L["Fishing mode needs a free bag slot for %s."] = "El modo pesca necesita un espacio libre en las bolsas para %s."
     L["an item"] = "un objeto"
 
     -- Bags.lua

@@ -4,6 +4,22 @@ All notable changes to OneKeyFishing are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Leaving fishing mode right after entering it (a double press of the toggle key, lag, or a mob attacking at once)
+  left the fishing pole in your hands and your weapon and off-hand item in your bags, and the addon never put them
+  back. The game takes a moment to answer each gear swap; the addon now waits for that answer before it puts your
+  gear back. Entering right after leaving no longer leaves you fishing without the pole either, and neither does
+  entering while a spell is being cast (a mount being summoned): the pole goes on when the cast ends.
+- With a two-handed pole, an off-hand item and full bags, fishing mode turned on without the pole (the game refused
+  the swap). It now stays off and says that a free bag slot is needed for the off-hand item.
+
+### Changed
+
+- `/okf debug` shows the gear swaps still waiting for the game's answer ("swap in flight").
+
 ## [1.7.1] - 2026-11-27
 
 ### Fixed

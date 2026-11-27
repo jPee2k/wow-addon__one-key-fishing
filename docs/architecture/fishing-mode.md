@@ -103,6 +103,28 @@ The fishing sounds of the "Sound effects" page (spec 013), `ns.Sound`, loaded af
   does it otherwise). An attack during a cast defers the swap past that moment, so the weapons come back after the
   fight: the game's limit, not covered by constitution III's "weapons at once".
 - `C_Item.EquipItemByName` fails silently while casting or channeling ([forever-api.md](../forever-api.md)).
+- **The wait for the game's answer** (spec 030, [research](../../specs/030-gear-in-flight/research.md)): the server
+  answers a swap 150 to 250 ms after the call, and the slot shows the old item until then. Every slot Gear asks to
+  change (`Ask`: `EquipItemByName`; `UnequipToBags`; the off hand a two-handed pole empties) waits in memory until its
+  `PLAYER_EQUIPMENT_CHANGED`, or `SWAP_WAIT` (5 s) when the game refused the swap and sends no event. While a slot they
+  judge waits (any slot for `Gear.Equip` and `Gear.Restore`, a weapon slot for `Gear.RestoreWeapons`, so a refused hat
+  does not keep the weapons in the bags at a fight's start), they neither judge nor change a slot: they queue themselves
+  (one action, the last one asked for; a weapons-only restore keeps a queued full restore full) and run on the frame
+  after the last answer (the main hand's and the off hand's answers come in one frame), an equip only while fishing mode
+  is on and not leaving, a restore only while it is off or leaving. A queued equip found in the combat lockdown stays
+  queued and runs after the fight (Gear's `PLAYER_REGEN_ENABLED`), one found while casting after the cast (the cast
+  ends' handler; `Gear.Equip` called during a cast, an entry while a mount is summoned, queues itself the same way); leaving cancels a queued equip, also with no record left. A fight that starts while the mode is off
+  and a queued full restore waits only for other slots brings the weapons back at once (Gear's `PLAYER_REGEN_DISABLED`).
+  A queued equip asks `Gear.HasRoomForPole()` again (the bags may
+  have filled meanwhile) and, without room, prints the line and equips nothing, the mode staying on. In `RestoreSlots`
+  the combat lockdown is checked first, then the wait, then the cast. Nothing of it is saved: after a `/reload` the
+  records are, and the login restore runs after the answer. Before, an exit 0.1 s after entering dropped the records and
+  left the pole in hand for good.
+- `Gear.HasRoomForPole()`: false (and the off-hand item's link) when the gear setting is on, the pole to equip is
+  two-handed and not in the main hand, the off hand holds an item and no regular bag (`bagType == 0`) has a free
+  slot. `Mode.Enter` asks it before anything is enabled and stays off with a chat line: the game refuses the whole
+  swap then ("Inventory is full."), and one free slot is enough.
+- `Gear.DebugState()` gives `/okf debug` the waiting slots and the queued action ("swap in flight").
 
 ## Fishing/Camera.lua
 

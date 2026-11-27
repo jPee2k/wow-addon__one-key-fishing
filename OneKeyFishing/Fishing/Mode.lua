@@ -176,6 +176,12 @@ local function Enter(owned)
         ns.Print(L["Cannot enter fishing mode in combat."])
         return
     end
+    -- Before anything changes: without room for the off hand the game refuses the pole (spec 030).
+    local room, offhand = ns.Gear.HasRoomForPole()
+    if not room then
+        ns.Print(L["Fishing mode needs a free bag slot for %s."], offhand or L["an item"])
+        return
+    end
     if not ns.Action.Enable() then
         return
     end
