@@ -43,7 +43,9 @@ goes into [tech-debt.md](tech-debt.md) and a 1.2.x patch.
 - [checklists/interface-language.md](checklists/interface-language.md): the rank notices at skill 225 and level 35
   (Nat Pagle); Korean and Chinese on a client in another language (deferred until a player reports it).
 - [checklists/item-kinds.md](checklists/item-kinds.md): a new trophy (steps 5-7: the gold notice, the rare sound, the
-  count), accepted on 2026-11-23 until a weighed fish new to the account bites.
+  count), accepted on 2026-11-23 until a weighed fish new to the account bites. **The gold notice confirmed on
+  2026-11-27** (42 Pound Redgill, Moonglade) and its check mark in the catalog (7/36, step 7, 2026-11-28); the rare
+  sound, the notice with catch notifications off and a second catch of it (step 6) stay accepted.
 
 ## 1.6.0 (released 2026-11-23)
 

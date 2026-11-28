@@ -40,10 +40,16 @@ and the count). Tick them when a weighed fish new to the account bites.
 5. [ ] Fish until a weighed fish your account has never caught bites: a gold notice "New trophy: [...] (n+1/36)"
    rises above the indicator, the catch line does not name it again, and the rare loot sound plays (FR-008). Turn
    "Show catch notifications" off and it still shows.
+   **The notice: seen 2026-11-27 23:35**, 42 Pound Redgill (13882) at Moonglade, Nighthaven (the Luremaster spike);
+   the author confirmed the notice came. The sound, the catch line and the notice with catch notifications off were
+   not reported; they stay accepted.
 6. [ ] Catch the same weighed fish again: only the ordinary catch line, no gold notice, no rare sound (FR-009).
-7. [ ] Open the catalog again: the count went up by one and the new trophy has its mark.
+7. [x] Open the catalog again: the count went up by one and the new trophy has its mark. 2026-11-28: 42 Pound
+   Redgill has its check mark and the Trophies header reads 7/36 (the count before it was not noted).
 
 ## Results
 
 - Date: 2026-11-23 Client language: ukUA Build: 1.5.1 + spec 023 (branch `023-item-kinds`)
 - Problems found: none. Steps 5-7 accepted, open until a new trophy bites.
+- 2026-11-27/28: the first new trophy (42 Pound Redgill) showed the gold notice (step 5, the notice only) and its
+  check mark in the catalog, the header at 7/36 (step 7). The rest of step 5 and step 6 stay accepted.
